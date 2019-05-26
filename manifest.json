@@ -1,0 +1,10 @@
+{
+  "domain": "yandex_smart_home",
+  "name": "Yandex smart home",
+  "documentation": "-",
+  "requirements": [],
+  "dependencies": [
+    "http"
+  ],
+  "codeowners": []
+}
