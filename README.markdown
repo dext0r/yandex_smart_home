@@ -2,7 +2,7 @@
 
 ### Installation
 
-1. Clone this project into custom_components directory
+1. Clone this project into custom_components directory(create if required, path should look like ~/.homeassistant/custom_directory/yandex_smart_home)
 2. Configure component via configuration.yaml
 3. Create dialog via https://dialogs.yandex.ru/developer/
 4. Add devices via your Yandex app on android/ios
@@ -91,3 +91,4 @@ Field | Value
 Client identifier | https://social.yandex.net/
 API authorization endpoint | https://[YOUR HOME ASSISTANT URL:PORT]/auth/authorize
 Token Endpoint | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
+Refreshing an Access Token | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
