@@ -26,7 +26,7 @@ yandex_smart_home:
 
 Configuration is similar to google assistant.
 
-{% configuration %}
+```
 expose_by_default:
   description: "Expose devices in all supported domains by default. If `exposed_domains` domains is set, only these domains are exposed by default. If `expose_by_default` is set to false, devices have to be manually exposed in `entity_config`."
   required: false
@@ -58,7 +58,7 @@ entity_config:
           description: Allows for associating this device to a Room in Yandex Smart Home.
           required: false
           type: string
-{% endconfiguration %}
+```
 
 ### Available domains
 
