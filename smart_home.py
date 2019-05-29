@@ -173,6 +173,8 @@ async def handle_devices_execute(hass, data, message):
             try:
                 await entities[entity_id].execute(data, capability.get('type', ''), capability.get('state', {}))
             except SmartHomeError as err:
+                if entity_id not in action_errors:
+                    action_errors[entity_id] = {}
                 action_errors[entity_id][capability['type']] = err.code
 
     final_results = list(results.values())
@@ -185,14 +187,14 @@ async def handle_devices_execute(hass, data, message):
 
         capabilities = []
         for capability in devices[entity.entity_id]['capabilities']:
-            if entity.entity_id in action_errors and capability in action_errors[entity.entity_id]:
+            if entity.entity_id in action_errors and capability['type'] in action_errors[entity.entity_id]:
                 capabilities.append({
                     'type': capability['type'],
                     'state': {
                         'instance': capability['state']['instance'],
                         'action_result': {
                           "status": "ERROR",
-                          "error_code": action_errors[entity.entity_id][capability],
+                          "error_code": action_errors[entity.entity_id][capability['type']],
                       }
                     }
                 })

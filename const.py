@@ -62,7 +62,7 @@ DOMAIN_TO_YANDEX_TYPES = {
     input_boolean.DOMAIN: TYPE_SWITCH,
     light.DOMAIN: TYPE_LIGHT,
     lock.DOMAIN: TYPE_OTHER,
-    media_player.DOMAIN: TYPE_SWITCH,
+    media_player.DOMAIN: TYPE_MEDIA_DEVICE,
     scene.DOMAIN: TYPE_OTHER,
     script.DOMAIN: TYPE_OTHER,
     switch.DOMAIN: TYPE_SWITCH,
@@ -71,5 +71,4 @@ DOMAIN_TO_YANDEX_TYPES = {
 
 DEVICE_CLASS_TO_YANDEX_TYPES = {
     (media_player.DOMAIN, media_player.DEVICE_CLASS_TV): TYPE_MEDIA_DEVICE_TV,
-    (media_player.DOMAIN, media_player.DEVICE_CLASS_SPEAKER): TYPE_MEDIA_DEVICE,
 }

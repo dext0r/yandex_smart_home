@@ -10,8 +10,8 @@ from homeassistant.const import (
 
 from . import capability
 from .const import (
-    DOMAIN_TO_YANDEX_TYPES, ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-    ERR_DEVICE_UNREACHABLE, CONF_ROOM,
+    DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
+    ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE, CONF_ROOM,
 )
 from .error import SmartHomeError
 
@@ -37,7 +37,7 @@ class RequestData:
 
 def get_yanex_type(domain, device_class):
     """Yandex type based on domain and device class."""
-    type = DOMAIN_TO_YANDEX_TYPES.get((domain, device_class))
+    type = DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class))
 
     return type if type is not None else DOMAIN_TO_YANDEX_TYPES[domain]
 
@@ -101,8 +101,7 @@ class YandexEntity:
         if not capabilities:
             return None
 
-        device_type = get_yanex_type(domain,
-                                      device_class)
+        device_type = get_yanex_type(domain, device_class)
 
         device = {
             'id': state.entity_id,

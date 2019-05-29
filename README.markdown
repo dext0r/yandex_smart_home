@@ -62,7 +62,7 @@ entity_config:
 
 ### Available domains
 
-Currently only on/off action implemented, the following domains are available to be used:
+Currently only on/off and mute/unmute actions implemented, the following domains are available to be used:
 
 - group (on/off)
 - input_boolean (on/off)
@@ -70,7 +70,7 @@ Currently only on/off action implemented, the following domains are available to
 - fan (on/off)
 - light (on/off)
 - cover (on/off)
-- media_player (on/off)
+- media_player (on/off, mute/unmute)
 
 ### Room/Area support
 

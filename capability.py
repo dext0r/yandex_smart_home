@@ -13,12 +13,17 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
+    SERVICE_VOLUME_MUTE,
     STATE_OFF,
+)
+from homeassistant.components.media_player.const import (
+    ATTR_MEDIA_VOLUME_MUTED
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN
 
 from .const import (
-    ERR_INVALID_VALUE
+    ERR_INVALID_VALUE,
+    ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 )
 from .error import SmartHomeError
 
@@ -26,6 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PREFIX_CAPABILITIES = 'devices.capabilities.'
 CAPABILITIES_ONOFF = PREFIX_CAPABILITIES + 'on_off'
+CAPABILITIES_TOGGLE = PREFIX_CAPABILITIES + 'toggle'
 
 CAPABILITIES = []
 
@@ -79,14 +85,14 @@ class OnOffCapability(_Capability):
     def description(self):
         """Return description for a devices request."""
         return {
-            'type': 'devices.capabilities.on_off',
+            'type': CAPABILITIES_ONOFF,
             'retrievable': True
         }
 
     def get_state(self):
         """Return the attributes of this capability for this entity."""
         return {
-            'type': 'devices.capabilities.on_off',
+            'type': CAPABILITIES_ONOFF,
             'state': {
                 "instance": "on",
                 "value": self.state.state != STATE_OFF
@@ -113,3 +119,58 @@ class OnOffCapability(_Capability):
         await self.hass.services.async_call(service_domain, service, {
             ATTR_ENTITY_ID: self.state.entity_id
         }, blocking=True, context=data.context)
+
+@register_capability
+class ToggleCapability(_Capability):
+    """Toggle to offer mute and unmute functionality.
+
+    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
+    """
+
+    type = CAPABILITIES_TOGGLE
+
+    @staticmethod
+    def supported(domain, features, device_class):
+        """Test if state is supported."""
+        return domain in (
+            media_player.DOMAIN,
+        )
+
+    def description(self):
+        """Return description for a devices request."""
+        muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
+        return {
+            'type': CAPABILITIES_TOGGLE,
+            'retrievable': True,
+            'parameters': {
+                'instance': 'mute'
+            }
+        }
+
+    def get_state(self):
+        """Return the attributes of this capability for this entity."""
+        muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
+        return {
+            'type': CAPABILITIES_TOGGLE,
+            'state': {
+                "instance": "mute",
+                "value": bool(muted)
+            }
+        }
+
+    async def set_state(self, data, state):
+        """Set state."""
+        if type(state['value']) is not bool:
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
+
+        muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
+        if muted is None:
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                                 "Device probably turned off")
+
+        await self.hass.services.async_call(
+            self.state.domain,
+            SERVICE_VOLUME_MUTE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                ATTR_MEDIA_VOLUME_MUTED: state['value']
+            }, blocking=True, context=data.context)
