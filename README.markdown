@@ -2,11 +2,13 @@
 
 ### Installation
 
-1. Clone this project into custom_components directory(create if required, path should look like ~/.homeassistant/custom_directory/yandex_smart_home)
-2. Configure component via configuration.yaml
-4. Restart home assistant
-5. Create dialog via https://dialogs.yandex.ru/developer/
-6. Add devices via your Yandex app on android/ios
+1. Update home assistant to 0.93.0 at least
+1. Clone this project into custom_components directory(create if required, 
+path should look like ~/.homeassistant/custom_directory/yandex_smart_home)
+1. Configure component via configuration.yaml
+1. Restart home assistant
+1. Create dialog via https://dialogs.yandex.ru/developer/
+1. Add devices via your Yandex app on android/ios
 
 ### Configuration
 
