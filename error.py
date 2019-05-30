@@ -10,3 +10,4 @@ class SmartHomeError(Exception):
         """Log error code."""
         super().__init__(msg)
         self.code = code
+        self.message = msg

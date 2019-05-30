@@ -19,13 +19,15 @@ HANDLERS = Registry()
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_handle_message(hass, config, user_id, request_id, action, message):
+async def async_handle_message(hass, config, user_id, request_id, action,
+                               message):
     """Handle incoming API messages."""
     data = RequestData(config, user_id, request_id)
 
     response = await _process(hass, data, action, message)
 
-    if response and 'payload' in response and 'error_code' in response['payload']:
+    if response and 'payload' in response and 'error_code' in response[
+        'payload']:
         _LOGGER.error('Error handling message %s: %s',
                       message, response['payload'])
 
@@ -171,8 +173,11 @@ async def handle_devices_execute(hass, data, message):
 
         for capability in device['capabilities']:
             try:
-                await entities[entity_id].execute(data, capability.get('type', ''), capability.get('state', {}))
+                await entities[entity_id].execute(data,
+                                                  capability.get('type', ''),
+                                                  capability.get('state', {}))
             except SmartHomeError as err:
+                _LOGGER.error("%s: %s" % (err.code, err.message))
                 if entity_id not in action_errors:
                     action_errors[entity_id] = {}
                 action_errors[entity_id][capability['type']] = err.code
@@ -187,14 +192,16 @@ async def handle_devices_execute(hass, data, message):
 
         capabilities = []
         for capability in devices[entity.entity_id]['capabilities']:
-            if entity.entity_id in action_errors and capability['type'] in action_errors[entity.entity_id]:
+            if entity.entity_id in action_errors and capability['type'] in \
+                    action_errors[entity.entity_id]:
                 capabilities.append({
                     'type': capability['type'],
                     'state': {
                         'instance': capability['state']['instance'],
                         'action_result': {
                           "status": "ERROR",
-                          "error_code": action_errors[entity.entity_id][capability['type']],
+                            "error_code": action_errors[entity.entity_id][
+                                capability['type']],
                       }
                     }
                 })

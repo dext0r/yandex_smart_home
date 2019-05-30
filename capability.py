@@ -16,9 +16,6 @@ from homeassistant.const import (
     SERVICE_VOLUME_MUTE,
     STATE_OFF,
 )
-from homeassistant.components.media_player.const import (
-    ATTR_MEDIA_VOLUME_MUTED
-)
 from homeassistant.core import DOMAIN as HA_DOMAIN
 
 from .const import (
@@ -32,16 +29,23 @@ _LOGGER = logging.getLogger(__name__)
 PREFIX_CAPABILITIES = 'devices.capabilities.'
 CAPABILITIES_ONOFF = PREFIX_CAPABILITIES + 'on_off'
 CAPABILITIES_TOGGLE = PREFIX_CAPABILITIES + 'toggle'
+CAPABILITIES_RANGE = PREFIX_CAPABILITIES + 'range'
 
 CAPABILITIES = []
 
-def register_capability (capability):
+
+def register_capability(capability):
     """Decorate a function to register a capability."""
     CAPABILITIES.append(capability)
     return capability
 
+
 class _Capability:
     """Represents a Capability."""
+
+    type = ''
+    instance = ''
+    retrievable = True
 
     def __init__(self, hass, state, config):
         """Initialize a trait for a state."""
@@ -51,15 +55,38 @@ class _Capability:
 
     def description(self):
         """Return description for a devices request."""
-        raise NotImplementedError
+        response = {
+            'type': self.type,
+            'retrievable': self.retrievable,
+        }
+        parameters = self.parameters()
+        if parameters is not None:
+            response['parameters'] = parameters
+
+        return response
 
     def get_state(self):
-        """Return the state of this trait for this entity."""
+        """Return the state of this capability for this entity."""
+        return {
+            'type': self.type,
+            'state':  {
+                'instance': self.instance,
+                'value': self.get_value()
+            }
+        }
+
+    def parameters(self):
+        """Return parameters for a devices request."""
         raise NotImplementedError
 
-    async def set_state(self, data, params):
-        """Execute a command."""
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
         raise NotImplementedError
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        raise NotImplementedError
+
 
 @register_capability
 class OnOffCapability(_Capability):
@@ -69,6 +96,7 @@ class OnOffCapability(_Capability):
     """
 
     type = CAPABILITIES_ONOFF
+    instance = 'on'
 
     @staticmethod
     def supported(domain, features, device_class):
@@ -82,36 +110,24 @@ class OnOffCapability(_Capability):
             media_player.DOMAIN,
         )
 
-    def description(self):
-        """Return description for a devices request."""
-        return {
-            'type': CAPABILITIES_ONOFF,
-            'retrievable': True
-        }
+    def parameters(self):
+        """Return parameters for a devices request."""
+        return None
 
-    def get_state(self):
-        """Return the attributes of this capability for this entity."""
-        return {
-            'type': CAPABILITIES_ONOFF,
-            'state': {
-                "instance": "on",
-                "value": self.state.state != STATE_OFF
-            }
-        }
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        return self.state.state != STATE_OFF
 
     async def set_state(self, data, state):
-        """Set state."""
+        """Set device state."""
         domain = self.state.domain
 
         if type(state['value']) is not bool:
-            raise SmartHomeError(
-                ERR_INVALID_VALUE,
-                'Value is not boolean')
+            raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
 
         if domain == group.DOMAIN:
             service_domain = HA_DOMAIN
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
-
         else:
             service_domain = domain
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
@@ -120,48 +136,39 @@ class OnOffCapability(_Capability):
             ATTR_ENTITY_ID: self.state.entity_id
         }, blocking=True, context=data.context)
 
+
 @register_capability
 class ToggleCapability(_Capability):
-    """Toggle to offer mute and unmute functionality.
+    """Mute and unmute functionality.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
     """
 
     type = CAPABILITIES_TOGGLE
+    instance = 'mute'
 
     @staticmethod
     def supported(domain, features, device_class):
         """Test if state is supported."""
-        return domain in (
-            media_player.DOMAIN,
-        )
+        return domain == media_player.DOMAIN and features & \
+            media_player.SUPPORT_VOLUME_MUTE
 
-    def description(self):
-        """Return description for a devices request."""
-        muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
+    def parameters(self):
+        """Return parameters for a devices request."""
         return {
-            'type': CAPABILITIES_TOGGLE,
-            'retrievable': True,
-            'parameters': {
-                'instance': 'mute'
-            }
+            'instance': self.instance
         }
 
-    def get_state(self):
-        """Return the attributes of this capability for this entity."""
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
         muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
-        return {
-            'type': CAPABILITIES_TOGGLE,
-            'state': {
-                "instance": "mute",
-                "value": bool(muted)
-            }
-        }
+
+        return bool(muted)
 
     async def set_state(self, data, state):
-        """Set state."""
+        """Set device state."""
         if type(state['value']) is not bool:
-            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
+            raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
 
         muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
         if muted is None:
@@ -172,5 +179,56 @@ class ToggleCapability(_Capability):
             self.state.domain,
             SERVICE_VOLUME_MUTE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                ATTR_MEDIA_VOLUME_MUTED: state['value']
+                media_player.ATTR_MEDIA_VOLUME_MUTED: state['value']
+            }, blocking=True, context=data.context)
+
+
+class _RangeCapability(_Capability):
+    """Base class of capabilities with range functionality like volume or
+    brightness."""
+
+    type = CAPABILITIES_RANGE
+
+
+@register_capability
+class BrightnessCapability(_RangeCapability):
+    """Set brightness functionality.
+
+    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
+    """
+
+    instance = 'brightness'
+
+    @staticmethod
+    def supported(domain, features, device_class):
+        """Test if state is supported."""
+        return domain == light.DOMAIN and features & light.SUPPORT_BRIGHTNESS
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        return {
+            'instance': self.instance,
+            'unit': 'unit.percent',
+            'range': {
+                'min': 0,
+                'max': 100,
+                'precision': 1
+            }
+        }
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        brightness = self.state.attributes.get(light.ATTR_BRIGHTNESS)
+        if brightness is None:
+            return 0
+        else:
+            return int(100 * (brightness / 255))
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await self.hass.services.async_call(
+            light.DOMAIN,
+            light.SERVICE_TURN_ON, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                light.ATTR_BRIGHTNESS_PCT: state['value']
             }, blocking=True, context=data.context)

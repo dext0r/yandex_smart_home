@@ -152,7 +152,8 @@ class YandexEntity:
         capabilities = []
 
         for cpb in self.capabilities():
-            capabilities.append(cpb.get_state())
+            if cpb.retrievable:
+                capabilities.append(cpb.get_state())
 
         return {
             'id': state.entity_id,
@@ -166,7 +167,7 @@ class YandexEntity:
         """
         executed = False
         for cpb in self.capabilities():
-            if type == cpb.type:
+            if type == cpb.type and state['instance'] == cpb.instance:
                 await cpb.set_state(data, state)
                 executed = True
                 break

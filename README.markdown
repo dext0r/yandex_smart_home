@@ -4,8 +4,9 @@
 
 1. Clone this project into custom_components directory(create if required, path should look like ~/.homeassistant/custom_directory/yandex_smart_home)
 2. Configure component via configuration.yaml
-3. Create dialog via https://dialogs.yandex.ru/developer/
-4. Add devices via your Yandex app on android/ios
+4. Restart home assistant
+5. Create dialog via https://dialogs.yandex.ru/developer/
+6. Add devices via your Yandex app on android/ios
 
 ### Configuration
 
@@ -41,7 +42,7 @@ entity_config:
   required: false
   type: map
   keys:
-    '`<ENTITY_ID>`':
+    '<ENTITY_ID>':
       description: Entity to configure
       required: false
       type: map
@@ -68,7 +69,7 @@ Currently only on/off and mute/unmute actions implemented, the following domains
 - input_boolean (on/off)
 - switch (on/off)
 - fan (on/off)
-- light (on/off)
+- light (on/off, brightness)
 - cover (on/off)
 - media_player (on/off, mute/unmute)
 

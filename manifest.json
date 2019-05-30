@@ -1,7 +1,7 @@
 {
   "domain": "yandex_smart_home",
-  "name": "Yandex smart home",
-  "documentation": "-",
+  "name": "Yandex Smart Home",
+  "documentation": "https://github.com/dmitry-k/yandex_smart_home",
   "requirements": [],
   "dependencies": [
     "http"
