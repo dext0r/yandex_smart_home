@@ -2,6 +2,7 @@
 import logging
 
 from homeassistant.components import (
+    cover,
     group,
     fan,
     input_boolean,
@@ -11,6 +12,8 @@ from homeassistant.components import (
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
+    SERVICE_CLOSE_COVER,
+    SERVICE_OPEN_COVER,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
@@ -102,6 +105,7 @@ class OnOffCapability(_Capability):
     def supported(domain, features, device_class):
         """Test if state is supported."""
         return domain in (
+            cover.DOMAIN,
             group.DOMAIN,
             input_boolean.DOMAIN,
             switch.DOMAIN,
@@ -116,7 +120,10 @@ class OnOffCapability(_Capability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        return self.state.state != STATE_OFF
+        if self.state.domain == cover.DOMAIN:
+            return self.state.state != cover.STATE_OPEN
+        else:
+            return self.state.state != STATE_OFF
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -128,6 +135,10 @@ class OnOffCapability(_Capability):
         if domain == group.DOMAIN:
             service_domain = HA_DOMAIN
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
+        elif domain == cover.DOMAIN:
+            service_domain = domain
+            service = SERVICE_CLOSE_COVER if state['value'] else \
+                SERVICE_OPEN_COVER
         else:
             service_domain = domain
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
