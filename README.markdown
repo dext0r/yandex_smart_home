@@ -72,7 +72,7 @@ Currently only on/off and mute/unmute actions implemented, the following domains
 - switch (on/off)
 - fan (on/off)
 - light (on/off, brightness)
-- cover (on/off)
+- cover (on/off = close/open)
 - media_player (on/off, mute/unmute)
 
 ### Room/Area support
