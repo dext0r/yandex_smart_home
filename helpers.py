@@ -111,7 +111,9 @@ class YandexEntity:
         }
 
         for cpb in capabilities:
-            device['capabilities'].append(cpb.description())
+            description = cpb.description()
+            if description not in device['capabilities']:
+                device['capabilities'].append(description)
 
         room = entity_config.get(CONF_ROOM)
         if room:
@@ -175,8 +177,10 @@ class YandexEntity:
         if not executed:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                'Unable to execute {} for {}'.format(type,
-                                                     self.state.entity_id))
+                'Unable to execute {} / {} for {}'.format(type,
+                                                          state['instance'],
+                                                          self.state.entity_id
+                                                          ))
 
     @callback
     def async_update(self):

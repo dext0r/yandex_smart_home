@@ -12,6 +12,7 @@ from homeassistant.components import (
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
+    ATTR_SUPPORTED_FEATURES,
     SERVICE_CLOSE_COVER,
     SERVICE_OPEN_COVER,
     SERVICE_TURN_OFF,
@@ -20,6 +21,7 @@ from homeassistant.const import (
     STATE_OFF,
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN
+from homeassistant.util import color as color_util
 
 from .const import (
     ERR_INVALID_VALUE,
@@ -33,6 +35,7 @@ PREFIX_CAPABILITIES = 'devices.capabilities.'
 CAPABILITIES_ONOFF = PREFIX_CAPABILITIES + 'on_off'
 CAPABILITIES_TOGGLE = PREFIX_CAPABILITIES + 'toggle'
 CAPABILITIES_RANGE = PREFIX_CAPABILITIES + 'range'
+CAPABILITIES_COLOR_SETTING = PREFIX_CAPABILITIES + 'color_setting'
 
 CAPABILITIES = []
 
@@ -196,17 +199,17 @@ class ToggleCapability(_Capability):
 
 class _RangeCapability(_Capability):
     """Base class of capabilities with range functionality like volume or
-    brightness."""
+    brightness.
+
+    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/range-docpage/
+    """
 
     type = CAPABILITIES_RANGE
 
 
 @register_capability
 class BrightnessCapability(_RangeCapability):
-    """Set brightness functionality.
-
-    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
-    """
+    """Set brightness functionality."""
 
     instance = 'brightness'
 
@@ -242,4 +245,98 @@ class BrightnessCapability(_RangeCapability):
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_BRIGHTNESS_PCT: state['value']
+            }, blocking=True, context=data.context)
+
+
+class _ColorSettingCapability(_Capability):
+    """Base color setting functionality.
+
+    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/color_setting-docpage/
+    """
+
+    type = CAPABILITIES_COLOR_SETTING
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        result = {}
+
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if features & light.SUPPORT_COLOR:
+            result['color_model'] = 'rgb'
+
+        if features & light.SUPPORT_COLOR_TEMP:
+            max_temp = self.state.attributes[light.ATTR_MIN_MIREDS]
+            min_temp = self.state.attributes[light.ATTR_MAX_MIREDS]
+            result['temperature_k'] = {
+                'min': color_util.color_temperature_mired_to_kelvin(min_temp),
+                'max': color_util.color_temperature_mired_to_kelvin(max_temp)
+            }
+
+        return result
+
+
+@register_capability
+class RgbCapability(_ColorSettingCapability):
+    """RGB color functionality."""
+
+    instance = 'rgb'
+
+    @staticmethod
+    def supported(domain, features, device_class):
+        """Test if state is supported."""
+        return domain == light.DOMAIN and features & light.SUPPORT_COLOR
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        color = self.state.attributes.get(light.ATTR_RGB_COLOR)
+        if color is None:
+            return 0
+
+        rgb = color[0]
+        rgb = (rgb << 8) + color[1]
+        rgb = (rgb << 8) + color[2]
+
+        return rgb
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        red = (state['value'] >> 16) & 0xFF
+        green = (state['value'] >> 8) & 0xFF
+        blue = state['value'] & 0xFF
+
+        await self.hass.services.async_call(
+            light.DOMAIN,
+            light.SERVICE_TURN_ON, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                light.ATTR_RGB_COLOR: (red, green, blue)
+            }, blocking=True, context=data.context)
+
+
+@register_capability
+class TemperatureKCapability(_ColorSettingCapability):
+    """Color temperature functionality."""
+
+    instance = 'temperature_k'
+
+    @staticmethod
+    def supported(domain, features, device_class):
+        """Test if state is supported."""
+        return domain == light.DOMAIN and features & light.SUPPORT_COLOR_TEMP
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        kelvin = self.state.attributes.get(light.ATTR_COLOR_TEMP)
+        if kelvin is None:
+            return 0
+
+        return color_util.color_temperature_mired_to_kelvin(kelvin)
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await self.hass.services.async_call(
+            light.DOMAIN,
+            light.SERVICE_TURN_ON, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                light.ATTR_KELVIN: state['value']
             }, blocking=True, context=data.context)
