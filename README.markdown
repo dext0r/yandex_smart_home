@@ -71,7 +71,7 @@ Currently only on/off and mute/unmute actions implemented, the following domains
 - input_boolean (on/off)
 - switch (on/off)
 - fan (on/off)
-- light (on/off, brightness)
+- light (on/off, brightness, color, color temperature)
 - cover (on/off = close/open)
 - media_player (on/off, mute/unmute)
 
