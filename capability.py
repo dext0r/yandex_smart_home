@@ -1,4 +1,4 @@
-"""Implement the Google Smart Home traits."""
+"""Implement the Yandex Smart Home capabilities."""
 import logging
 
 from homeassistant.components import (

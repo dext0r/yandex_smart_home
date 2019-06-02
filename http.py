@@ -6,13 +6,10 @@ from aiohttp.web import Request, Response
 # Typing imports
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import callback
-from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES
 
 from .const import (
-    CONF_EXPOSE_BY_DEFAULT,
-    CONF_EXPOSED_DOMAINS,
     CONF_ENTITY_CONFIG,
-    CONF_EXPOSE,
+    CONF_FILTER,
 )
 from .smart_home import async_handle_message
 from .helpers import Config
@@ -23,36 +20,9 @@ _LOGGER = logging.getLogger(__name__)
 @callback
 def async_register_http(hass, cfg):
     """Register HTTP views for Yandex Smart Home."""
-    expose_by_default = cfg.get(CONF_EXPOSE_BY_DEFAULT)
-    exposed_domains = cfg.get(CONF_EXPOSED_DOMAINS)
-    entity_config = cfg.get(CONF_ENTITY_CONFIG) or {}
-
-    def is_exposed(entity) -> bool:
-        """Determine if an entity should be exposed to Yandex Smart Home."""
-        if entity.attributes.get('view') is not None:
-            # Ignore entities that are views
-            return False
-
-        if entity.entity_id in CLOUD_NEVER_EXPOSED_ENTITIES:
-            return False
-
-        explicit_expose = \
-            entity_config.get(entity.entity_id, {}).get(CONF_EXPOSE)
-
-        domain_exposed_by_default = \
-            expose_by_default and entity.domain in exposed_domains
-
-        # Expose an entity if the entity's domain is exposed by default and
-        # the configuration doesn't explicitly exclude it from being
-        # exposed, or if the entity is explicitly exposed
-        is_default_exposed = \
-            domain_exposed_by_default and explicit_expose is not False
-
-        return is_default_exposed or explicit_expose
-
     config = Config(
-        should_expose=is_exposed,
-        entity_config=entity_config
+        should_expose=cfg.get(CONF_FILTER),
+        entity_config=cfg.get(CONF_ENTITY_CONFIG)
     )
 
     hass.http.register_view(YandexSmartHomeUnauthorizedView())

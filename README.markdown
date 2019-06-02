@@ -17,9 +17,14 @@ Now add the following lines to your `configuration.yaml` file:
 ```yaml
 # Example configuration.yaml entry
 yandex_smart_home:
-  exposed_domains:
-    - switch
-    - light
+  filter:
+    include_domains:
+      - switch
+      - light
+    include_entities:
+      - media_player.tv
+    exclude_entities:
+      - light.highlight
   entity_config:
     switch.kitchen:
       name: CUSTOM_NAME_FOR_YANDEX_SMART_HOME
@@ -27,40 +32,31 @@ yandex_smart_home:
       room: LIVING_ROOM
 ```
 
-Configuration is similar to google assistant.
+Configuration variables:
 
 ```
-expose_by_default:
-  description: "Expose devices in all supported domains by default. If `exposed_domains` domains is set, only these domains are exposed by default. If `expose_by_default` is set to false, devices have to be manually exposed in `entity_config`."
-  required: false
-  default: true
-  type: boolean
-exposed_domains:
-  description: List of entity domains to expose to Yandex Smart Home if `expose_by_default` is set to true. This has no effect if `expose_by_default` is set to false.
-  required: false
-  type: list
-entity_config:
-  description: Entity specific configuration for Yandex Smart Home
-  required: false
-  type: map
-  keys:
-    '<ENTITY_ID>':
-      description: Entity to configure
-      required: false
-      type: map
-      keys:
-        name:
-          description: Name of the entity to show in Yandex Smart Home
-          required: false
-          type: string
-        expose:
-          description: Force an entity to be exposed/excluded.
-          required: false
-          type: boolean
-        room:
-          description: Allows for associating this device to a Room in Yandex Smart Home.
-          required: false
-          type: string
+yandex_smart_home:
+  (map) (Optional) Configuration options for the Yandex Smart Home integration.
+
+  filter:
+    (map) (Optional) description: Filters for entities to include/exclude from Yandex Smart Home.
+    include_entities:
+      (list) (Optional) description: Entity IDs to include.
+    include_domains:
+      (list) (Optional) Domains to include.
+    exclude_entities:
+      (list) (Optional) Entity IDs to exclude.
+    exclude_domains:
+      (list) (Optional) Domains to exclude.
+
+  entity_config:
+    (map) (Optional) Entity specific configuration for Yandex Smart Home.
+    ENTITY_ID:
+      (map) (Optional) Entity to configure.
+      name:
+        (string) (Optional) Name of entity to show in Yandex Smart Home.
+      room:
+        (string) (Optional) Associating this device to a room in Yandex Smart Home
 ```
 
 ### Available domains
