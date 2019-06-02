@@ -1,4 +1,4 @@
-"""Support for Google Assistant Smart Home API."""
+"""Support for Yandex Smart Home API."""
 from itertools import product
 import logging
 
@@ -27,7 +27,7 @@ async def async_handle_message(hass, config, user_id, request_id, action,
     response = await _process(hass, data, action, message)
 
     if response and 'payload' in response and 'error_code' in response[
-        'payload']:
+            'payload']:
         _LOGGER.error('Error handling message %s: %s',
                       message, response['payload'])
 
@@ -82,7 +82,7 @@ async def async_devices_sync(hass, data, message):
         if state.entity_id in CLOUD_NEVER_EXPOSED_ENTITIES:
             continue
 
-        if not data.config.should_expose(state):
+        if not data.config.should_expose(state.entity_id):
             continue
 
         entity = YandexEntity(hass, data.config, state)
@@ -199,10 +199,10 @@ async def handle_devices_execute(hass, data, message):
                     'state': {
                         'instance': capability['state']['instance'],
                         'action_result': {
-                          "status": "ERROR",
-                            "error_code": action_errors[entity.entity_id][
+                            'status': 'ERROR',
+                            'error_code': action_errors[entity.entity_id][
                                 capability['type']],
-                      }
+                        }
                     }
                 })
             else:
@@ -211,7 +211,7 @@ async def handle_devices_execute(hass, data, message):
                     'state': {
                         'instance': capability['state']['instance'],
                         'action_result': {
-                            "status": "DONE",
+                            'status': 'DONE',
                         }
                     }
                 })

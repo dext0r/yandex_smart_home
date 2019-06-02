@@ -17,17 +17,10 @@ from homeassistant.components import (
 )
 DOMAIN = 'yandex_smart_home'
 
-CONF_EXPOSE = 'expose'
 CONF_ENTITY_CONFIG = 'entity_config'
-CONF_EXPOSE_BY_DEFAULT = 'expose_by_default'
-CONF_EXPOSED_DOMAINS = 'exposed_domains'
+CONF_FILTER = 'filter'
 CONF_ROOM = 'room'
 
-DEFAULT_EXPOSE_BY_DEFAULT = True
-DEFAULT_EXPOSED_DOMAINS = [
-    'climate', 'cover', 'fan', 'input_boolean', 'light',
-    'media_player', 'scene', 'script', 'switch', 'vacuum'
-]
 
 PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'

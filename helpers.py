@@ -17,7 +17,7 @@ from .error import SmartHomeError
 
 
 class Config:
-    """Hold the configuration for Google Assistant."""
+    """Hold the configuration for Yandex Smart Home."""
 
     def __init__(self, should_expose, entity_config=None):
         """Initialize the configuration."""
@@ -46,7 +46,7 @@ class YandexEntity:
     """Adaptation of Entity expressed in Yandex's terms."""
 
     def __init__(self, hass, config, state):
-        """Initialize a Google entity."""
+        """Initialize a Yandex Smart Home entity."""
         self.hass = hass
         self.config = config
         self.state = state
@@ -68,9 +68,11 @@ class YandexEntity:
         features = state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         device_class = state.attributes.get(ATTR_DEVICE_CLASS)
 
-        self._capabilities = [Capability(self.hass, state, self.config)
-                              for Capability in capability.CAPABILITIES
-                              if Capability.supported(domain, features, device_class)]
+        self._capabilities = [
+            Capability(self.hass, state, self.config)
+            for Capability in capability.CAPABILITIES
+            if Capability.supported(domain, features, device_class)
+        ]
         return self._capabilities
 
     async def devices_serialize(self):
