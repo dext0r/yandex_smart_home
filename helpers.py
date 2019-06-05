@@ -15,7 +15,6 @@ from .const import (
 )
 from .error import SmartHomeError
 
-
 class Config:
     """Hold the configuration for Yandex Smart Home."""
 
