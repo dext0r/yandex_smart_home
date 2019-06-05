@@ -15,6 +15,9 @@ from .const import (
 )
 from .error import SmartHomeError
 
+import logging
+_LOGGER = logging.getLogger(__name__)
+
 
 class Config:
     """Hold the configuration for Yandex Smart Home."""
@@ -92,6 +95,7 @@ class YandexEntity:
         name = (entity_config.get(CONF_NAME) or state.name).strip()
         domain = state.domain
         device_class = state.attributes.get(ATTR_DEVICE_CLASS)
+        _LOGGER.debug("Device name: {}".format(name))
 
         # If an empty string
         if not name:
