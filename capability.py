@@ -9,6 +9,11 @@ from homeassistant.components import (
     media_player,
     light,
     switch,
+    vacuum,
+)
+from homeassistant.components.vacuum import (
+    SERVICE_START,
+    SERVICE_RETURN_TO_BASE
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -115,6 +120,7 @@ class OnOffCapability(_Capability):
             fan.DOMAIN,
             light.DOMAIN,
             media_player.DOMAIN,
+            vacuum.DOMAIN
         )
 
     def parameters(self):
@@ -142,6 +148,10 @@ class OnOffCapability(_Capability):
             service_domain = domain
             service = SERVICE_CLOSE_COVER if state['value'] else \
                 SERVICE_OPEN_COVER
+        elif domain == vacuum.DOMAIN:
+            service_domain = domain
+            service = SERVICE_START if state['value'] else \
+                SERVICE_RETURN_TO_BASE
         else:
             service_domain = domain
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
