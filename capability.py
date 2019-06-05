@@ -26,6 +26,7 @@ from homeassistant.core import DOMAIN as HA_DOMAIN
 from homeassistant.util import color as color_util
 
 from .const import (
+    CLIMATE_MODE_TO_YANDEX_TYPES,
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 )
@@ -37,6 +38,7 @@ PREFIX_CAPABILITIES = 'devices.capabilities.'
 CAPABILITIES_ONOFF = PREFIX_CAPABILITIES + 'on_off'
 CAPABILITIES_TOGGLE = PREFIX_CAPABILITIES + 'toggle'
 CAPABILITIES_RANGE = PREFIX_CAPABILITIES + 'range'
+CAPABILITIES_MODE = PREFIX_CAPABILITIES + 'mode'
 CAPABILITIES_COLOR_SETTING = PREFIX_CAPABILITIES + 'color_setting'
 
 CAPABILITIES = []
@@ -204,6 +206,57 @@ class ToggleCapability(_Capability):
             }, blocking=True, context=data.context)
 
 
+class _ModeCapability(_Capability):
+    """Base class of capabilities with mode functionality like thermostat mode or
+    fan speed.
+
+    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-docpage/
+    """
+
+    type = CAPABILITIES_MODE
+
+@register_capability
+class ThermostatModeCapability(_ModeCapability):
+    """Thermostat mode functionality.
+
+    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-docpage/
+    """
+    instance = 'thermostat'
+
+    @staticmethod
+    def supported(domain, features, device_class):
+        """Test if state is supported."""
+        return domain == climate.DOMAIN and features & climate.SUPPORT_OPERATION_MODE
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        mode_list = self.state.attributes.get(climate.ATTR_OPERATION_LIST)
+        mode_array = []
+        for mode in mode_list:
+            if mode in CLIMATE_MODE_TO_YANDEX_TYPES:
+                mode_array.append({'value': CLIMATE_MODE_TO_YANDEX_TYPES[mode]})
+
+        return {
+            'instance': self.instance,
+            'modes': mode_array,
+            'ordered': False
+        }
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        mode = self.state.attributes.get(climate.ATTR_OPERATION_MODE)
+
+        return mode
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await self.hass.services.async_call(
+            climate.DOMAIN,
+            climate.SERVICE_SET_OPERATION_MODE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                climate.ATTR_OPERATION_MODE: state['value']
+            }, blocking=True, context=data.context)
+
 class _RangeCapability(_Capability):
     """Base class of capabilities with range functionality like volume or
     brightness.
@@ -214,7 +267,7 @@ class _RangeCapability(_Capability):
     type = CAPABILITIES_RANGE
 
 @register_capability
-class _TemperatureCapability(_RangeCapability):
+class TemperatureCapability(_RangeCapability):
     """Set temperature functionality."""
     instance = 'temperature'
 
