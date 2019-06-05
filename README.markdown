@@ -70,6 +70,7 @@ Currently only on/off and mute/unmute actions implemented, the following domains
 - light (on/off, brightness, color, color temperature)
 - cover (on/off = close/open)
 - media_player (on/off, mute/unmute)
+- vacuum (on/off)
 
 ### Room/Area support
 
