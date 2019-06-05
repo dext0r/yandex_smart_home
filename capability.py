@@ -26,7 +26,6 @@ from homeassistant.core import DOMAIN as HA_DOMAIN
 from homeassistant.util import color as color_util
 
 from .const import (
-    CLIMATE_MODE_TO_YANDEX_TYPES,
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 )
@@ -206,14 +205,16 @@ class ToggleCapability(_Capability):
             }, blocking=True, context=data.context)
 
 
+
 class _ModeCapability(_Capability):
-    """Base class of capabilities with mode functionality like thermostat mode or
-    fan speed.
+    """Base class of capabilities with mode functionality like thermostat mode
+    or fan speed.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-docpage/
     """
 
     type = CAPABILITIES_MODE
+
 
 @register_capability
 class ThermostatModeCapability(_ModeCapability):
@@ -221,41 +222,65 @@ class ThermostatModeCapability(_ModeCapability):
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-docpage/
     """
+
     instance = 'thermostat'
+
+    climate_map = {
+        climate.const.STATE_HEAT: 'heat',
+        climate.const.STATE_COOL: 'cool',
+        climate.const.STATE_AUTO: 'auto',
+        climate.const.STATE_ECO: 'eco',
+        climate.const.STATE_DRY: 'dry',
+        climate.const.STATE_FAN_ONLY: 'fan_only'
+    }
 
     @staticmethod
     def supported(domain, features, device_class):
         """Test if state is supported."""
-        return domain == climate.DOMAIN and features & climate.SUPPORT_OPERATION_MODE
+        return domain == climate.DOMAIN and features & \
+            climate.SUPPORT_OPERATION_MODE
 
     def parameters(self):
         """Return parameters for a devices request."""
-        mode_list = self.state.attributes.get(climate.ATTR_OPERATION_LIST)
-        mode_array = []
-        for mode in mode_list:
-            if mode in CLIMATE_MODE_TO_YANDEX_TYPES:
-                mode_array.append({'value': CLIMATE_MODE_TO_YANDEX_TYPES[mode]})
+        operation_list = self.state.attributes.get(climate.ATTR_OPERATION_LIST)
+        modes = []
+        for operation in operation_list:
+            if operation in self.climate_map:
+                modes.append({'value': self.climate_map[operation]})
 
         return {
             'instance': self.instance,
-            'modes': mode_array,
+            'modes': modes,
             'ordered': False
         }
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        mode = self.state.attributes.get(climate.ATTR_OPERATION_MODE)
+        operation = self.state.attributes.get(climate.ATTR_OPERATION_MODE)
 
-        return mode
+        if operation is not None and operation in self.climate_map:
+            return self.climate_map[operation]
+
+        return 'auto'
 
     async def set_state(self, data, state):
         """Set device state."""
+        value = None
+        for climate_value, yandex_value in self.climate_map.items():
+            if yandex_value == state['value']:
+                value = climate_value
+                break
+
+        if value is None:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
+
         await self.hass.services.async_call(
             climate.DOMAIN,
             climate.SERVICE_SET_OPERATION_MODE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                climate.ATTR_OPERATION_MODE: state['value']
+                climate.ATTR_OPERATION_MODE: value
             }, blocking=True, context=data.context)
+
 
 class _RangeCapability(_Capability):
     """Base class of capabilities with range functionality like volume or
@@ -266,15 +291,18 @@ class _RangeCapability(_Capability):
 
     type = CAPABILITIES_RANGE
 
+
 @register_capability
 class TemperatureCapability(_RangeCapability):
     """Set temperature functionality."""
+
     instance = 'temperature'
 
     @staticmethod
     def supported(domain, features, device_class):
         """Test if state is supported."""
-        return domain == climate.DOMAIN and features & climate.const.SUPPORT_TARGET_TEMPERATURE
+        return domain == climate.DOMAIN and features & \
+            climate.const.SUPPORT_TARGET_TEMPERATURE
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -306,6 +334,7 @@ class TemperatureCapability(_RangeCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_TEMPERATURE: state['value']
             }, blocking=True, context=data.context)
+
 
 @register_capability
 class BrightnessCapability(_RangeCapability):
