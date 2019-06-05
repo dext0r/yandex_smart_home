@@ -13,7 +13,7 @@ from homeassistant.components import (
 )
 from homeassistant.components.vacuum import (
     SERVICE_START,
-    SERVICE_STOP
+    SERVICE_RETURN_TO_BASE
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -151,7 +151,7 @@ class OnOffCapability(_Capability):
         elif domain == vacuum.DOMAIN:
             service_domain = domain
             service = SERVICE_START if state['value'] else \
-                SERVICE_STOP
+                SERVICE_RETURN_TO_BASE
         else:
             service_domain = domain
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
