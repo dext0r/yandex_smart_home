@@ -63,7 +63,7 @@ yandex_smart_home:
 
 Currently only on/off and mute/unmute actions implemented, the following domains are available to be used:
 
-- climate (temperature)
+- climate (temperature, mode)
 - cover (on/off = close/open)
 - fan (on/off)
 - group (on/off)
