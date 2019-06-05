@@ -111,6 +111,7 @@ class OnOffCapability(_Capability):
     def supported(domain, features, device_class):
         """Test if state is supported."""
         return domain in (
+            climate.DOMAIN,
             cover.DOMAIN,
             group.DOMAIN,
             input_boolean.DOMAIN,
