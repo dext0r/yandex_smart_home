@@ -12,11 +12,6 @@ from homeassistant.components import (
     switch,
     vacuum,
 )
-
-from homeassistant.components.vacuum import (
-    SERVICE_START,
-    SERVICE_RETURN_TO_BASE
-)
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_SUPPORTED_FEATURES,
@@ -25,7 +20,7 @@ from homeassistant.const import (
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
-    STATE_OFF,
+    STATE_OFF
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN
 from homeassistant.util import color as color_util
@@ -152,8 +147,8 @@ class OnOffCapability(_Capability):
                 SERVICE_OPEN_COVER
         elif domain == vacuum.DOMAIN:
             service_domain = domain
-            service = SERVICE_START if state['value'] else \
-                SERVICE_RETURN_TO_BASE
+            service = vacuum.SERVICE_START if state['value'] else \
+                vacuum.SERVICE_RETURN_TO_BASE
         else:
             service_domain = domain
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
@@ -230,12 +225,14 @@ class _TemperatureCapability(_RangeCapability):
 
     def parameters(self):
         """Return parameters for a devices request."""
+        min_temp = self.state.attributes.get(climate.ATTR_MIN_TEMP)
+        max_temp = self.state.attributes.get(climate.ATTR_MAX_TEMP)
         return {
             'instance': self.instance,
             'unit': 'unit.temperature.celsius',
             'range': {
-                'min': 7,
-                'max': 35,
+                'min': min_temp,
+                'max': max_temp,
                 'precision': 0.5
             }
         }
