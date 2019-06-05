@@ -83,7 +83,6 @@ async def async_devices_sync(hass, data, message):
             continue
 
         if not data.config.should_expose(state.entity_id):
-            _LOGGER.debug("Should not expose %s", state.entity_id)
             continue
 
         entity = YandexEntity(hass, data.config, state)
