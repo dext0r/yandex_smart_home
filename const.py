@@ -76,8 +76,8 @@ YANDEX_MODE_FAN_ONLY = 'fan_only'
 CLIMATE_MODE_TO_YANDEX_TYPES = {
     climate.const.STATE_HEAT: YANDEX_MODE_HEAT,
     climate.const.STATE_COOL: YANDEX_MODE_COOL,
-    climate.const.STATE_AUTO: YANDEX_MODE_AUTO,
-    climate.const.STATE_ECO: YANDEX_MODE_ECO,
+    # climate.const.STATE_AUTO: YANDEX_MODE_AUTO,
+    # climate.const.STATE_ECO: YANDEX_MODE_ECO,
     climate.const.STATE_DRY: YANDEX_MODE_DRY,
     climate.const.STATE_FAN_ONLY: YANDEX_MODE_FAN_ONLY
 }
