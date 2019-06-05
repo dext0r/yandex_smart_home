@@ -2,6 +2,7 @@
 import logging
 
 from homeassistant.components import (
+    climate,
     cover,
     group,
     fan,
@@ -11,6 +12,7 @@ from homeassistant.components import (
     switch,
     vacuum,
 )
+
 from homeassistant.components.vacuum import (
     SERVICE_START,
     SERVICE_RETURN_TO_BASE
@@ -216,6 +218,44 @@ class _RangeCapability(_Capability):
 
     type = CAPABILITIES_RANGE
 
+@register_capability
+class _TemperatureCapability(_RangeCapability):
+    """Set temperature functionality."""
+    instance = 'temperature'
+
+    @staticmethod
+    def supported(domain, features, device_class):
+        """Test if state is supported."""
+        return domain == climate.DOMAIN and features & climate.const.SUPPORT_TARGET_TEMPERATURE
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        return {
+            'instance': self.instance,
+            'unit': 'unit.temperature.celsius',
+            'range': {
+                'min': 7,
+                'max': 35,
+                'precision': 0.5
+            }
+        }
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        temperature = self.state.attributes.get(climate.ATTR_TEMPERATURE)
+        if temperature is None:
+            return 0
+        else:
+            return float(temperature)
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await self.hass.services.async_call(
+            climate.DOMAIN,
+            climate.SERVICE_SET_TEMPERATURE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                climate.ATTR_TEMPERATURE: state['value']
+            }, blocking=True, context=data.context)
 
 @register_capability
 class BrightnessCapability(_RangeCapability):
