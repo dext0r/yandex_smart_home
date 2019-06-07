@@ -111,7 +111,6 @@ class OnOffCapability(_Capability):
     def supported(domain, features, device_class):
         """Test if state is supported."""
         return domain in (
-            climate.DOMAIN,
             cover.DOMAIN,
             group.DOMAIN,
             input_boolean.DOMAIN,
@@ -120,7 +119,7 @@ class OnOffCapability(_Capability):
             light.DOMAIN,
             media_player.DOMAIN,
             vacuum.DOMAIN
-        )
+        ) or (climate.DOMAIN and features & climate.const.SUPPORT_ON_OFF)
 
     def parameters(self):
         """Return parameters for a devices request."""
