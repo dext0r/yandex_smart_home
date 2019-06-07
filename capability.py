@@ -20,7 +20,8 @@ from homeassistant.const import (
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
-    STATE_OFF
+    STATE_OFF,
+    STATE_ON,
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN
 from homeassistant.util import color as color_util
@@ -118,8 +119,14 @@ class OnOffCapability(_Capability):
             fan.DOMAIN,
             light.DOMAIN,
             media_player.DOMAIN,
-            vacuum.DOMAIN
-        ) or (climate.DOMAIN and features & climate.const.SUPPORT_ON_OFF)
+        ) or (climate.DOMAIN and features & climate.const.SUPPORT_ON_OFF) or (
+                       vacuum.DOMAIN
+                       and ((features & vacuum.SUPPORT_START
+                             and (features & vacuum.SUPPORT_RETURN_HOME
+                                  or features & vacuum.SUPPORT_STOP)
+                             ) or (features & vacuum.SUPPORT_TURN_ON
+                                   and features & vacuum.SUPPORT_TURN_OFF
+                                   )))
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -129,6 +136,9 @@ class OnOffCapability(_Capability):
         """Return the state value of this capability for this entity."""
         if self.state.domain == cover.DOMAIN:
             return self.state.state != cover.STATE_OPEN
+        elif self.state.domain == vacuum.DOMAIN:
+            return self.state.state == STATE_ON or self.state.state == \
+                   vacuum.STATE_CLEANING
         else:
             return self.state.state != STATE_OFF
 
@@ -148,8 +158,19 @@ class OnOffCapability(_Capability):
                 SERVICE_OPEN_COVER
         elif domain == vacuum.DOMAIN:
             service_domain = domain
-            service = vacuum.SERVICE_START if state['value'] else \
-                vacuum.SERVICE_RETURN_TO_BASE
+            features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
+            if state['value']:
+                if features & vacuum.SUPPORT_START:
+                    service = vacuum.SERVICE_START
+                else:
+                    service = SERVICE_TURN_ON
+            else:
+                if features & vacuum.SUPPORT_RETURN_HOME:
+                    service = vacuum.SERVICE_RETURN_TO_BASE
+                elif features & vacuum.SUPPORT_STOP:
+                    service = vacuum.SERVICE_STOP
+                else:
+                    service = SERVICE_TURN_OFF
         else:
             service_domain = domain
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
