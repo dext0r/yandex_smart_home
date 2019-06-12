@@ -238,11 +238,8 @@ class _ModeCapability(_Capability):
 
 
 @register_capability
-class ThermostatModeCapability(_ModeCapability):
-    """Thermostat mode functionality.
-
-    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-docpage/
-    """
+class ThermostatCapability(_ModeCapability):
+    """Thermostat functionality"""
 
     instance = 'thermostat'
 
@@ -300,6 +297,113 @@ class ThermostatModeCapability(_ModeCapability):
             climate.SERVICE_SET_OPERATION_MODE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_OPERATION_MODE: value
+            }, blocking=True, context=data.context)
+
+
+@register_capability
+class FanSpeedCapability(_ModeCapability):
+    """Fan speed functionality."""
+
+    instance = 'fan_speed'
+
+    values = {
+        'auto': ['auto'],
+        'low': ['low', 'min', 'silent'],
+        'medium': ['medium', 'middle'],
+        'high': ['high', 'max', 'strong'],
+    }
+
+    @staticmethod
+    def supported(domain, features, device_class):
+        """Test if state is supported."""
+        if domain == climate.DOMAIN:
+            return features & climate.SUPPORT_FAN_MODE
+        elif domain == fan.DOMAIN:
+            return features & fan.SUPPORT_SET_SPEED
+        return False
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        if self.state.domain == climate.DOMAIN:
+            speed_list = self.state.attributes.get(climate.ATTR_FAN_LIST)
+        elif self.state.domain == fan.DOMAIN:
+            speed_list = self.state.attributes.get(fan.ATTR_SPEED_LIST)
+        else:
+            speed_list = []
+
+        speeds = []
+        added = []
+        for ha_value in speed_list:
+            value = self.get_yandex_value_by_ha_value(ha_value)
+            if value is not None and value not in added:
+                speeds.append({'value': value})
+                added.append(value)
+
+        return {
+            'instance': self.instance,
+            'modes': speeds,
+            'ordered': True
+        }
+
+    def get_yandex_value_by_ha_value(self, ha_value):
+        for yandex_value, names in self.values.items():
+            for name in names:
+                if ha_value.lower().find(name) != -1:
+                    return yandex_value
+        return None
+
+    def get_ha_by_yandex_value(self, yandex_value):
+        if self.state.domain == climate.DOMAIN:
+            speed_list = self.state.attributes.get(climate.ATTR_FAN_LIST)
+        elif self.state.domain == fan.DOMAIN:
+            speed_list = self.state.attributes.get(fan.ATTR_SPEED_LIST)
+        else:
+            speed_list = []
+
+        for ha_value in speed_list:
+            if yandex_value in self.values:
+                for name in self.values[yandex_value]:
+                    if ha_value.lower().find(name) != -1:
+                        return ha_value
+        return None
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        if self.state.domain == climate.DOMAIN:
+            ha_value = self.state.attributes.get(climate.ATTR_FAN_MODE)
+        elif self.state.domain == fan.DOMAIN:
+            ha_value = self.state.attributes.get(fan.ATTR_SPEED)
+        else:
+            ha_value = None
+
+        if ha_value is not None:
+            yandex_value = self.get_yandex_value_by_ha_value(ha_value)
+            if yandex_value is not None:
+                return yandex_value
+
+        return 'auto'
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        value = self.get_ha_by_yandex_value(state['value'])
+
+        if value is None:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported value")
+
+        if self.state.domain == climate.DOMAIN:
+            service = climate.SERVICE_SET_FAN_MODE
+            attr = climate.ATTR_FAN_MODE
+        elif self.state.domain == fan.DOMAIN:
+            service = fan.SERVICE_SET_SPEED
+            attr = fan.ATTR_SPEED
+        else:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+
+        await self.hass.services.async_call(
+            self.state.domain,
+            service, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                attr: value
             }, blocking=True, context=data.context)
 
 
