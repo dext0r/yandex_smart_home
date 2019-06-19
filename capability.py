@@ -502,6 +502,41 @@ class BrightnessCapability(_RangeCapability):
             }, blocking=True, context=data.context)
 
 
+@register_capability
+class VolumeCapability(_RangeCapability):
+    """Set volume functionality."""
+
+    instance = 'volume'
+    retrievable = False
+
+    @staticmethod
+    def supported(domain, features, device_class):
+        """Test if state is supported."""
+        return domain == media_player.DOMAIN and features & \
+            media_player.SUPPORT_VOLUME_STEP
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        return {
+            'instance': self.instance
+        }
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        if not state['value']:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Supported relative mode "
+                                                    "only")
+        if state['value'] > 0:
+            service = media_player.SERVICE_VOLUME_UP
+        else:
+            service = media_player.SERVICE_VOLUME_DOWN
+        await self.hass.services.async_call(
+            media_player.DOMAIN,
+            service, {
+                ATTR_ENTITY_ID: self.state.entity_id
+            }, blocking=True, context=data.context)
+
+
 class _ColorSettingCapability(_Capability):
     """Base color setting functionality.
 
