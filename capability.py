@@ -109,7 +109,7 @@ class OnOffCapability(_Capability):
     instance = 'on'
 
     @staticmethod
-    def supported(domain, features, device_class):
+    def supported(domain, features):
         """Test if state is supported."""
         return domain in (
             cover.DOMAIN,
@@ -191,7 +191,7 @@ class ToggleCapability(_Capability):
     instance = 'mute'
 
     @staticmethod
-    def supported(domain, features, device_class):
+    def supported(domain, features):
         """Test if state is supported."""
         return domain == media_player.DOMAIN and features & \
             media_player.SUPPORT_VOLUME_MUTE
@@ -226,7 +226,6 @@ class ToggleCapability(_Capability):
             }, blocking=True, context=data.context)
 
 
-
 class _ModeCapability(_Capability):
     """Base class of capabilities with mode functionality like thermostat mode
     or fan speed.
@@ -253,7 +252,7 @@ class ThermostatCapability(_ModeCapability):
     }
 
     @staticmethod
-    def supported(domain, features, device_class):
+    def supported(domain, features):
         """Test if state is supported."""
         return domain == climate.DOMAIN and features & \
             climate.SUPPORT_OPERATION_MODE
@@ -314,7 +313,7 @@ class FanSpeedCapability(_ModeCapability):
     }
 
     @staticmethod
-    def supported(domain, features, device_class):
+    def supported(domain, features):
         """Test if state is supported."""
         if domain == climate.DOMAIN:
             return features & climate.SUPPORT_FAN_MODE
@@ -424,7 +423,7 @@ class TemperatureCapability(_RangeCapability):
     instance = 'temperature'
 
     @staticmethod
-    def supported(domain, features, device_class):
+    def supported(domain, features):
         """Test if state is supported."""
         return domain == climate.DOMAIN and features & \
             climate.const.SUPPORT_TARGET_TEMPERATURE
@@ -468,7 +467,7 @@ class BrightnessCapability(_RangeCapability):
     instance = 'brightness'
 
     @staticmethod
-    def supported(domain, features, device_class):
+    def supported(domain, features):
         """Test if state is supported."""
         return domain == light.DOMAIN and features & light.SUPPORT_BRIGHTNESS
 
@@ -510,7 +509,7 @@ class VolumeCapability(_RangeCapability):
     retrievable = False
 
     @staticmethod
-    def supported(domain, features, device_class):
+    def supported(domain, features):
         """Test if state is supported."""
         return domain == media_player.DOMAIN and features & \
             media_player.SUPPORT_VOLUME_STEP
@@ -572,7 +571,7 @@ class RgbCapability(_ColorSettingCapability):
     instance = 'rgb'
 
     @staticmethod
-    def supported(domain, features, device_class):
+    def supported(domain, features):
         """Test if state is supported."""
         return domain == light.DOMAIN and features & light.SUPPORT_COLOR
 
@@ -609,7 +608,7 @@ class TemperatureKCapability(_ColorSettingCapability):
     instance = 'temperature_k'
 
     @staticmethod
-    def supported(domain, features, device_class):
+    def supported(domain, features):
         """Test if state is supported."""
         return domain == light.DOMAIN and features & light.SUPPORT_COLOR_TEMP
 

@@ -36,11 +36,12 @@ class RequestData:
         self.context = Context(user_id=user_id)
 
 
-def get_yanex_type(domain, device_class):
+def get_yandex_type(domain, device_class):
     """Yandex type based on domain and device class."""
-    type = DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class))
+    yandex_type = DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class))
 
-    return type if type is not None else DOMAIN_TO_YANDEX_TYPES[domain]
+    return yandex_type if yandex_type is not None else \
+        DOMAIN_TO_YANDEX_TYPES[domain]
 
 
 class YandexEntity:
@@ -67,12 +68,11 @@ class YandexEntity:
         state = self.state
         domain = state.domain
         features = state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-        device_class = state.attributes.get(ATTR_DEVICE_CLASS)
 
         self._capabilities = [
             Capability(self.hass, state, self.config)
             for Capability in capability.CAPABILITIES
-            if Capability.supported(domain, features, device_class)
+            if Capability.supported(domain, features)
         ]
         return self._capabilities
 
@@ -104,7 +104,7 @@ class YandexEntity:
         if not capabilities:
             return None
 
-        device_type = get_yanex_type(domain, device_class)
+        device_type = get_yandex_type(domain, device_class)
 
         device = {
             'id': state.entity_id,
@@ -165,7 +165,7 @@ class YandexEntity:
             'capabilities': capabilities,
         }
 
-    async def execute(self, data, type, state):
+    async def execute(self, data, capability_type, state):
         """Execute action.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
@@ -175,11 +175,11 @@ class YandexEntity:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
                 "Invalid request: no 'instance' field in state {} / {}"
-                .format(type, self.state.entity_id))
+                .format(capability_type, self.state.entity_id))
 
         instance = state['instance']
         for cpb in self.capabilities():
-            if type == cpb.type and instance == cpb.instance:
+            if capability_type == cpb.type and instance == cpb.instance:
                 await cpb.set_state(data, state)
                 executed = True
                 break
@@ -187,7 +187,7 @@ class YandexEntity:
         if not executed:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                "Unable to execute {} / {} for {}".format(type,
+                "Unable to execute {} / {} for {}".format(capability_type,
                                                           instance,
                                                           self.state.entity_id
                                                           ))

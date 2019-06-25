@@ -1,5 +1,4 @@
 """Support for Yandex Smart Home API."""
-from itertools import product
 import logging
 
 from homeassistant.util.decorator import Registry
