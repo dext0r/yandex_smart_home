@@ -1,5 +1,6 @@
 """Errors for Yandex Smart Home."""
 
+
 class SmartHomeError(Exception):
     """Yandex Smart Home errors.
 
