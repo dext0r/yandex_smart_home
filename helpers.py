@@ -11,7 +11,8 @@ from homeassistant.const import (
 from . import capability
 from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
-    ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE, CONF_ROOM,
+    ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
+    ERR_INVALID_VALUE, CONF_ROOM,
 )
 from .error import SmartHomeError
 
@@ -170,8 +171,15 @@ class YandexEntity:
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
         """
         executed = False
+        if state is None or 'instance' not in state:
+            raise SmartHomeError(
+                ERR_INVALID_VALUE,
+                "Invalid request: no 'instance' field in state {} / {}"
+                .format(type, self.state.entity_id))
+
+        instance = state['instance']
         for cpb in self.capabilities():
-            if type == cpb.type and state['instance'] == cpb.instance:
+            if type == cpb.type and instance == cpb.instance:
                 await cpb.set_state(data, state)
                 executed = True
                 break
@@ -179,8 +187,8 @@ class YandexEntity:
         if not executed:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                'Unable to execute {} / {} for {}'.format(type,
-                                                          state['instance'],
+                "Unable to execute {} / {} for {}".format(type,
+                                                          instance,
                                                           self.state.entity_id
                                                           ))
 
