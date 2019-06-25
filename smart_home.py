@@ -72,11 +72,6 @@ async def async_devices_sync(hass, data, message):
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
     """
-    hass.bus.async_fire(
-        EVENT_DEVICES_RECEIVED,
-        {'request_id': data.request_id},
-        context=data.context)
-
     devices = []
     for state in hass.states.async_all():
         if state.entity_id in CLOUD_NEVER_EXPOSED_ENTITIES:
@@ -113,14 +108,6 @@ async def async_devices_query(hass, data, message):
         devid = device['id']
         state = hass.states.get(devid)
 
-        hass.bus.async_fire(
-            EVENT_QUERY_RECEIVED,
-            {
-                'request_id': data.request_id,
-                ATTR_ENTITY_ID: devid,
-            },
-            context=data.context)
-
         if not state:
             # If we can't find a state, the device is unreachable
             devices.append({
@@ -149,15 +136,6 @@ async def handle_devices_execute(hass, data, message):
     for device in message['payload']['devices']:
         entity_id = device['id']
         devices[entity_id] = device
-
-        hass.bus.async_fire(
-            EVENT_ACTION_RECEIVED,
-            {
-                'request_id': data.request_id,
-                ATTR_ENTITY_ID: entity_id,
-                'capabilities': device['capabilities']
-            },
-            context=data.context)
 
         if entity_id not in entities:
             state = hass.states.get(entity_id)
