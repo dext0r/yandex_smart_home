@@ -10,10 +10,10 @@ from homeassistant.const import CONF_NAME
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entityfilter
 
-from .const import (
+from custom_components.yandex_smart_home.const import (
     DOMAIN, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM
 )
-from .http import async_register_http
+from custom_components.yandex_smart_home.http import async_register_http
 
 _LOGGER = logging.getLogger(__name__)
 
