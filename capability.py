@@ -309,7 +309,7 @@ class FanSpeedCapability(_ModeCapability):
         'auto': ['auto'],
         'low': ['low', 'min', 'silent'],
         'medium': ['medium', 'middle'],
-        'high': ['high', 'max', 'strong'],
+        'high': ['high', 'max', 'strong', 'favorite'],
     }
 
     @staticmethod
