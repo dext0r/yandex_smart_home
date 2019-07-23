@@ -243,12 +243,12 @@ class ThermostatCapability(_ModeCapability):
     instance = 'thermostat'
 
     climate_map = {
-        climate.const.STATE_HEAT: 'heat',
-        climate.const.STATE_COOL: 'cool',
-        climate.const.STATE_AUTO: 'auto',
-        climate.const.STATE_ECO: 'eco',
-        climate.const.STATE_DRY: 'dry',
-        climate.const.STATE_FAN_ONLY: 'fan_only'
+        climate.const.HVAC_MODE_HEAT: 'heat',
+        climate.const.HVAC_MODE_COOL: 'cool',
+        climate.const.HVAC_MODE_AUTO: 'auto',
+        climate.const.PRESET_ECO: 'eco',
+        climate.const.HVAC_MODE_DRY: 'dry',
+        climate.const.HVAC_MODE_FAN_ONLY: 'fan_only'
     }
 
     @staticmethod
