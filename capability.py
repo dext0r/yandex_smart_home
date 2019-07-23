@@ -119,16 +119,14 @@ class OnOffCapability(_Capability):
             fan.DOMAIN,
             light.DOMAIN,
             media_player.DOMAIN,
-        ) or (climate.DOMAIN 
-              and features & climate.const.HVAC_MODE_OFF 
-              and features & climate.const.HVAC_MODE_HEAT) or (
-                       vacuum.DOMAIN
-                       and ((features & vacuum.SUPPORT_START
-                             and (features & vacuum.SUPPORT_RETURN_HOME
-                                  or features & vacuum.SUPPORT_STOP)
-                             ) or (features & vacuum.SUPPORT_TURN_ON
-                                   and features & vacuum.SUPPORT_TURN_OFF
-                                   )))
+            climate.DOMAIN,
+        ) or (vacuum.DOMAIN
+               and ((features & vacuum.SUPPORT_START
+                     and (features & vacuum.SUPPORT_RETURN_HOME
+                          or features & vacuum.SUPPORT_STOP)
+                     ) or (features & vacuum.SUPPORT_TURN_ON
+                           and features & vacuum.SUPPORT_TURN_OFF
+                           )))
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -142,7 +140,7 @@ class OnOffCapability(_Capability):
             return self.state.state == STATE_ON or self.state.state == \
                    vacuum.STATE_CLEANING
         elif self.state.domain == climate.DOMAIN:
-            return self.state.state != climate.const.HVAC_MODE_OFF
+            return self.state.state != climate.HVAC_MODE_OFF
         else:
             return self.state.state != STATE_OFF
 
