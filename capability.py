@@ -119,7 +119,9 @@ class OnOffCapability(_Capability):
             fan.DOMAIN,
             light.DOMAIN,
             media_player.DOMAIN,
-        ) or (climate.DOMAIN and features & climate.const.SUPPORT_ON_OFF) or (
+        ) or (climate.DOMAIN 
+              and features & climate.const.HVAC_MODE_OFF 
+              and features & climate.const.HVAC_MODE_HEAT) or (
                        vacuum.DOMAIN
                        and ((features & vacuum.SUPPORT_START
                              and (features & vacuum.SUPPORT_RETURN_HOME
@@ -139,6 +141,8 @@ class OnOffCapability(_Capability):
         elif self.state.domain == vacuum.DOMAIN:
             return self.state.state == STATE_ON or self.state.state == \
                    vacuum.STATE_CLEANING
+        elif self.state.domain == climate.DOMAIN:
+            return self.state.state != climate.const.HVAC_MODE_OFF
         else:
             return self.state.state != STATE_OFF
 
@@ -243,23 +247,21 @@ class ThermostatCapability(_ModeCapability):
     instance = 'thermostat'
 
     climate_map = {
-        climate.const.STATE_HEAT: 'heat',
-        climate.const.STATE_COOL: 'cool',
-        climate.const.STATE_AUTO: 'auto',
-        climate.const.STATE_ECO: 'eco',
-        climate.const.STATE_DRY: 'dry',
-        climate.const.STATE_FAN_ONLY: 'fan_only'
+        climate.const.HVAC_MODE_HEAT: 'heat',
+        climate.const.HVAC_MODE_COOL: 'cool',
+        climate.const.HVAC_MODE_AUTO: 'auto',
+        climate.const.HVAC_MODE_DRY: 'dry',
+        climate.const.HVAC_MODE_FAN_ONLY: 'fan_only'
     }
 
     @staticmethod
     def supported(domain, features):
         """Test if state is supported."""
-        return domain == climate.DOMAIN and features & \
-            climate.SUPPORT_OPERATION_MODE
+        return domain == climate.DOMAIN
 
     def parameters(self):
         """Return parameters for a devices request."""
-        operation_list = self.state.attributes.get(climate.ATTR_OPERATION_LIST)
+        operation_list = self.state.attributes.get(climate.ATTR_HVAC_MODES)
         modes = []
         for operation in operation_list:
             if operation in self.climate_map:
@@ -273,7 +275,7 @@ class ThermostatCapability(_ModeCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        operation = self.state.attributes.get(climate.ATTR_OPERATION_MODE)
+        operation = self.state.attributes.get(climate.ATTR_HVAC_MODE)
 
         if operation is not None and operation in self.climate_map:
             return self.climate_map[operation]
@@ -293,9 +295,9 @@ class ThermostatCapability(_ModeCapability):
 
         await self.hass.services.async_call(
             climate.DOMAIN,
-            climate.SERVICE_SET_OPERATION_MODE, {
+            climate.SERVICE_SET_HVAC_MODE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                climate.ATTR_OPERATION_MODE: value
+                climate.ATTR_HVAC_MODE: value
             }, blocking=True, context=data.context)
 
 
@@ -324,7 +326,7 @@ class FanSpeedCapability(_ModeCapability):
     def parameters(self):
         """Return parameters for a devices request."""
         if self.state.domain == climate.DOMAIN:
-            speed_list = self.state.attributes.get(climate.ATTR_FAN_LIST)
+            speed_list = self.state.attributes.get(climate.ATTR_FAN_MODES)
         elif self.state.domain == fan.DOMAIN:
             speed_list = self.state.attributes.get(fan.ATTR_SPEED_LIST)
         else:
@@ -353,7 +355,7 @@ class FanSpeedCapability(_ModeCapability):
 
     def get_ha_by_yandex_value(self, yandex_value):
         if self.state.domain == climate.DOMAIN:
-            speed_list = self.state.attributes.get(climate.ATTR_FAN_LIST)
+            speed_list = self.state.attributes.get(climate.ATTR_FAN_MODES)
         elif self.state.domain == fan.DOMAIN:
             speed_list = self.state.attributes.get(fan.ATTR_SPEED_LIST)
         else:
