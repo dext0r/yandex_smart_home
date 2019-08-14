@@ -247,7 +247,7 @@ class ThermostatCapability(_ModeCapability):
     climate_map = {
         climate.const.HVAC_MODE_HEAT: 'heat',
         climate.const.HVAC_MODE_COOL: 'cool',
-        climate.const.HVAC_MODE_AUTO: 'auto',
+        climate.const.HVAC_MODE_HEAT_COOL: 'auto',
         climate.const.HVAC_MODE_DRY: 'dry',
         climate.const.HVAC_MODE_FAN_ONLY: 'fan_only'
     }
@@ -432,13 +432,14 @@ class TemperatureCapability(_RangeCapability):
         """Return parameters for a devices request."""
         min_temp = self.state.attributes.get(climate.ATTR_MIN_TEMP)
         max_temp = self.state.attributes.get(climate.ATTR_MAX_TEMP)
+        precision_temp = self.state.attributes.get(climate.ATTR_TARGET_TEMP_STEP)
         return {
             'instance': self.instance,
             'unit': 'unit.temperature.celsius',
             'range': {
                 'min': min_temp,
                 'max': max_temp,
-                'precision': 0.5
+                'precision': precision_temp
             }
         }
 
