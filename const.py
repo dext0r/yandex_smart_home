@@ -30,6 +30,8 @@ TYPE_THERMOSTAT = PREFIX_TYPES + 'thermostat'
 TYPE_THERMOSTAT_AC = PREFIX_TYPES + 'thermostat.ac'
 TYPE_MEDIA_DEVICE = PREFIX_TYPES + 'media_device'
 TYPE_MEDIA_DEVICE_TV = PREFIX_TYPES + 'media_device.tv'
+TYPE_OPENABLE = PREFIX_TYPES + 'openable'
+TYPE_OPENABLE_CURTAIN = PREFIX_TYPES + 'openable.curtain'
 TYPE_OTHER = PREFIX_TYPES + 'other'
 
 # Error codes
@@ -50,7 +52,7 @@ DOMAIN_TO_YANDEX_TYPES = {
     binary_sensor.DOMAIN: TYPE_OTHER,
     camera.DOMAIN: TYPE_OTHER,
     climate.DOMAIN: TYPE_THERMOSTAT,
-    cover.DOMAIN: TYPE_OTHER,
+    cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
     fan.DOMAIN: TYPE_THERMOSTAT,
     group.DOMAIN: TYPE_SWITCH,
     input_boolean.DOMAIN: TYPE_SWITCH,

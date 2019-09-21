@@ -8,8 +8,7 @@ from homeassistant.const import (
 
 from .const import (
     ERR_INTERNAL_ERROR, ERR_DEVICE_UNREACHABLE,
-    ERR_DEVICE_NOT_FOUND, EVENT_ACTION_RECEIVED,
-    EVENT_DEVICES_RECEIVED, EVENT_QUERY_RECEIVED
+    ERR_DEVICE_NOT_FOUND
 )
 from .helpers import RequestData, YandexEntity
 from .error import SmartHomeError
