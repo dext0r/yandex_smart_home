@@ -2,6 +2,7 @@
 
 ### Installation
 
+1. Configure SSL certificate if it was not done already
 1. Update home assistant to 0.96.0 at least
 1. Clone this project into custom_components directory(create if required, 
 path should look like ~/.homeassistant/custom_components/yandex_smart_home)
