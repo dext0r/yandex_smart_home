@@ -69,6 +69,7 @@ Currently only on/off and mute/unmute actions implemented, the following domains
 - fan (on/off, fan speed)
 - group (on/off)
 - input_boolean (on/off)
+- script (on/off)
 - light (on/off, brightness, color, color temperature)
 - media_player (on/off, mute/unmute)
 - switch (on/off)

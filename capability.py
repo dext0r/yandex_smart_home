@@ -9,6 +9,7 @@ from homeassistant.components import (
     input_boolean,
     media_player,
     light,
+    script,
     switch,
     vacuum,
 )
@@ -120,6 +121,7 @@ class OnOffCapability(_Capability):
             light.DOMAIN,
             media_player.DOMAIN,
             climate.DOMAIN,
+            script.DOMAIN,
         ) or (vacuum.DOMAIN
                and ((features & vacuum.SUPPORT_START
                      and (features & vacuum.SUPPORT_RETURN_HOME
