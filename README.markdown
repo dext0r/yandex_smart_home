@@ -81,13 +81,14 @@ Entities that have not got rooms explicitly set and that have been placed in Hom
 
 ### Create Dialog
 
-Go to https://dialogs.yandex.ru/developer/ and create smart home dialog.
+Go to https://dialogs.yandex.ru/developer/ and create smart home skill.
 
 Field | Value
 ------------ | -------------
 Endpoint URL | https://[YOUR HOME ASSISTANT URL:PORT]/api/yandex_smart_home
 
-For account linking add configuration on https://dialogs.yandex.ru/developer/settings/oauth:
+For account linking use button at the bottom of skill settings page, fill it
+ using values like below:
 
 Field | Value
 ------------ | -------------
