@@ -137,7 +137,7 @@ class OnOffCapability(_Capability):
     def get_value(self):
         """Return the state value of this capability for this entity."""
         if self.state.domain == cover.DOMAIN:
-            return self.state.state != cover.STATE_OPEN
+            return self.state.state == cover.STATE_OPEN
         elif self.state.domain == vacuum.DOMAIN:
             return self.state.state == STATE_ON or self.state.state == \
                    vacuum.STATE_CLEANING
@@ -158,8 +158,8 @@ class OnOffCapability(_Capability):
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
         elif domain == cover.DOMAIN:
             service_domain = domain
-            service = SERVICE_CLOSE_COVER if state['value'] else \
-                SERVICE_OPEN_COVER
+            service = SERVICE_OPEN_COVER if state['value'] else \
+                SERVICE_CLOSE_COVER
         elif domain == vacuum.DOMAIN:
             service_domain = domain
             features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
