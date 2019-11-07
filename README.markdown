@@ -1,8 +1,10 @@
+[![Donate](https://img.shields.io/badge/-Donate-purple.svg)](https://money.yandex.ru/to/41001142896898)
+
 ## Yandex Smart Home custom component for Home Assistant
 
 ### Installation
 
-1. Configure SSL certificate if it was not done already
+1. Configure SSL certificate if it was not done already (do not use self-signed certificate)
 1. Update home assistant to 0.96.0 at least
 1. Clone this project into custom_components directory(create if required, 
 path should look like ~/.homeassistant/custom_components/yandex_smart_home)
