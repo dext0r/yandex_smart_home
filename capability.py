@@ -9,6 +9,7 @@ from homeassistant.components import (
     input_boolean,
     media_player,
     light,
+    scene,
     script,
     switch,
     vacuum,
@@ -121,6 +122,7 @@ class OnOffCapability(_Capability):
             light.DOMAIN,
             media_player.DOMAIN,
             climate.DOMAIN,
+            scene.DOMAIN,
             script.DOMAIN,
         ) or (vacuum.DOMAIN
                and ((features & vacuum.SUPPORT_START
@@ -143,6 +145,9 @@ class OnOffCapability(_Capability):
                    vacuum.STATE_CLEANING
         elif self.state.domain == climate.DOMAIN:
             return self.state.state != climate.HVAC_MODE_OFF
+        elif self.state.domain == scene.DOMAIN or self.state.domain == \
+                script.DOMAIN:
+            return False
         else:
             return self.state.state != STATE_OFF
 
@@ -153,15 +158,14 @@ class OnOffCapability(_Capability):
         if type(state['value']) is not bool:
             raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
 
+        service_domain = domain
         if domain == group.DOMAIN:
             service_domain = HA_DOMAIN
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
         elif domain == cover.DOMAIN:
-            service_domain = domain
             service = SERVICE_OPEN_COVER if state['value'] else \
                 SERVICE_CLOSE_COVER
         elif domain == vacuum.DOMAIN:
-            service_domain = domain
             features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
             if state['value']:
                 if features & vacuum.SUPPORT_START:
@@ -175,13 +179,18 @@ class OnOffCapability(_Capability):
                     service = vacuum.SERVICE_STOP
                 else:
                     service = SERVICE_TURN_OFF
+        elif self.state.domain == scene.DOMAIN or self.state.domain == \
+                script.DOMAIN:
+            if state['value']:
+                service = SERVICE_TURN_ON
+            else:
+                return
         else:
-            service_domain = domain
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
 
         await self.hass.services.async_call(service_domain, service, {
             ATTR_ENTITY_ID: self.state.entity_id
-        }, blocking=True, context=data.context)
+        }, blocking=self.state.domain != script.DOMAIN, context=data.context)
 
 
 @register_capability
