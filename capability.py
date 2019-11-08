@@ -110,6 +110,11 @@ class OnOffCapability(_Capability):
     type = CAPABILITIES_ONOFF
     instance = 'on'
 
+    def __init__(self, hass, state, config):
+        super().__init__(hass, state, config)
+        self.retrievable = state.domain != scene.DOMAIN and state.domain != \
+            script.DOMAIN
+
     @staticmethod
     def supported(domain, features):
         """Test if state is supported."""
@@ -145,9 +150,6 @@ class OnOffCapability(_Capability):
                    vacuum.STATE_CLEANING
         elif self.state.domain == climate.DOMAIN:
             return self.state.state != climate.HVAC_MODE_OFF
-        elif self.state.domain == scene.DOMAIN or self.state.domain == \
-                script.DOMAIN:
-            return False
         else:
             return self.state.state != STATE_OFF
 
@@ -181,10 +183,7 @@ class OnOffCapability(_Capability):
                     service = SERVICE_TURN_OFF
         elif self.state.domain == scene.DOMAIN or self.state.domain == \
                 script.DOMAIN:
-            if state['value']:
-                service = SERVICE_TURN_ON
-            else:
-                return
+            service = SERVICE_TURN_ON
         else:
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
 
