@@ -26,6 +26,7 @@ yandex_smart_home:
       - light
     include_entities:
       - media_player.tv
+      - media_player.tv_lg
     exclude_entities:
       - light.highlight
   entity_config:
@@ -33,6 +34,8 @@ yandex_smart_home:
       name: CUSTOM_NAME_FOR_YANDEX_SMART_HOME
     light.living_room:
       room: LIVING_ROOM
+    media_player.tv_lg:
+      channel_set_via_media_content_id: true
 ```
 
 Configuration variables:
@@ -60,20 +63,27 @@ yandex_smart_home:
         (string) (Optional) Name of entity to show in Yandex Smart Home.
       room:
         (string) (Optional) Associating this device to a room in Yandex Smart Home
+      channel_set_via_media_content_id:
+        (string) (Optional) Enables ability to set channel by number for 
+        part of TVs (TVs that support channel change via passing number as media_content_id)
 ```
 
 ### Available domains
 
-Currently only on/off and mute/unmute actions implemented, the following domains are available to be used:
+The following domains are available to be used:
 
 - climate (on/off, temperature, mode, fan speed)
 - cover (on/off = close/open)
 - fan (on/off, fan speed)
 - group (on/off)
 - input_boolean (on/off)
+- scene (on/off)
 - script (on/off)
 - light (on/off, brightness, color, color temperature)
-- media_player (on/off, mute/unmute)
+- media_player (on/off, mute/unmute, volume, channels: up/down as prev/next 
+track, get/set media_content_id via channel number for part of TVs(enabled 
+via extra option "channel_set_via_media_content_id: true" in entity 
+configurations))
 - switch (on/off)
 - vacuum (on/off)
 

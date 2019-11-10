@@ -30,8 +30,8 @@ from homeassistant.util import color as color_util
 
 from .const import (
     ERR_INVALID_VALUE,
-    ERR_NOT_SUPPORTED_IN_CURRENT_MODE
-)
+    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)
 from .error import SmartHomeError
 
 _LOGGER = logging.getLogger(__name__)
@@ -59,11 +59,11 @@ class _Capability:
     instance = ''
     retrievable = True
 
-    def __init__(self, hass, state, config):
+    def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
-        self.config = config
+        self.entity_config = entity_config
 
     def description(self):
         """Return description for a devices request."""
@@ -116,7 +116,7 @@ class OnOffCapability(_Capability):
             script.DOMAIN
 
     @staticmethod
-    def supported(domain, features):
+    def supported(domain, features, entity_config):
         """Test if state is supported."""
         return domain in (
             cover.DOMAIN,
@@ -203,7 +203,7 @@ class ToggleCapability(_Capability):
     instance = 'mute'
 
     @staticmethod
-    def supported(domain, features):
+    def supported(domain, features, entity_config):
         """Test if state is supported."""
         return domain == media_player.DOMAIN and features & \
             media_player.SUPPORT_VOLUME_MUTE
@@ -263,7 +263,7 @@ class ThermostatCapability(_ModeCapability):
     }
 
     @staticmethod
-    def supported(domain, features):
+    def supported(domain, features, entity_config):
         """Test if state is supported."""
         return domain == climate.DOMAIN
 
@@ -323,7 +323,7 @@ class FanSpeedCapability(_ModeCapability):
     }
 
     @staticmethod
-    def supported(domain, features):
+    def supported(domain, features, entity_config):
         """Test if state is supported."""
         if domain == climate.DOMAIN:
             return features & climate.SUPPORT_FAN_MODE
@@ -433,7 +433,7 @@ class TemperatureCapability(_RangeCapability):
     instance = 'temperature'
 
     @staticmethod
-    def supported(domain, features):
+    def supported(domain, features, entity_config):
         """Test if state is supported."""
         return domain == climate.DOMAIN and features & \
             climate.const.SUPPORT_TARGET_TEMPERATURE
@@ -477,7 +477,7 @@ class BrightnessCapability(_RangeCapability):
     instance = 'brightness'
 
     @staticmethod
-    def supported(domain, features):
+    def supported(domain, features, entity_config):
         """Test if state is supported."""
         return domain == light.DOMAIN and features & light.SUPPORT_BRIGHTNESS
 
@@ -519,7 +519,7 @@ class VolumeCapability(_RangeCapability):
     retrievable = False
 
     @staticmethod
-    def supported(domain, features):
+    def supported(domain, features, entity_config):
         """Test if state is supported."""
         return domain == media_player.DOMAIN and features & \
             media_player.SUPPORT_VOLUME_STEP
@@ -544,6 +544,83 @@ class VolumeCapability(_RangeCapability):
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id
             }, blocking=True, context=data.context)
+
+
+@register_capability
+class ChannelCapability(_RangeCapability):
+    """Set channel functionality."""
+
+    instance = 'channel'
+
+    def __init__(self, hass, state, config):
+        super().__init__(hass, state, config)
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        self.retrievable = features & media_player.SUPPORT_PLAY_MEDIA != 0 and \
+            self.entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)
+
+    @staticmethod
+    def supported(domain, features, entity_config):
+        """Test if state is supported."""
+        return domain == media_player.DOMAIN and (
+                (features & media_player.SUPPORT_PLAY_MEDIA and
+                    entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)) or (
+                    features & media_player.SUPPORT_PREVIOUS_TRACK
+                    and features & media_player.SUPPORT_NEXT_TRACK)
+        )
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        if self.retrievable:
+            return {
+                'instance': self.instance,
+                'random_access': True,
+                'range': {
+                    'max': 999,
+                    'min': 0,
+                    'precision': 1
+                }
+            }
+        else:
+            return {
+                'instance': self.instance,
+                'random_access': False
+            }
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        if self.retrievable or self.state.attributes.get(
+                media_player.ATTR_MEDIA_CONTENT_TYPE) \
+                != media_player.const.MEDIA_TYPE_CHANNEL:
+            return 0
+        try:
+            return int(self.state.attributes.get(
+                media_player.ATTR_MEDIA_CONTENT_ID))
+        except ValueError:
+            return 0
+        except TypeError:
+            return 0
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        if 'relative' in state and state['relative']:
+            if state['value'] > 0:
+                service = media_player.SERVICE_MEDIA_NEXT_TRACK
+            else:
+                service = media_player.SERVICE_MEDIA_PREVIOUS_TRACK
+            await self.hass.services.async_call(
+                media_player.DOMAIN,
+                service, {
+                    ATTR_ENTITY_ID: self.state.entity_id
+                }, blocking=True, context=data.context)
+        else:
+            await self.hass.services.async_call(
+                media_player.DOMAIN,
+                media_player.SERVICE_PLAY_MEDIA, {
+                    ATTR_ENTITY_ID: self.state.entity_id,
+                    media_player.const.ATTR_MEDIA_CONTENT_ID: state['value'],
+                    media_player.const.ATTR_MEDIA_CONTENT_TYPE:
+                        media_player.const.MEDIA_TYPE_CHANNEL,
+                }, blocking=True, context=data.context)
 
 
 class _ColorSettingCapability(_Capability):
@@ -581,7 +658,7 @@ class RgbCapability(_ColorSettingCapability):
     instance = 'rgb'
 
     @staticmethod
-    def supported(domain, features):
+    def supported(domain, features, entity_config):
         """Test if state is supported."""
         return domain == light.DOMAIN and features & light.SUPPORT_COLOR
 
@@ -618,7 +695,7 @@ class TemperatureKCapability(_ColorSettingCapability):
     instance = 'temperature_k'
 
     @staticmethod
-    def supported(domain, features):
+    def supported(domain, features, entity_config):
         """Test if state is supported."""
         return domain == light.DOMAIN and features & light.SUPPORT_COLOR_TEMP
 
