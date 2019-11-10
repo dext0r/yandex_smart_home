@@ -64,8 +64,11 @@ yandex_smart_home:
       room:
         (string) (Optional) Associating this device to a room in Yandex Smart Home
       channel_set_via_media_content_id:
-        (string) (Optional) Enables ability to set channel by number for 
+        (boolean) (Optional) (media_player only) Enables ability to set channel
+         by number for 
         part of TVs (TVs that support channel change via passing number as media_content_id)
+      relative_volume_only:
+        (boolean) (Optional) (media_player only) Force disable ability to get/set volume by number
 ```
 
 ### Available domains

@@ -31,7 +31,7 @@ from homeassistant.util import color as color_util
 from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)
+    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY)
 from .error import SmartHomeError
 
 _LOGGER = logging.getLogger(__name__)
@@ -518,6 +518,11 @@ class VolumeCapability(_RangeCapability):
     instance = 'volume'
     retrievable = False
 
+    def __init__(self, hass, state, config):
+        super().__init__(hass, state, config)
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        self.retrievable = features & media_player.SUPPORT_VOLUME_SET != 0
+
     @staticmethod
     def supported(domain, features, entity_config):
         """Test if state is supported."""
@@ -526,24 +531,56 @@ class VolumeCapability(_RangeCapability):
 
     def parameters(self):
         """Return parameters for a devices request."""
-        return {
-            'instance': self.instance
-        }
+        if self.is_relative_volume_only():
+            return {
+                'instance': self.instance
+            }
+        else:
+            return {
+                'instance': self.instance,
+                'random_access': True,
+                'range': {
+                    'max': 100,
+                    'min': 0,
+                    'precision': 1
+                }
+            }
+
+    def is_relative_volume_only(self):
+        _LOGGER.debug("CONF_RELATIVE_VOLUME_ONLY: %r" % self.entity_config.get(
+            CONF_RELATIVE_VOLUME_ONLY))
+        return not self.retrievable or self.entity_config.get(
+            CONF_RELATIVE_VOLUME_ONLY)
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        level = self.state.attributes.get(
+            media_player.ATTR_MEDIA_VOLUME_LEVEL)
+        if level is None:
+            return 0
+        else:
+            return int(level * 100)
 
     async def set_state(self, data, state):
         """Set device state."""
-        if not state['value']:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Supported relative mode "
-                                                    "only")
-        if state['value'] > 0:
-            service = media_player.SERVICE_VOLUME_UP
+        if self.is_relative_volume_only():
+            if state['value'] > 0:
+                service = media_player.SERVICE_VOLUME_UP
+            else:
+                service = media_player.SERVICE_VOLUME_DOWN
+            await self.hass.services.async_call(
+                media_player.DOMAIN,
+                service, {
+                    ATTR_ENTITY_ID: self.state.entity_id
+                }, blocking=True, context=data.context)
         else:
-            service = media_player.SERVICE_VOLUME_DOWN
-        await self.hass.services.async_call(
-            media_player.DOMAIN,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            }, blocking=True, context=data.context)
+            await self.hass.services.async_call(
+                media_player.DOMAIN,
+                media_player.SERVICE_VOLUME_SET, {
+                    ATTR_ENTITY_ID: self.state.entity_id,
+                    media_player.const.ATTR_MEDIA_VOLUME_LEVEL:
+                        state['value'] / 100,
+                }, blocking=True, context=data.context)
 
 
 @register_capability
