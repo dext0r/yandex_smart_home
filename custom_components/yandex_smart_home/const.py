@@ -20,6 +20,8 @@ DOMAIN = 'yandex_smart_home'
 CONF_ENTITY_CONFIG = 'entity_config'
 CONF_FILTER = 'filter'
 CONF_ROOM = 'room'
+CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID = 'channel_set_via_media_content_id'
+CONF_RELATIVE_VOLUME_ONLY = 'relative_volume_only'
 
 
 PREFIX_TYPES = 'devices.types.'
@@ -30,6 +32,11 @@ TYPE_THERMOSTAT = PREFIX_TYPES + 'thermostat'
 TYPE_THERMOSTAT_AC = PREFIX_TYPES + 'thermostat.ac'
 TYPE_MEDIA_DEVICE = PREFIX_TYPES + 'media_device'
 TYPE_MEDIA_DEVICE_TV = PREFIX_TYPES + 'media_device.tv'
+TYPE_OPENABLE = PREFIX_TYPES + 'openable'
+TYPE_OPENABLE_CURTAIN = PREFIX_TYPES + 'openable.curtain'
+TYPE_HUMIDIFIER = PREFIX_TYPES + 'humidifier'
+TYPE_PURIFIER = PREFIX_TYPES + 'purifier'
+TYPE_VACUUM_CLEANER = PREFIX_TYPES + 'vacuum_cleaner'
 TYPE_OTHER = PREFIX_TYPES + 'other'
 
 # Error codes
@@ -50,8 +57,8 @@ DOMAIN_TO_YANDEX_TYPES = {
     binary_sensor.DOMAIN: TYPE_OTHER,
     camera.DOMAIN: TYPE_OTHER,
     climate.DOMAIN: TYPE_THERMOSTAT,
-    cover.DOMAIN: TYPE_OTHER,
-    fan.DOMAIN: TYPE_THERMOSTAT,
+    cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
+    fan.DOMAIN: TYPE_HUMIDIFIER,
     group.DOMAIN: TYPE_SWITCH,
     input_boolean.DOMAIN: TYPE_SWITCH,
     light.DOMAIN: TYPE_LIGHT,
@@ -60,7 +67,7 @@ DOMAIN_TO_YANDEX_TYPES = {
     scene.DOMAIN: TYPE_OTHER,
     script.DOMAIN: TYPE_OTHER,
     switch.DOMAIN: TYPE_SWITCH,
-    vacuum.DOMAIN: TYPE_OTHER,
+    vacuum.DOMAIN: TYPE_VACUUM_CLEANER,
 }
 
 DEVICE_CLASS_TO_YANDEX_TYPES = {
