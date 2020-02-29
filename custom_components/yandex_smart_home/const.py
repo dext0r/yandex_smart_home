@@ -20,6 +20,7 @@ DOMAIN = 'yandex_smart_home'
 CONF_ENTITY_CONFIG = 'entity_config'
 CONF_FILTER = 'filter'
 CONF_ROOM = 'room'
+CONF_TYPE = 'type'
 CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID = 'channel_set_via_media_content_id'
 CONF_RELATIVE_VOLUME_ONLY = 'relative_volume_only'
 

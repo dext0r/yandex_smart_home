@@ -12,7 +12,7 @@ from . import capability
 from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
-    ERR_INVALID_VALUE, CONF_ROOM,
+    ERR_INVALID_VALUE, CONF_ROOM, CONF_TYPE
 )
 from .error import SmartHomeError
 
@@ -118,6 +118,10 @@ class YandexEntity:
             description = cpb.description()
             if description not in device['capabilities']:
                 device['capabilities'].append(description)
+
+        override_type = entity_config.get(CONF_TYPE)
+        if override_type:
+            device['type'] = override_type
 
         room = entity_config.get(CONF_ROOM)
         if room:
