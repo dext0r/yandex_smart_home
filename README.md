@@ -6,7 +6,7 @@
 
 1. Configure SSL certificate if it was not done already (do not use self-signed certificate)
 1. Update home assistant to 0.96.0 at least
-1. Install [HACS](https://hacs.xyz/) and add this repository to it (I plan to add it to default repository soon). That way you get updates automatically. But you also can just copy and add files into custom_components directory manually instead
+1. Install [HACS](https://hacs.xyz/) and search for "Yandex Smart Home" there. That way you get updates automatically. But you also can just copy and add files into custom_components directory manually instead
 1. Configure component via configuration.yaml (see instructions below)
 1. Restart home assistant
 1. Create dialog via https://dialogs.yandex.ru/developer/
