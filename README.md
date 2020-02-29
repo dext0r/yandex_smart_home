@@ -6,9 +6,8 @@
 
 1. Configure SSL certificate if it was not done already (do not use self-signed certificate)
 1. Update home assistant to 0.96.0 at least
-1. Clone this project into custom_components directory(create if required, 
-path should look like ~/.homeassistant/custom_components/yandex_smart_home)
-1. Configure component via configuration.yaml
+1. Install [HACS](https://hacs.xyz/) and add this repository to it (I plan to add it to default repository soon). That way you get updates automatically. But you also can just copy and add files into custom_components directory manually instead
+1. Configure component via configuration.yaml (see instructions below)
 1. Restart home assistant
 1. Create dialog via https://dialogs.yandex.ru/developer/
 1. Add devices via your Yandex app on android/ios

@@ -1,4 +1,6 @@
 {
   "name": "Yandex Smart Home",
-  "country": ["RU", "BY"]
+  "country": ["RU", "BY"],
+  "render_readme": true,
+  "homeassistant": "0.96.0"
 }
