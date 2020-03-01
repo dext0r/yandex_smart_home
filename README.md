@@ -64,6 +64,8 @@ yandex_smart_home:
         (string) (Optional) Name of entity to show in Yandex Smart Home.
       room:
         (string) (Optional) Associating this device to a room in Yandex Smart Home
+      type:
+        (string) (Optional) Allows to force set device type. For exmaple set devices.types.purifier to display device as purifier (instead default devices.types.humidifier for such devices) 
       channel_set_via_media_content_id:
         (boolean) (Optional) (media_player only) Enables ability to set channel
          by number for 
