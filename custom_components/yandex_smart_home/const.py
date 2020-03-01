@@ -14,6 +14,7 @@ from homeassistant.components import (
     script,
     switch,
     vacuum,
+    water_heater,
 )
 DOMAIN = 'yandex_smart_home'
 
@@ -29,6 +30,7 @@ PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'
 TYPE_SOCKET = PREFIX_TYPES + 'socket'
 TYPE_SWITCH = PREFIX_TYPES + 'switch'
+TYPE_KETTLE = PREFIX_TYPES + 'cooking.kettle'
 TYPE_THERMOSTAT = PREFIX_TYPES + 'thermostat'
 TYPE_THERMOSTAT_AC = PREFIX_TYPES + 'thermostat.ac'
 TYPE_MEDIA_DEVICE = PREFIX_TYPES + 'media_device'
@@ -57,6 +59,7 @@ EVENT_DEVICES_RECEIVED = 'yandex_smart_home_devices'
 DOMAIN_TO_YANDEX_TYPES = {
     binary_sensor.DOMAIN: TYPE_OTHER,
     camera.DOMAIN: TYPE_OTHER,
+    water_heater.DOMAIN: TYPE_KETTLE,
     climate.DOMAIN: TYPE_THERMOSTAT,
     cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
     fan.DOMAIN: TYPE_HUMIDIFIER,

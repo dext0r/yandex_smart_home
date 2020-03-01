@@ -13,6 +13,7 @@ from homeassistant.components import (
     script,
     switch,
     vacuum,
+    water_heater,
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -467,6 +468,50 @@ class TemperatureCapability(_RangeCapability):
             climate.SERVICE_SET_TEMPERATURE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_TEMPERATURE: state['value']
+            }, blocking=True, context=data.context)
+
+
+@register_capability
+class WaterTemperatureCapability(_RangeCapability):
+    """Set temperature functionality."""
+
+    instance = 'temperature'
+
+    @staticmethod
+    def supported(domain, features, entity_config):
+        """Test if state is supported."""
+        return domain == water_heater.DOMAIN and features & \
+            water_heater.SUPPORT_TARGET_TEMPERATURE
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        min_temp = self.state.attributes.get(water_heater.ATTR_MIN_TEMP)
+        max_temp = self.state.attributes.get(water_heater.ATTR_MAX_TEMP)
+        return {
+            'instance': self.instance,
+            'unit': 'unit.temperature.celsius',
+            'range': {
+                'min': min_temp,
+                'max': max_temp,
+                'precision': 0.5
+            }
+        }
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        temperature = self.state.attributes.get(water_heater.ATTR_TEMPERATURE)
+        if temperature is None:
+            return 0
+        else:
+            return float(temperature)
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await self.hass.services.async_call(
+            water_heater.DOMAIN,
+            water_heater.SERVICE_SET_TEMPERATURE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                water_heater.ATTR_TEMPERATURE: state['value']
             }, blocking=True, context=data.context)
 
 
