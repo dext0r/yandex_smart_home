@@ -13,6 +13,7 @@ from homeassistant.components import (
     script,
     switch,
     vacuum,
+    water_heater
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -129,6 +130,7 @@ class OnOffCapability(_Capability):
             climate.DOMAIN,
             scene.DOMAIN,
             script.DOMAIN,
+            water_heater.DOMAIN
         ) or (vacuum.DOMAIN
                and ((features & vacuum.SUPPORT_START
                      and (features & vacuum.SUPPORT_RETURN_HOME
@@ -435,13 +437,23 @@ class TemperatureCapability(_RangeCapability):
     @staticmethod
     def supported(domain, features, entity_config):
         """Test if state is supported."""
-        return domain == climate.DOMAIN and features & \
-            climate.const.SUPPORT_TARGET_TEMPERATURE
+        if domain == water_heater.DOMAIN:
+            return features & water_heater.SUPPORT_TARGET_TEMPERATURE
+        elif domain == climate.DOMAIN:
+            return features & climate.const.SUPPORT_TARGET_TEMPERATURE
+        return False
 
     def parameters(self):
         """Return parameters for a devices request."""
-        min_temp = self.state.attributes.get(climate.ATTR_MIN_TEMP)
-        max_temp = self.state.attributes.get(climate.ATTR_MAX_TEMP)
+        if self.state.domain == water_heater.DOMAIN:
+            min_temp = self.state.attributes.get(water_heater.ATTR_MIN_TEMP)
+            max_temp = self.state.attributes.get(water_heater.ATTR_MAX_TEMP)
+        elif self.state.domain == climate.DOMAIN:
+            min_temp = self.state.attributes.get(climate.ATTR_MIN_TEMP)
+            max_temp = self.state.attributes.get(climate.ATTR_MAX_TEMP)
+        else:
+            min_temp = 0
+            max_temp = 100
         return {
             'instance': self.instance,
             'unit': 'unit.temperature.celsius',
@@ -454,7 +466,10 @@ class TemperatureCapability(_RangeCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        temperature = self.state.attributes.get(climate.ATTR_TEMPERATURE)
+        if self.state.domain == water_heater.DOMAIN:
+            temperature = self.state.attributes.get(water_heater.ATTR_TEMPERATURE)
+        elif self.state.domain == climate.DOMAIN:
+            temperature = self.state.attributes.get(climate.ATTR_TEMPERATURE)
         if temperature is None:
             return 0
         else:
@@ -462,11 +477,21 @@ class TemperatureCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
+
+        if self.state.domain == water_heater.DOMAIN:
+            service = water_heater.SERVICE_SET_TEMPERATURE
+            attr = water_heater.ATTR_TEMPERATURE
+        elif self.state.domain == climate.DOMAIN:
+            service = climate.SERVICE_SET_TEMPERATURE
+            attr = climate.ATTR_TEMPERATURE
+        else:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+
         await self.hass.services.async_call(
-            climate.DOMAIN,
-            climate.SERVICE_SET_TEMPERATURE, {
+            self.state.domain,
+            service, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                climate.ATTR_TEMPERATURE: state['value']
+                attr: state['value']
             }, blocking=True, context=data.context)
 
 

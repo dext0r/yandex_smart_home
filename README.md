@@ -92,6 +92,7 @@ via extra option "channel_set_via_media_content_id: true" in entity
 configurations))
 - switch (on/off)
 - vacuum (on/off)
+- water_heater (on/off, temperature)
 
 ### Room/Area support
 
