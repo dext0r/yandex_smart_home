@@ -13,7 +13,7 @@ from homeassistant.components import (
     script,
     switch,
     vacuum,
-    water_heater
+    water_heater,
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -126,18 +126,18 @@ class OnOffCapability(_Capability):
             switch.DOMAIN,
             fan.DOMAIN,
             light.DOMAIN,
-            media_player.DOMAIN,
             climate.DOMAIN,
             scene.DOMAIN,
             script.DOMAIN,
-            water_heater.DOMAIN
-        ) or (vacuum.DOMAIN
-               and ((features & vacuum.SUPPORT_START
-                     and (features & vacuum.SUPPORT_RETURN_HOME
-                          or features & vacuum.SUPPORT_STOP)
-                     ) or (features & vacuum.SUPPORT_TURN_ON
-                           and features & vacuum.SUPPORT_TURN_OFF
-                           )))
+        ) or (media_player.DOMAIN
+              and features & media_player.SUPPORT_TURN_ON and features & media_player.SUPPORT_TURN_OFF
+              ) or (vacuum.DOMAIN
+                    and ((features & vacuum.SUPPORT_START
+                          and (features & vacuum.SUPPORT_RETURN_HOME
+                               or features & vacuum.SUPPORT_STOP)
+                          ) or (features & vacuum.SUPPORT_TURN_ON
+                                and features & vacuum.SUPPORT_TURN_OFF
+                                )))
 
     def parameters(self):
         """Return parameters for a devices request."""
