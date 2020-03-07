@@ -14,6 +14,7 @@ from homeassistant.components import (
     switch,
     vacuum,
     water_heater,
+    lock,
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -23,6 +24,8 @@ from homeassistant.const import (
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
+    SERVICE_LOCK,
+    SERVICE_UNLOCK,
     STATE_OFF,
     STATE_ON,
 )
@@ -129,9 +132,10 @@ class OnOffCapability(_Capability):
             climate.DOMAIN,
             scene.DOMAIN,
             script.DOMAIN,
-        ) or (media_player.DOMAIN
+            lock.DOMAIN,
+        ) or (domain == media_player.DOMAIN
               and features & media_player.SUPPORT_TURN_ON and features & media_player.SUPPORT_TURN_OFF
-              ) or (vacuum.DOMAIN
+              ) or (domain == vacuum.DOMAIN
                     and ((features & vacuum.SUPPORT_START
                           and (features & vacuum.SUPPORT_RETURN_HOME
                                or features & vacuum.SUPPORT_STOP)
@@ -152,6 +156,8 @@ class OnOffCapability(_Capability):
                    vacuum.STATE_CLEANING
         elif self.state.domain == climate.DOMAIN:
             return self.state.state != climate.HVAC_MODE_OFF
+        elif self.state.domain == lock.DOMAIN:
+            return self.state.state == lock.STATE_UNLOCKED
         else:
             return self.state.state != STATE_OFF
 
@@ -186,6 +192,9 @@ class OnOffCapability(_Capability):
         elif self.state.domain == scene.DOMAIN or self.state.domain == \
                 script.DOMAIN:
             service = SERVICE_TURN_ON
+        elif self.state.domain == lock.DOMAIN:
+            service = SERVICE_UNLOCK if state['value'] else \
+                SERVICE_LOCK
         else:
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
 

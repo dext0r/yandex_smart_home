@@ -93,6 +93,7 @@ configurations))
 - switch (on/off)
 - vacuum (on/off)
 - water_heater (temperature)
+- lock (on/off = lock/unlock)
 
 ### Room/Area support
 

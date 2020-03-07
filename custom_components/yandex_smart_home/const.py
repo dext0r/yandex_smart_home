@@ -25,7 +25,7 @@ CONF_TYPE = 'type'
 CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID = 'channel_set_via_media_content_id'
 CONF_RELATIVE_VOLUME_ONLY = 'relative_volume_only'
 
-
+# https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types-docpage/
 PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'
 TYPE_SOCKET = PREFIX_TYPES + 'socket'
@@ -65,7 +65,7 @@ DOMAIN_TO_YANDEX_TYPES = {
     group.DOMAIN: TYPE_SWITCH,
     input_boolean.DOMAIN: TYPE_SWITCH,
     light.DOMAIN: TYPE_LIGHT,
-    lock.DOMAIN: TYPE_OTHER,
+    lock.DOMAIN: TYPE_OPENABLE,
     media_player.DOMAIN: TYPE_MEDIA_DEVICE,
     scene.DOMAIN: TYPE_OTHER,
     script.DOMAIN: TYPE_OTHER,
