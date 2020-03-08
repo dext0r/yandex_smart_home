@@ -73,7 +73,7 @@ class YandexEntity:
         self._capabilities = [
             Capability(self.hass, state, entity_config)
             for Capability in capability.CAPABILITIES
-            if Capability.supported(domain, features, entity_config)
+            if Capability.supported(domain, features, entity_config, state.attributes)
         ]
         return self._capabilities
 
