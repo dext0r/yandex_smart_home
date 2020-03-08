@@ -72,6 +72,8 @@ yandex_smart_home:
         part of TVs (TVs that support channel change via passing number as media_content_id)
       relative_volume_only:
         (boolean) (Optional) (media_player only) Force disable ability to get/set volume by number
+      support_service_turn_on_off:
+        (boolean) (Optional) Force allow to use turn on/turn off service for any device. Use for your own risk only, make sense to enable for some water_heater devices only probably.
 ```
 
 ### Available domains

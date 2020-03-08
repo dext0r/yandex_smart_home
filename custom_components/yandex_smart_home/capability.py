@@ -35,7 +35,7 @@ from homeassistant.util import color as color_util
 from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY)
+    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY, CONF_SUPPORT_SERVICE_TURN_ON_OFF)
 from .error import SmartHomeError
 
 _LOGGER = logging.getLogger(__name__)
@@ -141,7 +141,7 @@ class OnOffCapability(_Capability):
                                or features & vacuum.SUPPORT_STOP)
                           ) or (features & vacuum.SUPPORT_TURN_ON
                                 and features & vacuum.SUPPORT_TURN_OFF
-                                )))
+                                ))) or entity_config.get(CONF_SUPPORT_SERVICE_TURN_ON_OFF)
 
     def parameters(self):
         """Return parameters for a devices request."""
