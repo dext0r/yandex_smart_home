@@ -118,8 +118,8 @@ class OnOffCapability(_Capability):
     instance = 'on'
 
     water_heater_operations = {
-        'on': [STATE_ON, 'On', 'ON', STATE_ELECTRIC],
-        'off': [STATE_OFF, 'Off', 'OFF'],
+        STATE_ON: [STATE_ON, 'On', 'ON', STATE_ELECTRIC],
+        STATE_OFF: [STATE_OFF, 'Off', 'OFF'],
     }
 
     def __init__(self, hass, state, config):
@@ -147,9 +147,9 @@ class OnOffCapability(_Capability):
 
         if domain == water_heater.DOMAIN and features & water_heater.SUPPORT_OPERATION_MODE:
             operation_list = attributes.get(water_heater.ATTR_OPERATION_LIST)
-            if OnOffCapability.get_water_heater_operation('on', operation_list) is None:
+            if OnOffCapability.get_water_heater_operation(STATE_ON, operation_list) is None:
                 return False
-            if OnOffCapability.get_water_heater_operation('off', operation_list) is None:
+            if OnOffCapability.get_water_heater_operation(STATE_OFF, operation_list) is None:
                 return False
             return True
 
@@ -184,7 +184,7 @@ class OnOffCapability(_Capability):
         elif self.state.domain == water_heater.DOMAIN:
             operation_mode = self.state.attributes.get(water_heater.ATTR_OPERATION_MODE)
             operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST)
-            return operation_mode != OnOffCapability.get_water_heater_operation('off', operation_list)
+            return operation_mode != OnOffCapability.get_water_heater_operation(STATE_OFF, operation_list)
         else:
             return self.state.state != STATE_OFF
 
@@ -230,10 +230,10 @@ class OnOffCapability(_Capability):
             service = SERVICE_SET_OPERATION_MODE
             if state['value']:
                 service_data[water_heater.ATTR_OPERATION_MODE] = \
-                    OnOffCapability.get_water_heater_operation('on', operation_list)
+                    OnOffCapability.get_water_heater_operation(STATE_ON, operation_list)
             else:
                 service_data[water_heater.ATTR_OPERATION_MODE] = \
-                    OnOffCapability.get_water_heater_operation('off', operation_list)
+                    OnOffCapability.get_water_heater_operation(STATE_OFF, operation_list)
         else:
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
 
