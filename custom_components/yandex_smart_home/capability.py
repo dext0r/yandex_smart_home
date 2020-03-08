@@ -35,7 +35,9 @@ from homeassistant.util import color as color_util
 from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY, CONF_SUPPORT_SERVICE_TURN_ON_OFF)
+    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY,
+    CONF_OPERATION_MODE_ON,
+    CONF_SUPPORT_SERVICE_TURN_ON_OFF)
 from .error import SmartHomeError
 
 _LOGGER = logging.getLogger(__name__)
@@ -134,14 +136,17 @@ class OnOffCapability(_Capability):
             script.DOMAIN,
             lock.DOMAIN,
         ) or (domain == media_player.DOMAIN
-              and features & media_player.SUPPORT_TURN_ON and features & media_player.SUPPORT_TURN_OFF
-              ) or (domain == vacuum.DOMAIN
-                    and ((features & vacuum.SUPPORT_START
-                          and (features & vacuum.SUPPORT_RETURN_HOME
-                               or features & vacuum.SUPPORT_STOP)
-                          ) or (features & vacuum.SUPPORT_TURN_ON
-                                and features & vacuum.SUPPORT_TURN_OFF
-                                ))) or entity_config.get(CONF_SUPPORT_SERVICE_TURN_ON_OFF)
+              and features & media_player.SUPPORT_TURN_ON
+                    and features & media_player.SUPPORT_TURN_OFF
+        ) or (domain == water_heater.DOMAIN
+              and entity_config.get(CONF_OPERATION_MODE_ON)
+        ) or (domain == vacuum.DOMAIN
+              and ((features & vacuum.SUPPORT_START
+                    and (features & vacuum.SUPPORT_RETURN_HOME
+                         or features & vacuum.SUPPORT_STOP)
+                    ) or (features & vacuum.SUPPORT_TURN_ON
+                          and features & vacuum.SUPPORT_TURN_OFF))
+        ) or entity_config.get(CONF_SUPPORT_SERVICE_TURN_ON_OFF)
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -169,6 +174,10 @@ class OnOffCapability(_Capability):
             raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
 
         service_domain = domain
+        params = {
+            ATTR_ENTITY_ID: self.state.entity_id
+        }
+
         if domain == group.DOMAIN:
             service_domain = HA_DOMAIN
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
@@ -195,12 +204,19 @@ class OnOffCapability(_Capability):
         elif self.state.domain == lock.DOMAIN:
             service = SERVICE_UNLOCK if state['value'] else \
                 SERVICE_LOCK
+        elif self.state.domain == water_heater.DOMAIN:
+            service = water_heater.SERVICE_SET_OPERATION_MODE
+            if state['value']:
+                params[water_heater.ATTR_OPERATION_MODE] = \
+                    self.entity_config.get(CONF_OPERATION_MODE_ON)
+            else:
+                params[water_heater.ATTR_OPERATION_MODE] = \
+                    water_heater.STATE_OFF
         else:
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
 
-        await self.hass.services.async_call(service_domain, service, {
-            ATTR_ENTITY_ID: self.state.entity_id
-        }, blocking=self.state.domain != script.DOMAIN, context=data.context)
+        await self.hass.services.async_call(service_domain, service, params, \
+            blocking=self.state.domain != script.DOMAIN, context=data.context)
 
 
 @register_capability

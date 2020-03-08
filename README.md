@@ -37,6 +37,8 @@ yandex_smart_home:
       room: LIVING_ROOM
     media_player.tv_lg:
       channel_set_via_media_content_id: true
+    water_heater.redmondkettler
+      operation_mode_on: "electric"
 ```
 
 Configuration variables:
@@ -72,6 +74,8 @@ yandex_smart_home:
         part of TVs (TVs that support channel change via passing number as media_content_id)
       relative_volume_only:
         (boolean) (Optional) (media_player only) Force disable ability to get/set volume by number
+      operation_mode_on:
+        (string) (Optional) (water_heater only) Assign operation mode of heater to turn on
       support_service_turn_on_off:
         (boolean) (Optional) Force allow to use turn on/turn off service for any device. Use for your own risk only, make sense to enable for some water_heater devices only probably.
 ```
@@ -94,7 +98,7 @@ via extra option "channel_set_via_media_content_id: true" in entity
 configurations))
 - switch (on/off)
 - vacuum (on/off)
-- water_heater (temperature)
+- water_heater (on/off, temperature)
 - lock (on/off = lock/unlock)
 
 ### Room/Area support
