@@ -359,6 +359,75 @@ class ThermostatCapability(_ModeCapability):
 
 
 @register_capability
+class InputSourceCapability(_ModeCapability):
+    """Input Source functionality"""
+
+    instance = 'input_source'
+
+    media_player_source_map = {
+        1: 'one',
+        2: 'two',
+        3: 'three',
+        4: 'four',
+        5: 'five',
+        6: 'six',
+        7: 'seven',
+        8: 'eight',
+        9: 'nine',
+        10: 'ten'
+    }
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        """Test if state is supported."""
+        return domain == media_player.DOMAIN \
+            and features & media_player.SUPPORT_SELECT_SOURCE \
+            and attributes.get(media_player.ATTR_INPUT_SOURCE_LIST) is not None
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        source_list = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST)
+        modes = []
+        if source_list is not None:
+            for i in range(0, min(len(source_list), 10)):
+                modes.append({'value': self.media_player_source_map[i + 1]})
+
+        return {
+            'instance': self.instance,
+            'modes': modes,
+            'ordered': True
+        }
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        source = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE)
+        source_list = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST)
+        if source_list is not None and source in source_list:
+            return self.media_player_source_map[min(source_list.index(source) + 1, 10)]
+        return self.media_player_source_map[1]
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        value = None
+        source_list = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST)
+        for index, yandex_value in self.media_player_source_map.items():
+            if yandex_value == state['value']:
+                if index <= len(source_list):
+                    value = source_list[index - 1]
+                break
+
+        if value is None:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
+
+        await self.hass.services.async_call(
+            media_player.DOMAIN,
+            media_player.SERVICE_SELECT_SOURCE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                media_player.const.ATTR_INPUT_SOURCE: value,
+            }, blocking=True, context=data.context)
+
+
+@register_capability
 class FanSpeedCapability(_ModeCapability):
     """Fan speed functionality."""
 
