@@ -86,7 +86,7 @@ The following domains are available to be used:
 - scene (on/off)
 - script (on/off)
 - light (on/off, brightness, color, color temperature)
-- media_player (on/off, mute/unmute, volume, input_source, channels: up/down as prev/next 
+- media_player (on/off, mute/unmute, volume, input_source, pause/unpause, channels: up/down as prev/next 
 track, get/set media_content_id via channel number for part of TVs(enabled 
 via extra option "channel_set_via_media_content_id: true" in entity 
 configurations))

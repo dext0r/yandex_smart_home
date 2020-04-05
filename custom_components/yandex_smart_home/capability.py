@@ -241,14 +241,24 @@ class OnOffCapability(_Capability):
                                             blocking=self.state.domain != script.DOMAIN, context=data.context)
 
 
-@register_capability
-class ToggleCapability(_Capability):
-    """Mute and unmute functionality.
-
-    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
-    """
+class _ToggleCapability(_Capability):
+    """Base toggle functionality.
+        https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
+        """
 
     type = CAPABILITIES_TOGGLE
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        return {
+            'instance': self.instance
+        }
+
+
+@register_capability
+class MuteCapability(_ToggleCapability):
+    """Mute and unmute functionality."""
+
     instance = 'mute'
 
     @staticmethod
@@ -256,12 +266,6 @@ class ToggleCapability(_Capability):
         """Test if state is supported."""
         return domain == media_player.DOMAIN and features & \
             media_player.SUPPORT_VOLUME_MUTE
-
-    def parameters(self):
-        """Return parameters for a devices request."""
-        return {
-            'instance': self.instance
-        }
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -284,6 +288,40 @@ class ToggleCapability(_Capability):
             SERVICE_VOLUME_MUTE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 media_player.ATTR_MEDIA_VOLUME_MUTED: state['value']
+            }, blocking=True, context=data.context)
+
+
+@register_capability
+class PauseCapability(_ToggleCapability):
+    """Pause and unpause functionality."""
+
+    instance = 'pause'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        """Test if state is supported."""
+        return domain == media_player.DOMAIN \
+            and features & media_player.SUPPORT_PAUSE \
+            and features & media_player.SUPPORT_PLAY
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        return bool(self.state.state != media_player.STATE_PLAYING)
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        if type(state['value']) is not bool:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
+
+        if state['value']:
+            service = media_player.SERVICE_MEDIA_PAUSE
+        else:
+            service = media_player.SERVICE_MEDIA_PLAY
+
+        await self.hass.services.async_call(
+            self.state.domain,
+            service, {
+                ATTR_ENTITY_ID: self.state.entity_id
             }, blocking=True, context=data.context)
 
 
