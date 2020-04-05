@@ -12,6 +12,7 @@ from homeassistant.components import (
     media_player,
     scene,
     script,
+    sensor,
     switch,
     vacuum,
     water_heater
@@ -72,6 +73,7 @@ DOMAIN_TO_YANDEX_TYPES = {
     switch.DOMAIN: TYPE_SWITCH,
     vacuum.DOMAIN: TYPE_VACUUM_CLEANER,
     water_heater.DOMAIN: TYPE_KETTLE,
+    sensor.DOMAIN: TYPE_OTHER,
 }
 
 DEVICE_CLASS_TO_YANDEX_TYPES = {

@@ -8,7 +8,7 @@ from homeassistant.const import (
     ATTR_DEVICE_CLASS
 )
 
-from . import capability
+from . import capability, prop
 from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
@@ -53,6 +53,7 @@ class YandexEntity:
         self.config = config
         self.state = state
         self._capabilities = None
+        self._properties = None
 
     @property
     def entity_id(self):
@@ -77,6 +78,24 @@ class YandexEntity:
         ]
         return self._capabilities
 
+    @callback
+    def properties(self):
+        """Return properties for entity."""
+        if self._properties is not None:
+            return self._properties
+
+        state = self.state
+        domain = state.domain
+        features = state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        entity_config = self.config.entity_config.get(state.entity_id, {})
+
+        self._properties = [
+            Property(self.hass, state, entity_config)
+            for Property in prop.PROPERTIES
+            if Property.supported(domain, features, entity_config, state.attributes)
+        ]
+        return self._properties
+
     async def devices_serialize(self):
         """Serialize entity for a devices response.
 
@@ -100,9 +119,10 @@ class YandexEntity:
             return None
 
         capabilities = self.capabilities()
+        properties = self.properties()
 
-        # Found no supported traits for this entity
-        if not capabilities:
+        # Found no supported capabilities for this entity
+        if not capabilities and not properties:
             return None
 
         device_type = get_yandex_type(domain, device_class)
@@ -112,12 +132,18 @@ class YandexEntity:
             'name': name,
             'type': device_type,
             'capabilities': [],
+            'properties': [],
         }
 
         for cpb in capabilities:
             description = cpb.description()
             if description not in device['capabilities']:
                 device['capabilities'].append(description)
+
+        for ppt in properties:
+            description = ppt.description()
+            if description not in device['properties']:
+                device['properties'].append(description)
 
         override_type = entity_config.get(CONF_TYPE)
         if override_type:
@@ -160,14 +186,18 @@ class YandexEntity:
             return {'error_code': ERR_DEVICE_UNREACHABLE}
 
         capabilities = []
-
         for cpb in self.capabilities():
             if cpb.retrievable:
                 capabilities.append(cpb.get_state())
 
+        properties = []
+        for ppt in self.properties():
+            properties.append(ppt.get_state())
+
         return {
             'id': state.entity_id,
             'capabilities': capabilities,
+            'properties': properties,
         }
 
     async def execute(self, data, capability_type, state):

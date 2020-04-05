@@ -78,7 +78,7 @@ yandex_smart_home:
 
 The following domains are available to be used:
 
-- climate (on/off, temperature, mode, fan speed)
+- climate (on/off, temperature, mode, fan speed) (properties: temperature , humidity)
 - cover (on/off = close/open)
 - fan (on/off, fan speed)
 - group (on/off)
@@ -94,6 +94,7 @@ configurations))
 - vacuum (on/off)
 - water_heater (on/off, temperature)
 - lock (on/off = lock/unlock)
+- sensor (properties: temperature, humidity)
 
 ### Room/Area support
 
