@@ -346,13 +346,19 @@ class ThermostatCapability(_ModeCapability):
         climate.const.HVAC_MODE_COOL: 'cool',
         climate.const.HVAC_MODE_AUTO: 'auto',
         climate.const.HVAC_MODE_DRY: 'dry',
-        climate.const.HVAC_MODE_FAN_ONLY: 'fan_only'
+        climate.const.HVAC_MODE_FAN_ONLY: 'fan_only',
+        climate.const.HVAC_MODE_OFF: 'eco'
     }
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == climate.DOMAIN
+        if domain == climate.DOMAIN:
+            operation_list = attributes.get(climate.ATTR_HVAC_MODES)
+            for operation in operation_list:
+                if operation in ThermostatCapability.climate_map:
+                    return True
+        return False
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -374,6 +380,11 @@ class ThermostatCapability(_ModeCapability):
 
         if operation is not None and operation in self.climate_map:
             return self.climate_map[operation]
+
+        # Return first value if current one is not acceptable
+        for operation in self.state.attributes.get(climate.ATTR_HVAC_MODES):
+            if operation in self.climate_map:
+                return self.climate_map[operation]
 
         return 'auto'
 
