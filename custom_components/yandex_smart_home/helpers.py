@@ -12,7 +12,7 @@ from . import capability, prop
 from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
-    ERR_INVALID_VALUE, CONF_ROOM, CONF_TYPE
+    ERR_INVALID_VALUE, CONF_ROOM, CONF_TYPE, CONF_ENTITY_PROPERTIES
 )
 from .error import SmartHomeError
 
@@ -94,6 +94,11 @@ class YandexEntity:
             for Property in prop.PROPERTIES
             if Property.supported(domain, features, entity_config, state.attributes)
         ]
+
+        for property_config in entity_config.get(CONF_ENTITY_PROPERTIES):
+            entity_property = prop.CustomEntityProperty(self.hass, state, entity_config, property_config)
+            self._properties.append(entity_property)
+
         return self._properties
 
     async def devices_serialize(self):
@@ -210,7 +215,7 @@ class YandexEntity:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
                 "Invalid request: no 'instance' field in state {} / {}"
-                .format(capability_type, self.state.entity_id))
+                    .format(capability_type, self.state.entity_id))
 
         instance = state['instance']
         for cpb in self.capabilities():
@@ -246,4 +251,5 @@ def deep_update(target, source):
             target[key] = deep_update(target.get(key, {}), value)
         else:
             target[key] = value
+
     return target
