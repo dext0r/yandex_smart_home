@@ -346,8 +346,7 @@ class ThermostatCapability(_ModeCapability):
         climate.const.HVAC_MODE_COOL: 'cool',
         climate.const.HVAC_MODE_AUTO: 'auto',
         climate.const.HVAC_MODE_DRY: 'dry',
-        climate.const.HVAC_MODE_FAN_ONLY: 'fan_only',
-        climate.const.HVAC_MODE_OFF: 'eco'
+        climate.const.HVAC_MODE_FAN_ONLY: 'fan_only'
     }
 
     @staticmethod
