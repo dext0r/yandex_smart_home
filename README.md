@@ -37,6 +37,17 @@ yandex_smart_home:
       room: LIVING_ROOM
     media_player.tv_lg:
       channel_set_via_media_content_id: true
+    fan.xiaomi_miio_device:
+      name: "Увлажнитель"
+      room: LIVING_ROOM
+      type: devices.types.humidifier
+      properties:
+        - type: temperature
+          entity: sensor.temperature_158d000444c824
+        - type: humidity
+          attribute: humidity
+        - type: water_level
+          attribute: depth
 ```
 
 Configuration variables:
@@ -72,6 +83,13 @@ yandex_smart_home:
         part of TVs (TVs that support channel change via passing number as media_content_id)
       relative_volume_only:
         (boolean) (Optional) (media_player only) Force disable ability to get/set volume by number
+      properties:
+        - type:
+            (string) (Required) Sensor type, available types: humidity, temperature, water_level, co2_level, power, voltage
+          entity:
+            (string) (Optional) Custom entity, any sensor can be added 
+          attribute:
+            (string) (Optional) Attribute of an object to receive data
 ```
 
 ### Available domains

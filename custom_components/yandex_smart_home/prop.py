@@ -12,7 +12,13 @@ from homeassistant.const import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     STATE_UNAVAILABLE,
-    STATE_UNKNOWN,
+    STATE_UNKNOWN
+)
+
+from .const import (
+    CONF_TYPE,
+    CONF_ENTITY_PROPERTY_ENTITY,
+    CONF_ENTITY_PROPERTY_ATTRIBUTE
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -57,7 +63,7 @@ class _Property:
         """Return the state of this property for this entity."""
         return {
             'type': self.type,
-            'state':  {
+            'state': {
                 'instance': self.instance,
                 'value': self.get_value()
             }
@@ -74,7 +80,6 @@ class _Property:
 
 @register_property
 class TemperatureProperty(_Property):
-
     type = PROPERTY_FLOAT
     instance = 'temperature'
 
@@ -108,7 +113,6 @@ class TemperatureProperty(_Property):
 
 @register_property
 class HumidityProperty(_Property):
-
     type = PROPERTY_FLOAT
     instance = 'humidity'
 
@@ -136,5 +140,57 @@ class HumidityProperty(_Property):
 
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+
+        return float(value)
+
+
+class CustomEntityProperty(_Property):
+    """Represents a Property."""
+
+    instance_unit = {
+        'humidity': 'unit.percent',
+        'temperature': 'unit.temperature.celsius',
+        'water_level': 'unit.percent',
+        'co2_level': 'unit.ppm',
+        'power': 'unit.watt',
+        'voltage': 'unit.volt'}
+
+    def __init__(self, hass, state, entity_config, property_config):
+        super().__init__(hass, state, entity_config)
+
+        self.hass = hass
+        self.state = state
+        self.entity_config = entity_config
+        self.property_config = property_config
+        self.type = PROPERTY_FLOAT
+        self.instance = property_config.get(CONF_TYPE)
+
+    def parameters(self):
+        if self.instance in self.instance_unit:
+            unit = self.instance_unit[self.instance]
+            return {'instance': self.instance, 'unit': unit}
+
+        raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "unit not found for type: {}".format(self.instance))
+
+    def get_value(self):
+        value = 0
+        attribute = None
+
+        if CONF_ENTITY_PROPERTY_ATTRIBUTE in self.property_config:
+            attribute = self.property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
+
+        if CONF_ENTITY_PROPERTY_ENTITY in self.property_config:
+            property_entity_id = self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
+            entity = self.hass.states.get(property_entity_id)
+
+            if attribute:
+                value = entity.attributes.get(attribute)
+                return float(value)
+
+            value = entity.state
+            return float(value)
+
+        if attribute:
+            value = self.state.attributes.get(attribute)
 
         return float(value)
