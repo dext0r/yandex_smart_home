@@ -16,7 +16,7 @@ from homeassistant.const import (
 )
 
 from .const import (
-    CONF_TYPE,
+    CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_ATTRIBUTE
 )
@@ -163,7 +163,7 @@ class CustomEntityProperty(_Property):
         self.entity_config = entity_config
         self.property_config = property_config
         self.type = PROPERTY_FLOAT
-        self.instance = property_config.get(CONF_TYPE)
+        self.instance = property_config.get(CONF_ENTITY_PROPERTY_TYPE)
 
     def parameters(self):
         if self.instance in self.instance_unit:
