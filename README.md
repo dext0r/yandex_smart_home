@@ -52,7 +52,7 @@ yandex_smart_home:
 
 Configuration variables:
 
-```
+```yaml
 yandex_smart_home:
   (map) (Optional) Configuration options for the Yandex Smart Home integration.
 
