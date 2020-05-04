@@ -153,7 +153,9 @@ class CustomEntityProperty(_Property):
         'water_level': 'unit.percent',
         'co2_level': 'unit.ppm',
         'power': 'unit.watt',
-        'voltage': 'unit.volt'}
+        'voltage': 'unit.volt',
+        'battery_level': 'unit.percent',
+        'amperage': 'unit.ampere'}
 
     def __init__(self, hass, state, entity_config, property_config):
         super().__init__(hass, state, entity_config)
