@@ -753,16 +753,17 @@ class VolumeCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        if self.is_relative_volume_only():
+        if 'relative' in state and state['relative']:
             if state['value'] > 0:
                 service = media_player.SERVICE_VOLUME_UP
             else:
                 service = media_player.SERVICE_VOLUME_DOWN
-            await self.hass.services.async_call(
-                media_player.DOMAIN,
-                service, {
-                    ATTR_ENTITY_ID: self.state.entity_id
-                }, blocking=True, context=data.context)
+            for i in range(abs(state['value'])):
+                await self.hass.services.async_call(
+                    media_player.DOMAIN,
+                    service, {
+                        ATTR_ENTITY_ID: self.state.entity_id
+                    }, blocking=True, context=data.context)
         else:
             await self.hass.services.async_call(
                 media_player.DOMAIN,
