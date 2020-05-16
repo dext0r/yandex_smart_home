@@ -13,7 +13,8 @@ from homeassistant.helpers import entityfilter
 from .const import (
     DOMAIN, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_ATTRIBUTE, CONF_ENTITY_PROPERTY_TYPE,
-    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY)
+    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MIN, 
+    CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_PRECISION)
 from .http import async_register_http
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,6 +25,12 @@ ENTITY_PROPERTY_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_PROPERTY_ATTRIBUTE): cv.string,
 })
 
+ENTITY_RANGE_SCHEMA = vol.Schema({
+    vol.Optional(CONF_ENTITY_RANGE_MIN): cv.float,
+    vol.Optional(CONF_ENTITY_RANGE_MAX): cv.float,
+    vol.Optional(CONF_ENTITY_RANGE_PRECISION): cv.float,
+})
+
 ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_NAME): cv.string,
     vol.Optional(CONF_ROOM): cv.string,
@@ -31,6 +38,7 @@ ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
     vol.Optional(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID): cv.boolean,
     vol.Optional(CONF_RELATIVE_VOLUME_ONLY): cv.boolean,
+    vol.Optional(CONF_ENTITY_RANGE, default=[]): [ENTITY_RANGE_SCHEMA],
 })
 
 YANDEX_SMART_HOME_SCHEMA = vol.All(
