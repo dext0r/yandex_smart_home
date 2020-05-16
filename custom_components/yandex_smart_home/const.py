@@ -29,6 +29,10 @@ CONF_ENTITY_PROPERTY_ATTRIBUTE = 'attribute'
 CONF_ENTITY_PROPERTIES = 'properties'
 CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID = 'channel_set_via_media_content_id'
 CONF_RELATIVE_VOLUME_ONLY = 'relative_volume_only'
+CONF_ENTITY_RANGE = 'range'
+CONF_ENTITY_RANGE_MIN = 'min'
+CONF_ENTITY_RANGE_MAX = 'max'
+CONF_ENTITY_RANGE_PRECISION = 'precision'
 
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types-docpage/
 PREFIX_TYPES = 'devices.types.'
