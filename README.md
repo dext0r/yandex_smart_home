@@ -28,6 +28,7 @@ yandex_smart_home:
     include_entities:
       - media_player.tv
       - media_player.tv_lg
+      - media_player.receiver
     exclude_entities:
       - light.highlight
   entity_config:
@@ -48,6 +49,13 @@ yandex_smart_home:
           attribute: humidity
         - type: water_level
           attribute: depth
+    media_player.receiver:
+      type: devices.types.media_device.receiver
+      relative_volume_only: false
+      range:
+        max: 95
+        min: 20
+        precision: 2
 ```
 
 Configuration variables:
@@ -90,6 +98,13 @@ yandex_smart_home:
             (string) (Optional) Custom entity, any sensor can be added 
           attribute:
             (string) (Optional) Attribute of an object to receive data
+       range: (Optional)
+         max:
+            (float) (Optional) Range Maximum
+         min:
+            (float) (Optional) Range Minimum
+         precision:
+            (float) (Optional) Range Precision (adjustment step)
 ```
 
 ### Available domains
