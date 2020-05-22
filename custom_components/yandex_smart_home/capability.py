@@ -38,7 +38,9 @@ from homeassistant.util import color as color_util
 from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY)
+    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY,
+    CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN, 
+    CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_RANGE)
 from .error import SmartHomeError
 
 _LOGGER = logging.getLogger(__name__)
@@ -726,13 +728,21 @@ class VolumeCapability(_RangeCapability):
                 'instance': self.instance
             }
         else:
+            default_values = {
+                CONF_ENTITY_RANGE_MAX: 100,
+                CONF_ENTITY_RANGE_MIN: 0,
+                CONF_ENTITY_RANGE_PRECISION: 1
+            }
+            vol_max = self.get_entity_range_value(CONF_ENTITY_RANGE_MAX, default_values)
+            vol_min = self.get_entity_range_value(CONF_ENTITY_RANGE_MIN, default_values)
+            vol_step = self.get_entity_range_value(CONF_ENTITY_RANGE_PRECISION, default_values)
             return {
                 'instance': self.instance,
                 'random_access': True,
                 'range': {
-                    'max': 100,
-                    'min': 0,
-                    'precision': 1
+                    'max': vol_max,
+                    'min': vol_min,
+                    'precision': vol_step
                 }
             }
 
@@ -741,6 +751,18 @@ class VolumeCapability(_RangeCapability):
             CONF_RELATIVE_VOLUME_ONLY))
         return not self.retrievable or self.entity_config.get(
             CONF_RELATIVE_VOLUME_ONLY)
+    
+    def get_entity_range_value(self, range_entity, default_values):
+        if CONF_ENTITY_RANGE in self.entity_config and range_entity in self.entity_config.get(CONF_ENTITY_RANGE):
+            return int(self.entity_config.get(CONF_ENTITY_RANGE).get(range_entity))
+        else:
+            try:
+                return int(default_values[range_entity])
+            except KeyError as e:
+                _LOGGER.error("Invalid element of range object: %r" % range_entity)
+                _LOGGER.error('Undefined unit: {}'.format(e.args[0]))
+                # raise ValueError('Undefined unit: {}'.format(e.args[0])) 
+                return 0
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
