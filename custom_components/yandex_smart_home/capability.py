@@ -483,9 +483,9 @@ class FanSpeedCapability(_ModeCapability):
 
     values = {
         'auto': ['auto'],
-        'low': ['low', 'min', 'silent'],
-        'medium': ['medium', 'middle'],
-        'high': ['high', 'max', 'strong', 'favorite'],
+        'low': ['low', 'min', 'silent', 'level 2'],
+        'medium': ['medium', 'middle', 'level 3'],
+        'high': ['high', 'max', 'strong', 'favorite', 'level 4'],
     }
 
     @staticmethod
