@@ -124,7 +124,7 @@ track, get/set media_content_id via channel number for part of TVs(enabled
 via extra option "channel_set_via_media_content_id: true" in entity 
 configurations))
 - switch (on/off)
-- vacuum (on/off)
+- vacuum (on/off, pause/unpause, clean speed) (properties: battery)
 - water_heater (on/off, temperature)
 - lock (on/off = lock/unlock)
 - sensor (properties: temperature, humidity)
