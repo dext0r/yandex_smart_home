@@ -302,23 +302,37 @@ class PauseCapability(_ToggleCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == media_player.DOMAIN \
-            and features & media_player.SUPPORT_PAUSE \
-            and features & media_player.SUPPORT_PLAY
+        if domain == media_player.DOMAIN:
+            return features & media_player.SUPPORT_PAUSE and features & media_player.SUPPORT_PLAY
+        elif domain == vacuum.DOMAIN:
+            return features & vacuum.SUPPORT_PAUSE
+        return False
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        return bool(self.state.state != media_player.STATE_PLAYING)
+        if self.state.domain == media_player.DOMAIN:
+            return bool(self.state.state != media_player.STATE_PLAYING)
+        elif self.state.domain == vacuum.DOMAIN:
+            return self.state.state == vacuum.STATE_PAUSED
+        return None
 
     async def set_state(self, data, state):
         """Set device state."""
         if type(state['value']) is not bool:
             raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
 
-        if state['value']:
-            service = media_player.SERVICE_MEDIA_PAUSE
+        if self.state.domain == media_player.DOMAIN:
+            if state['value']:
+                service = media_player.SERVICE_MEDIA_PAUSE
+            else:
+                service = media_player.SERVICE_MEDIA_PLAY
+        elif self.state.domain == vacuum.DOMAIN:
+            if state['value']:
+                service = vacuum.SERVICE_PAUSE
+            else:
+                service = vacuum.SERVICE_START
         else:
-            service = media_player.SERVICE_MEDIA_PLAY
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
 
         await self.hass.services.async_call(
             self.state.domain,
