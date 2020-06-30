@@ -6,6 +6,7 @@ from custom_components.yandex_smart_home.error import SmartHomeError
 from homeassistant.components import (
     climate,
     sensor,
+    vacuum,
 )
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
@@ -137,6 +138,35 @@ class HumidityProperty(_Property):
             value = self.state.state
         elif self.state.domain == climate.DOMAIN:
             value = self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY)
+
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+
+        return float(value)
+
+
+@register_property
+class BatteryProperty(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'battery_level'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == vacuum.DOMAIN:
+            return vacuum.ATTR_BATTERY_LEVEL in attributes
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.percent'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == vacuum.DOMAIN:
+            value = self.state.attributes.get(vacuum.ATTR_BATTERY_LEVEL)
 
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
