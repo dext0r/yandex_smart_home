@@ -1,7 +1,11 @@
 """Implement the Yandex Smart Home properties."""
 import logging
 
-from custom_components.yandex_smart_home.const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+from custom_components.yandex_smart_home.const import (
+    ERR_DEVICE_NOT_FOUND,
+    ERR_INVALID_VALUE,
+    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+)
 from custom_components.yandex_smart_home.error import SmartHomeError
 from homeassistant.components import (
     climate,
@@ -184,12 +188,18 @@ class CustomEntityProperty(_Property):
         if CONF_ENTITY_PROPERTY_ENTITY in self.property_config:
             property_entity_id = self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
             entity = self.hass.states.get(property_entity_id)
+            if entity is None:
+                _LOGGER.error(f'Entity not found: {property_entity_id}')
+                raise SmartHomeError(ERR_DEVICE_NOT_FOUND, "Entity not found")
 
             if attribute:
                 value = entity.attributes.get(attribute)
-                return float(value)
+            else:
+                value = entity.state
 
-            value = entity.state
+            if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+                _LOGGER.error(f'Invalid value: {entity}')
+                raise SmartHomeError(ERR_INVALID_VALUE, "Invalid value")
             return float(value)
 
         if attribute:
