@@ -381,6 +381,11 @@ class ThermostatCapability(_ModeCapability):
 
         if operation is not None and operation in self.climate_map:
             return self.climate_map[operation]
+        
+        # Try to take current mode from device state
+        operation = self.state.state
+        if operation is not None and operation in self.climate_map:
+            return self.climate_map[operation]
 
         # Return first value if current one is not acceptable
         for operation in self.state.attributes.get(climate.ATTR_HVAC_MODES):
