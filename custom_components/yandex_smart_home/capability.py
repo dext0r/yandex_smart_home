@@ -633,7 +633,7 @@ class TemperatureCapability(_RangeCapability):
         if self.state.domain == water_heater.DOMAIN:
             min_temp = self.state.attributes.get(water_heater.ATTR_MIN_TEMP)
             max_temp = self.state.attributes.get(water_heater.ATTR_MAX_TEMP)
-            precision = self.state.attributes.get(water_heater.ATTR_TARGET_TEMP_STEP, 0.5)
+            precision = 0.5
         elif self.state.domain == climate.DOMAIN:
             min_temp = self.state.attributes.get(climate.ATTR_MIN_TEMP)
             max_temp = self.state.attributes.get(climate.ATTR_MAX_TEMP)
