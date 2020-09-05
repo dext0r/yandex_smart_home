@@ -995,13 +995,15 @@ class CleanupModeCapability(_ModeCapability):
 
     instance = 'cleanup_mode'
 
+    # 101-105 xiaomi miio fan speeds
     values = {
-        'auto': {'auto'},
-        'min': {'mop'},
-        'quiet': {'low', 'min'},
-        'normal': {'medium', 'middle'},
-        'turbo': {'high', 'turbo'},
+        'auto': {'auto', '102'},
+        'turbo': {'turbo', 'high', '104'},
+        'min': {'min', 'mop'},
         'max': {'max', 'strong'},
+        'express': {'express', '105'},
+        'normal': {'normal', 'medium', 'middle', '103'},
+        'quiet': {'quiet', 'low', 'min', 'silent', '101'},
     }
 
     @staticmethod
@@ -1033,7 +1035,7 @@ class CleanupModeCapability(_ModeCapability):
 
     def get_yandex_value_by_ha_value(self, ha_value):
         for yandex_value, names in self.values.items():
-            if ha_value.lower() in names:
+            if str(ha_value).lower() in names:
                 return yandex_value
         return None
 
