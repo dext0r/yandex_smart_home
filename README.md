@@ -111,7 +111,7 @@ The following domains are available to be used:
 
 - climate (on/off, temperature, mode, fan speed) (properties: temperature , humidity)
 - cover (on/off = close/open)
-- fan (on/off, fan speed)
+- fan (on/off, fan speed, oscillation)
 - group (on/off)
 - input_boolean (on/off)
 - scene (on/off)

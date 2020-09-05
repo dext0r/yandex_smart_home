@@ -341,6 +341,34 @@ class PauseCapability(_ToggleCapability):
             }, blocking=True, context=data.context)
 
 
+@register_capability
+class OscillationCapability(_ToggleCapability):
+    """Oscillation functionality."""
+
+    instance = 'oscillation'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        """Test if state is supported."""
+        return domain == fan.DOMAIN and features & fan.SUPPORT_OSCILLATE
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        return bool(self.state.attributes.get(fan.ATTR_OSCILLATING))
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        if type(state['value']) is not bool:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
+
+        await self.hass.services.async_call(
+            self.state.domain,
+            fan.SERVICE_OSCILLATE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                fan.ATTR_OSCILLATING: state['value']
+            }, blocking=True, context=data.context)
+
+
 class _ModeCapability(_Capability):
     """Base class of capabilities with mode functionality like thermostat mode
     or fan speed.
@@ -577,7 +605,7 @@ class FanSpeedCapability(_ModeCapability):
             if yandex_value is not None:
                 return yandex_value
 
-        return 'auto'
+        return self.parameters()['modes'][0]['value']
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -1062,7 +1090,7 @@ class CleanupModeCapability(_ModeCapability):
             if yandex_value is not None:
                 return yandex_value
 
-        return 'auto'
+        return self.parameters()['modes'][0]['value']
 
     async def set_state(self, data, state):
         """Set device state."""
