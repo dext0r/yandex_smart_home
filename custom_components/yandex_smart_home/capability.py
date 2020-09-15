@@ -605,7 +605,9 @@ class FanSpeedCapability(_ModeCapability):
             if yandex_value is not None:
                 return yandex_value
 
-        return self.parameters()['modes'][0]['value']
+        modes = self.parameters()['modes']
+
+        return modes[0] if len(modes) > 0 else 'auto'
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -1090,7 +1092,9 @@ class CleanupModeCapability(_ModeCapability):
             if yandex_value is not None:
                 return yandex_value
 
-        return self.parameters()['modes'][0]['value']
+        modes = self.parameters()['modes']
+
+        return modes[0] if len(modes) > 0 else 'auto'
 
     async def set_state(self, data, state):
         """Set device state."""
