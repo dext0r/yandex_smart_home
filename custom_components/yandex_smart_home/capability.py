@@ -607,7 +607,7 @@ class FanSpeedCapability(_ModeCapability):
 
         modes = self.parameters()['modes']
 
-        return modes[0] if len(modes) > 0 else 'auto'
+        return modes[0]['value'] if len(modes) > 0 else 'auto'
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -1094,7 +1094,7 @@ class CleanupModeCapability(_ModeCapability):
 
         modes = self.parameters()['modes']
 
-        return modes[0] if len(modes) > 0 else 'auto'
+        return modes[0]['value'] if len(modes) > 0 else 'auto'
 
     async def set_state(self, data, state):
         """Set device state."""
