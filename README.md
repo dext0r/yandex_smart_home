@@ -47,6 +47,17 @@ yandex_smart_home:
           attribute: humidity
         - type: water_level
           attribute: depth
+    climate.tion_breezer:
+      name: "Проветриватель"
+      modes:
+        fan_speed:
+          auto: [auto]
+          min: [1,'1.0']
+          low: [2,'2.0']
+          medium: [3,'3.0']
+          high: [4,'4.0']
+          turbo: [5,'5.0']
+          max: [6,'6.0']
     media_player.receiver:
       type: devices.types.media_device.receiver
       relative_volume_only: false
@@ -96,13 +107,19 @@ yandex_smart_home:
             (string) (Optional) Custom entity, any sensor can be added 
           attribute:
             (string) (Optional) Attribute of an object to receive data
-       range: (Optional)
-         max:
-            (float) (Optional) Range Maximum
-         min:
-            (float) (Optional) Range Minimum
-         precision:
-            (float) (Optional) Range Precision (adjustment step)
+      range: (Optional)
+        max:
+          (float) (Optional) Range Maximum
+        min:
+          (float) (Optional) Range Minimum
+        precision:
+          (float) (Optional) Range Precision (adjustment step)
+      modes:
+        (map) (Optional) Map of yandex mode functions (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-docpage/)
+        fan_speed|cleanup_mode:
+          (map) (Optional) Map of yandex modes (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-modes-docpage/) to HA modes.
+          yandex_mode1: ha_mode1
+          yandex_mode2: [ha_mode2, ha_mode2b]
 ```
 
 ### Available domains
