@@ -33,6 +33,7 @@ CONF_ENTITY_RANGE = 'range'
 CONF_ENTITY_RANGE_MIN = 'min'
 CONF_ENTITY_RANGE_MAX = 'max'
 CONF_ENTITY_RANGE_PRECISION = 'precision'
+CONF_ENTITY_MODE_MAP = 'modes'
 
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types-docpage/
 PREFIX_TYPES = 'devices.types.'
