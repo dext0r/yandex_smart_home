@@ -6,6 +6,7 @@ from homeassistant.components import (
     cover,
     group,
     fan,
+    humidifier,
     input_boolean,
     media_player,
     light,
@@ -167,6 +168,7 @@ class OnOffCapability(_Capability):
             scene.DOMAIN,
             script.DOMAIN,
             lock.DOMAIN,
+            humidifier.DOMAIN,
         )
 
     def parameters(self):
@@ -487,6 +489,115 @@ class ThermostatCapability(_ModeCapability):
 
 
 @register_capability
+class ProgramCapability(_ModeCapability):
+    """Program functionality"""
+
+    instance = "program"
+
+    # Because there is no 1 to 1 compatibility between default humidifier modes and yandex modes,
+    # we just chose what is closest or at least not too confusing
+    humidifier_mode_map = {
+        humidifier.const.MODE_NORMAL: "normal",
+        humidifier.const.MODE_ECO: "eco",
+        humidifier.const.MODE_AWAY: "min",
+        humidifier.const.MODE_BOOST: "turbo",
+        humidifier.const.MODE_COMFORT: "medium",
+        humidifier.const.MODE_HOME: "max",
+        humidifier.const.MODE_SLEEP: "quiet",
+        humidifier.const.MODE_AUTO: "auto",
+        humidifier.const.MODE_BABY: "high",
+    }
+
+    # For custom modes we fallback to its number
+    fallback_program_map = {
+        1: "one",
+        2: "two",
+        3: "three",
+        4: "four",
+        5: "five",
+        6: "six",
+        7: "seven",
+        8: "eight",
+        9: "nine",
+        10: "ten",
+    }
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        """Test if state is supported."""
+        if domain == humidifier.DOMAIN:
+            return features & humidifier.SUPPORT_MODES
+        return False
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        if self.state.domain == humidifier.DOMAIN:
+            mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
+            modes = []
+            for mode in mode_list:
+                if mode in self.humidifier_mode_map:
+                    modes.append({"value": self.humidifier_mode_map[mode]})
+                else:
+                    mode_index = mode_list.index(mode)
+                    if mode_index <= 10:
+                        modes.append({"value": self.fallback_program_map[mode_index]})
+        else:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+
+        return {"instance": self.instance, "modes": modes, "ordered": False}
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        if self.state.domain == humidifier.DOMAIN:
+            mode = self.state.attributes.get(humidifier.ATTR_MODE)
+
+            if mode is not None and mode in self.humidifier_mode_map:
+                return self.humidifier_mode_map[mode]
+
+            # Fallback into numeric mode
+            mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
+            mode_index = mode_list.index(mode)
+            if mode_index <= 10:
+                return self.fallback_program_map[mode_index]
+        else:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+
+        return "auto"
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        value = None
+        if self.state.domain == humidifier.DOMAIN:
+            service = humidifier.SERVICE_SET_MODE
+            attr = humidifier.ATTR_MODE
+
+            for humidifier_value, yandex_value in self.humidifier_mode_map.items():
+                if yandex_value == state["value"]:
+                    value = humidifier_value
+                    break
+
+            mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
+            if value is None:
+                for humidifier_value, yandex_value in self.fallback_program_map.items():
+                    if yandex_value == state["value"]:
+                        value = mode_list[humidifier_value]
+                        break
+        else:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+
+        if value is None or value not in mode_list:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
+
+        await self.hass.services.async_call(
+            self.state.domain,
+            service,
+            {ATTR_ENTITY_ID: self.state.entity_id, attr: value},
+            blocking=True,
+            context=data.context,
+        )
+
+
+@register_capability
 class InputSourceCapability(_ModeCapability):
     """Input Source functionality"""
 
@@ -731,6 +842,64 @@ class TemperatureCapability(_RangeCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 attr: state['value']
             }, blocking=True, context=data.context)
+
+
+@register_capability
+class HumidityCapability(_RangeCapability):
+    """Set humidity functionality."""
+
+    instance = "humidity"
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        """Test if state is supported."""
+        if domain == humidifier.DOMAIN:
+            return True
+        return False
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        if self.state.domain == humidifier.DOMAIN:
+            min_humidity = self.state.attributes.get(humidifier.ATTR_MIN_HUMIDITY)
+            max_humidity = self.state.attributes.get(humidifier.ATTR_MAX_HUMIDITY)
+            precision = 1
+        else:
+            min_humidity = 0
+            max_humidity = 100
+            precision = 1
+        return {
+            "instance": self.instance,
+            "unit": "unit.percent",
+            "range": {"min": min_humidity, "max": max_humidity, "precision": precision},
+        }
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        humidity = None
+        if self.state.domain == humidifier.DOMAIN:
+            humidity = self.state.attributes.get(humidifier.ATTR_HUMIDITY)
+
+        if humidity is None:
+            return 0
+        else:
+            return float(humidity)
+
+    async def set_state(self, data, state):
+        """Set device state."""
+
+        if self.state.domain == humidifier.DOMAIN:
+            service = humidifier.SERVICE_SET_HUMIDITY
+            attr = humidifier.ATTR_HUMIDITY
+        else:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+
+        await self.hass.services.async_call(
+            self.state.domain,
+            service,
+            {ATTR_ENTITY_ID: self.state.entity_id, attr: state["value"]},
+            blocking=True,
+            context=data.context,
+        )
 
 
 @register_capability

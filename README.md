@@ -143,6 +143,7 @@ configurations))
 - water_heater (on/off, temperature)
 - lock (on/off = lock/unlock)
 - sensor (properties: temperature, humidity)
+- humidifier (on/off, mode, target humidity)
 
 ### Room/Area support
 
