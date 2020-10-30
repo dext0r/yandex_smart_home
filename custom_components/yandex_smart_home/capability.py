@@ -222,8 +222,9 @@ class OnOffCapability(_Capability):
                     service = vacuum.SERVICE_STOP
                 else:
                     service = SERVICE_TURN_OFF
-        elif self.state.domain == scene.DOMAIN or self.state.domain == script.DOMAIN:
-            service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
+        elif self.state.domain == scene.DOMAIN or self.state.domain == \
+                script.DOMAIN:
+            service = SERVICE_TURN_ON
         elif self.state.domain == lock.DOMAIN:
             service = SERVICE_UNLOCK if state['value'] else \
                 SERVICE_LOCK
