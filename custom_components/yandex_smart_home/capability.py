@@ -496,30 +496,30 @@ class ProgramCapability(_ModeCapability):
 
     # Because there is no 1 to 1 compatibility between default humidifier modes and yandex modes,
     # we just chose what is closest or at least not too confusing
-    humidifier_mode_map = {
-        humidifier.const.MODE_NORMAL: "normal",
-        humidifier.const.MODE_ECO: "eco",
-        humidifier.const.MODE_AWAY: "min",
-        humidifier.const.MODE_BOOST: "turbo",
-        humidifier.const.MODE_COMFORT: "medium",
-        humidifier.const.MODE_HOME: "max",
-        humidifier.const.MODE_SLEEP: "quiet",
-        humidifier.const.MODE_AUTO: "auto",
-        humidifier.const.MODE_BABY: "high",
+    modes_map = {
+        'normal': [humidifier.const.MODE_NORMAL],
+        'eco': [humidifier.const.MODE_ECO],
+        'min': [humidifier.const.MODE_AWAY],
+        'turbo': [humidifier.const.MODE_BOOST],
+        'medium': [humidifier.const.MODE_COMFORT],
+        'max': [humidifier.const.MODE_HOME],
+        'quiet': [humidifier.const.MODE_SLEEP],
+        'auto': [humidifier.const.MODE_AUTO],
+        'high': [humidifier.const.MODE_BABY],
     }
 
     # For custom modes we fallback to its number
     fallback_program_map = {
-        1: "one",
-        2: "two",
-        3: "three",
-        4: "four",
-        5: "five",
-        6: "six",
-        7: "seven",
-        8: "eight",
-        9: "nine",
-        10: "ten",
+        0: "one",
+        1: "two",
+        2: "three",
+        3: "four",
+        4: "five",
+        5: "six",
+        6: "seven",
+        7: "eight",
+        8: "nine",
+        9: "ten",
     }
 
     @staticmethod
@@ -536,13 +536,10 @@ class ProgramCapability(_ModeCapability):
             modes = []
             for mode in mode_list:
                 value = self.get_yandex_mode_by_ha_mode(mode)
-                # First, try to get yandex mode from configuration, if provided
                 if value is not None:
                     modes.append({"value": value})
-                # Next, try the map of default modes
-                elif mode in self.humidifier_mode_map:
-                    modes.append({"value": self.humidifier_mode_map[mode]})
-                # Lastly, enumerate the mode by its position in the mode list
+                # If mapping not found in configuration or default map,
+                # enumerate the mode by its position in the mode list
                 else:
                     mode_index = mode_list.index(mode)
                     if mode_index <= 10:
@@ -560,9 +557,6 @@ class ProgramCapability(_ModeCapability):
                 ya_mode = self.get_yandex_mode_by_ha_mode(mode)
                 if ya_mode is not None:
                     return ya_mode
-
-                if mode in self.humidifier_mode_map:
-                    return self.humidifier_mode_map[mode]
 
                 # Fallback into numeric mode
                 mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
@@ -582,12 +576,10 @@ class ProgramCapability(_ModeCapability):
             attr = humidifier.ATTR_MODE
 
             mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
-            value = self.get_ha_mode_by_yandex_mode(state["value"], mode_list)
-            if value is None:
-                for humidifier_value, yandex_value in self.humidifier_mode_map.items():
-                    if yandex_value == state["value"]:
-                        value = humidifier_value
-                        break
+            try:
+                value = self.get_ha_mode_by_yandex_mode(state["value"], mode_list)
+            except KeyError:
+                pass
 
             if value is None:
                 for humidifier_value, yandex_value in self.fallback_program_map.items():
