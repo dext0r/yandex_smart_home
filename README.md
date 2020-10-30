@@ -65,6 +65,20 @@ yandex_smart_home:
         max: 95
         min: 20
         precision: 2
+    humidifier.bedroom:
+      modes:
+        program:
+          normal:
+            - normal
+          eco:
+            - away
+      properties:
+        - type: temperature
+          entity: sensor.bedroom_temperature
+        - type: humidity
+          entity: sensor.bedroom_humidity
+        - type: water_level
+          entity: sensor.humidifier_level
 ```
 
 Configuration variables:
@@ -116,9 +130,10 @@ yandex_smart_home:
           (float) (Optional) Range Precision (adjustment step)
       modes:
         (map) (Optional) Map of yandex mode functions (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-docpage/)
-        fan_speed|cleanup_mode:
+        fan_speed|cleanup_mode|program:
           (map) (Optional) Map of yandex modes (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-modes-docpage/) to HA modes.
-          yandex_mode1: ha_mode1
+          yandex_mode1:
+            - ha_mode1
           yandex_mode2: [ha_mode2, ha_mode2b]
 ```
 

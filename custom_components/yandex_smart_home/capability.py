@@ -535,8 +535,14 @@ class ProgramCapability(_ModeCapability):
             mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
             modes = []
             for mode in mode_list:
-                if mode in self.humidifier_mode_map:
+                value = self.get_yandex_mode_by_ha_mode(mode)
+                # First, try to get yandex mode from configuration, if provided
+                if value is not None:
+                    modes.append({"value": value})
+                # Next, try the map of default modes
+                elif mode in self.humidifier_mode_map:
                     modes.append({"value": self.humidifier_mode_map[mode]})
+                # Lastly, enumerate the mode by its position in the mode list
                 else:
                     mode_index = mode_list.index(mode)
                     if mode_index <= 10:
@@ -550,15 +556,19 @@ class ProgramCapability(_ModeCapability):
         """Return the state value of this capability for this entity."""
         if self.state.domain == humidifier.DOMAIN:
             mode = self.state.attributes.get(humidifier.ATTR_MODE)
+            if mode is not None:
+                ya_mode = self.get_yandex_mode_by_ha_mode(mode)
+                if ya_mode is not None:
+                    return ya_mode
 
-            if mode is not None and mode in self.humidifier_mode_map:
-                return self.humidifier_mode_map[mode]
+                if mode in self.humidifier_mode_map:
+                    return self.humidifier_mode_map[mode]
 
-            # Fallback into numeric mode
-            mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
-            mode_index = mode_list.index(mode)
-            if mode_index <= 10:
-                return self.fallback_program_map[mode_index]
+                # Fallback into numeric mode
+                mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
+                mode_index = mode_list.index(mode)
+                if mode_index <= 10:
+                    return self.fallback_program_map[mode_index]
         else:
             raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
 
@@ -571,12 +581,14 @@ class ProgramCapability(_ModeCapability):
             service = humidifier.SERVICE_SET_MODE
             attr = humidifier.ATTR_MODE
 
-            for humidifier_value, yandex_value in self.humidifier_mode_map.items():
-                if yandex_value == state["value"]:
-                    value = humidifier_value
-                    break
-
             mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
+            value = self.get_ha_mode_by_yandex_mode(state["value"], mode_list)
+            if value is None:
+                for humidifier_value, yandex_value in self.humidifier_mode_map.items():
+                    if yandex_value == state["value"]:
+                        value = humidifier_value
+                        break
+
             if value is None:
                 for humidifier_value, yandex_value in self.fallback_program_map.items():
                     if yandex_value == state["value"]:
