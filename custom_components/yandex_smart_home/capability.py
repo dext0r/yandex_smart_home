@@ -818,7 +818,7 @@ class CoverLevelCapability(_RangeCapability):
 
         if position is None:
             return 0
-        else
+        else:
             return float(position)
 
     async def set_state(self, data, state):
