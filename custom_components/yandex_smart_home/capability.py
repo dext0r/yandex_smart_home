@@ -796,6 +796,7 @@ class CoverLevelCapability(_RangeCapability):
         """Test if state is supported."""
         if domain == cover.DOMAIN:
             return features & cover.SUPPORT_SET_POSITION
+        return False
 
     def parameters(self):
         """Return parameters for a devices request."""
