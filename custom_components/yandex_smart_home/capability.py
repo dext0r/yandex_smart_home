@@ -808,11 +808,14 @@ class CoverLevelCapability(_RangeCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        open = self.state.attributes.get(cover.ATTR_CURRENT_POSITION)
-        if open is None:
-            return 23
-        else:
-            return open
+        position = None
+        if self.state.domain == cover.DOMAIN:
+            position = self.state.attributes.get(cover.ATTR_CURRENT_POSITION)
+
+        if position is None:
+            return 0
+        else
+            return float(position)
 
     async def set_state(self, data, state):
         """Set device state."""
