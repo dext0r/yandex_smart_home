@@ -22,6 +22,7 @@ from homeassistant.const import (
     ATTR_SUPPORTED_FEATURES,
     SERVICE_CLOSE_COVER,
     SERVICE_OPEN_COVER,
+    SERVICE_SET_COVER_POSITION,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
@@ -30,6 +31,14 @@ from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
 )
+
+from homeassistant.components.cover import (
+    ATTR_POSITION,
+    ATTR_TILT_POSITION,
+    DOMAIN,
+    CoverEntity,
+)
+
 from homeassistant.components.water_heater import (
     STATE_ELECTRIC, SERVICE_SET_OPERATION_MODE
 )
@@ -772,6 +781,46 @@ class _RangeCapability(_Capability):
 
     type = CAPABILITIES_RANGE
 
+@register_capability
+class CoverLevelCapability(_RangeCapability):
+    """Set cover level"""
+    
+    instance = 'open'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        """Test if state is supported."""
+        if domain == cover.DOMAIN:
+            return features & cover.SUPPORT_SET_POSITION
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        return {
+				"instance": self.instance,
+				"range": {
+					"max": 100,
+					"min": 0,
+					"precision": 1
+				},
+				"unit": "unit.percent"
+			}
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        open = self.state.attributes.get(cover.ATTR_CURRENT_POSITION)
+        if open is None:
+            return 23
+        else:
+            return open
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await self.hass.services.async_call(
+            cover.DOMAIN,
+            cover.SERVICE_SET_COVER_POSITION, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                cover.ATTR_POSITION: state['value']
+            }, blocking=True, context=data.context)
 
 @register_capability
 class TemperatureCapability(_RangeCapability):
