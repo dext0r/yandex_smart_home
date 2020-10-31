@@ -823,11 +823,17 @@ class CoverLevelCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
+        if self.state.domain == cover.DOMAIN:
+            service = cover.SERVICE_SET_COVER_POSITION
+            attr = cover.ATTR_POSITION
+        else:
+             raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+             
         await self.hass.services.async_call(
-            cover.DOMAIN,
-            cover.SERVICE_SET_COVER_POSITION, {
+            self.state.domain,
+            service, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                cover.ATTR_POSITION: state['value']
+                attr: state['value']
             }, blocking=True, context=data.context)
 
 @register_capability
