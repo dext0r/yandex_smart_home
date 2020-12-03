@@ -10,6 +10,7 @@ from custom_components.yandex_smart_home.error import SmartHomeError
 from homeassistant.components import (
     climate,
     sensor,
+    binary_sensor,
     vacuum,
 )
 from homeassistant.const import (
@@ -30,6 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PREFIX_PROPERTIES = 'devices.properties.'
 PROPERTY_FLOAT = PREFIX_PROPERTIES + 'float'
+PROPERTY_BOOL = PREFIX_PROPERTIES + 'bool'
 
 PROPERTIES = []
 
