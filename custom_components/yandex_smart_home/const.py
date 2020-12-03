@@ -36,21 +36,30 @@ CONF_ENTITY_RANGE_MAX = 'max'
 CONF_ENTITY_RANGE_PRECISION = 'precision'
 CONF_ENTITY_MODE_MAP = 'modes'
 
-# https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types-docpage/
+# https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types.html/
 PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'
 TYPE_SOCKET = PREFIX_TYPES + 'socket'
 TYPE_SWITCH = PREFIX_TYPES + 'switch'
-TYPE_KETTLE = PREFIX_TYPES + 'cooking.kettle'
 TYPE_THERMOSTAT = PREFIX_TYPES + 'thermostat'
 TYPE_THERMOSTAT_AC = PREFIX_TYPES + 'thermostat.ac'
 TYPE_MEDIA_DEVICE = PREFIX_TYPES + 'media_device'
 TYPE_MEDIA_DEVICE_TV = PREFIX_TYPES + 'media_device.tv'
+TYPE_MEDIA_DEVICE_TV_BOX = PREFIX_TYPES + 'media_device.tv_box'
+TYPE_MEDIA_DEVICE_RECIEVER = PREFIX_TYPES + 'media_device.receiver'
+TYPE_COOKING = PREFIX_TYPES + 'cooking'
+TYPE_COFFEE_MAKER = PREFIX_TYPES + 'cooking.coffee_maker'
+TYPE_KETTLE = PREFIX_TYPES + 'cooking.kettle'
+TYPE_MULTICOOKER = PREFIX_TYPES + 'cooking.multicooker'
 TYPE_OPENABLE = PREFIX_TYPES + 'openable'
 TYPE_OPENABLE_CURTAIN = PREFIX_TYPES + 'openable.curtain'
 TYPE_HUMIDIFIER = PREFIX_TYPES + 'humidifier'
 TYPE_PURIFIER = PREFIX_TYPES + 'purifier'
 TYPE_VACUUM_CLEANER = PREFIX_TYPES + 'vacuum_cleaner'
+TYPE_WASHING_MACHINE = PREFIX_TYPES + 'washing_machine'
+TYPE_DISHWASHER = PREFIX_TYPES + 'dishwasher'
+TYPE_IRON = PREFIX_TYPES + 'iron'
+TYPE_SENSOR = PREFIX_TYPES + 'sensor'
 TYPE_OTHER = PREFIX_TYPES + 'other'
 
 # Error codes
@@ -68,7 +77,7 @@ EVENT_QUERY_RECEIVED = 'yandex_smart_home_query'
 EVENT_DEVICES_RECEIVED = 'yandex_smart_home_devices'
 
 DOMAIN_TO_YANDEX_TYPES = {
-    binary_sensor.DOMAIN: TYPE_OTHER,
+    binary_sensor.DOMAIN: TYPE_SENSOR,
     camera.DOMAIN: TYPE_OTHER,
     climate.DOMAIN: TYPE_THERMOSTAT,
     cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
@@ -84,7 +93,7 @@ DOMAIN_TO_YANDEX_TYPES = {
     switch.DOMAIN: TYPE_SWITCH,
     vacuum.DOMAIN: TYPE_VACUUM_CLEANER,
     water_heater.DOMAIN: TYPE_KETTLE,
-    sensor.DOMAIN: TYPE_OTHER,
+    sensor.DOMAIN: TYPE_SENSOR,
 }
 
 DEVICE_CLASS_TO_YANDEX_TYPES = {
