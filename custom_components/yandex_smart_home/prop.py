@@ -81,7 +81,7 @@ class _Property:
         raise NotImplementedError
 
     def get_value(self):
-        """Return the state value of this capability for this entity."""
+        """Return the state value of this property for this entity."""
         raise NotImplementedError
 
 
@@ -200,7 +200,7 @@ class CustomEntityProperty(_Property):
         self.state = state
         self.entity_config = entity_config
         self.property_config = property_config
-        self.type = PROPERTY_FLOAT
+        self.type = PROPERTY_BOOL if self.state.domain == binary_sensor.DOMAIN else PROPERTY_FLOAT
         self.instance = property_config.get(CONF_ENTITY_PROPERTY_TYPE)
 
     def parameters(self):
@@ -211,7 +211,7 @@ class CustomEntityProperty(_Property):
         raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "unit not found for type: {}".format(self.instance))
 
     def get_value(self):
-        value = 0
+        value = False if self.state.domain == binary_sensor.DOMAIN else 0
         attribute = None
 
         if CONF_ENTITY_PROPERTY_ATTRIBUTE in self.property_config:
@@ -232,9 +232,9 @@ class CustomEntityProperty(_Property):
             if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
                 _LOGGER.error(f'Invalid value: {entity}')
                 raise SmartHomeError(ERR_INVALID_VALUE, "Invalid value")
-            return float(value)
+            return bool(value) if self.state.domain == binary_sensor.DOMAIN else float(value)
 
         if attribute:
             value = self.state.attributes.get(attribute)
 
-        return float(value)
+        return bool(value) if self.state.domain == binary_sensor.DOMAIN else float(value)
