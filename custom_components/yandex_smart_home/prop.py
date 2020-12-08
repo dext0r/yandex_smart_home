@@ -9,12 +9,13 @@ from custom_components.yandex_smart_home.const import (
 from custom_components.yandex_smart_home.error import SmartHomeError
 from homeassistant.components import (
     climate,
-    sensor,
     binary_sensor,
+    sensor,
     vacuum,
 )
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
+	ATTR_BATTERY_LEVEL,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     STATE_UNAVAILABLE,
@@ -47,18 +48,23 @@ class _Property:
 
     type = ''
     instance = ''
+    retrievable = ''
+    reportable = ''
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
         self.entity_config = entity_config
+        self.retrievable = True # Доступен ли для встроенного датчика устройства запрос состояния - default: True
+#        reportable = True # Оповещает ли встроенный датчик об изменении состояния платформу умного дома - default: False
 
     def description(self):
         """Return description for a devices request."""
         response = {
             'type': self.type,
-            'retrievable': True,
+            'retrievable': self.retrievable,
+#			'reportable': self.reportable,
         }
         parameters = self.parameters()
         if parameters is not None:
@@ -81,7 +87,7 @@ class _Property:
         raise NotImplementedError
 
     def get_value(self):
-        """Return the state value of this property for this entity."""
+        """Return the state value of this capability for this entity."""
         raise NotImplementedError
 
 
@@ -160,6 +166,10 @@ class BatteryProperty(_Property):
     def supported(domain, features, entity_config, attributes):
         if domain == vacuum.DOMAIN:
             return vacuum.ATTR_BATTERY_LEVEL in attributes
+        # elif domain == sensor.DOMAIN:
+            # return attributes.get(ATTR_BATTERY_LEVEL) is not None
+        # elif domain == binary_sensor.DOMAIN:
+            # return attributes.get(ATTR_BATTERY_LEVEL) is not None
 
         return False
 
@@ -173,12 +183,69 @@ class BatteryProperty(_Property):
         value = 0
         if self.state.domain == vacuum.DOMAIN:
             value = self.state.attributes.get(vacuum.ATTR_BATTERY_LEVEL)
-
+        # elif self.state.domain == sensor.DOMAIN:
+            # value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
+        # elif self.state.domain == binary_sensor.DOMAIN:
+            # value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
+			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
 
         return float(value)
 
+# @register_property
+# class MagnetProperty(_Property):
+    # type = PROPERTY_BOOL
+    # instance = 'magnet'
+
+    # @staticmethod
+    # def supported(domain, features, entity_config, attributes):
+        # if domain == binary_sensor.DOMAIN:
+            # return attributes.get(ATTR_DEVICE_CLASS) == 'opening'
+
+        # return False
+
+    # def parameters(self):
+        # return {
+            # 'instance': self.instance
+        # }
+
+    # def get_value(self):
+        # value = False
+        # if self.state.domain == binary_sensor.DOMAIN:
+            # value = self.state.state
+
+        # if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            # raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+
+        # return bool(value)
+
+# @register_property
+# class MotionProperty(_Property):
+    # type = PROPERTY_BOOL
+    # instance = 'motion'
+
+    # @staticmethod
+    # def supported(domain, features, entity_config, attributes):
+        # if domain == binary_sensor.DOMAIN:
+            # return attributes.get(ATTR_DEVICE_CLASS) == 'motion'
+
+        # return False
+
+    # def parameters(self):
+        # return {
+            # 'instance': self.instance
+        # }
+
+    # def get_value(self):
+        # value = False
+        # if self.state.domain == binary_sensor.DOMAIN:
+            # value = self.state.state
+
+        # if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            # raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+
+        # return bool(value)
 
 class CustomEntityProperty(_Property):
     """Represents a Property."""
@@ -200,18 +267,18 @@ class CustomEntityProperty(_Property):
         self.state = state
         self.entity_config = entity_config
         self.property_config = property_config
-        self.type = PROPERTY_BOOL if self.state.domain == binary_sensor.DOMAIN else PROPERTY_FLOAT
+        self.type = PROPERTY_FLOAT# if self.state.domain != binary_sensor.DOMAIN else PROPERTY_BOOL
         self.instance = property_config.get(CONF_ENTITY_PROPERTY_TYPE)
 
     def parameters(self):
         if self.instance in self.instance_unit:
             unit = self.instance_unit[self.instance]
-            return {'instance': self.instance, 'unit': unit}
+            return {'instance': self.instance, 'unit': unit}# if self.state.domain != binary_sensor.DOMAIN else {'instance': self.instance}
 
         raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "unit not found for type: {}".format(self.instance))
 
     def get_value(self):
-        value = False if self.state.domain == binary_sensor.DOMAIN else 0
+        value = 0
         attribute = None
 
         if CONF_ENTITY_PROPERTY_ATTRIBUTE in self.property_config:
@@ -232,9 +299,9 @@ class CustomEntityProperty(_Property):
             if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
                 _LOGGER.error(f'Invalid value: {entity}')
                 raise SmartHomeError(ERR_INVALID_VALUE, "Invalid value")
-            return bool(value) if self.state.domain == binary_sensor.DOMAIN else float(value)
+            return float(value)# if self.state.domain != binary_sensor.DOMAIN else bool(value)
 
         if attribute:
             value = self.state.attributes.get(attribute)
 
-        return bool(value) if self.state.domain == binary_sensor.DOMAIN else float(value)
+        return float(value)# if self.state.domain != binary_sensor.DOMAIN else bool(value)
