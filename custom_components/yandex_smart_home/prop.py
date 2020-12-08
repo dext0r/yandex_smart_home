@@ -57,14 +57,14 @@ class _Property:
         self.state = state
         self.entity_config = entity_config
         self.retrievable = True # Доступен ли для встроенного датчика устройства запрос состояния - default: True
-#        reportable = True # Оповещает ли встроенный датчик об изменении состояния платформу умного дома - default: False
+        self.reportable = True # Оповещает ли встроенный датчик об изменении состояния платформу умного дома - default: False
 
     def description(self):
         """Return description for a devices request."""
         response = {
             'type': self.type,
             'retrievable': self.retrievable,
-#			'reportable': self.reportable,
+            'reportable': self.reportable,
         }
         parameters = self.parameters()
         if parameters is not None:
