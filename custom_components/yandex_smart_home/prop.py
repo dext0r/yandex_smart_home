@@ -15,7 +15,7 @@ from homeassistant.components import (
 )
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
-	ATTR_BATTERY_LEVEL,
+    ATTR_BATTERY_LEVEL,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     STATE_UNAVAILABLE,
