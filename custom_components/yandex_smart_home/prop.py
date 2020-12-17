@@ -166,10 +166,10 @@ class BatteryProperty(_Property):
     def supported(domain, features, entity_config, attributes):
         if domain == vacuum.DOMAIN:
             return vacuum.ATTR_BATTERY_LEVEL in attributes
-        # elif domain == sensor.DOMAIN:
-            # return attributes.get(ATTR_BATTERY_LEVEL) is not None
-        # elif domain == binary_sensor.DOMAIN:
-            # return attributes.get(ATTR_BATTERY_LEVEL) is not None
+        elif domain == sensor.DOMAIN:
+            return attributes.get(ATTR_BATTERY_LEVEL) is not None
+        elif domain == binary_sensor.DOMAIN:
+            return attributes.get(ATTR_BATTERY_LEVEL) is not None
 
         return False
 
