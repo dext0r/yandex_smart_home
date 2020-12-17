@@ -183,69 +183,69 @@ class BatteryProperty(_Property):
         value = 0
         if self.state.domain == vacuum.DOMAIN:
             value = self.state.attributes.get(vacuum.ATTR_BATTERY_LEVEL)
-        # elif self.state.domain == sensor.DOMAIN:
-            # value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
-        # elif self.state.domain == binary_sensor.DOMAIN:
-            # value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
+        elif self.state.domain == sensor.DOMAIN:
+            value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
+        elif self.state.domain == binary_sensor.DOMAIN:
+            value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
 
         return float(value)
 
-# @register_property
-# class MagnetProperty(_Property):
-    # type = PROPERTY_BOOL
-    # instance = 'magnet'
+@register_property
+class MagnetProperty(_Property):
+    type = PROPERTY_BOOL
+    instance = 'magnet'
 
-    # @staticmethod
-    # def supported(domain, features, entity_config, attributes):
-        # if domain == binary_sensor.DOMAIN:
-            # return attributes.get(ATTR_DEVICE_CLASS) == 'opening'
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN:
+            return attributes.get(ATTR_DEVICE_CLASS) == 'opening'
 
-        # return False
+        return False
 
-    # def parameters(self):
-        # return {
-            # 'instance': self.instance
-        # }
+    def parameters(self):
+        return {
+            'instance': self.instance
+        }
 
-    # def get_value(self):
-        # value = False
-        # if self.state.domain == binary_sensor.DOMAIN:
-            # value = self.state.state
+    def get_value(self):
+        value = False
+        if self.state.domain == binary_sensor.DOMAIN:
+            value = self.state.state
 
-        # if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            # raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
 
-        # return bool(value)
+        return bool(value)
 
-# @register_property
-# class MotionProperty(_Property):
-    # type = PROPERTY_BOOL
-    # instance = 'motion'
+@register_property
+class MotionProperty(_Property):
+    type = PROPERTY_BOOL
+    instance = 'motion'
 
-    # @staticmethod
-    # def supported(domain, features, entity_config, attributes):
-        # if domain == binary_sensor.DOMAIN:
-            # return attributes.get(ATTR_DEVICE_CLASS) == 'motion'
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN:
+            return attributes.get(ATTR_DEVICE_CLASS) == 'motion'
 
-        # return False
+        return False
 
-    # def parameters(self):
-        # return {
-            # 'instance': self.instance
-        # }
+    def parameters(self):
+        return {
+            'instance': self.instance
+        }
 
-    # def get_value(self):
-        # value = False
-        # if self.state.domain == binary_sensor.DOMAIN:
-            # value = self.state.state
+    def get_value(self):
+        value = False
+        if self.state.domain == binary_sensor.DOMAIN:
+            value = self.state.state
 
-        # if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            # raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
 
-        # return bool(value)
+        return bool(value)
 
 class CustomEntityProperty(_Property):
     """Represents a Property."""
