@@ -49,7 +49,7 @@ from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY,
-    CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN, 
+    CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_RANGE,
     CONF_ENTITY_MODE_MAP)
 from .error import SmartHomeError
@@ -465,7 +465,7 @@ class ThermostatCapability(_ModeCapability):
 
         if operation is not None and operation in self.climate_map:
             return self.climate_map[operation]
-        
+
         # Try to take current mode from device state
         operation = self.state.state
         if operation is not None and operation in self.climate_map:
@@ -788,7 +788,7 @@ class _RangeCapability(_Capability):
 @register_capability
 class CoverLevelCapability(_RangeCapability):
     """Set cover level"""
-    
+
     instance = 'open'
 
     @staticmethod
@@ -828,7 +828,7 @@ class CoverLevelCapability(_RangeCapability):
             attr = cover.ATTR_POSITION
         else:
              raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
-             
+
         await self.hass.services.async_call(
             self.state.domain,
             service, {
@@ -904,6 +904,50 @@ class TemperatureCapability(_RangeCapability):
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 attr: state['value']
+            }, blocking=True, context=data.context)
+
+
+@register_capability
+class WaterTemperatureCapability(_RangeCapability):
+    """Set temperature functionality."""
+
+    instance = 'temperature'
+
+    @staticmethod
+    def supported(domain, features, entity_config):
+        """Test if state is supported."""
+        return domain == water_heater.DOMAIN and features & \
+            water_heater.SUPPORT_TARGET_TEMPERATURE
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        min_temp = self.state.attributes.get(water_heater.ATTR_MIN_TEMP)
+        max_temp = self.state.attributes.get(water_heater.ATTR_MAX_TEMP)
+        return {
+            'instance': self.instance,
+            'unit': 'unit.temperature.celsius',
+            'range': {
+                'min': min_temp,
+                'max': max_temp,
+                'precision': 0.5
+            }
+        }
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        temperature = self.state.attributes.get(water_heater.ATTR_TEMPERATURE)
+        if temperature is None:
+            return 0
+        else:
+            return float(temperature)
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await self.hass.services.async_call(
+            water_heater.DOMAIN,
+            water_heater.SERVICE_SET_TEMPERATURE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                water_heater.ATTR_TEMPERATURE: state['value']
             }, blocking=True, context=data.context)
 
 
@@ -1054,7 +1098,7 @@ class VolumeCapability(_RangeCapability):
             CONF_RELATIVE_VOLUME_ONLY))
         return not self.retrievable or self.entity_config.get(
             CONF_RELATIVE_VOLUME_ONLY)
-    
+
     def get_entity_range_value(self, range_entity, default_values):
         if CONF_ENTITY_RANGE in self.entity_config and range_entity in self.entity_config.get(CONF_ENTITY_RANGE):
             return int(self.entity_config.get(CONF_ENTITY_RANGE).get(range_entity))
@@ -1064,7 +1108,7 @@ class VolumeCapability(_RangeCapability):
             except KeyError as e:
                 _LOGGER.error("Invalid element of range object: %r" % range_entity)
                 _LOGGER.error('Undefined unit: {}'.format(e.args[0]))
-                # raise ValueError('Undefined unit: {}'.format(e.args[0])) 
+                # raise ValueError('Undefined unit: {}'.format(e.args[0]))
                 return 0
 
     def get_value(self):
