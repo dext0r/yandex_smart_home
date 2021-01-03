@@ -26,6 +26,9 @@ from homeassistant.const import (
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
+    SERVICE_MEDIA_PLAY,
+    SERVICE_MEDIA_PAUSE,
+    STATE_PLAYING,
     SERVICE_LOCK,
     SERVICE_UNLOCK,
     STATE_OFF,
@@ -199,6 +202,8 @@ class OnOffCapability(_Capability):
             operation_mode = self.state.attributes.get(water_heater.ATTR_OPERATION_MODE)
             operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST)
             return operation_mode != OnOffCapability.get_water_heater_operation(STATE_OFF, operation_list)
+        elif self.state.domain == media_player.DOMAIN:
+            return self.state.state == STATE_PLAYING
         else:
             return self.state.state != STATE_OFF
 
@@ -248,6 +253,10 @@ class OnOffCapability(_Capability):
             else:
                 service_data[water_heater.ATTR_OPERATION_MODE] = \
                     OnOffCapability.get_water_heater_operation(STATE_OFF, operation_list)
+        elif domain == media_player.DOMAIN:
+            service_domain = domain
+            service = SERVICE_MEDIA_PLAY if state['value'] else \
+                SERVICE_MEDIA_PAUSE
         else:
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
 
