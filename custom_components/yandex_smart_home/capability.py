@@ -998,13 +998,20 @@ class BrightnessCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        await self.hass.services.async_call(
-            light.DOMAIN,
-            light.SERVICE_TURN_ON, {
-                ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_BRIGHTNESS_PCT: state['value']
-            }, blocking=True, context=data.context)
-
+        if ('relative' in state and state['relative'] == True):
+            await self.hass.services.async_call(
+                light.DOMAIN,
+                light.SERVICE_TURN_ON, {
+                    ATTR_ENTITY_ID: self.state.entity_id,
+                    light.ATTR_BRIGHTNESS_STEP_PCT: state['value']
+                }, blocking=True, context=data.context)
+        else:
+            await self.hass.services.async_call(
+                light.DOMAIN,
+                light.SERVICE_TURN_ON, {
+                    ATTR_ENTITY_ID: self.state.entity_id,
+                    light.ATTR_BRIGHTNESS_PCT: state['value']
+                }, blocking=True, context=data.context)
 
 @register_capability
 class VolumeCapability(_RangeCapability):
