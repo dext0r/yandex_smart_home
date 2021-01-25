@@ -998,12 +998,16 @@ class BrightnessCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
+        if 'relative' in state and state['relative']:
+            attr_name = light.ATTR_BRIGHTNESS_STEP_PCT
+        else:
+            attr_name = light.ATTR_BRIGHTNESS_PCT
         await self.hass.services.async_call(
             light.DOMAIN,
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_BRIGHTNESS_PCT: state['value']
-            }, blocking=True, context=data.context)
+                attr_name: state['value']
+        }, blocking=True, context=data.context)
 
 
 @register_capability
