@@ -138,8 +138,17 @@ class YandexEntity:
             'name': name,
             'type': device_type,
             'capabilities': [],
-            'properties': [],
+            'device_info':{},
         }
+
+        # Описание устройства. Автор, дополни. Я ещё не знаю как названия вытаскивать. Но сейчас, хоть видно, что устройство добавлено с помощью Yandex Smart Home
+        device_info = {
+            'manufacturer': 'Yandex Smart Home custom component for Home Assistant', # Производитель. На данном этапе хотя бы  будем видеть, что устройство добавлено с помощью Yandex Smart Home
+            #'model': 'будет модель устройства' ,
+            #'sw_version': 'будет sw_version',
+            #'hw_version': 'На будующее hw_version',
+        }
+        device['device_info'] = device_info
 
         for cpb in capabilities:
             description = cpb.description()
