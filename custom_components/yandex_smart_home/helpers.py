@@ -138,6 +138,7 @@ class YandexEntity:
             'name': name,
             'type': device_type,
             'capabilities': [],
+            'properties': [],
             'device_info':{},
         }
 
