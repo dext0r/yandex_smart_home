@@ -145,7 +145,7 @@ class YandexEntity:
         # Описание устройства. Автор, дополни. Я ещё не знаю как названия вытаскивать. Но сейчас, хоть видно, что устройство добавлено с помощью Yandex Smart Home
         device_info = {
             'manufacturer': 'Yandex Smart Home custom component for Home Assistant', # Производитель. На данном этапе хотя бы  будем видеть, что устройство добавлено с помощью Yandex Smart Home
-            #'model': 'будет модель устройства' ,
+            'model': state.entity_id , #  нужно модель устройства вытащить, пока покажем ID объекта в  Home Assistant. Будет точно видно, что это за устройство.
             #'sw_version': 'будет sw_version',
             #'hw_version': 'На будующее hw_version',
         }
