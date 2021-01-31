@@ -899,11 +899,15 @@ class TemperatureCapability(_RangeCapability):
         else:
             raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
 
+        new_value = state['value']
+        if 'relative' in state and state['relative'] and self.state.domain == climate.DOMAIN:
+            new_value = self.state.attributes.get(climate.ATTR_TEMPERATURE) + state['value']
+
         await self.hass.services.async_call(
             self.state.domain,
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                attr: state['value']
+                attr: new_value
             }, blocking=True, context=data.context)
 
 
