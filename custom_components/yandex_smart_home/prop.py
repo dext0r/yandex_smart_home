@@ -52,16 +52,14 @@ class _Property:
 
     type = ''
     instance = ''
-    retrievable = ''
-    reportable = ''
+    retrievable = True # default: для встроенного датчика доступен запрос состояния
+    reportable = False # default: оповещение выключено. Встроенный датчик не оповещает платформу об изменении состояния
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
         self.entity_config = entity_config
-        self.retrievable = True # Доступен ли для встроенного датчика устройства запрос состояния - default: True
-        self.reportable = True # Оповещает ли встроенный датчик об изменении состояния платформу умного дома - default: False
 
     def description(self):
         """Return description for a devices request."""
@@ -96,11 +94,25 @@ class _Property:
 
     def bool_value(value):
         """Return the bool value according to any type of value."""
-        if value == 1 or value == STATE_ON or value == STATE_OPEN or value == 'high' or value:  # 1/on/high/open/true
-            return True
-        elif  value == 0 or value == STATE_OFF or value == STATE_CLOSED or value == 'low' or not value:  # 0/off/low/closed/false
-            return False
-        return False
+        return value == 1 or value == STATE_ON or value == STATE_OPEN or value == 'high' or value # 1/on/high/open/true
+
+class _BoolProperty(_Property):
+    type = PROPERTY_BOOL
+
+    def parameters(self):
+        return {
+            'instance': self.instance
+        }
+
+    def get_value(self):
+        value = False
+        if self.state.domain == binary_sensor.DOMAIN:
+            value = self.state.state
+
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+
+        return self.bool_value(value)
 
 @register_property
 class TemperatureProperty(_Property):
@@ -201,8 +213,7 @@ class BatteryProperty(_Property):
         return float(value)
 
 @register_property
-class MagnetProperty(_Property):
-    type = PROPERTY_BOOL
+class MagnetProperty(_BoolProperty):
     instance = 'magnet'
 
     @staticmethod
@@ -212,24 +223,8 @@ class MagnetProperty(_Property):
 
         return False
 
-    def parameters(self):
-        return {
-            'instance': self.instance
-        }
-
-    def get_value(self):
-        value = False
-        if self.state.domain == binary_sensor.DOMAIN:
-            value = self.state.state
-
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
-
-        return self.bool_value(value)
-
 @register_property
-class MotionProperty(_Property):
-    type = PROPERTY_BOOL
+class MotionProperty(_BoolProperty):
     instance = 'motion'
 
     @staticmethod
@@ -238,21 +233,6 @@ class MotionProperty(_Property):
             return attributes.get(ATTR_DEVICE_CLASS) == 'motion'
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance
-        }
-
-    def get_value(self):
-        value = False
-        if self.state.domain == binary_sensor.DOMAIN:
-            value = self.state.state
-
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
-
-        return self.bool_value(value)
 
 class CustomEntityProperty(_Property):
     """Represents a Property."""
