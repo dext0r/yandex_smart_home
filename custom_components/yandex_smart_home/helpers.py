@@ -133,12 +133,25 @@ class YandexEntity:
 
         device_type = get_yandex_type(domain, device_class)
 
+        manufacturer = state.entity_id + ' | ' + state.attributes.get("manufacturer", "Yandex Smart Home")
+        model = state.attributes.get("model","")
+        sw_version = state.attributes.get("sw_version","")
+        hw_version = state.attributes.get("hw_version","")
+
+        device_info = {
+            'manufacturer': manufacturer,
+            'model': model,
+            'sw_version': sw_version,
+            'hw_version': hw_version,
+        }
+
         device = {
             'id': state.entity_id,
             'name': name,
             'type': device_type,
             'capabilities': [],
             'properties': [],
+            'device_info': device_info,
         }
 
         for cpb in capabilities:
