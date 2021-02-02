@@ -92,6 +92,7 @@ class _Property:
         """Return the state value of this capability for this entity."""
         raise NotImplementedError
 
+    @staticmethod
     def bool_value(value):
         """Return the bool value according to any type of value."""
         return value == 1 or value == STATE_ON or value == STATE_OPEN or value == 'high' or value # 1/on/high/open/true
