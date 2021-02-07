@@ -9,14 +9,20 @@ from custom_components.yandex_smart_home.const import (
 from custom_components.yandex_smart_home.error import SmartHomeError
 from homeassistant.components import (
     climate,
+    binary_sensor,
     sensor,
     vacuum,
 )
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
+    ATTR_BATTERY_LEVEL,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     STATE_UNAVAILABLE,
+    STATE_ON,
+    STATE_OFF,
+    STATE_OPEN,
+    STATE_CLOSED,
     STATE_UNKNOWN
 )
 
@@ -30,6 +36,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PREFIX_PROPERTIES = 'devices.properties.'
 PROPERTY_FLOAT = PREFIX_PROPERTIES + 'float'
+PROPERTY_BOOL = PREFIX_PROPERTIES + 'bool'
 
 PROPERTIES = []
 
@@ -45,6 +52,8 @@ class _Property:
 
     type = ''
     instance = ''
+    retrievable = True # default: для встроенного датчика доступен запрос состояния
+    reportable = False # default: оповещение выключено. Встроенный датчик не оповещает платформу об изменении состояния
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
@@ -56,7 +65,8 @@ class _Property:
         """Return description for a devices request."""
         response = {
             'type': self.type,
-            'retrievable': True,
+            'retrievable': self.retrievable,
+            'reportable': self.reportable,
         }
         parameters = self.parameters()
         if parameters is not None:
@@ -82,6 +92,28 @@ class _Property:
         """Return the state value of this capability for this entity."""
         raise NotImplementedError
 
+    @staticmethod
+    def bool_value(value):
+        """Return the bool value according to any type of value."""
+        return value == 1 or value == STATE_ON or value == STATE_OPEN or value == 'high' or value # 1/on/high/open/true
+
+class _BoolProperty(_Property):
+    type = PROPERTY_BOOL
+
+    def parameters(self):
+        return {
+            'instance': self.instance
+        }
+
+    def get_value(self):
+        value = False
+        if self.state.domain == binary_sensor.DOMAIN:
+            value = self.state.state
+
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+
+        return self.bool_value(value)
 
 @register_property
 class TemperatureProperty(_Property):
@@ -158,6 +190,8 @@ class BatteryProperty(_Property):
     def supported(domain, features, entity_config, attributes):
         if domain == vacuum.DOMAIN:
             return vacuum.ATTR_BATTERY_LEVEL in attributes
+        elif domain == sensor.DOMAIN or domain == binary_sensor.DOMAIN: 
+            return attributes.get(ATTR_BATTERY_LEVEL) is not None
 
         return False
 
@@ -171,12 +205,35 @@ class BatteryProperty(_Property):
         value = 0
         if self.state.domain == vacuum.DOMAIN:
             value = self.state.attributes.get(vacuum.ATTR_BATTERY_LEVEL)
-
+        elif self.state.domain == sensor.DOMAIN or self.state.domain == binary_sensor.DOMAIN:
+            value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
+			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
 
         return float(value)
 
+@register_property
+class MagnetProperty(_BoolProperty):
+    instance = 'magnet'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN:
+            return attributes.get(ATTR_DEVICE_CLASS) == 'opening'
+
+        return False
+
+@register_property
+class MotionProperty(_BoolProperty):
+    instance = 'motion'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN:
+            return attributes.get(ATTR_DEVICE_CLASS) == 'motion'
+
+        return False
 
 class CustomEntityProperty(_Property):
     """Represents a Property."""
@@ -201,10 +258,22 @@ class CustomEntityProperty(_Property):
         self.type = PROPERTY_FLOAT
         self.instance = property_config.get(CONF_ENTITY_PROPERTY_TYPE)
 
+        if CONF_ENTITY_PROPERTY_ENTITY in self.property_config:
+            property_entity_id = self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
+            entity = self.hass.states.get(property_entity_id)
+            if entity is None:
+                _LOGGER.error(f'Entity not found: {property_entity_id}')
+                raise SmartHomeError(ERR_DEVICE_NOT_FOUND, "Entity not found")
+
+            if entity.domain == binary_sensor.DOMAIN:
+                self.type = PROPERTY_BOOL
+
     def parameters(self):
         if self.instance in self.instance_unit:
             unit = self.instance_unit[self.instance]
             return {'instance': self.instance, 'unit': unit}
+        elif self.type == PROPERTY_BOOL:
+            return {'instance': self.instance}
 
         raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "unit not found for type: {}".format(self.instance))
 
@@ -230,9 +299,9 @@ class CustomEntityProperty(_Property):
             if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
                 _LOGGER.error(f'Invalid value: {entity}')
                 raise SmartHomeError(ERR_INVALID_VALUE, "Invalid value")
-            return float(value)
+            return float(value) if self.type != PROPERTY_BOOL else self.bool_value(value)
 
         if attribute:
             value = self.state.attributes.get(attribute)
 
-        return float(value)
+        return float(value) if self.type != PROPERTY_BOOL else self.bool_value(value)

@@ -77,7 +77,8 @@ class _Capability:
 
     type = ''
     instance = ''
-    retrievable = True
+    retrievable = True # для умения доступен запрос состояния
+    reportable = False # умение не оповещает платформу о (каждом) изменении своего состояния
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
@@ -90,6 +91,7 @@ class _Capability:
         response = {
             'type': self.type,
             'retrievable': self.retrievable,
+            'reportable': self.reportable,
         }
         parameters = self.parameters()
         if parameters is not None:

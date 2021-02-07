@@ -151,7 +151,7 @@ class YandexEntity:
             'type': device_type,
             'capabilities': [],
             'properties': [],
-            'device_info':device_info,
+            'device_info': device_info,
         }
 
         for cpb in capabilities:
