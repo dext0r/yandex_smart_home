@@ -7,6 +7,8 @@ from homeassistant.const import (
     CONF_NAME, STATE_UNAVAILABLE, ATTR_SUPPORTED_FEATURES,
     ATTR_DEVICE_CLASS
 )
+from homeassistant.helpers.entity_registry import EntityRegistry
+from homeassistant.helpers.device_registry import DeviceRegistry
 
 from . import capability, prop
 from .const import (
@@ -102,7 +104,7 @@ class YandexEntity:
 
         return self._properties
 
-    async def devices_serialize(self):
+    async def devices_serialize(self, entity_reg: EntityRegistry, dev_reg: DeviceRegistry):
         """Serialize entity for a devices response.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
@@ -133,16 +135,15 @@ class YandexEntity:
 
         device_type = get_yandex_type(domain, device_class)
 
-        manufacturer = state.entity_id + ' | ' + state.attributes.get("manufacturer", "Yandex Smart Home")
-        model = state.attributes.get("model","")
-        sw_version = state.attributes.get("sw_version","")
-        hw_version = state.attributes.get("hw_version","")
+        entry = entity_reg.async_get(state.entity_id)
+        device = dev_reg.async_get(getattr(entry, 'device_id', ""))
+
+        manufacturer = state.entity_id + ' | ' + getattr(device, "manufacturer", "Yandex Smart Home")
+        model = getattr(device, "model", "")
 
         device_info = {
             'manufacturer': manufacturer,
-            'model': model,
-            'sw_version': sw_version,
-            'hw_version': hw_version,
+            'model': model
         }
 
         device = {

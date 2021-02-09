@@ -3,6 +3,9 @@ import logging
 
 from homeassistant.util.decorator import Registry
 
+from homeassistant.helpers import entity_registry
+from homeassistant.helpers import device_registry
+
 from homeassistant.const import (
     CLOUD_NEVER_EXPOSED_ENTITIES, ATTR_ENTITY_ID)
 
@@ -71,6 +74,9 @@ async def async_devices_sync(hass, data, message):
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
     """
     devices = []
+    entity_reg = await entity_registry.async_get_registry(hass)
+    dev_reg = await device_registry.async_get_registry(hass)
+
     for state in hass.states.async_all():
         if state.entity_id in CLOUD_NEVER_EXPOSED_ENTITIES:
             continue
@@ -79,7 +85,7 @@ async def async_devices_sync(hass, data, message):
             continue
 
         entity = YandexEntity(hass, data.config, state)
-        serialized = await entity.devices_serialize()
+        serialized = await entity.devices_serialize(entity_reg, dev_reg)
 
         if serialized is None:
             _LOGGER.debug("No mapping for %s domain", entity.state)
