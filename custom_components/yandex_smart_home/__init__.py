@@ -69,15 +69,25 @@ async def async_setup(hass: HomeAssistant, yaml_config: Dict[str, Any]):
     """Activate Yandex Smart Home component."""
     config = yaml_config.get(DOMAIN, {})
     async_register_http(hass, config)
-
-    skill = YandexSkill(hass, config)
-
-    async def listener(event: Event):
+    
+    try:
+        skill = YandexSkill(hass, config)
+        
+        async def listener(event: Event):
+            try:
+                await skill.async_event_handler(event)
+            except Exception:
+                _LOGGER.exception("Event handler error")
         try:
-            await skill.async_event_handler(event)
+            if CONF_SKILL_NAME in config[CONF_SKILL]:
+                coro = skill.create_skill()
+                asyncio.create_task(coro)
         except Exception:
-            _LOGGER.exception("Event handler error")
-
-    hass.bus.async_listen('state_changed', listener)
+            _LOGGER.exception("Skill create error")
+            return False
+            
+        hass.bus.async_listen('state_changed', listener)
+    except Exception:
+        _LOGGER.exception("Skill Init error")
 
     return True
