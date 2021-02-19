@@ -33,13 +33,13 @@ class YandexSkill():
     def __init__(self, hass: HomeAssistantType, config: str):
         self.hass = hass
         self.config = Config(
-            should_expose=self.config.get(CONF_FILTER),
-            entity_config=self.config.get(CONF_ENTITY_CONFIG)
+            should_expose=config.get(CONF_FILTER),
+            entity_config=config.get(CONF_ENTITY_CONFIG)
         )
         self.skill_name = config[CONF_SKILL][CONF_SKILL_NAME]
         self.user_id = config[CONF_SKILL][CONF_SKILL_USER]
         self.oauth_token = config[CONF_SKILL][CONF_SKILL_OAUTH_TOKEN]
-        self.should_expose=self.config.get(CONF_FILTER)
+        self.should_expose = config.get(CONF_FILTER)
         
     async def async_notify_skill(self, devices: str):
         try:
