@@ -95,8 +95,7 @@ class _Property:
     @staticmethod
     def bool_value(value):
         """Return the bool value according to any type of value."""
-        return value == 1 or value == STATE_ON or value == STATE_OPEN or value == 'high' or value # 1/on/high/open/true
-        #return True if value in {1, STATE_ON, STATE_OPEN, 'high', True} else False # 1/on/high/open/true
+        return True if value in {1, STATE_ON, STATE_OPEN, 'high', True} else False # 1/on/high/open/true
 
 class _BoolProperty(_Property):
     type = PROPERTY_BOOL
