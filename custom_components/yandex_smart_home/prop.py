@@ -53,7 +53,7 @@ class _Property:
     type = ''
     instance = ''
     retrievable = True # default: для встроенного датчика доступен запрос состояния
-    reportable = True # default: оповещение включено. Встроенный датчик оповещает платформу об изменении состояния
+    reportable = False # default: оповещение выключено. Встроенный датчик не оповещает платформу об изменении состояния
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
@@ -95,7 +95,7 @@ class _Property:
     @staticmethod
     def bool_value(value):
         """Return the bool value according to any type of value."""
-        return True if value in {1, STATE_ON, STATE_OPEN, 'high', True} else False # 1/on/high/open/true
+        return value in [1, STATE_ON, STATE_OPEN, 'high', True] # 1/on/high/open/true
 
 class _BoolProperty(_Property):
     type = PROPERTY_BOOL
