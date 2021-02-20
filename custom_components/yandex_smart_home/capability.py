@@ -70,7 +70,7 @@ class _Capability:
     type = ''
     instance = ''
     retrievable = True
-    reportable = False
+    reportable = True
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
