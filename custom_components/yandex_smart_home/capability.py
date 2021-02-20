@@ -22,7 +22,6 @@ from homeassistant.const import (
     ATTR_SUPPORTED_FEATURES,
     SERVICE_CLOSE_COVER,
     SERVICE_OPEN_COVER,
-    SERVICE_SET_COVER_POSITION,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
@@ -30,13 +29,6 @@ from homeassistant.const import (
     SERVICE_UNLOCK,
     STATE_OFF,
     STATE_ON,
-)
-
-from homeassistant.components.cover import (
-    ATTR_POSITION,
-    ATTR_TILT_POSITION,
-    DOMAIN,
-    CoverEntity,
 )
 
 from homeassistant.components.water_heater import (
@@ -77,8 +69,8 @@ class _Capability:
 
     type = ''
     instance = ''
-    retrievable = True # для умения доступен запрос состояния
-    reportable = False # умение не оповещает платформу о (каждом) изменении своего состояния
+    retrievable = True
+    reportable = False
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
@@ -688,10 +680,12 @@ class FanSpeedCapability(_ModeCapability):
     instance = 'fan_speed'
 
     modes_map = {
-        'auto': ['auto'],
-        'low': ['low', 'min', 'silent', 'level 2'],
-        'medium': ['medium', 'middle', 'level 3'],
-        'high': ['high', 'max', 'strong', 'favorite', 'level 4'],
+        'auto': [climate.const.FAN_AUTO, climate.const.FAN_ON],
+        'quiet': [fan.SPEED_OFF, climate.const.FAN_OFF, 'silent', 'level 1'],
+        'low': [fan.SPEED_LOW, climate.const.FAN_LOW, 'min', 'level 2'],
+        'medium': [fan.SPEED_LOW, fan.SPEED_MEDIUM, climate.const.FAN_MEDIUM, climate.const.FAN_MIDDLE, 'level 3'],
+        'high': [fan.SPEED_HIGH, climate.const.FAN_HIGH, 'strong', 'favorite', 'level 4'],
+        'turbo': [climate.const.FAN_FOCUS, 'max', 'level 5'],
     }
 
     @staticmethod
