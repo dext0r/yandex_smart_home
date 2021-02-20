@@ -85,7 +85,6 @@ class YandexSkill():
                 await self.get_skill_id()
             url = f"{SKILL_API_URL}/{self.skill_id}"
             headers = {"Authorization": "OAuth "+self.oauth_token,"Content-Type": "application/json"}
-            #ts = int(time.time())
             ts = time.time()
             if devices:
                 url_tail = STATE_URL 
