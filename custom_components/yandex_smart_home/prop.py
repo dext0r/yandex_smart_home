@@ -214,8 +214,8 @@ class BatteryProperty(_Property):
         return float(value)
 
 @register_property
-class MagnetProperty(_BoolProperty):
-    instance = 'magnet'
+class ContactProperty(_BoolProperty):
+    instance = 'contact'
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
