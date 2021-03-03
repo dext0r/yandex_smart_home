@@ -18,6 +18,7 @@ from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
+    DEVICE_CLASS_PRESSURE,
     STATE_UNAVAILABLE,
     STATE_ON,
     STATE_OFF,
@@ -180,6 +181,36 @@ class HumidityProperty(_Property):
 
         return float(value)
 
+@register_property
+class PressureProperty(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'pressure'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == sensor.DOMAIN:
+            return attributes.get(
+                ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.pressure.pascal'
+        }
+
+    def get_value(self):
+        value = 0.0
+        if self.state.domain == sensor.DOMAIN:
+            value = self.state.state
+
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                "Invalid value")
+
+        return float(value)
 
 @register_property
 class BatteryProperty(_Property):
