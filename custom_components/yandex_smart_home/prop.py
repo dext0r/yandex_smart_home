@@ -210,7 +210,7 @@ class PressureProperty(_Property):
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                 "Invalid value")
 
-        return float(value)
+        return float(value) * 100
 
 @register_property
 class BatteryProperty(_Property):
@@ -272,6 +272,7 @@ class CustomEntityProperty(_Property):
     instance_unit = {
         'humidity': 'unit.percent',
         'temperature': 'unit.temperature.celsius',
+        'pressure': 'unit.pressure.pascal',
         'water_level': 'unit.percent',
         'co2_level': 'unit.ppm',
         'power': 'unit.watt',

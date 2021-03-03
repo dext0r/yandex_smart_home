@@ -116,7 +116,7 @@ yandex_smart_home:
         (boolean) (Optional) (media_player only) Force disable ability to get/set volume by number
       properties:
         - type:
-            (string) (Optional) Sensor type, available types: humidity, temperature, water_level, co2_level, power, voltage, battery_level, amperage
+            (string) (Optional) Sensor type, available types: humidity, temperature, pressure, water_level, co2_level, power, voltage, battery_level, amperage
           entity:
             (string) (Optional) Custom entity, any sensor can be added 
           attribute:
@@ -157,7 +157,7 @@ configurations))
 - vacuum (on/off, pause/unpause, clean speed) (properties: battery)
 - water_heater (on/off, temperature)
 - lock (on/off = lock/unlock)
-- sensor (properties: temperature, humidity)
+- sensor (properties: temperature, humidity, pressure)
 - humidifier (on/off, mode, target humidity)
 
 ### Room/Area support
