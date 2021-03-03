@@ -138,8 +138,13 @@ class YandexEntity:
         entry = entity_reg.async_get(state.entity_id)
         device = dev_reg.async_get(getattr(entry, 'device_id', ""))
 
-        manufacturer = state.entity_id + ' | ' + getattr(device, "manufacturer", "Yandex Smart Home")
-        model = getattr(device, "model", "")
+        manufacturer = state.entity_id
+        model = ""
+        if device is DeviceRegistry:
+            if device.manufacturer is not None:
+                manufacturer += ' | ' + device.manufacturer
+            if device.model is not None:
+                model = device.model
 
         device_info = {
             'manufacturer': manufacturer,
