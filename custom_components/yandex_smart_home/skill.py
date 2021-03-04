@@ -18,7 +18,6 @@ from homeassistant.core import Event
 
 from .helpers import RequestData, YandexEntity, Config
 from .error import SmartHomeError
-from .core.yandex_quasar import YandexQuasar
 from .core.yandex_session import YandexSession
 
 _LOGGER = logging.getLogger(__name__)
@@ -40,7 +39,7 @@ class YandexSkill():
         )
         self.skill_name = config[CONF_SKILL][CONF_SKILL_NAME] if CONF_SKILL_NAME in config[CONF_SKILL] else 'Home Assistant'   
         self.session = session
-        self.notirication_session = ''
+        self.notification_session = ''
         self.csrf_token = ''
         self.skill_id = ''
         self.user_id = config[CONF_SKILL][CONF_SKILL_USER]
@@ -48,15 +47,17 @@ class YandexSkill():
         self.should_expose = config.get(CONF_FILTER)
         
     async def async_init(self):
-        self.notirication_session = async_create_clientsession(self.hass)
+        self.notification_session = async_create_clientsession(self.hass)
         try:        
             if self.oauth_token == '':
-                await self.get_oauth_token()
+                if not await self.get_oauth_token():
+                    return False
             if self.skill_id == '':
-                await self.get_skill_id()
-            return True
+                if not await self.get_skill_id():
+                    return False
         except Exception:
             _LOGGER.exception("Async Init Failed")
+        _LOGGER.error("Async Init Failed")
         return False
 
     async def get_skill_id(self):
@@ -70,15 +71,13 @@ class YandexSkill():
                     if skill['name'] == self.skill_name or skill['draft']['name'] == self.skill_name:
                         self.skill_id = skill['id']
                         _LOGGER.debug(f"Skill ID: {self.skill_id}")
-                return self.skill_id
+                        return self.skill_id
             # create skill
-            try:
-                coro = self.create_skill()
-                asyncio.create_task(coro)
-            except Exception:
-                _LOGGER.exception("Skill create error")
+            coro = self.create_skill()
+            asyncio.create_task(coro)
         except Exception:
             _LOGGER.exception("Skill ID Failed")
+        return False
             
     async def get_oauth_token(self):
         try:
@@ -91,6 +90,7 @@ class YandexSkill():
                 return self.oauth_token
         except Exception:
             _LOGGER.exception("OAuth Token Failed")
+        return False
            
     async def get_csrf_token(self):
         try:
@@ -104,7 +104,8 @@ class YandexSkill():
                 return self.csrf_token
         except Exception:
             _LOGGER.exception("CSRF Token Failed")
-           
+        return
+    
     async def async_notify_skill(self, devices: str):
         try:
             url = f"{SKILL_API_URL}/{self.skill_id}"
@@ -119,7 +120,7 @@ class YandexSkill():
             data = {"ts": ts,"payload": payload}
             #_LOGGER.debug(f"Request sent: {data}")
 
-            r = await self.notirication_session.post(f"{url}{url_tail}", headers=headers,
+            r = await self.notification_session.post(f"{url}{url_tail}", headers=headers,
                                    json=data)
             assert r.status == 202, await r.read()
             data = await r.json()
@@ -152,7 +153,7 @@ class YandexSkill():
             if devices:
                 await self.async_notify_skill(devices)
 
-    async def get_oauth_appid(self, hass_url = ''):
+    async def get_oauth_appid(self, session, hass_url = ''):
         oauth_appid = None
         try:
             if hass_url == '':
@@ -164,7 +165,7 @@ class YandexSkill():
                     _LOGGER.error("Can't get external HTTPS URL")
                     return
             
-            #headers = {'x-csrf-token': self.csrf_token} # u433049200ee01b7da6efc70e2e75b7e2
+            headers = {'x-csrf-token': self.csrf_token}
             created_at = datetime.now(tz=timezone.utc).astimezone(timezone.utc).isoformat('T','milliseconds').replace('+00:00','Z')
             updated_at = created_at
             payload = {
@@ -177,7 +178,7 @@ class YandexSkill():
               "refreshTokenUrl": hass_url + "/auth/token",
               "clientSecret":"secret"
             }
-            r = await self.session.post(f"{INDEX}/api/oauth/apps",
+            r = await session.post(f"{INDEX}/api/oauth/apps", headers=headers, 
                                    json=payload)
             assert r.status == 201, await r.read()
             data = await r.json()
@@ -197,17 +198,23 @@ class YandexSkill():
             return
 
         try:
-            # get tokens
-            #await self.async_init()
-
             # check if skill exists
             if self.skill_id !='':
                 url = f"{INDEX}/skills/{self.skill_id}"
                 _LOGGER.debug(f"Skill already exists: {url}")
                 return
+            
+            csrf_token = await self.get_csrf_token()
+
+            raw = base64.b64decode(self.session.cookie)
+
+            session = async_create_clientsession(self.hass)
+            session.cookie_jar._cookies = pickle.loads(raw)
+
+            headers = {'x-csrf-token': csrf_token}
 
             # create new skill
-            r = await self.session.post(f"{INDEX}/api/skills",
+            r = await session.post(f"{INDEX}/api/skills", headers=headers,
                                    json={'channel': 'smartHome'})
             assert r.status == 201, await r.read()
             data = await r.json()
@@ -216,15 +223,15 @@ class YandexSkill():
             
             # upload logo.png as skill logo
             filename = path.join(path.dirname(path.abspath(__file__)), 'logo.png')
-            r = await self.session.post(
-                f"{INDEX}/api/skills/{self.skill_id}/logo",
+            r = await session.post(
+                f"{INDEX}/api/skills/{self.skill_id}/logo", headers=headers,
                 data={'file': open(filename, 'rb')})
             assert r.status == 201, await r.read()
             data = await r.json()
             logo_id = data['result']['id']
 
             # get oauthAppId
-            appid = await self.get_oauth_appid(hass_url)
+            appid = await self.get_oauth_appid(session, hass_url)
 
             # settings
             payload = {
@@ -245,6 +252,7 @@ class YandexSkill():
                 "publishingSettings": {
                     "brandVerificationWebsite": "",
                     "category": "utilities",
+                    "secondaryTitle": "Home Assistant",
                     "description": "Home Assistant",
                     "developerName": "Home Assistant",
                     "email": "",
@@ -264,36 +272,41 @@ class YandexSkill():
                 "voice": "shitova.us",
                 "yaCloudGrant": False
             }
-            r = await self.session.patch(f"{INDEX}/api/skills/{self.skill_id}/draft",
-                                    json=payload)
+            r = await session.patch(f"{INDEX}/api/skills/{self.skill_id}/draft",
+                                    headers=headers, json=payload)
             assert r.status == 200, await r.read()
 
-            # check if webhook works
-            payload = {"text": "", "isDraft": True, "sessionId": "",
-                       "sessionSeq": 0, "surface": "mobile",
-                       "isAnonymousUser": False}
-            r = await self.session.post(f"{INDEX}/api/skills/{self.skill_id}/message",
-                                   json=payload)
-            assert r.status == 201, await r.read()
-            data = await r.json()
-            error = data['result'].get('error')
-            if error:
-                _LOGGER.debug(f"Ошибка при создании навыка: {error}")
-                self.hass.components.persistent_notification.async_create(
-                    f"При создании навыка: [ссылка]({skill_url})\n"
-                    f"возникла ошибка: `{error}`\n"
-                    f"Проверьте внешний доступ: {hass_url}",
-                    title="Yandex Dialogs")
-                return
+            # check if webhook works ???
+            # payload = {"text": "", "isDraft": True, "sessionId": "",
+                       # "sessionSeq": 0, "surface": "mobile",
+                       # "isAnonymousUser": False}
+            # r = await session.post(f"{INDEX}/api/skills/{self.skill_id}/message",
+                                    # headers=headers, json=payload)
+            # assert r.status == 201, await r.read()
+            # data = await r.json()
+            # error = data['result'].get('error')
+            # if error:
+                # _LOGGER.debug(f"Ошибка при создании навыка: {error}")
+                # self.hass.components.persistent_notification.async_create(
+                    # f"При создании навыка: [ссылка]({skill_url})\n"
+                    # f"возникла ошибка: `{error}`\n"
+                    # f"Проверьте внешний доступ: {hass_url}",
+                    # title="Yandex Smart Home")
+                # #return
 
             # publish skill
-            r = await self.session.post(f"{INDEX}/api/skills/{self.skill_id}/release")
+            r = await session.post(f"{INDEX}/api/skills/{self.skill_id}/release",
+                                    headers=headers)
             assert r.status == 201, await r.read()
 
             _LOGGER.debug("Навык успешно создан")
             self.hass.components.persistent_notification.async_create(
                 f"Навык успешно создан: [ссылка]({skill_url})",
-                title="Yandex Dialogs")
+                title="Yandex Smart Home")
 
         except Exception:
-            _LOGGER.exception("Create Skill")
+            _LOGGER.exception("Create Skill Failed")
+            
+#   async def link_skill(self):
+        #https://iot.quasar.yandex.ru/m/user/skills/9b0d72a1-af7c-43e8-8d61-bead50a32f77
+        #https://yandex.ru/quasar/iot/linking/9b0d72a1-af7c-43e8-8d61-bead50a32f77/?app_build_number=unknown&app_id=unknown&app_platform=unknown&app_version=unknown&app_version_name=unknown&dp=2&lang=ru-RU&manufacturer=unknown&model=unknown&os_version=unknown&size=1080%2C1920

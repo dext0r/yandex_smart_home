@@ -140,7 +140,9 @@ async def _setup_skill(hass: HomeAssistant, session: YandexSession):
     _LOGGER.debug("Skill Setup") 
     try:
         skill = YandexSkill(hass, session)
-        await skill.async_init()
+        if not await skill.async_init():
+            _LOGGER.error("Skill Setup Failed") 
+            return False
             
         async def listener(event: Event):
             await skill.async_event_handler(event)
