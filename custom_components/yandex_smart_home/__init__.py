@@ -6,18 +6,22 @@ from typing import Dict, Any
 import voluptuous as vol
 
 from homeassistant.core import HomeAssistant, Event
-
-from homeassistant.const import CONF_NAME, CONF_USERNAME, CONF_PASSWORD
+from homeassistant.const import CONF_NAME, CONF_USERNAME, CONF_PASSWORD, CONF_TOKEN
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entityfilter
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .const import (
     DOMAIN, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_ATTRIBUTE, CONF_ENTITY_PROPERTY_TYPE,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MAX, 
     CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP,
-	CONF_SKILL, CONF_SKILL_NAME, CONF_SKILL_USER, CONF_SKILL_OAUTH_TOKEN)
+    CONF_SKILL, CONF_SKILL_NAME, CONF_SKILL_USER, CONF_PROXY)
+
 from .http import async_register_http
+from .core import utils
+from .core.yandex_session import YandexSession
 from .skill import YandexSkill
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,9 +52,10 @@ ENTITY_SCHEMA = vol.Schema({
 SKILL_SCHEMA = vol.Schema({
     vol.Optional(CONF_USERNAME): cv.string,
     vol.Optional(CONF_PASSWORD): cv.string,
+    vol.Optional(CONF_TOKEN): cv.string,
+    vol.Optional(CONF_PROXY): cv.string,
     vol.Optional(CONF_SKILL_NAME): cv.string,
     vol.Optional(CONF_SKILL_USER): cv.string,
-    vol.Optional(CONF_SKILL_OAUTH_TOKEN): cv.string,
 }, extra=vol.PREVENT_EXTRA)
 
 YANDEX_SMART_HOME_SCHEMA = vol.All(
@@ -64,30 +69,84 @@ CONFIG_SCHEMA = vol.Schema({
     DOMAIN: YANDEX_SMART_HOME_SCHEMA
 }, extra=vol.ALLOW_EXTRA)
 
-
 async def async_setup(hass: HomeAssistant, yaml_config: Dict[str, Any]):
     """Activate Yandex Smart Home component."""
-    config = yaml_config.get(DOMAIN, {})
-    async_register_http(hass, config)
+    hass.data[DOMAIN] = yaml_config.get(DOMAIN, {})
+    async_register_http(hass, hass.data[DOMAIN])
     
-    try:
-        skill = YandexSkill(hass, config)
-        
-        async def listener(event: Event):
-            try:
-                await skill.async_event_handler(event)
-            except Exception:
-                _LOGGER.exception("Event handler error")
-        try:
-            if CONF_SKILL_NAME in config[CONF_SKILL]:
-                coro = skill.create_skill()
-                asyncio.create_task(coro)
-        except Exception:
-            _LOGGER.exception("Skill create error")
-            return False
-            
-        hass.bus.async_listen('state_changed', listener)
-    except Exception:
-        _LOGGER.exception("Skill Init error")
-
+    await _setup_entry_from_config(hass)
+    
     return True
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    async def update_cookie_and_token(**kwargs):
+        hass.config_entries.async_update_entry(entry, data=kwargs)
+    
+    config = hass.data[DOMAIN][CONF_SKILL]
+    session = async_create_clientsession(hass)
+    yandex = YandexSession(session, **entry.data)
+    yandex.proxy = config.get(CONF_PROXY)
+    yandex.add_update_listener(update_cookie_and_token)
+
+    if not await yandex.refresh_cookies():
+        hass.components.persistent_notification.async_create(
+            "Необходимо заново авторизоваться в Яндексе. Для этого [добавьте "
+            "новую интеграцию](/config/integrations) с тем же логином.",
+            title="Yandex Smart Home")
+        return False
+    
+    await _setup_skill(hass, yandex)
+    
+    return True
+    
+async def _setup_entry_from_config(hass: HomeAssistant):
+    """Support legacy config from YAML."""
+    if CONF_SKILL not in hass.data[DOMAIN]:
+        _LOGGER.debug("No skill config")
+        return
+        
+    config = hass.data[DOMAIN][CONF_SKILL]
+    if CONF_USERNAME not in config:
+        _LOGGER.debug("No username inside config")
+        return
+    
+    # check if already configured
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.unique_id == config[CONF_USERNAME]:
+            _LOGGER.debug("Config entry already configured")
+            return
+    
+    if CONF_TOKEN not in config:
+        # load config/.yandex_station.json
+        x_token = utils.load_token_from_json(hass)
+        if x_token:
+            _LOGGER.debug("x_token is inside json")
+            config['x_token'] = x_token
+    else:
+        config['x_token'] = config[CONF_TOKEN]
+        
+    # need username and token or password
+    if 'x_token' not in config and CONF_PASSWORD not in config:
+        _LOGGER.debug("No password or x_token inside config")
+        return
+    _LOGGER.debug("Credentials configured inside config")
+    
+    hass.async_create_task(hass.config_entries.flow.async_init(
+        DOMAIN, context={'source': SOURCE_IMPORT}, data=config
+    ))
+    
+async def _setup_skill(hass: HomeAssistant, session: YandexSession):
+    """Set up connection to Yandex Dialogs."""
+    _LOGGER.debug("Skill Setup") 
+    try:
+        skill = YandexSkill(hass, session)
+        await skill.async_init()
+            
+        async def listener(event: Event):
+            await skill.async_event_handler(event)
+        
+        hass.bus.async_listen('state_changed', listener)
+        
+    except Exception:
+        _LOGGER.exception("Skill Setup error")
+        return False
