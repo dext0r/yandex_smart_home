@@ -16,6 +16,7 @@ from homeassistant.components import (
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_BATTERY_LEVEL,
+    ATTR_UNIT_OF_MEASUREMENT,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_PRESSURE,
@@ -30,7 +31,11 @@ from homeassistant.const import (
 from .const import (
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_ENTITY,
-    CONF_ENTITY_PROPERTY_ATTRIBUTE
+    CONF_ENTITY_PROPERTY_ATTRIBUTE,
+    PRESSURE_UNITS_TO_YANDEX_UNITS,
+    PRESSURE_FROM_PASCAL,
+    PRESSURE_TO_PASCAL,
+    PRESSURE_UNIT_HECTOPASCAL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,10 +61,11 @@ class _Property:
     retrievable = True # default: для встроенного датчика доступен запрос состояния
     reportable = False # default: оповещение выключено. Встроенный датчик не оповещает платформу об изменении состояния
 
-    def __init__(self, hass, state, entity_config):
+    def __init__(self, hass, state, config, entity_config):
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
+        self.config = config
         self.entity_config = entity_config
 
     def description(self):
@@ -197,7 +203,7 @@ class PressureProperty(_Property):
     def parameters(self):
         return {
             'instance': self.instance,
-            'unit': 'unit.pressure.pascal'
+            'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.pressure_unit],
         }
 
     def get_value(self):
@@ -210,7 +216,15 @@ class PressureProperty(_Property):
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                 "Invalid value")
 
-        return float(value) * 100
+        # Get a conversion multiplier to pascal
+        unit = self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+        if not unit in PRESSURE_TO_PASCAL:
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f"Unsupported pressure unit: {unit}")
+
+        # Convert the value to pascal and then to the chosen Yandex unit
+        return float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.pressure_unit]
 
 @register_property
 class BatteryProperty(_Property):

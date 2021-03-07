@@ -92,7 +92,7 @@ class YandexEntity:
         entity_config = self.config.entity_config.get(state.entity_id, {})
 
         self._properties = [
-            Property(self.hass, state, entity_config)
+            Property(self.hass, state, self.config, entity_config)
             for Property in prop.PROPERTIES
             if Property.supported(domain, features, entity_config, state.attributes)
         ]
