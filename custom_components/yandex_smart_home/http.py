@@ -9,7 +9,7 @@ from homeassistant.core import callback
 
 from .const import (
     CONF_ENTITY_CONFIG,
-    CONF_FILTER,
+    CONF_FILTER, CONF_SETTINGS,
 )
 from .smart_home import async_handle_message
 from .helpers import Config
@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 def async_register_http(hass, cfg):
     """Register HTTP views for Yandex Smart Home."""
     config = Config(
+        settings=cfg.get(CONF_SETTINGS),
         should_expose=cfg.get(CONF_FILTER),
         entity_config=cfg.get(CONF_ENTITY_CONFIG)
     )

@@ -203,7 +203,7 @@ class PressureProperty(_Property):
     def parameters(self):
         return {
             'instance': self.instance,
-            'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.pressure_unit],
+            'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings.pressure_unit],
         }
 
     def get_value(self):
@@ -224,7 +224,7 @@ class PressureProperty(_Property):
                 f"Unsupported pressure unit: {unit}")
 
         # Convert the value to pascal and then to the chosen Yandex unit
-        return float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.pressure_unit]
+        return float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings.pressure_unit]
 
 @register_property
 class BatteryProperty(_Property):

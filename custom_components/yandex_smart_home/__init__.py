@@ -11,7 +11,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entityfilter
 
 from .const import (
-    DOMAIN, CONF_PRESSURE_UNIT, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
+    CONF_SETTINGS, DOMAIN, CONF_PRESSURE_UNIT, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_ATTRIBUTE, CONF_ENTITY_PROPERTY_TYPE,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MAX, 
     CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS)
@@ -50,9 +50,11 @@ def pressure_unit_validate(unit):
 
 YANDEX_SMART_HOME_SCHEMA = vol.All(
     vol.Schema({
-        vol.Optional(CONF_PRESSURE_UNIT, default=PRESSURE_UNIT_MMHG): vol.Schema(
-            vol.All(str, pressure_unit_validate)
-        ),
+        vol.Optional(CONF_SETTINGS, default={}): vol.Schema({
+            vol.Optional(CONF_PRESSURE_UNIT, default=PRESSURE_UNIT_MMHG): vol.Schema(
+                vol.All(str, pressure_unit_validate)
+            ),
+        }),
         vol.Optional(CONF_FILTER, default={}): entityfilter.FILTER_SCHEMA,
         vol.Optional(CONF_ENTITY_CONFIG, default={}): {cv.entity_id: ENTITY_SCHEMA},
     }, extra=vol.PREVENT_EXTRA))

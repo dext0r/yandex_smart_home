@@ -20,6 +20,7 @@ from homeassistant.components import (
 )
 DOMAIN = 'yandex_smart_home'
 
+CONF_SETTINGS = 'settings'
 CONF_PRESSURE_UNIT = 'pressure_unit'
 CONF_ENTITY_CONFIG = 'entity_config'
 CONF_FILTER = 'filter'
