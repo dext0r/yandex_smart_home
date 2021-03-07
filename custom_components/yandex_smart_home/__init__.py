@@ -42,9 +42,17 @@ ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_MODE_MAP, default={}): {cv.string: {cv.string: [cv.string]}},
 })
 
+def pressure_unit_validate(unit):
+    if not unit in PRESSURE_UNITS_TO_YANDEX_UNITS:
+        raise vol.Invalid(f'Pressure unit "{unit}" is not supported')
+
+    return unit
+
 YANDEX_SMART_HOME_SCHEMA = vol.All(
     vol.Schema({
-        vol.Optional(CONF_PRESSURE_UNIT, default=PRESSURE_UNIT_MMHG): set(PRESSURE_UNITS_TO_YANDEX_UNITS),
+        vol.Optional(CONF_PRESSURE_UNIT, default=PRESSURE_UNIT_MMHG): vol.Schema(
+            vol.All(str, pressure_unit_validate)
+        ),
         vol.Optional(CONF_FILTER, default={}): entityfilter.FILTER_SCHEMA,
         vol.Optional(CONF_ENTITY_CONFIG, default={}): {cv.entity_id: ENTITY_SCHEMA},
     }, extra=vol.PREVENT_EXTRA))
