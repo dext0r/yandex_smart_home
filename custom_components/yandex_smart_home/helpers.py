@@ -100,7 +100,7 @@ class YandexEntity:
 
         if CONF_ENTITY_PROPERTIES in entity_config:
             for property_config in entity_config.get(CONF_ENTITY_PROPERTIES):
-                entity_property = prop.CustomEntityProperty(self.hass, state, entity_config, property_config)
+                entity_property = prop.CustomEntityProperty(self.hass, state, self.config, entity_config, property_config)
                 self._properties.append(entity_property)
 
         return self._properties

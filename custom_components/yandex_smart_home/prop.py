@@ -283,23 +283,21 @@ class MotionProperty(_BoolProperty):
 class CustomEntityProperty(_Property):
     """Represents a Property."""
 
-    instance_unit = {
-        'humidity': 'unit.percent',
-        'temperature': 'unit.temperature.celsius',
-        'pressure': 'unit.pressure.pascal',
-        'water_level': 'unit.percent',
-        'co2_level': 'unit.ppm',
-        'power': 'unit.watt',
-        'voltage': 'unit.volt',
-        'battery_level': 'unit.percent',
-        'amperage': 'unit.ampere'}
+    def __init__(self, hass, state, config, entity_config, property_config):
+        super().__init__(hass, state, config, entity_config)
 
-    def __init__(self, hass, state, entity_config, property_config):
-        super().__init__(hass, state, entity_config)
+        self.instance_unit = {
+            'humidity': 'unit.percent',
+            'temperature': 'unit.temperature.celsius',
+            'pressure': self.config.settings[CONF_PRESSURE_UNIT],
+            'water_level': 'unit.percent',
+            'co2_level': 'unit.ppm',
+            'power': 'unit.watt',
+            'voltage': 'unit.volt',
+            'battery_level': 'unit.percent',
+            'amperage': 'unit.ampere'
+        }
 
-        self.hass = hass
-        self.state = state
-        self.entity_config = entity_config
         self.property_config = property_config
         self.type = PROPERTY_FLOAT
         self.instance = property_config.get(CONF_ENTITY_PROPERTY_TYPE)
