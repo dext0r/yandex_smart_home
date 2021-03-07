@@ -29,13 +29,13 @@ from homeassistant.const import (
 )
 
 from .const import (
+    CONF_PRESSURE_UNIT,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
     PRESSURE_UNITS_TO_YANDEX_UNITS,
     PRESSURE_FROM_PASCAL,
     PRESSURE_TO_PASCAL,
-    PRESSURE_UNIT_HECTOPASCAL
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -203,7 +203,7 @@ class PressureProperty(_Property):
     def parameters(self):
         return {
             'instance': self.instance,
-            'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings.pressure_unit],
+            'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
         }
 
     def get_value(self):
@@ -224,7 +224,7 @@ class PressureProperty(_Property):
                 f"Unsupported pressure unit: {unit}")
 
         # Convert the value to pascal and then to the chosen Yandex unit
-        return float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings.pressure_unit]
+        return float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]]
 
 @register_property
 class BatteryProperty(_Property):
