@@ -47,18 +47,22 @@ class YandexSkill():
         self.should_expose = config.get(CONF_FILTER)
         
     async def async_init(self):
-        self.notification_session = async_create_clientsession(self.hass)
         try:        
+            self.notification_session = async_create_clientsession(self.hass)
             if self.oauth_token == '':
                 if not await self.get_oauth_token():
+                    _LOGGER.error("Async Init Failed")
                     return False
             if self.skill_id == '':
                 if not await self.get_skill_id():
+                    _LOGGER.error("Async Init Failed")
                     return False
+            
+            await self.link_skill()
+            
+            return True
         except Exception:
             _LOGGER.exception("Async Init Failed")
-        _LOGGER.error("Async Init Failed")
-        return False
 
     async def get_skill_id(self):
         try:
@@ -307,6 +311,34 @@ class YandexSkill():
         except Exception:
             _LOGGER.exception("Create Skill Failed")
             
-#   async def link_skill(self):
-        #https://iot.quasar.yandex.ru/m/user/skills/9b0d72a1-af7c-43e8-8d61-bead50a32f77
-        #https://yandex.ru/quasar/iot/linking/9b0d72a1-af7c-43e8-8d61-bead50a32f77/?app_build_number=unknown&app_id=unknown&app_platform=unknown&app_version=unknown&app_version_name=unknown&dp=2&lang=ru-RU&manufacturer=unknown&model=unknown&os_version=unknown&size=1080%2C1920
+    async def link_skill(self):
+        skill_linked = False
+        iot_url = 'https://iot.quasar.yandex.ru/m/user/skills/' + self.skill_id
+        linking_url = 'https://yandex.ru/quasar/iot/linking/' + self.skill_id
+
+        r = await self.session.get(iot_url)
+        assert r.status == 200, await r.read()
+        data = await r.json()
+        skill_linked = data.get('is_bound')
+        _LOGGER.debug(f"Skill linked: {skill_linked}")
+        if skill_linked:
+            return True
+
+        # check external HTTPS URL
+        try:
+            hass_url = get_url(self.hass, require_ssl=True, allow_internal=False)
+            _LOGGER.debug(f"External hass URL: {hass_url}")
+        except NoURLAvailableError:
+            _LOGGER.error("Can't get external HTTPS URL")
+            return False
+
+        
+        # link skill
+        #get token
+        token = ''
+
+        
+        auth_url = hass_url + "/auth/authorize?state=https%3A%2F%2Fsocial.yandex.ru%2Fbroker2%2Fauthz_in_web%2F" + token + "%2Fcallback&redirect_uri=https%3A%2F%2Fsocial.yandex.net%2Fbroker%2Fredirect&response_type=code&client_id=https%3A%2F%2Fsocial.yandex.net%2F"
+        _LOGGER.debug(f"Auth url: {auth_url}")
+        
+        return skill_linked
