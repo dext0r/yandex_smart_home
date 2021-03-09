@@ -8,6 +8,7 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import callback
 
 from .const import (
+    DOMAIN, DATA_CONFIG,
     CONF_ENTITY_CONFIG,
     CONF_FILTER, CONF_SETTINGS,
 )
@@ -25,6 +26,10 @@ def async_register_http(hass, cfg):
         should_expose=cfg.get(CONF_FILTER),
         entity_config=cfg.get(CONF_ENTITY_CONFIG)
     )
+
+    hass.data[DOMAIN] = {
+        DATA_CONFIG: config
+    }
 
     hass.http.register_view(YandexSmartHomeUnauthorizedView())
     hass.http.register_view(YandexSmartHomeView(config))

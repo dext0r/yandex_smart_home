@@ -29,6 +29,8 @@ from homeassistant.const import (
 )
 
 from .const import (
+    DOMAIN,
+    DATA_CONFIG,
     CONF_PRESSURE_UNIT,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_ENTITY,
@@ -61,11 +63,11 @@ class _Property:
     retrievable = True # default: для встроенного датчика доступен запрос состояния
     reportable = False # default: оповещение выключено. Встроенный датчик не оповещает платформу об изменении состояния
 
-    def __init__(self, hass, state, config, entity_config):
+    def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
-        self.config = config
+        self.config = hass.data[DOMAIN][DATA_CONFIG]
         self.entity_config = entity_config
 
     def description(self):
@@ -283,8 +285,8 @@ class MotionProperty(_BoolProperty):
 class CustomEntityProperty(_Property):
     """Represents a Property."""
 
-    def __init__(self, hass, state, config, entity_config, property_config):
-        super().__init__(hass, state, config, entity_config)
+    def __init__(self, hass, state, entity_config, property_config):
+        super().__init__(hass, state, entity_config)
 
         self.instance_unit = {
             'humidity': 'unit.percent',

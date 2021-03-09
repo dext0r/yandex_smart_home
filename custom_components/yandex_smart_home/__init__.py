@@ -66,6 +66,7 @@ CONFIG_SCHEMA = vol.Schema({
 
 async def async_setup(hass: HomeAssistant, yaml_config: Dict[str, Any]):
     """Activate Yandex Smart Home component."""
+
     config = yaml_config.get(DOMAIN, {})
     async_register_http(hass, config)
 
