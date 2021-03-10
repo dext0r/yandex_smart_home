@@ -24,7 +24,10 @@ _LOGGER = logging.getLogger(__name__)
 
 INDEX = 'https://dialogs.yandex.ru/developer'
 SKILL_API_URL = 'https://dialogs.yandex.net/api/v1/skills'
-TOKEN_URL = 'https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd'
+OAUTH_URL = 'https://oauth.yandex.ru/authorize'
+DIALOGS_APP_ID = 'c473ca268cd749d3a8371351a8f2bcbd'
+TOKEN_URL = OAUTH_URL + '?response_type=token&client_id=' + DIALOGS_APP_ID
+ALLOW_URL = OAUTH_URL + '/allow'
 DISCOVERY_URL = '/callback/discovery' # для параметров устройств
 STATE_URL = '/callback/state' # для состояния устройств
 
@@ -86,12 +89,28 @@ class YandexSkill():
     async def get_oauth_token(self):
         try:
             if self.oauth_token == '':
-                r = await self.session.get(f"{TOKEN_URL}")
+                r = await self.session.get(TOKEN_URL)
                 assert r.status == 200, await r.read()
+                if r.real_url == r.url: # если нет доступа к API диалогов
+                    rdata = await r.text()
+                    csrf = re.search(r'type="hidden" name="csrf" value="(.+?)"', rdata)[1]
+                    request_id = re.search(r'"request_id" value="(.+?)"', rdata)[1]
+                    data = {
+                        "retpath": TOKEN_URL,
+                        "clientId": DIALOGS_APP_ID,
+                        "csrf": csrf,
+                        "request_id": request_id,
+                        "redirect_uri": "https://oauth.yandex.ru/verification_code",
+                        "response_type": "token",
+                        "granted_scopes": "login:info"
+                    }
+                    r = await self.session.post(ALLOW_URL, headers={}, data=data)
+                    assert r.status == 200, await r.read()
+                # есть доступ к API
                 data = dict(x.split('=', 1) for x in r.real_url.fragment.split('&'))   
                 self.oauth_token = data.get('access_token')
                 _LOGGER.debug(f"OAuth Token: {self.oauth_token}")
-                return self.oauth_token
+                return True
         except Exception:
             _LOGGER.exception("OAuth Token Failed")
         return False
@@ -138,24 +157,23 @@ class YandexSkill():
     
     async def async_event_handler(self, event: Event):
         devices = []
-        new_state = event.data.get('new_state')
         entity_id = event.data.get('entity_id')
-        if event.data.get('old_state') is None:
+        old_state = event.data.get('old_state')
+        new_state = event.data.get('new_state')
+        if old_state is None:
             return
-        if entity_id in CLOUD_NEVER_EXPOSED_ENTITIES:
+        if entity_id in CLOUD_NEVER_EXPOSED_ENTITIES or not self.should_expose(entity_id):
             return
-        if not self.should_expose(entity_id):
-            return
-        if new_state.state == STATE_UNAVAILABLE:
-            return
-        _LOGGER.debug("Update "+entity_id+": "+new_state.state)
-        if new_state:
+        if new_state and new_state.state != STATE_UNAVAILABLE:
+            old_entity = YandexEntity(self.hass, self.config, old_state)
             entity = YandexEntity(self.hass, self.config, new_state)
             device = entity.query_serialize()
-            if device['capabilities'] or device['properties']:
-                devices.append(device)
-            if devices:
-                await self.async_notify_skill(devices)
+            if old_entity.query_serialize() != device: # есть изменения
+                if device['capabilities'] or device['properties']:
+                    devices.append(device)
+                if devices:
+                    await self.async_notify_skill(devices)
+                    _LOGGER.debug("Update "+entity_id+": "+new_state.state)
 
     async def get_oauth_appid(self, session, hass_url = ''):
         oauth_appid = None
