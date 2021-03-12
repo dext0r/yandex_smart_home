@@ -11,7 +11,8 @@ from homeassistant.const import (
 
 from .const import (
     ERR_INTERNAL_ERROR, ERR_DEVICE_UNREACHABLE,
-    ERR_DEVICE_NOT_FOUND
+    ERR_DEVICE_NOT_FOUND,
+    DOMAIN, CONF_SKILL, CONF_SKILL_USER
 )
 from .helpers import RequestData, YandexEntity
 from .error import SmartHomeError
@@ -92,6 +93,9 @@ async def async_devices_sync(hass, data, message):
             continue
 
         devices.append(serialized)
+    
+    if CONF_SKILL_USER not in hass.data[DOMAIN][CONF_SKILL]:
+        hass.data[DOMAIN][CONF_SKILL][CONF_SKILL_USER] = data.context.user_id
 
     response = {
         'user_id': data.context.user_id,
