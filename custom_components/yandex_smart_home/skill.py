@@ -65,13 +65,16 @@ class YandexSkill():
                     _LOGGER.error("Async Init Failed: No skill ID")
                     return False
             await self.skill_linking()
-            if await self.device_list_update():
-                if CONF_SKILL_USER in self.hass.data[DOMAIN][CONF_SKILL]:
-                    self.user_id = self.hass.data[DOMAIN][CONF_SKILL][CONF_SKILL_USER]
-                    if self.user_id == '':
-                        _LOGGER.error("Async Init Failed: No user ID")
-                        return False
-                    _LOGGER.debug(f"User ID: {self.user_id}")
+            if CONF_SKILL_USER in self.hass.data[DOMAIN][CONF_SKILL]:
+                self.user_id = self.hass.data[DOMAIN][CONF_SKILL][CONF_SKILL_USER]
+            else:
+                if await self.device_list_update():
+                    if CONF_SKILL_USER in self.hass.data[DOMAIN][CONF_SKILL]:
+                        self.user_id = self.hass.data[DOMAIN][CONF_SKILL][CONF_SKILL_USER]
+                        if self.user_id == '':
+                            _LOGGER.error("Async Init Failed: No user ID")
+                            return False
+            _LOGGER.debug(f"User ID: {self.user_id}")
         except Exception:
             _LOGGER.exception("Async Init Failed")
         return True
