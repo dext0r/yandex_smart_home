@@ -25,6 +25,8 @@ _LOGGER = logging.getLogger(__name__)
 INDEX = 'https://dialogs.yandex.ru/developer'
 SKILL_API_URL = 'https://dialogs.yandex.net/api/v1/skills'
 OAUTH_URL = 'https://oauth.yandex.ru/authorize'
+IOT_URL = 'https://iot.quasar.yandex.ru/m/user/skills'
+LINKING_URL = 'https://yandex.ru/quasar/iot/linking'
 DIALOGS_APP_ID = 'c473ca268cd749d3a8371351a8f2bcbd'
 TOKEN_URL = OAUTH_URL + '?response_type=token&client_id=' + DIALOGS_APP_ID
 ALLOW_URL = OAUTH_URL + '/allow'
@@ -34,38 +36,45 @@ STATE_URL = '/callback/state' # для состояния устройств
 class YandexSkill():
 
     def __init__(self, hass: HomeAssistantType, session: YandexSession):
-        config = hass.data[DOMAIN]
         self.hass = hass
-        self.config = Config(
-            should_expose=config.get(CONF_FILTER),
-            entity_config=config.get(CONF_ENTITY_CONFIG)
-        )
-        self.skill_name = config[CONF_SKILL][CONF_SKILL_NAME] if CONF_SKILL_NAME in config[CONF_SKILL] else 'Home Assistant'   
         self.session = session
         self.notification_session = ''
+        self.config = ''
+        self.skill_name = ''  
+        self.oauth_token = ''
         self.csrf_token = ''
         self.skill_id = ''
-        self.user_id = config[CONF_SKILL][CONF_SKILL_USER]
-        self.oauth_token = ''
-        self.should_expose = config.get(CONF_FILTER)
+        self.user_id = ''
+        self.should_expose = ''
         
     async def async_init(self):
+        self.skill_name = self.hass.data[DOMAIN][CONF_SKILL][CONF_SKILL_NAME] if CONF_SKILL_NAME in self.hass.data[DOMAIN][CONF_SKILL] else 'Home Assistant'   
+        self.should_expose = self.hass.data[DOMAIN].get(CONF_FILTER)
+        self.config = Config(
+            should_expose=self.should_expose,
+            entity_config=self.hass.data[DOMAIN].get(CONF_ENTITY_CONFIG)
+        )
         try:        
             self.notification_session = async_create_clientsession(self.hass)
             if self.oauth_token == '':
                 if not await self.get_oauth_token():
-                    _LOGGER.error("Async Init Failed")
+                    _LOGGER.error("Async Init Failed: No OAuth Token")
                     return False
             if self.skill_id == '':
                 if not await self.get_skill_id():
-                    _LOGGER.error("Async Init Failed")
+                    _LOGGER.error("Async Init Failed: No skill ID")
                     return False
-            
-            await self.link_skill()
-            
-            return True
+            await self.skill_linking()
+            if await self.device_list_update():
+                if CONF_SKILL_USER in self.hass.data[DOMAIN][CONF_SKILL]:
+                    self.user_id = self.hass.data[DOMAIN][CONF_SKILL][CONF_SKILL_USER]
+                    if self.user_id == '':
+                        _LOGGER.error("Async Init Failed: No user ID")
+                        return False
+                    _LOGGER.debug(f"User ID: {self.user_id}")
         except Exception:
             _LOGGER.exception("Async Init Failed")
+        return True
 
     async def get_skill_id(self):
         try:
@@ -85,7 +94,7 @@ class YandexSkill():
         except Exception:
             _LOGGER.exception("Skill ID Failed")
         return False
-            
+
     async def get_oauth_token(self):
         try:
             if self.oauth_token == '':
@@ -128,7 +137,81 @@ class YandexSkill():
         except Exception:
             _LOGGER.exception("CSRF Token Failed")
         return
-    
+
+    async def get_oauth_appid(self, session, hass_url = ''):
+        oauth_appid = None
+        try:
+            if hass_url == '':
+                # check external HTTPS URL
+                try:
+                    hass_url = get_url(self.hass, require_ssl=True, allow_internal=False)
+                    _LOGGER.debug(f"External hass URL: {hass_url}")
+                except NoURLAvailableError:
+                    _LOGGER.error("Can't get external HTTPS URL")
+                    return
+            
+            headers = {'x-csrf-token': self.csrf_token}
+            created_at = datetime.now(tz=timezone.utc).astimezone(timezone.utc).isoformat('T','milliseconds').replace('+00:00','Z')
+            updated_at = created_at
+            payload = {
+              "name": self.skill_name,
+              "createdAt":created_at,
+              "updatedAt":updated_at,
+              "clientId":"https://social.yandex.net/",
+              "authorizationUrl": hass_url + "/auth/authorize",
+              "tokenUrl": hass_url + "/auth/token",
+              "refreshTokenUrl": hass_url + "/auth/token",
+              "clientSecret":"secret" # any string
+            }
+            r = await session.post(f"{INDEX}/api/oauth/apps", headers=headers, 
+                                   json=payload)
+            assert r.status == 201, await r.read()
+            data = await r.json()
+            oauth_appid = data['result']['id']
+            _LOGGER.debug(f"OAuth AppID: {oauth_appid}")
+        except Exception:
+            _LOGGER.exception("OAuth AppID Failed")
+        return oauth_appid
+
+    async def skill_linking(self):
+        r = await self.session.get(IOT_URL + '/' + self.skill_id)
+        assert r.status == 200, await r.read()
+        data = await r.json()
+        if data.get('is_bound'):
+            _LOGGER.debug(f"Skill linked!")
+            return True
+        # связка аккаунтов не выполнена
+        _LOGGER.debug(f"Skill is NOT properly linked!")
+        # check external HTTPS URL
+        # try:
+            # hass_url = get_url(self.hass, require_ssl=True, allow_internal=False)
+            # _LOGGER.debug(f"External hass URL: {hass_url}")
+        # except NoURLAvailableError:
+            # _LOGGER.error("Can't get external HTTPS URL")
+            # return False        
+        # link skill ??
+        # get token
+        # token = ''
+        # auth_url = hass_url + "/auth/authorize?state=https%3A%2F%2Fsocial.yandex.ru%2Fbroker2%2Fauthz_in_web%2F" + token + "%2Fcallback&redirect_uri=https%3A%2F%2Fsocial.yandex.net%2Fbroker%2Fredirect&response_type=code&client_id=https%3A%2F%2Fsocial.yandex.net%2F"
+        # _LOGGER.debug(f"Auth url: {auth_url}")
+
+        self.hass.components.persistent_notification.async_create(
+            f"Для работы компонента нужно [связать]({LINKING_URL}/{self.skill_id}) аккаунты в Умном Доме Яндекса.",
+            title="Yandex Smart Home")
+
+        return False
+
+    async def device_list_update(self):
+        # refresh device list
+        r = await self.session.post(IOT_URL + '/' + self.skill_id + '/discovery')
+        assert r.status == 200, await r.read()
+        data = await r.json()
+        if data['status'] == 'ok':
+            _LOGGER.debug(f"Device list updated!")
+            return True
+        _LOGGER.error(f"Device list update FAILED!")
+        return False
+
     async def async_notify_skill(self, devices: str):
         try:
             url = f"{SKILL_API_URL}/{self.skill_id}"
@@ -171,44 +254,9 @@ class YandexSkill():
             if old_entity.query_serialize() != device: # есть изменения
                 if device['capabilities'] or device['properties']:
                     devices.append(device)
-                if devices:
-                    await self.async_notify_skill(devices)
-                    _LOGGER.debug("Update "+entity_id+": "+new_state.state)
-
-    async def get_oauth_appid(self, session, hass_url = ''):
-        oauth_appid = None
-        try:
-            if hass_url == '':
-                # check external HTTPS URL
-                try:
-                    hass_url = get_url(self.hass, require_ssl=True, allow_internal=False)
-                    _LOGGER.debug(f"External hass URL: {hass_url}")
-                except NoURLAvailableError:
-                    _LOGGER.error("Can't get external HTTPS URL")
-                    return
-            
-            headers = {'x-csrf-token': self.csrf_token}
-            created_at = datetime.now(tz=timezone.utc).astimezone(timezone.utc).isoformat('T','milliseconds').replace('+00:00','Z')
-            updated_at = created_at
-            payload = {
-              "name": self.skill_name,
-              "createdAt":created_at,
-              "updatedAt":updated_at,
-              "clientId":"https://social.yandex.net/",
-              "authorizationUrl": hass_url + "/auth/authorize",
-              "tokenUrl": hass_url + "/auth/token",
-              "refreshTokenUrl": hass_url + "/auth/token",
-              "clientSecret":"secret"
-            }
-            r = await session.post(f"{INDEX}/api/oauth/apps", headers=headers, 
-                                   json=payload)
-            assert r.status == 201, await r.read()
-            data = await r.json()
-            oauth_appid = data['result']['id']
-            _LOGGER.debug(f"OAuth AppID: {oauth_appid}")
-        except Exception:
-            _LOGGER.exception("OAuth AppID Failed")
-        return oauth_appid
+                    if devices:
+                        await self.async_notify_skill(devices)
+                        _LOGGER.debug("Update "+entity_id+": "+new_state.state)
 
     async def create_skill(self):
         # check external HTTPS URL
@@ -328,35 +376,3 @@ class YandexSkill():
 
         except Exception:
             _LOGGER.exception("Create Skill Failed")
-            
-    async def link_skill(self):
-        skill_linked = False
-        iot_url = 'https://iot.quasar.yandex.ru/m/user/skills/' + self.skill_id
-        linking_url = 'https://yandex.ru/quasar/iot/linking/' + self.skill_id
-
-        r = await self.session.get(iot_url)
-        assert r.status == 200, await r.read()
-        data = await r.json()
-        skill_linked = data.get('is_bound')
-        _LOGGER.debug(f"Skill linked: {skill_linked}")
-        if skill_linked:
-            return True
-
-        # check external HTTPS URL
-        try:
-            hass_url = get_url(self.hass, require_ssl=True, allow_internal=False)
-            _LOGGER.debug(f"External hass URL: {hass_url}")
-        except NoURLAvailableError:
-            _LOGGER.error("Can't get external HTTPS URL")
-            return False
-
-        
-        # link skill
-        #get token
-        token = ''
-
-        
-        auth_url = hass_url + "/auth/authorize?state=https%3A%2F%2Fsocial.yandex.ru%2Fbroker2%2Fauthz_in_web%2F" + token + "%2Fcallback&redirect_uri=https%3A%2F%2Fsocial.yandex.net%2Fbroker%2Fredirect&response_type=code&client_id=https%3A%2F%2Fsocial.yandex.net%2F"
-        _LOGGER.debug(f"Auth url: {auth_url}")
-        
-        return skill_linked
