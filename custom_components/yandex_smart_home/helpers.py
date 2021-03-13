@@ -22,8 +22,9 @@ from .error import SmartHomeError
 class Config:
     """Hold the configuration for Yandex Smart Home."""
 
-    def __init__(self, should_expose, entity_config=None):
+    def __init__(self, settings, should_expose, entity_config=None):
         """Initialize the configuration."""
+        self.settings = settings
         self.should_expose = should_expose
         self.entity_config = entity_config or {}
 

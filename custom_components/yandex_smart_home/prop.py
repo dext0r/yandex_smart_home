@@ -16,6 +16,7 @@ from homeassistant.components import (
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_BATTERY_LEVEL,
+    ATTR_UNIT_OF_MEASUREMENT,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_PRESSURE,
@@ -28,9 +29,15 @@ from homeassistant.const import (
 )
 
 from .const import (
+    DOMAIN,
+    DATA_CONFIG,
+    CONF_PRESSURE_UNIT,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_ENTITY,
-    CONF_ENTITY_PROPERTY_ATTRIBUTE
+    CONF_ENTITY_PROPERTY_ATTRIBUTE,
+    PRESSURE_UNITS_TO_YANDEX_UNITS,
+    PRESSURE_FROM_PASCAL,
+    PRESSURE_TO_PASCAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,6 +67,7 @@ class _Property:
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
+        self.config = hass.data[DOMAIN][DATA_CONFIG]
         self.entity_config = entity_config
 
     def description(self):
@@ -197,7 +205,7 @@ class PressureProperty(_Property):
     def parameters(self):
         return {
             'instance': self.instance,
-            'unit': 'unit.pressure.pascal'
+            'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
         }
 
     def get_value(self):
@@ -210,7 +218,15 @@ class PressureProperty(_Property):
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                 "Invalid value")
 
-        return float(value) * 100
+        # Get a conversion multiplier to pascal
+        unit = self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+        if not unit in PRESSURE_TO_PASCAL:
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f"Unsupported pressure unit: {unit}")
+
+        # Convert the value to pascal and then to the chosen Yandex unit
+        return float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]]
 
 @register_property
 class BatteryProperty(_Property):
@@ -269,23 +285,21 @@ class MotionProperty(_BoolProperty):
 class CustomEntityProperty(_Property):
     """Represents a Property."""
 
-    instance_unit = {
-        'humidity': 'unit.percent',
-        'temperature': 'unit.temperature.celsius',
-        'pressure': 'unit.pressure.pascal',
-        'water_level': 'unit.percent',
-        'co2_level': 'unit.ppm',
-        'power': 'unit.watt',
-        'voltage': 'unit.volt',
-        'battery_level': 'unit.percent',
-        'amperage': 'unit.ampere'}
-
     def __init__(self, hass, state, entity_config, property_config):
         super().__init__(hass, state, entity_config)
 
-        self.hass = hass
-        self.state = state
-        self.entity_config = entity_config
+        self.instance_unit = {
+            'humidity': 'unit.percent',
+            'temperature': 'unit.temperature.celsius',
+            'pressure': self.config.settings[CONF_PRESSURE_UNIT],
+            'water_level': 'unit.percent',
+            'co2_level': 'unit.ppm',
+            'power': 'unit.watt',
+            'voltage': 'unit.volt',
+            'battery_level': 'unit.percent',
+            'amperage': 'unit.ampere'
+        }
+
         self.property_config = property_config
         self.type = PROPERTY_FLOAT
         self.instance = property_config.get(CONF_ENTITY_PROPERTY_TYPE)

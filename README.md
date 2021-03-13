@@ -19,6 +19,8 @@ Now add the following lines to your `configuration.yaml` file:
 ```yaml
 # Example configuration.yaml entry
 yandex_smart_home:
+  settings:
+    pressure_unit: mmHg
   filter:
     include_domains:
       - switch
@@ -87,6 +89,12 @@ Configuration variables:
 yandex_smart_home:
   (map) (Optional) Configuration options for the Yandex Smart Home integration.
 
+  settings:
+    (map) (Optional) Various settings that affect this integration.
+    pressure_unit:
+      (string) (Optional) Pressure unit to use when exposing pressure entities, available units: pa, mmHg (default), atm, bar
+      Value conversion is done automatically from 'hPa' or 'mbar' that Home Assistant supports.
+
   filter:
     (map) (Optional) description: Filters for entities to include/exclude from Yandex Smart Home.
     include_entities:
@@ -107,7 +115,7 @@ yandex_smart_home:
       room:
         (string) (Optional) Associating this device to a room in Yandex Smart Home
       type:
-        (string) (Optional) Allows to force set device type. For exmaple set devices.types.purifier to display device as purifier (instead default devices.types.humidifier for such devices) 
+        (string) (Optional) Allows to force set device type. For example set devices.types.purifier to display device as purifier (instead default devices.types.humidifier for such devices) 
       channel_set_via_media_content_id:
         (boolean) (Optional) (media_player only) Enables ability to set channel
          by number for 
