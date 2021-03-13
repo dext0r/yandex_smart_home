@@ -1282,13 +1282,13 @@ class CleanupModeCapability(_ModeCapability):
 
     # 101-105 xiaomi miio fan speeds
     modes_map = {
-        'auto': {'auto', '102'},
-        'turbo': {'turbo', 'high', '104'},
+        'auto': {'auto', 'Automatic', '102'},
+        'turbo': {'turbo', 'high', 'Performance' '104'},
         'min': {'min', 'mop'},
         'max': {'max', 'strong'},
         'express': {'express', '105'},
         'normal': {'normal', 'medium', 'middle', '103'},
-        'quiet': {'quiet', 'low', 'min', 'silent', '101'},
+        'quiet': {'quiet', 'low', 'min', 'silent', 'Eco', '101'},
     }
 
     @staticmethod
