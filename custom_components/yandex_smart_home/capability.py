@@ -1025,8 +1025,8 @@ class VolumeCapability(_RangeCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == media_player.DOMAIN and features & \
-            media_player.SUPPORT_VOLUME_STEP
+        return domain == media_player.DOMAIN and (
+                    features & media_player.SUPPORT_VOLUME_STEP or features & media_player.SUPPORT_VOLUME_SET)
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -1068,7 +1068,6 @@ class VolumeCapability(_RangeCapability):
             except KeyError as e:
                 _LOGGER.error("Invalid element of range object: %r" % range_entity)
                 _LOGGER.error('Undefined unit: {}'.format(e.args[0]))
-                # raise ValueError('Undefined unit: {}'.format(e.args[0])) 
                 return 0
 
     def get_value(self):
@@ -1082,24 +1081,30 @@ class VolumeCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
+        set_volume_level = None
         if 'relative' in state and state['relative']:
-            if state['value'] > 0:
-                service = media_player.SERVICE_VOLUME_UP
+            features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
+            if features & media_player.SUPPORT_VOLUME_STEP:
+                if state['value'] > 0:
+                    service = media_player.SERVICE_VOLUME_UP
+                else:
+                    service = media_player.SERVICE_VOLUME_DOWN
+                for i in range(abs(state['value'])):
+                    await self.hass.services.async_call(
+                        media_player.DOMAIN,
+                        service, {
+                            ATTR_ENTITY_ID: self.state.entity_id
+                        }, blocking=True, context=data.context)
             else:
-                service = media_player.SERVICE_VOLUME_DOWN
-            for i in range(abs(state['value'])):
-                await self.hass.services.async_call(
-                    media_player.DOMAIN,
-                    service, {
-                        ATTR_ENTITY_ID: self.state.entity_id
-                    }, blocking=True, context=data.context)
+                set_volume_level = (self.get_value() + state['value']) / 100
         else:
+            set_volume_level = state['value'] / 100
+        if set_volume_level is not None:
             await self.hass.services.async_call(
                 media_player.DOMAIN,
                 media_player.SERVICE_VOLUME_SET, {
                     ATTR_ENTITY_ID: self.state.entity_id,
-                    media_player.const.ATTR_MEDIA_VOLUME_LEVEL:
-                        state['value'] / 100,
+                    media_player.const.ATTR_MEDIA_VOLUME_LEVEL: set_volume_level,
                 }, blocking=True, context=data.context)
 
 
