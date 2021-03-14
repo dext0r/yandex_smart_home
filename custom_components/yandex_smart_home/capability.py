@@ -1260,7 +1260,7 @@ class TemperatureKCapability(_ColorSettingCapability):
         """Return the state value of this capability for this entity."""
         kelvin = self.state.attributes.get(light.ATTR_COLOR_TEMP)
         if kelvin is None:
-            return 0
+            kelvin = self.state.attributes[light.ATTR_MAX_MIREDS]
 
         return color_util.color_temperature_mired_to_kelvin(kelvin)
 
