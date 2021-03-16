@@ -22,7 +22,7 @@
         }
       },
       "cookies": {
-        "description": "1. Установите расширение [Copy Cookies](https://chrome.google.com/webstore/detail/copy-cookies/jcbpglbplpblnagieibnemmkiamekcdg) в Google Chrome, Yandex Browser или Opera\n2. Авторизуйтесь в [Яндекс Паспорт](https://passport.yandex.ru/profile)\n3. Скопируйте сюда Cookies с помощью расширения",
+        "description": "1. Установите расширение [Copy Cookies](https://chrome.google.com/webstore/detail/copy-cookies/jcbpglbplpblnagieibnemmkiamekcdg) в Google Chrome, Yandex Browser или Opera\n2. Авторизуйтесь в [Yandex Passport.com](https://passport.yandex.com/profile)\n3. Скопируйте сюда Cookies с помощью расширения",
         "data": {
           "cookies": "Cookies JSON"
         }
@@ -40,7 +40,7 @@
         }
       },
       "external": {
-        "description": "1. Пройдите авторизацию по [внешней ссылке]({external_url})\n2. Повторно авторизуйтесь в компоненте\n\nОбязательно используйте тот же Интернет, что и сервер Home Assistant. Или используйте другие способы авторизации",
+        "description": "1. Пройдите авторизацию по [внешней ссылке]({external_url})\n2. Повторно авторизуйтесь в компоненте\n\nОбязательно используйте тот же Интернет, что и сервер Home Assistant.\nВ случае проблем используйте способ авторизации - **Cookies**.",
         "data": {
           "username": "Логин",
           "password": "Пароль"
