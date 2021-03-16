@@ -9,5 +9,6 @@
   ],
   "codeowners": [
     "@dmitry-k"
-  ]
+  ],
+  "version": "0.0.1"
 }
