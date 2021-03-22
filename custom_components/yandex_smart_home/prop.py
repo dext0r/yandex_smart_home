@@ -226,7 +226,7 @@ class PressureProperty(_Property):
                 f"Unsupported pressure unit: {unit}")
 
         # Convert the value to pascal and then to the chosen Yandex unit
-        return float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]]
+        return round(float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2)
 
 @register_property
 class BatteryProperty(_Property):
@@ -291,13 +291,13 @@ class CustomEntityProperty(_Property):
         self.instance_unit = {
             'humidity': 'unit.percent',
             'temperature': 'unit.temperature.celsius',
-            'pressure': self.config.settings[CONF_PRESSURE_UNIT],
+            'pressure': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
             'water_level': 'unit.percent',
             'co2_level': 'unit.ppm',
             'power': 'unit.watt',
             'voltage': 'unit.volt',
             'battery_level': 'unit.percent',
-            'amperage': 'unit.ampere'
+            'amperage': 'unit.ampere',
         }
 
         self.property_config = property_config
@@ -345,7 +345,18 @@ class CustomEntityProperty(_Property):
             if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
                 _LOGGER.error(f'Invalid value: {entity}')
                 raise SmartHomeError(ERR_INVALID_VALUE, "Invalid value")
-            return float(value) if self.type != PROPERTY_BOOL else self.bool_value(value)
+
+            if self.instance == 'pressure':
+                # Get a conversion multiplier to pascal
+                unit = entity.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+                if not unit in PRESSURE_TO_PASCAL:
+                    raise SmartHomeError(
+                        ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                        f"Unsupported pressure unit: {unit}")
+                # Convert the value to pascal and then to the chosen Yandex unit
+                return round(float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2)
+            else:
+                return float(value) if self.type != PROPERTY_BOOL else self.bool_value(value)
 
         if attribute:
             value = self.state.attributes.get(attribute)
