@@ -7,9 +7,9 @@
 1. Configure SSL certificate if it was not done already (do not use self-signed certificate)
 1. Update home assistant to 0.112.0 at least
 1. Install [HACS](https://hacs.xyz/) and search for "Yandex Smart Home" there. That way you get updates automatically. But you also can just copy and add files into custom_components directory manually instead
-1. Configure component via configuration.yaml (see instructions below)
+1. Configure component via configuration.yaml (see instructions below) and if you want to set up device status notification configure via GUI
 1. Restart home assistant
-1. Create dialog via https://dialogs.yandex.ru/developer/
+1. Create dialog via https://dialogs.yandex.ru/developer/ (if you set up device status notification, dialog will be created automatically)
 1. Add devices via your Yandex app on android/ios
 
 ### Configuration
@@ -19,6 +19,13 @@ Now add the following lines to your `configuration.yaml` file:
 ```yaml
 # Example configuration.yaml entry
 yandex_smart_home:
+  skill:
+    username: !secret yandex_username
+    password: !secret yandex_password
+    token: !secret yandex_token
+    proxy: https://myproxy.com
+    skill_name: My Home Assistant
+    skill_user: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
   filter:
     include_domains:
       - switch
@@ -86,6 +93,21 @@ Configuration variables:
 ```yaml
 yandex_smart_home:
   (map) (Optional) Configuration options for the Yandex Smart Home integration.
+
+  skill:
+    (map) (Optional) description: Device notification required credentials.
+    username: 
+      (string) (Optional) Yandex username.
+    password:
+      (string) (Optional) Yandex password.
+    token:
+      (string) (Optional) Yandex token (if it is provided, no need to specify login and password).
+    proxy:
+      (string) (Optional) Your proxy server, if you need it.
+    skill_name:
+      (string) (Optional) Name of your dialog in Yandex.Dialogs (also might be set via GUI). Default: Home Assistant
+    skill_user:
+      (string) (Optional) User ID, under which you are logged in to Home Assistant, during the linking of accounts
 
   filter:
     (map) (Optional) description: Filters for entities to include/exclude from Yandex Smart Home.
@@ -166,6 +188,8 @@ Entities that have not got rooms explicitly set and that have been placed in Hom
 
 ### Create Dialog
 
+(If you set up device status notification, dialog will be created automatically.)
+
 Go to https://dialogs.yandex.ru/developer/ and create smart home skill.
 
 Field | Value
@@ -181,3 +205,31 @@ Client identifier | https://social.yandex.net/
 API authorization endpoint | https://[YOUR HOME ASSISTANT URL:PORT]/auth/authorize
 Token Endpoint | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
 Refreshing an Access Token | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
+
+### Set up device status notification
+
+**Via GUI (recommended)**
+
+For authorization, use your Yandex login and password or one-time password from the Yandex.Key application, with two-factor authentication enabled.
+
+As a result, the component will receive a Yandex token and save it, your password is not saved anywhere.
+
+If Yandex considers the authorization suspicious, it may require you to enter a captcha or confirm your account in the Yandex Passport service. Account verification must be done using the same Internet / VPN as the Home Assistant server.
+
+In case of problems with password authorization, you can go to Yandex in a regular browser and copy Cookies from there. The component will tell you what needs to be done at the configuration stage.
+
+You can also transfer the Yandex token from another Home Assistant server, where authorization has already been completed. The component will tell you what needs to be done at the configuration stage.
+
+**Via YAML (legacy)**
+
+```yaml
+yandex_smart_home:
+  skill:
+    username: !secret yandex_username
+    password: !secret yandex_password
+    token: !secret yandex_token
+    proxy: https://myproxy.com
+```
+
+Credentials must be specified once, after which they will be imported into Config Entry and can be deleted, updated and edited there.
+When using 2FA, there may be problems with the login - in this case, it is recommended to use a token.
