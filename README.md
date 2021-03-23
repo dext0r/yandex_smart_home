@@ -105,9 +105,9 @@ yandex_smart_home:
     proxy:
       (string) (Optional) Your proxy server, if you need it.
     skill_name:
-      (string) (Optional) Name of your dialog in Yandex.Dialogs (also might be set via GUI). Default "Home Assistant"
+      (string) (Optional) Name of your dialog in Yandex.Dialogs (also might be set via GUI). Default "Home Assistant".
     skill_user:
-      (string) (Optional) User ID, under which you are logged in to Home Assistant, during the linking of accounts
+      (string) (Optional) User ID, under which you are logged in to Home Assistant, during the linking of accounts (also might be set via GUI). 
 
   filter:
     (map) (Optional) description: Filters for entities to include/exclude from Yandex Smart Home.
