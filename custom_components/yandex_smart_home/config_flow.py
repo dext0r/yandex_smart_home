@@ -10,10 +10,11 @@
 import logging
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow
+from homeassistant.core import callback
+from homeassistant.config_entries import ConfigFlow, OptionsFlow
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
-from . import DOMAIN
+from .const import DOMAIN, CONF_SKILL_NAME, CONF_SKILL_USER
 from .core.yandex_session import YandexSession, LoginResponse
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,9 +27,14 @@ CAPTCHA_SCHEMA = vol.Schema({
     vol.Required('captcha_answer'): str,
 })
 
-
-class YandexStationFlowHandler(ConfigFlow, domain=DOMAIN):
+class YandexSmartHomeFlowHandler(ConfigFlow, domain=DOMAIN):
     yandex: YandexSession = None
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return YandexSmartHomeOptionsFlowHandler(config_entry)
 
     async def async_step_import(self, data: dict):
         """Init by component setup. Forward YAML login/pass to auth."""
@@ -151,3 +157,44 @@ class YandexStationFlowHandler(ConfigFlow, domain=DOMAIN):
             )
 
         raise NotImplemented
+
+class YandexSmartHomeOptionsFlowHandler(OptionsFlow):
+    """Handle options."""
+
+    def __init__(self, config_entry):
+        """Initialize options flow."""
+        self.config_entry = config_entry
+        self.options = dict(config_entry.options)
+
+    async def async_step_init(self, user_input=None):
+        """Manage the options."""
+        return await self.async_step_skill_options()
+
+    async def async_step_skill_options(self, user_input=None):
+        """Manage the devices options."""
+        if user_input is not None:
+            self.options[CONF_SKILL_NAME] = user_input[CONF_SKILL_NAME]
+            self.options[CONF_SKILL_USER] = user_input[CONF_SKILL_USER]
+            return self.async_create_entry(title="", data=self.options)
+            
+        user_settings_url = '/config/users'
+        return self.async_show_form(
+            step_id="skill_options",
+            data_schema=vol.Schema({
+                vol.Optional(
+                    CONF_SKILL_NAME, 
+                    default=self.config_entry.options.get(
+                        CONF_SKILL_NAME, ""
+                    )
+                ): str,
+                vol.Optional(
+                    CONF_SKILL_USER, 
+                    default=self.config_entry.options.get(
+                        CONF_SKILL_USER, ""
+                    )
+                ): str
+            }),
+            description_placeholders={
+                'user_settings_url': user_settings_url
+            }
+        )

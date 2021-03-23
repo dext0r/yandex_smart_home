@@ -95,41 +95,48 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             title="Yandex Smart Home")
         return False
     
+    if CONF_SKILL_NAME in entry.options and CONF_SKILL_NAME not in hass.data[DOMAIN][CONF_SKILL]:
+        hass.data[DOMAIN][CONF_SKILL][CONF_SKILL_NAME] = entry.options[CONF_SKILL_NAME]
+    if CONF_SKILL_USER in entry.options and CONF_SKILL_USER not in hass.data[DOMAIN][CONF_SKILL]:
+        hass.data[DOMAIN][CONF_SKILL][CONF_SKILL_USER] = entry.options[CONF_SKILL_USER]
+    
     await _setup_skill(hass, yandex)
     
     return True
     
 async def _setup_entry_from_config(hass: HomeAssistant):
     """Support legacy config from YAML."""
+    _LOGGER.info("Trying to import config into entry...")
     if CONF_SKILL not in hass.data[DOMAIN]:
         _LOGGER.debug("No skill config")
         return
         
     config = hass.data[DOMAIN][CONF_SKILL]
     if CONF_USERNAME not in config:
-        _LOGGER.debug("No username inside config")
+        _LOGGER.debug("No username inside config - nothing to import")
         return
     
     # check if already configured
     for entry in hass.config_entries.async_entries(DOMAIN):
         if entry.unique_id == config[CONF_USERNAME]:
-            _LOGGER.debug("Config entry already configured")
+            _LOGGER.info("Config entry already configured")
             return
     
     if CONF_TOKEN not in config:
         # load config/.yandex_station.json
         x_token = utils.load_token_from_json(hass)
         if x_token:
-            _LOGGER.debug("x_token is inside json")
+            _LOGGER.info("x_token is inside json")
             config['x_token'] = x_token
     else:
         config['x_token'] = config[CONF_TOKEN]
+        _LOGGER.info("Got x_token from config")
         
     # need username and token or password
     if 'x_token' not in config and CONF_PASSWORD not in config:
-        _LOGGER.debug("No password or x_token inside config")
+        _LOGGER.error("No password or x_token inside config")
         return
-    _LOGGER.debug("Credentials configured inside config")
+    _LOGGER.info("Credentials configured inside config - BEGIN IMPORT")
     
     hass.async_create_task(hass.config_entries.flow.async_init(
         DOMAIN, context={'source': SOURCE_IMPORT}, data=config
@@ -137,7 +144,7 @@ async def _setup_entry_from_config(hass: HomeAssistant):
     
 async def _setup_skill(hass: HomeAssistant, session: YandexSession):
     """Set up connection to Yandex Dialogs."""
-    _LOGGER.debug("Skill Setup") 
+    _LOGGER.info("Skill Setup") 
     try:
         skill = YandexSkill(hass, session)
         if not await skill.async_init():

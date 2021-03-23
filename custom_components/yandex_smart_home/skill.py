@@ -4,18 +4,18 @@ import json
 import logging
 import pickle
 import re
+
 from os import path
-import time
+from time import time
 from datetime import datetime, timezone
 
-from .const import DOMAIN, CONF_SKILL, CONF_SKILL_NAME, CONF_SKILL_USER, CONF_ENTITY_CONFIG, CONF_FILTER
 from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, CONF_USERNAME, CONF_PASSWORD
-
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.network import get_url, NoURLAvailableError
 from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.core import Event
 
+from .const import DOMAIN, CONF_SKILL, CONF_SKILL_NAME, CONF_SKILL_USER, CONF_ENTITY_CONFIG, CONF_FILTER
 from .helpers import RequestData, YandexEntity, Config
 from .error import SmartHomeError
 from .core.yandex_session import YandexSession
@@ -74,9 +74,12 @@ class YandexSkill():
                         if self.user_id == '':
                             _LOGGER.error("Async Init Failed: No user ID")
                             return False
-            _LOGGER.debug(f"User ID: {self.user_id}")
+            _LOGGER.info(f"User ID: {self.user_id}") # info
         except Exception:
             _LOGGER.exception("Async Init Failed")
+            self.hass.components.persistent_notification.async_create(
+                "Ошибка при инициализации компонента (уведомление навыка об изменении состояния устройств работать не будет).",
+                title="Yandex Smart Home")
         return True
 
     async def get_skill_id(self):
@@ -89,7 +92,7 @@ class YandexSkill():
                 for skill in data['result']['skills']:
                     if skill['name'] == self.skill_name or skill['draft']['name'] == self.skill_name:
                         self.skill_id = skill['id']
-                        _LOGGER.debug(f"Skill ID: {self.skill_id}")
+                        _LOGGER.info(f"Skill ID: {self.skill_id}")
                         return self.skill_id
             # create skill
             coro = self.create_skill()
@@ -135,7 +138,7 @@ class YandexSkill():
                 data = await r.text()
                 m = re.search(r'"secretkey":"(.+?)"', data)
                 self.csrf_token = m[1]
-                _LOGGER.debug(f"CSRF Token: {self.csrf_token}")
+                _LOGGER.info(f"CSRF Token: {self.csrf_token}")
                 return self.csrf_token
         except Exception:
             _LOGGER.exception("CSRF Token Failed")
@@ -148,7 +151,7 @@ class YandexSkill():
                 # check external HTTPS URL
                 try:
                     hass_url = get_url(self.hass, require_ssl=True, allow_internal=False)
-                    _LOGGER.debug(f"External hass URL: {hass_url}")
+                    _LOGGER.info(f"External hass URL: {hass_url}")
                 except NoURLAvailableError:
                     _LOGGER.error("Can't get external HTTPS URL")
                     return
@@ -181,10 +184,10 @@ class YandexSkill():
         assert r.status == 200, await r.read()
         data = await r.json()
         if data.get('is_bound'):
-            _LOGGER.debug(f"Skill linked!")
+            _LOGGER.info(f"Skill linked!")
             return True
         # связка аккаунтов не выполнена
-        _LOGGER.debug(f"Skill is NOT properly linked!")
+        _LOGGER.error(f"Skill is NOT properly linked!")
         # check external HTTPS URL
         # try:
             # hass_url = get_url(self.hass, require_ssl=True, allow_internal=False)
@@ -210,7 +213,7 @@ class YandexSkill():
         assert r.status == 200, await r.read()
         data = await r.json()
         if data['status'] == 'ok':
-            _LOGGER.debug(f"Device list updated!")
+            _LOGGER.info(f"Device list updated!")
             return True
         _LOGGER.error(f"Device list update FAILED!")
         return False
@@ -219,7 +222,7 @@ class YandexSkill():
         try:
             url = f"{SKILL_API_URL}/{self.skill_id}"
             headers = {"Authorization": "OAuth "+self.oauth_token}
-            ts = time.time()
+            ts = time()
             if devices:
                 url_tail = STATE_URL 
                 payload = {"user_id": self.user_id, "devices": devices}
@@ -235,7 +238,7 @@ class YandexSkill():
             data = await r.json()
             error = data.get('error_message')
             if error:
-                _LOGGER.debug(f"Ошибка при обновлении данных: {error}")
+                _LOGGER.error(f"Ошибка при обновлении данных: {error}")
                 return
             #_LOGGER.debug(f"Result recieved: {data}")
         except Exception:
@@ -259,13 +262,13 @@ class YandexSkill():
                     devices.append(device)
                     if devices:
                         await self.async_notify_skill(devices)
-                        _LOGGER.debug("Update "+entity_id+": "+new_state.state)
+                        _LOGGER.info("Update "+entity_id+": "+new_state.state)
 
     async def create_skill(self):
         # check external HTTPS URL
         try:
             hass_url = get_url(self.hass, require_ssl=True, allow_internal=False)
-            _LOGGER.debug(f"External hass URL: {hass_url}")
+            _LOGGER.info(f"External hass URL: {hass_url}")
         except NoURLAvailableError:
             _LOGGER.error("Can't get external HTTPS URL")
             return
@@ -274,7 +277,7 @@ class YandexSkill():
             # check if skill exists
             if self.skill_id !='':
                 url = f"{INDEX}/skills/{self.skill_id}"
-                _LOGGER.debug(f"Skill already exists: {url}")
+                _LOGGER.info(f"Skill already exists: {url}")
                 return
             
             csrf_token = await self.get_csrf_token()
@@ -372,7 +375,7 @@ class YandexSkill():
                                     headers=headers)
             assert r.status == 201, await r.read()
 
-            _LOGGER.debug("Навык успешно создан")
+            _LOGGER.info("Навык успешно создан")
             self.hass.components.persistent_notification.async_create(
                 f"Навык успешно создан: [ссылка]({skill_url})",
                 title="Yandex Smart Home")
