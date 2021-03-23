@@ -59,6 +59,12 @@ SKILL_SCHEMA = vol.Schema({
     vol.Optional(CONF_SKILL_USER): cv.string,
 }, extra=vol.PREVENT_EXTRA)
 
+def pressure_unit_validate(unit):
+    if not unit in PRESSURE_UNITS_TO_YANDEX_UNITS:
+        raise vol.Invalid(f'Pressure unit "{unit}" is not supported')
+
+    return unit
+
 SETTINGS_SCHEMA = vol.Schema({
     vol.Optional(CONF_PRESSURE_UNIT, default=PRESSURE_UNIT_MMHG): vol.Schema(vol.All(str, pressure_unit_validate)),
 })
@@ -166,9 +172,3 @@ async def _setup_skill(hass: HomeAssistant, session: YandexSession):
     except Exception:
         _LOGGER.exception("Skill Setup error")
         return False
-      
-def pressure_unit_validate(unit):
-    if not unit in PRESSURE_UNITS_TO_YANDEX_UNITS:
-        raise vol.Invalid(f'Pressure unit "{unit}" is not supported')
-
-    return unit
