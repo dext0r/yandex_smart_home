@@ -20,6 +20,10 @@ from homeassistant.components import (
 )
 DOMAIN = 'yandex_smart_home'
 
+DATA_CONFIG = 'config'
+
+CONF_SETTINGS = 'settings'
+CONF_PRESSURE_UNIT = 'pressure_unit'
 CONF_ENTITY_CONFIG = 'entity_config'
 CONF_FILTER = 'filter'
 CONF_ROOM = 'room'
@@ -81,6 +85,35 @@ ERR_NOT_SUPPORTED_IN_CURRENT_MODE = 'NOT_SUPPORTED_IN_CURRENT_MODE'
 EVENT_ACTION_RECEIVED = 'yandex_smart_home_action'
 EVENT_QUERY_RECEIVED = 'yandex_smart_home_query'
 EVENT_DEVICES_RECEIVED = 'yandex_smart_home_devices'
+
+# Pressure units
+PRESSURE_UNIT_PASCAL = 'pa'
+PRESSURE_UNIT_HECTOPASCAL = 'hPa'
+PRESSURE_UNIT_MMHG = 'mmHg'
+PRESSURE_UNIT_ATM = 'atm'
+PRESSURE_UNIT_BAR = 'bar'
+PRESSURE_UNIT_MBAR = 'mbar'
+
+PRESSURE_UNITS_TO_YANDEX_UNITS = {
+    PRESSURE_UNIT_PASCAL: 'unit.pressure.pascal',
+    PRESSURE_UNIT_MMHG: 'unit.pressure.mmhg',
+    PRESSURE_UNIT_ATM: 'unit.pressure.atm',
+    PRESSURE_UNIT_BAR: 'unit.pressure.bar'
+}
+
+# Multiplier to convert from given pressure unit to pascal
+PRESSURE_TO_PASCAL = {
+    PRESSURE_UNIT_HECTOPASCAL: 100,
+    PRESSURE_UNIT_MBAR: 0.01
+}
+
+# Multiplier to convert from pascal to given pressure unit
+PRESSURE_FROM_PASCAL = {
+    PRESSURE_UNIT_PASCAL: 1,
+    PRESSURE_UNIT_MMHG: 0.00750061575846,
+    PRESSURE_UNIT_ATM: 0.00000986923266716,
+    PRESSURE_UNIT_BAR: 0.00001,
+}
 
 DOMAIN_TO_YANDEX_TYPES = {
     binary_sensor.DOMAIN: TYPE_SENSOR,
