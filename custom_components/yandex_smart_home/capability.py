@@ -1025,8 +1025,8 @@ class VolumeCapability(_RangeCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == media_player.DOMAIN and (
-                    features & media_player.SUPPORT_VOLUME_STEP or features & media_player.SUPPORT_VOLUME_SET)
+        return domain == media_player.DOMAIN and features & \
+            media_player.SUPPORT_VOLUME_STEP
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -1068,6 +1068,7 @@ class VolumeCapability(_RangeCapability):
             except KeyError as e:
                 _LOGGER.error("Invalid element of range object: %r" % range_entity)
                 _LOGGER.error('Undefined unit: {}'.format(e.args[0]))
+                # raise ValueError('Undefined unit: {}'.format(e.args[0])) 
                 return 0
 
     def get_value(self):
@@ -1081,30 +1082,24 @@ class VolumeCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        set_volume_level = None
         if 'relative' in state and state['relative']:
-            features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
-            if features & media_player.SUPPORT_VOLUME_STEP:
-                if state['value'] > 0:
-                    service = media_player.SERVICE_VOLUME_UP
-                else:
-                    service = media_player.SERVICE_VOLUME_DOWN
-                for i in range(abs(state['value'])):
-                    await self.hass.services.async_call(
-                        media_player.DOMAIN,
-                        service, {
-                            ATTR_ENTITY_ID: self.state.entity_id
-                        }, blocking=True, context=data.context)
+            if state['value'] > 0:
+                service = media_player.SERVICE_VOLUME_UP
             else:
-                set_volume_level = (self.get_value() + state['value']) / 100
+                service = media_player.SERVICE_VOLUME_DOWN
+            for i in range(abs(state['value'])):
+                await self.hass.services.async_call(
+                    media_player.DOMAIN,
+                    service, {
+                        ATTR_ENTITY_ID: self.state.entity_id
+                    }, blocking=True, context=data.context)
         else:
-            set_volume_level = state['value'] / 100
-        if set_volume_level is not None:
             await self.hass.services.async_call(
                 media_player.DOMAIN,
                 media_player.SERVICE_VOLUME_SET, {
                     ATTR_ENTITY_ID: self.state.entity_id,
-                    media_player.const.ATTR_MEDIA_VOLUME_LEVEL: set_volume_level,
+                    media_player.const.ATTR_MEDIA_VOLUME_LEVEL:
+                        state['value'] / 100,
                 }, blocking=True, context=data.context)
 
 
@@ -1265,7 +1260,7 @@ class TemperatureKCapability(_ColorSettingCapability):
         """Return the state value of this capability for this entity."""
         kelvin = self.state.attributes.get(light.ATTR_COLOR_TEMP)
         if kelvin is None:
-            kelvin = self.state.attributes[light.ATTR_MAX_MIREDS]
+            return 0
 
         return color_util.color_temperature_mired_to_kelvin(kelvin)
 
@@ -1287,13 +1282,13 @@ class CleanupModeCapability(_ModeCapability):
 
     # 101-105 xiaomi miio fan speeds
     modes_map = {
-        'auto': {'auto', 'Automatic', '102'},
-        'turbo': {'turbo', 'high', 'Performance' '104'},
+        'auto': {'auto', '102'},
+        'turbo': {'turbo', 'high', '104'},
         'min': {'min', 'mop'},
         'max': {'max', 'strong'},
         'express': {'express', '105'},
         'normal': {'normal', 'medium', 'middle', '103'},
-        'quiet': {'quiet', 'low', 'min', 'silent', 'Eco', '101'},
+        'quiet': {'quiet', 'low', 'min', 'silent', '101'},
     }
 
     @staticmethod

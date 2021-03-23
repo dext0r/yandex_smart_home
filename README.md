@@ -26,8 +26,6 @@ yandex_smart_home:
     proxy: https://myproxy.com
     skill_name: My Home Assistant
     skill_user: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  settings:
-    pressure_unit: mmHg
   filter:
     include_domains:
       - switch
@@ -95,6 +93,7 @@ Configuration variables:
 ```yaml
 yandex_smart_home:
   (map) (Optional) Configuration options for the Yandex Smart Home integration.
+
   skill:
     (map) (Optional) description: Device notification required credentials.
     username: 
@@ -109,11 +108,6 @@ yandex_smart_home:
       (string) (Optional) Name of your dialog in Yandex.Dialogs (also might be set via GUI). Default "Home Assistant".
     skill_user:
       (string) (Optional) User ID, under which you are logged in to Home Assistant, during the linking of accounts (also might be set via GUI). 
-  settings:
-    (map) (Optional) Various settings that affect this integration.
-    pressure_unit:
-      (string) (Optional) Pressure unit to use when exposing pressure entities, available units: pa, mmHg (default), atm, bar
-      Value conversion is done automatically from 'hPa' or 'mbar' that Home Assistant supports.
 
   filter:
     (map) (Optional) description: Filters for entities to include/exclude from Yandex Smart Home.
@@ -135,7 +129,7 @@ yandex_smart_home:
       room:
         (string) (Optional) Associating this device to a room in Yandex Smart Home
       type:
-        (string) (Optional) Allows to force set device type. For example set devices.types.purifier to display device as purifier (instead default devices.types.humidifier for such devices) 
+        (string) (Optional) Allows to force set device type. For exmaple set devices.types.purifier to display device as purifier (instead default devices.types.humidifier for such devices) 
       channel_set_via_media_content_id:
         (boolean) (Optional) (media_player only) Enables ability to set channel
          by number for 
