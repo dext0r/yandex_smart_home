@@ -40,6 +40,12 @@ CONF_ENTITY_RANGE_MAX = 'max'
 CONF_ENTITY_RANGE_PRECISION = 'precision'
 CONF_ENTITY_MODE_MAP = 'modes'
 
+#skill
+CONF_SKILL = 'skill'
+CONF_SKILL_OAUTH_TOKEN = 'oauth_token'
+CONF_SKILL_ID = 'skill_id'
+CONF_SKILL_USER_ID = 'user_id'      
+
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types.html/
 PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'
