@@ -60,8 +60,8 @@ class _Property:
 
     type = ''
     instance = ''
-    retrievable = True # default: для встроенного датчика доступен запрос состояния
-    reportable = False # default: оповещение выключено. Встроенный датчик не оповещает платформу об изменении состояния
+    retrievable = True
+    reportable = True
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
