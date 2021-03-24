@@ -19,6 +19,10 @@ Now add the following lines to your `configuration.yaml` file:
 ```yaml
 # Example configuration.yaml entry
 yandex_smart_home:
+  skill:
+    oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
+    skill_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
   settings:
     pressure_unit: mmHg
   filter:
@@ -89,6 +93,14 @@ Configuration variables:
 yandex_smart_home:
   (map) (Optional) Configuration options for the Yandex Smart Home integration.
 
+  skill:
+    (map) (Optional) Various settings that affect this integration.
+    oauth_token: 
+      (string) (Optional) Your Yandex Dialogs OAuth Token. Get it [here](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd).
+    skill_id:
+      (string) (Optional) Your Skill ID. Get it at [Yandex Dialogs](https://dialogs.yandex.ru/developer).
+    user_id:
+      (string) (Optional) User under which you autorized and linked your dialog with Home Assistant. ID
   settings:
     (map) (Optional) Various settings that affect this integration.
     pressure_unit:
@@ -189,3 +201,14 @@ Client identifier | https://social.yandex.net/
 API authorization endpoint | https://[YOUR HOME ASSISTANT URL:PORT]/auth/authorize
 Token Endpoint | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
 Refreshing an Access Token | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
+
+### State changing notification
+
+If you want to notify Yandex Smart Home about a change in the state of your devices, you need to configure three parameters: [OAuth token](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd), [skill ID](https://dialogs.yandex.ru/developer), and Home Assistant user ID (https://[YOUR HOME ASSISTANT URL:PORT]/config/users) to which the skill is linked.
+```
+yandex_smart_home:
+  skill:
+    oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
+    skill_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
