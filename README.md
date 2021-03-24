@@ -96,11 +96,11 @@ yandex_smart_home:
   skill:
     (map) (Optional) Various settings that affect this integration.
     oauth_token: 
-      (string) (Optional) Your Yandex Dialogs OAuth Token. Get it [here](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd).
+      (string) (Optional) Your Yandex Dialogs OAuth Token.
     skill_id:
-      (string) (Optional) Your Skill ID. Get it at [Yandex Dialogs](https://dialogs.yandex.ru/developer).
+      (string) (Optional) Your Skill ID. Get it at Yandex Dialogs.
     user_id:
-      (string) (Optional) User under which you autorized and linked your dialog with Home Assistant. ID
+      (string) (Optional) User under which you autorized and linked your dialog with Home Assistant.
   settings:
     (map) (Optional) Various settings that affect this integration.
     pressure_unit:
