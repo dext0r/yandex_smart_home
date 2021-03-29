@@ -268,7 +268,7 @@ class ContactProperty(_BoolProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == 'opening'
+            return attributes.get(ATTR_DEVICE_CLASS) in ['door', 'garage_door', 'window', 'opening']
 
         return False
 
