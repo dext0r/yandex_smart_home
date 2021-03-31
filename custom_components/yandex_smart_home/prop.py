@@ -20,6 +20,11 @@ from homeassistant.const import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_PRESSURE,
+    DEVICE_CLASS_DOOR,
+    DEVICE_CLASS_GARAGE_DOOR,
+    DEVICE_CLASS_OPENING,
+    DEVICE_CLASS_WINDOW,
+    DEVICE_CLASS_MOTION,
     STATE_UNAVAILABLE,
     STATE_ON,
     STATE_OFF,
@@ -268,7 +273,7 @@ class ContactProperty(_BoolProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) in ['door', 'garage_door', 'window', 'opening']
+            return attributes.get(ATTR_DEVICE_CLASS) in [DEVICE_CLASS_DOOR, DEVICE_CLASS_GARAGE_DOOR, DEVICE_CLASS_OPENING, DEVICE_CLASS_WINDOW]
 
         return False
 
@@ -279,7 +284,7 @@ class MotionProperty(_BoolProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == 'motion'
+            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_MOTION
 
         return False
 
