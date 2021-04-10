@@ -6,5 +6,6 @@
   "dependencies": [
     "http"
   ],
-  "codeowners": []
+  "codeowners": [],
+  "version": 0
 }
