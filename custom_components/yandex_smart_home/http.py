@@ -21,14 +21,18 @@ _LOGGER = logging.getLogger(__name__)
 @callback
 def async_register_http(hass, cfg):
     """Register HTTP views for Yandex Smart Home."""
-    hass.data[DOMAIN][DATA_CONFIG] = Config(
+    config = Config(
         settings=cfg.get(CONF_SETTINGS),
         should_expose=cfg.get(CONF_FILTER),
         entity_config=cfg.get(CONF_ENTITY_CONFIG)
     )
 
+    hass.data[DOMAIN] = {
+        DATA_CONFIG: config
+    }
+
     hass.http.register_view(YandexSmartHomeUnauthorizedView())
-    hass.http.register_view(YandexSmartHomeView(hass.data[DOMAIN][DATA_CONFIG]))
+    hass.http.register_view(YandexSmartHomeView(config))
 
 
 class YandexSmartHomeUnauthorizedView(HomeAssistantView):
