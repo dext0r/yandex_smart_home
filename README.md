@@ -21,7 +21,7 @@ Now add the following lines to your `configuration.yaml` file:
 yandex_smart_home:
   skill:
     oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
-    skill_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
     user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
   settings:
     pressure_unit: mmHg
@@ -100,7 +100,7 @@ yandex_smart_home:
     skill_id:
       (string) (Optional) Your Skill ID. Get it at Yandex Dialogs.
     user_id:
-      (string) (Optional) User under which you autorized and linked your dialog with Home Assistant.
+      (string) (Optional) 32-digit User ID under which you autorized and linked your dialog with Home Assistant.
   settings:
     (map) (Optional) Various settings that affect this integration.
     pressure_unit:
@@ -204,11 +204,12 @@ Refreshing an Access Token | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
 
 ### State changing notification
 
-If you want to notify Yandex Smart Home about a change in the state of your devices, you need to configure three parameters: [OAuth token](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd), [skill ID](https://dialogs.yandex.ru/developer), and Home Assistant user ID (https://[YOUR HOME ASSISTANT URL:PORT]/config/users) to which the skill is linked.
+If you want to notify Yandex Smart Home about a change in the state of your devices, you need to configure three parameters: [OAuth token](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd), [skill ID](https://dialogs.yandex.ru/developer), and Home Assistant user ID (https://[YOUR HOME ASSISTANT URL:PORT]/config/users) to which the skill is linked. User ID is not the same as Home Assistant username. This is a 32-digit identifier that can be found by selecting the desired user in the settings.
+<img src="user_id.png" width="394">
 ```
 yandex_smart_home:
   skill:
     oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
-    skill_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
     user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
