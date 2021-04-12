@@ -1150,7 +1150,7 @@ class ChannelCapability(_RangeCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        if self.retrievable or self.state.attributes.get(
+        if not self.retrievable or self.state.attributes.get(
                 media_player.ATTR_MEDIA_CONTENT_TYPE) \
                 != media_player.const.MEDIA_TYPE_CHANNEL:
             return 0
