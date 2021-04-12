@@ -44,7 +44,8 @@ CONF_ENTITY_MODE_MAP = 'modes'
 CONF_SKILL = 'skill'
 CONF_SKILL_OAUTH_TOKEN = 'oauth_token'
 CONF_SKILL_ID = 'skill_id'
-CONF_SKILL_USER_ID = 'user_id'      
+CONF_SKILL_USER_ID = 'user_id'  
+NOTIFIER = 'notifier'    
 
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types.html/
 PREFIX_TYPES = 'devices.types.'

@@ -38,6 +38,7 @@ from .const import (
     PRESSURE_UNITS_TO_YANDEX_UNITS,
     PRESSURE_FROM_PASCAL,
     PRESSURE_TO_PASCAL,
+    NOTIFIER,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ class _Property:
     type = ''
     instance = ''
     retrievable = True
-    reportable = True
+    reportable = False
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
@@ -69,6 +70,7 @@ class _Property:
         self.state = state
         self.config = hass.data[DOMAIN][DATA_CONFIG]
         self.entity_config = entity_config
+        self.reportable = hass.data[DOMAIN][NOTIFIER]
 
     def description(self):
         """Return description for a devices request."""
@@ -104,7 +106,7 @@ class _Property:
     @staticmethod
     def bool_value(value):
         """Return the bool value according to any type of value."""
-        return value in [1, STATE_ON, STATE_OPEN, 'high', True] # 1/on/high/open/true
+        return value in [1, STATE_ON, STATE_OPEN, 'high', True]
 
 class _BoolProperty(_Property):
     type = PROPERTY_BOOL

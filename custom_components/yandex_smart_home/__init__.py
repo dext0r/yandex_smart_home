@@ -4,7 +4,7 @@ from typing import Dict, Any
 
 import voluptuous as vol
 
-from homeassistant.core import HomeAssistant, Event
+from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_NAME
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entityfilter
@@ -17,7 +17,7 @@ from .const import (
     CONF_SETTINGS, CONF_PRESSURE_UNIT, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS,
     CONF_SKILL, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_SKILL_USER_ID)
 from .http import async_register_http
-from .skill import YandexSkillLight
+from .skill import setup_notification
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,17 +44,17 @@ ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_MODE_MAP, default={}): {cv.string: {cv.string: [cv.string]}},
 })
 
-def pressure_unit_validate(unit):
-    if not unit in PRESSURE_UNITS_TO_YANDEX_UNITS:
-        raise vol.Invalid(f'Pressure unit "{unit}" is not supported')
-
-    return unit
-
 SKILL_SCHEMA = vol.Schema({
     vol.Optional(CONF_SKILL_OAUTH_TOKEN): cv.string,
     vol.Optional(CONF_SKILL_ID): cv.string,
     vol.Optional(CONF_SKILL_USER_ID): cv.string,
 }, extra=vol.PREVENT_EXTRA)
+
+def pressure_unit_validate(unit):
+    if not unit in PRESSURE_UNITS_TO_YANDEX_UNITS:
+        raise vol.Invalid(f'Pressure unit "{unit}" is not supported')
+
+    return unit
 
 SETTINGS_SCHEMA = vol.Schema({
     vol.Optional(CONF_PRESSURE_UNIT, default=PRESSURE_UNIT_MMHG): vol.Schema(
@@ -77,28 +77,10 @@ CONFIG_SCHEMA = vol.Schema({
 
 async def async_setup(hass: HomeAssistant, yaml_config: Dict[str, Any]):
     """Activate Yandex Smart Home component."""
-
+    
+    hass.data[DOMAIN] = {}
     config = yaml_config.get(DOMAIN, {})
     async_register_http(hass, config)
-    
-    await _setup_skill(hass, config)
+    await setup_notification(hass, config)
 
     return True
-
-async def _setup_skill(hass: HomeAssistant, config):
-    """Set up connection to Yandex Dialogs."""
-    _LOGGER.info("Skill Setup") 
-    try:
-        skill = YandexSkillLight(hass, config)
-        if not skill:
-            _LOGGER.error("Skill Setup Failed") 
-            return False
-            
-        async def listener(event: Event):
-            await skill.async_event_handler(event)
-        
-        hass.bus.async_listen('state_changed', listener)
-        
-    except Exception:
-        _LOGGER.exception("Skill Setup error")
-        return False
