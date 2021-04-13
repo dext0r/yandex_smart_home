@@ -15,9 +15,9 @@ from .const import (
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MAX, 
     CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP,
     CONF_SETTINGS, CONF_PRESSURE_UNIT, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS,
-    CONF_SKILL, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_SKILL_USER_ID)
+    CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID)
 from .http import async_register_http
-from .skill import setup_notification
+from .notifier import setup_notification
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,10 +44,10 @@ ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_MODE_MAP, default={}): {cv.string: {cv.string: [cv.string]}},
 })
 
-SKILL_SCHEMA = vol.Schema({
+NOTIFIER_SCHEMA = vol.Schema({
     vol.Optional(CONF_SKILL_OAUTH_TOKEN): cv.string,
     vol.Optional(CONF_SKILL_ID): cv.string,
-    vol.Optional(CONF_SKILL_USER_ID): cv.string,
+    vol.Optional(CONF_NOTIFIER_USER_ID): cv.string,
 }, extra=vol.PREVENT_EXTRA)
 
 def pressure_unit_validate(unit):
@@ -64,7 +64,7 @@ SETTINGS_SCHEMA = vol.Schema({
 
 YANDEX_SMART_HOME_SCHEMA = vol.All(
     vol.Schema({
-        vol.Optional(CONF_SKILL, default={}): SKILL_SCHEMA,
+        vol.Optional(CONF_NOTIFIER, default={}): NOTIFIER_SCHEMA,
         vol.Optional(CONF_SETTINGS, default={}): SETTINGS_SCHEMA,
         vol.Optional(CONF_FILTER, default={}): entityfilter.FILTER_SCHEMA,
         vol.Optional(CONF_ENTITY_CONFIG, default={}): {cv.entity_id: ENTITY_SCHEMA},

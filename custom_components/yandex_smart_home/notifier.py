@@ -11,8 +11,8 @@ from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.core import HomeAssistant, Event
 
 from .const import (
-    DOMAIN, CONF_SKILL, CONF_SKILL_OAUTH_TOKEN, CONF_SETTINGS, 
-    CONF_SKILL_ID, CONF_SKILL_USER_ID, CONF_ENTITY_CONFIG, CONF_FILTER, NOTIFIER
+    DOMAIN, CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SETTINGS, 
+    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, CONF_ENTITY_CONFIG, CONF_FILTER, NOTIFIER_ENABLED
 )
 from .helpers import YandexEntity, Config
 from .error import SmartHomeError
@@ -25,19 +25,22 @@ STATE_URL = '/callback/state' # для состояния устройств
 
 async def setup_notification(hass: HomeAssistant, config):
     """Set up notification."""
-    _LOGGER.info("Skill Setup")
-    hass.data[DOMAIN][NOTIFIER] = False
+    _LOGGER.info("Notifier Setup")
+    hass.data[DOMAIN][NOTIFIER_ENABLED] = False
     try:
-        if not config[CONF_SKILL]:
-            _LOGGER.error("Skill Setup Failed: No Config")
+        if not config[CONF_NOTIFIER]:
+            _LOGGER.error("Notifier Setup Failed: No Config")
             return False
 
-        skill = YandexSkillLight(hass, config)
+        skill = YandexNotifier(hass, config)
         if not skill.init():
-            _LOGGER.error("Skill Setup Failed")
+            _LOGGER.error("Notifier Setup Failed")
+            self.hass.components.persistent_notification.async_create(
+                "Ошибка при инициализации (уведомление навыка об изменении состояния устройств работать не будет).",
+                title="Yandex Smart Home")
             return False
         
-        hass.data[DOMAIN][NOTIFIER] = True
+        hass.data[DOMAIN][NOTIFIER_ENABLED] = True
         
         async def listener(event: Event):
             await skill.async_event_handler(event)
@@ -45,16 +48,16 @@ async def setup_notification(hass: HomeAssistant, config):
         hass.bus.async_listen('state_changed', listener)
         
     except Exception:
-        _LOGGER.exception("Skill Setup Error")
+        _LOGGER.exception("Notifier Setup Error")
         return False
 
-class YandexSkillLight():
+class YandexNotifier():
 
     def __init__(self, hass: HomeAssistantType, config):
         self.hass = hass
-        self.oauth_token = config[CONF_SKILL][CONF_SKILL_OAUTH_TOKEN] if CONF_SKILL_OAUTH_TOKEN in config[CONF_SKILL] else ''
-        self.skill_id = config[CONF_SKILL][CONF_SKILL_ID] if CONF_SKILL_ID in config[CONF_SKILL] else ''
-        self.user_id = config[CONF_SKILL][CONF_SKILL_USER_ID] if CONF_SKILL_USER_ID in config[CONF_SKILL] else ''
+        self.oauth_token = config[CONF_NOTIFIER][CONF_SKILL_OAUTH_TOKEN] if CONF_SKILL_OAUTH_TOKEN in config[CONF_NOTIFIER] else ''
+        self.skill_id = config[CONF_NOTIFIER][CONF_SKILL_ID] if CONF_SKILL_ID in config[CONF_NOTIFIER] else ''
+        self.user_id = config[CONF_NOTIFIER][CONF_NOTIFIER_USER_ID] if CONF_NOTIFIER_USER_ID in config[CONF_NOTIFIER] else ''
         self.should_expose = config.get(CONF_FILTER)
         self.config = Config(
             settings=config.get(CONF_SETTINGS),
@@ -81,7 +84,7 @@ class YandexSkillLight():
         except Exception:
             _LOGGER.exception("Async Init Failed")
             self.hass.components.persistent_notification.async_create(
-                "Ошибка при инициализации компонента (уведомление навыка об изменении состояния устройств работать не будет).",
+                "Ошибка при инициализации (уведомление навыка об изменении состояния устройств работать не будет).",
                 title="Yandex Smart Home")
             return False
         return True
@@ -110,7 +113,7 @@ class YandexSkillLight():
                 return
             #_LOGGER.debug(f"Result recieved: {data}")
         except Exception:
-            _LOGGER.exception("Notify Skill Failed")
+            _LOGGER.exception("Notify Notifier Failed")
     
     async def async_event_handler(self, event: Event):
         devices = []

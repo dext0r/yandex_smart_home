@@ -38,7 +38,7 @@ from .const import (
     PRESSURE_UNITS_TO_YANDEX_UNITS,
     PRESSURE_FROM_PASCAL,
     PRESSURE_TO_PASCAL,
-    NOTIFIER,
+    NOTIFIER_ENABLED,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class _Property:
         self.state = state
         self.config = hass.data[DOMAIN][DATA_CONFIG]
         self.entity_config = entity_config
-        self.reportable = hass.data[DOMAIN][NOTIFIER]
+        self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
 
     def description(self):
         """Return description for a devices request."""
