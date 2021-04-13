@@ -10,12 +10,13 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entityfilter
 
 from .const import (
-    DOMAIN, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
+    DOMAIN, CONFIG, DATA_CONFIG, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_ATTRIBUTE, CONF_ENTITY_PROPERTY_TYPE,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MAX, 
     CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP,
     CONF_SETTINGS, CONF_PRESSURE_UNIT, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS,
-    CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID)
+    CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED)
+from .helpers import Config
 from .http import async_register_http
 from .notifier import setup_notification
 
@@ -79,8 +80,14 @@ async def async_setup(hass: HomeAssistant, yaml_config: Dict[str, Any]):
     """Activate Yandex Smart Home component."""
     
     hass.data[DOMAIN] = {}
-    config = yaml_config.get(DOMAIN, {})
-    async_register_http(hass, config)
-    await setup_notification(hass, config)
+    hass.data[DOMAIN][CONFIG] = yaml_config.get(DOMAIN, {})
+    hass.data[DOMAIN][DATA_CONFIG] = Config(
+        settings=hass.data[DOMAIN][CONFIG].get(CONF_SETTINGS),
+        should_expose=hass.data[DOMAIN][CONFIG].get(CONF_FILTER),
+        entity_config=hass.data[DOMAIN][CONFIG].get(CONF_ENTITY_CONFIG)
+    )
+    hass.data[DOMAIN][NOTIFIER_ENABLED] = False
+    async_register_http(hass)
+    setup_notification(hass)
 
     return True

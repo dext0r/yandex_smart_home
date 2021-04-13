@@ -1,21 +1,13 @@
-import asyncio
-import base64
-import json
 import logging
-
 from time import time
-
 from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
-from homeassistant.helpers.typing import HomeAssistantType
 from homeassistant.core import HomeAssistant, Event
-
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from .const import (
-    DOMAIN, CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SETTINGS, 
-    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, CONF_ENTITY_CONFIG, CONF_FILTER, NOTIFIER_ENABLED
+    DOMAIN, CONFIG, DATA_CONFIG, CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN,
+    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED
 )
-from .helpers import YandexEntity, Config
-from .error import SmartHomeError
+from .helpers import YandexEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,19 +15,18 @@ SKILL_API_URL = 'https://dialogs.yandex.net/api/v1/skills'
 DISCOVERY_URL = '/callback/discovery' # для параметров устройств
 STATE_URL = '/callback/state' # для состояния устройств
 
-async def setup_notification(hass: HomeAssistant, config):
+def setup_notification(hass: HomeAssistant):
     """Set up notification."""
     _LOGGER.info("Notifier Setup")
-    hass.data[DOMAIN][NOTIFIER_ENABLED] = False
     try:
-        if not config[CONF_NOTIFIER]:
+        if not hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
             _LOGGER.error("Notifier Setup Failed: No Config")
             return False
 
-        skill = YandexNotifier(hass, config)
-        if not skill.init():
+        notifier = YandexNotifier(hass)
+        if not notifier.init():
             _LOGGER.error("Notifier Setup Failed")
-            self.hass.components.persistent_notification.async_create(
+            hass.components.persistent_notification.async_create(
                 "Ошибка при инициализации (уведомление навыка об изменении состояния устройств работать не будет).",
                 title="Yandex Smart Home")
             return False
@@ -43,7 +34,7 @@ async def setup_notification(hass: HomeAssistant, config):
         hass.data[DOMAIN][NOTIFIER_ENABLED] = True
         
         async def listener(event: Event):
-            await skill.async_event_handler(event)
+            await notifier.async_event_handler(event)
         
         hass.bus.async_listen('state_changed', listener)
         
@@ -53,17 +44,11 @@ async def setup_notification(hass: HomeAssistant, config):
 
 class YandexNotifier():
 
-    def __init__(self, hass: HomeAssistantType, config):
+    def __init__(self, hass: HomeAssistant):
         self.hass = hass
-        self.oauth_token = config[CONF_NOTIFIER][CONF_SKILL_OAUTH_TOKEN] if CONF_SKILL_OAUTH_TOKEN in config[CONF_NOTIFIER] else ''
-        self.skill_id = config[CONF_NOTIFIER][CONF_SKILL_ID] if CONF_SKILL_ID in config[CONF_NOTIFIER] else ''
-        self.user_id = config[CONF_NOTIFIER][CONF_NOTIFIER_USER_ID] if CONF_NOTIFIER_USER_ID in config[CONF_NOTIFIER] else ''
-        self.should_expose = config.get(CONF_FILTER)
-        self.config = Config(
-            settings=config.get(CONF_SETTINGS),
-            should_expose=self.should_expose,
-            entity_config=config.get(CONF_ENTITY_CONFIG)
-        )
+        self.oauth_token = hass.data[DOMAIN][CONFIG][CONF_NOTIFIER][CONF_SKILL_OAUTH_TOKEN] if CONF_SKILL_OAUTH_TOKEN in hass.data[DOMAIN][CONFIG][CONF_NOTIFIER] else ''
+        self.skill_id = hass.data[DOMAIN][CONFIG][CONF_NOTIFIER][CONF_SKILL_ID] if CONF_SKILL_ID in hass.data[DOMAIN][CONFIG][CONF_NOTIFIER] else ''
+        self.user_id = hass.data[DOMAIN][CONFIG][CONF_NOTIFIER][CONF_NOTIFIER_USER_ID] if CONF_NOTIFIER_USER_ID in hass.data[DOMAIN][CONFIG][CONF_NOTIFIER] else ''
         self.session = None
                 
     def init(self):
@@ -122,11 +107,11 @@ class YandexNotifier():
         new_state = event.data.get('new_state')
         if old_state is None:
             return
-        if entity_id in CLOUD_NEVER_EXPOSED_ENTITIES or not self.should_expose(entity_id):
+        if entity_id in CLOUD_NEVER_EXPOSED_ENTITIES or not self.hass.data[DOMAIN][DATA_CONFIG].should_expose(entity_id):
             return
         if new_state and new_state.state != STATE_UNAVAILABLE:
-            old_entity = YandexEntity(self.hass, self.config, old_state)
-            entity = YandexEntity(self.hass, self.config, new_state)
+            old_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], old_state)
+            entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], new_state)
             device = entity.query_serialize()
             if old_entity.query_serialize() != device: # есть изменения
                 if device['capabilities'] or device['properties']:
