@@ -93,7 +93,7 @@ Configuration variables:
 yandex_smart_home:
   (map) (Optional) Configuration options for the Yandex Smart Home integration.
 
-  skill:
+  notifier:
     (map) (Optional) Various settings that affect this integration.
     oauth_token: 
       (string) (Optional) Your Yandex Dialogs OAuth Token.
