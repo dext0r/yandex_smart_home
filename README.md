@@ -19,7 +19,7 @@ Now add the following lines to your `configuration.yaml` file:
 ```yaml
 # Example configuration.yaml entry
 yandex_smart_home:
-  skill:
+  notifier:
     oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
     skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
     user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -208,7 +208,7 @@ If you want to notify Yandex Smart Home about a change in the state of your devi
 <img src="user_id.png" width="394">
 ```
 yandex_smart_home:
-  skill:
+  notifier:
     oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
     skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
     user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
