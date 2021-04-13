@@ -827,11 +827,7 @@ class CoverLevelCapability(_RangeCapability):
              
         value = state['value']
         if value < 0:
-            position = self.get_value() # текущее положение
-            if (position+value) >= 0: # если задаваемое положение отрицательно
-                value += position # вычитаем
-            else: # если нужно закрыть на большее значение, чем открыто
-                value = 0
+	    value = min(self.get_value() + value, 0)
         
         await self.hass.services.async_call(
             self.state.domain,
