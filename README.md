@@ -205,7 +205,9 @@ Refreshing an Access Token | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
 ### State changing notification
 
 If you want to notify Yandex Smart Home about a change in the state of your devices, you need to configure three parameters: [OAuth token](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd), [skill ID](https://dialogs.yandex.ru/developer), and Home Assistant user ID (https://[YOUR HOME ASSISTANT URL:PORT]/config/users) to which the skill is linked.
+
 <img src="user_id.png" width="394">
+
 User ID is not the same as Home Assistant username. This is a 32-digit identifier that can be found by selecting the desired user in the settings.
 ```
 yandex_smart_home:
