@@ -61,7 +61,6 @@ class _Property:
 
     type = ''
     instance = ''
-    retrievable = True
     reportable = False
 
     def __init__(self, hass, state, entity_config):
@@ -70,6 +69,7 @@ class _Property:
         self.state = state
         self.config = hass.data[DOMAIN][DATA_CONFIG]
         self.entity_config = entity_config
+        self.retrievable = True
         self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
 
     def description(self):

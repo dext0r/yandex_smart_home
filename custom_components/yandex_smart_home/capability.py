@@ -70,7 +70,6 @@ class _Capability:
 
     type = ''
     instance = ''
-    retrievable = True
     reportable = False
 
     def __init__(self, hass, state, entity_config):
@@ -78,6 +77,7 @@ class _Capability:
         self.hass = hass
         self.state = state
         self.entity_config = entity_config
+        self.retrievable = True
         self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
 
     def description(self):
@@ -1017,7 +1017,6 @@ class VolumeCapability(_RangeCapability):
     """Set volume functionality."""
 
     instance = 'volume'
-    retrievable = False
 
     def __init__(self, hass, state, config):
         super().__init__(hass, state, config)
