@@ -19,6 +19,10 @@ Now add the following lines to your `configuration.yaml` file:
 ```yaml
 # Example configuration.yaml entry
 yandex_smart_home:
+  notifier:
+    oauth_token: AgAAAAAEEo2aYYR7m-CEyS7SEiUJjnKez3v3GZe
+    skill_id: d38d4c39-5846-ba53-67acc27e08bc
+    user_id: e8701ad48ba05a91604e480dd60899a3
   settings:
     pressure_unit: mmHg
   filter:
@@ -89,6 +93,14 @@ Configuration variables:
 yandex_smart_home:
   (map) (Optional) Configuration options for the Yandex Smart Home integration.
 
+  notifier:
+    (map) (Optional) Device status change notification settings.
+    oauth_token: 
+      (string) (Optional) Your Yandex Dialogs OAuth Token.
+    skill_id:
+      (string) (Optional) Your Skill ID. Get it at Yandex Dialogs.
+    user_id:
+      (string) (Optional) 32-digit User ID under which you autorized and linked your dialog with Home Assistant.
   settings:
     (map) (Optional) Various settings that affect this integration.
     pressure_unit:
@@ -189,3 +201,18 @@ Client identifier | https://social.yandex.net/
 API authorization endpoint | https://[YOUR HOME ASSISTANT URL:PORT]/auth/authorize
 Token Endpoint | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
 Refreshing an Access Token | https://[YOUR HOME ASSISTANT URL:PORT]/auth/token
+
+### State changing notification
+
+If you want to notify Yandex Smart Home about a change in the state of your devices, you need to configure three parameters: [OAuth token](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd), [skill ID](https://dialogs.yandex.ru/developer), and Home Assistant user ID (https://[YOUR HOME ASSISTANT URL:PORT]/config/users) to which the skill is linked.
+
+<img src="user_id.png" width="394">
+
+User ID is not the same as Home Assistant username. This is a 32-digit identifier that can be found by selecting the desired user in the settings.
+```
+yandex_smart_home:
+  notifier:
+    oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
+    skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
+    user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```

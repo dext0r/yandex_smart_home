@@ -20,6 +20,7 @@ from homeassistant.components import (
 )
 DOMAIN = 'yandex_smart_home'
 
+CONFIG = 'yaml_config'
 DATA_CONFIG = 'config'
 
 CONF_SETTINGS = 'settings'
@@ -39,6 +40,13 @@ CONF_ENTITY_RANGE_MIN = 'min'
 CONF_ENTITY_RANGE_MAX = 'max'
 CONF_ENTITY_RANGE_PRECISION = 'precision'
 CONF_ENTITY_MODE_MAP = 'modes'
+
+#notifier
+CONF_NOTIFIER = 'notifier'
+CONF_SKILL_OAUTH_TOKEN = 'oauth_token'
+CONF_SKILL_ID = 'skill_id'
+CONF_NOTIFIER_USER_ID = 'user_id'  
+NOTIFIER_ENABLED = 'notifier_enabled'    
 
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types.html/
 PREFIX_TYPES = 'devices.types.'

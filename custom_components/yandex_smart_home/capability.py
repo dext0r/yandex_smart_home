@@ -38,12 +38,13 @@ from homeassistant.core import DOMAIN as HA_DOMAIN
 from homeassistant.util import color as color_util
 
 from .const import (
+    DOMAIN,
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY,
     CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN, 
     CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_RANGE,
-    CONF_ENTITY_MODE_MAP)
+    CONF_ENTITY_MODE_MAP, NOTIFIER_ENABLED)
 from .error import SmartHomeError
 
 _LOGGER = logging.getLogger(__name__)
@@ -77,6 +78,7 @@ class _Capability:
         self.hass = hass
         self.state = state
         self.entity_config = entity_config
+        self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
 
     def description(self):
         """Return description for a devices request."""
