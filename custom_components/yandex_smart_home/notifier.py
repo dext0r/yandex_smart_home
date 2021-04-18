@@ -1,6 +1,6 @@
 import logging
 from time import time
-from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE
+from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, Event
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from .const import (
@@ -105,17 +105,19 @@ class YandexNotifier():
         entity_id = event.data.get('entity_id')
         old_state = event.data.get('old_state')
         new_state = event.data.get('new_state')
-        if old_state is None:
+        if not old_state or old_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
+            return
+        if not new_state or new_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
             return
         if entity_id in CLOUD_NEVER_EXPOSED_ENTITIES or not self.hass.data[DOMAIN][DATA_CONFIG].should_expose(entity_id):
             return
-        if new_state and new_state.state != STATE_UNAVAILABLE:
-            old_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], old_state)
-            entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], new_state)
-            device = entity.query_serialize()
-            if old_entity.query_serialize() != device: # есть изменения
-                if device['capabilities'] or device['properties']:
-                    devices.append(device)
-                    if devices:
-                        await self.async_notify_skill(devices)
-                        _LOGGER.info("Update "+entity_id+": "+new_state.state)
+        old_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], old_state)
+        entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], new_state)
+        device = entity.query_serialize()
+        if old_entity.query_serialize() != device: # есть изменения
+            if device['capabilities'] or device['properties']:
+                devices.append(device)
+                if devices:
+                    await self.async_notify_skill(devices)
+                    _LOGGER.info("Update "+entity_id+": "+new_state.state)
+
