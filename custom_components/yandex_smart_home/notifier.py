@@ -12,13 +12,12 @@ from .helpers import YandexEntity
 _LOGGER = logging.getLogger(__name__)
 
 SKILL_API_URL = 'https://dialogs.yandex.net/api/v1/skills'
-DISCOVERY_URL = '/callback/discovery'  # для параметров устройств
-STATE_URL = '/callback/state'  # для состояния устройств
+DISCOVERY_URL = '/callback/discovery'
+STATE_URL = '/callback/state'
 
 
 def setup_notification(hass: HomeAssistant):
     """Set up notification."""
-    _LOGGER.info("Notifier Setup")
     try:
         if not hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
             _LOGGER.error("Notifier Setup Failed: No Config")
@@ -48,42 +47,34 @@ class YandexNotifier:
 
     def __init__(self, hass: HomeAssistant):
         self.hass = hass
-        self.oauth_token = hass.data[DOMAIN][CONFIG][CONF_NOTIFIER][CONF_SKILL_OAUTH_TOKEN] if CONF_SKILL_OAUTH_TOKEN in \
-                                                                                               hass.data[DOMAIN][
-                                                                                                   CONFIG][
-                                                                                                   CONF_NOTIFIER] else ''
-        self.skill_id = hass.data[DOMAIN][CONFIG][CONF_NOTIFIER][CONF_SKILL_ID] if CONF_SKILL_ID in \
-                                                                                   hass.data[DOMAIN][CONFIG][
-                                                                                       CONF_NOTIFIER] else ''
-        self.user_id = hass.data[DOMAIN][CONFIG][CONF_NOTIFIER][CONF_NOTIFIER_USER_ID] if CONF_NOTIFIER_USER_ID in \
-                                                                                          hass.data[DOMAIN][CONFIG][
-                                                                                              CONF_NOTIFIER] else ''
-        self.session = None
+        conf = hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]
+        if CONF_SKILL_OAUTH_TOKEN in conf and CONF_SKILL_ID in conf and CONF_NOTIFIER_USER_ID in conf:
+            self.oauth_token = conf[CONF_SKILL_OAUTH_TOKEN]
+            self.skill_id = conf[CONF_SKILL_ID]
+            self.user_id = conf[CONF_NOTIFIER_USER_ID]
 
     def init(self):
         try:
-            if self.oauth_token == '':
-                _LOGGER.error("Async Init Failed: No OAuth Token")
+            if self.oauth_token is None:
+                _LOGGER.error("Notifier Init Failed: No OAuth Token")
                 return False
-            _LOGGER.info(f"OAuth Token: {self.oauth_token}")
-            if self.skill_id == '':
-                _LOGGER.error("Async Init Failed: No skill ID")
+            if self.skill_id is None:
+                _LOGGER.error("Notifier Init Failed: No skill ID")
                 return False
-            _LOGGER.info(f"Skill ID: {self.skill_id}")
-            if self.user_id == '':
-                _LOGGER.error("Async Init Failed: No user ID")
+            if self.user_id is None:
+                _LOGGER.error("Notifier Init Failed: No user ID")
                 return False
-            _LOGGER.info(f"User ID: {self.user_id}")
             self.session = async_create_clientsession(self.hass)
         except Exception:
-            _LOGGER.exception("Async Init Failed")
+            _LOGGER.exception("Notifier Init Failed")
             self.hass.components.persistent_notification.async_create(
-                "Ошибка при инициализации (уведомление навыка об изменении состояния устройств работать не будет).",
+                "Notifier: Ошибка при инициализации (уведомление навыка об изменении состояния устройств работать не "
+                "будет).",
                 title="Yandex Smart Home")
             return False
         return True
 
-    async def async_notify_skill(self, devices: str):
+    async def async_notify_skill(self, devices):
         try:
             url = f"{SKILL_API_URL}/{self.skill_id}"
             headers = {"Authorization": "OAuth " + self.oauth_token}
@@ -102,7 +93,7 @@ class YandexNotifier:
             data = await r.json()
             error = data.get('error_message')
             if error:
-                _LOGGER.error(f"Ошибка при обновлении данных: {error}")
+                _LOGGER.error(f"Notification sending error: {error}")
                 return
         except Exception:
             _LOGGER.exception("Notifier Failed")
@@ -126,4 +117,4 @@ class YandexNotifier:
                     devices.append(device)
                     if devices:
                         await self.async_notify_skill(devices)
-                        _LOGGER.info("Update " + entity_id + ": " + new_state.state)
+                        _LOGGER.debug("Notify yandex about new state " + entity_id + ": " + new_state.state)
