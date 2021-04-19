@@ -20,7 +20,7 @@ def setup_notification(hass: HomeAssistant):
     """Set up notification."""
     try:
         if not hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
-            _LOGGER.error("Notifier Setup Failed: No Config")
+            _LOGGER.debug("Notifier disabled: no config")
             return False
 
         notifier = YandexNotifier(hass)
