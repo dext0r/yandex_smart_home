@@ -122,7 +122,7 @@ class _BoolProperty(_Property):
             value = self.state.state
 
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid bool property value")
 
         return self.bool_value(value)
 
@@ -154,7 +154,7 @@ class TemperatureProperty(_Property):
             value = self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE)
 
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid temperature property value")
 
         return float(value)
 
@@ -187,7 +187,7 @@ class HumidityProperty(_Property):
             value = self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY)
 
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid humidity property value")
 
         return float(value)
 
@@ -218,7 +218,7 @@ class PressureProperty(_Property):
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                "Invalid value")
+                "Invalid pressure property value")
 
         # Get a conversion multiplier to pascal
         unit = self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
@@ -259,7 +259,7 @@ class BatteryProperty(_Property):
             value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid value")
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid battery property value")
 
         return float(value)
 
@@ -324,7 +324,7 @@ class CustomEntityProperty(_Property):
         elif self.type == PROPERTY_BOOL:
             return {'instance': self.instance}
 
-        raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "unit not found for type: {}".format(self.instance))
+        raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Unit not found for type: {}".format(self.instance))
 
     def get_value(self):
         value = 0
@@ -352,7 +352,7 @@ class CustomEntityProperty(_Property):
             if self.instance == 'pressure':
                 # Get a conversion multiplier to pascal
                 unit = entity.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-                if not unit in PRESSURE_TO_PASCAL:
+                if unit not in PRESSURE_TO_PASCAL:
                     raise SmartHomeError(
                         ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                         f"Unsupported pressure unit: {unit}")

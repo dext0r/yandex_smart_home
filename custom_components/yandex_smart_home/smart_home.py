@@ -48,12 +48,13 @@ async def _process(hass, data, action, message):
     try:
         result = await handler(hass, data, message)
     except SmartHomeError as err:
+        _LOGGER.error('Handler process error: %s %s', err.code, err.message)
         return {
             'request_id': data.request_id,
             'payload': {'error_code': err.code}
         }
     except Exception:  # pylint: disable=broad-except
-        _LOGGER.exception('Unexpected error')
+        _LOGGER.exception('Handler process unexpected error')
         return {
             'request_id': data.request_id,
             'payload': {'error_code': ERR_INTERNAL_ERROR}
