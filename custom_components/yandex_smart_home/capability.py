@@ -827,11 +827,15 @@ class CoverLevelCapability(_RangeCapability):
         else:
              raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
              
+        value = state['value']
+        if value < 0:
+	    value = min(self.get_value() + value, 0)
+        
         await self.hass.services.async_call(
             self.state.domain,
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                attr: state['value']
+                attr: value
             }, blocking=True, context=data.context)
 
 @register_capability
