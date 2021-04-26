@@ -11,15 +11,21 @@ from homeassistant.components import (
     climate,
     binary_sensor,
     sensor,
+    switch,
     vacuum,
 )
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_BATTERY_LEVEL,
+    ATTR_VOLTAGE,
     ATTR_UNIT_OF_MEASUREMENT,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_PRESSURE,
+    DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_VOLTAGE,
+    DEVICE_CLASS_POWER,
+    DEVICE_CLASS_CO2,
     STATE_UNAVAILABLE,
     STATE_ON,
     STATE_OFF,
@@ -45,7 +51,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PREFIX_PROPERTIES = 'devices.properties.'
 PROPERTY_FLOAT = PREFIX_PROPERTIES + 'float'
-PROPERTY_BOOL = PREFIX_PROPERTIES + 'bool'
+PROPERTY_BOOL = PREFIX_PROPERTIES + 'event'
 
 PROPERTIES = []
 
@@ -158,7 +164,6 @@ class TemperatureProperty(_Property):
 
         return float(value)
 
-
 @register_property
 class HumidityProperty(_Property):
     type = PROPERTY_FLOAT
@@ -230,6 +235,134 @@ class PressureProperty(_Property):
         # Convert the value to pascal and then to the chosen Yandex unit
         val = float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]]
         return round(val, 2)
+
+@register_property
+class CO2Property(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'co2_level'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == sensor.DOMAIN: 
+            return attributes.get(DEVICE_CLASS_CO2) is not None
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.ppm'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == sensor.DOMAIN:
+            value = self.state.state
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid co2 level property value")
+
+        return float(value)
+
+@register_property
+class VoltageProperty(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'voltage'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == sensor.DOMAIN: 
+            return attributes.get(DEVICE_CLASS_VOLTAGE) is not None
+        elif domain == switch.DOMAIN:
+            return ATTR_VOLTAGE in attributes
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.volt'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == sensor.DOMAIN:
+            value = self.state.state
+        elif self.state.domain == switch.DOMAIN:
+            value = self.state.attributes.get(ATTR_VOLTAGE)
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid voltage property value")
+
+        return float(value)
+
+@register_property
+class CurrentProperty(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'amperage'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == sensor.DOMAIN: 
+            return attributes.get(DEVICE_CLASS_CURRENT) is not None
+        elif domain == switch.DOMAIN:
+            return 'current' in attributes
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.ampere'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == sensor.DOMAIN:
+            value = self.state.state
+        elif self.state.domain == switch.DOMAIN:
+            value = self.state.attributes.get('current')
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid amperage property value")
+
+        return float(value)
+
+@register_property
+class PowerProperty(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'power'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == sensor.DOMAIN: 
+            return attributes.get(DEVICE_CLASS_POWER) is not None
+        elif domain == switch.DOMAIN and 'power' in attributes:
+            return 'power' in attributes
+        elif domain == switch.DOMAIN and 'load_power' in attributes:
+            return 'load_power' in attributes
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.watt'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == sensor.DOMAIN:
+            value = self.state.state
+        elif self.state.domain == switch.DOMAIN and 'power' in self.state.attributes:
+            value = self.state.attributes.get('power')
+        elif self.state.domain == switch.DOMAIN and 'load_power' in self.state.attributes:
+            value = self.state.attributes.get('load_power')
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid power property value")
+
+        return float(value)
 
 @register_property
 class BatteryProperty(_Property):
