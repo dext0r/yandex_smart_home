@@ -10,6 +10,8 @@ from custom_components.yandex_smart_home.error import SmartHomeError
 from homeassistant.components import (
     climate,
     binary_sensor,
+    fan,
+    light,
     sensor,
     switch,
     vacuum,
@@ -25,6 +27,7 @@ from homeassistant.const import (
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_VOLTAGE,
     DEVICE_CLASS_POWER,
+    DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CO2,
     STATE_UNAVAILABLE,
     STATE_ON,
@@ -141,7 +144,7 @@ class TemperatureProperty(_Property):
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_TEMPERATURE
-        elif domain == climate.DOMAIN:
+        elif domain == climate.DOMAIN or domain == fan.DOMAIN:
             return attributes.get(climate.ATTR_CURRENT_TEMPERATURE) is not None
 
         return False
@@ -156,7 +159,7 @@ class TemperatureProperty(_Property):
         value = 0.0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == climate.DOMAIN:
+        elif self.state.domain == climate.DOMAIN or self.state.domain == fan.DOMAIN:
             value = self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE)
 
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
@@ -173,7 +176,7 @@ class HumidityProperty(_Property):
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_HUMIDITY
-        elif domain == climate.DOMAIN:
+        elif domain == climate.DOMAIN or domain == fan.DOMAIN:
             return attributes.get(climate.ATTR_CURRENT_HUMIDITY) is not None
 
         return False
@@ -188,7 +191,7 @@ class HumidityProperty(_Property):
         value = 0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == climate.DOMAIN:
+        elif self.state.domain == climate.DOMAIN or self.state.domain == fan.DOMAIN:
             value = self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY)
 
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
@@ -237,14 +240,42 @@ class PressureProperty(_Property):
         return round(val, 2)
 
 @register_property
+class WaterLevelProperty(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'water_level'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == fan.DOMAIN:
+            return 'water_level' in attributes
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.percent'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == fan.DOMAIN:
+            value = self.state.attributes.get('water_level')
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid voltage property value")
+
+        return float(value)
+
+@register_property
 class CO2Property(_Property):
     type = PROPERTY_FLOAT
     instance = 'co2_level'
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN: 
-            return attributes.get(DEVICE_CLASS_CO2) is not None
+        if domain == sensor.DOMAIN or domain == fan.DOMAIN: 
+            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CO2
 
         return False
 
@@ -256,7 +287,7 @@ class CO2Property(_Property):
 
     def get_value(self):
         value = 0
-        if self.state.domain == sensor.DOMAIN:
+        if self.state.domain == sensor.DOMAIN or self.state.domain == fan.DOMAIN:
             value = self.state.state
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
@@ -272,8 +303,8 @@ class VoltageProperty(_Property):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN: 
-            return attributes.get(DEVICE_CLASS_VOLTAGE) is not None
-        elif domain == switch.DOMAIN:
+            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_VOLTAGE
+        elif domain == switch.DOMAIN or domain == light.DOMAIN:
             return ATTR_VOLTAGE in attributes
 
         return False
@@ -288,7 +319,7 @@ class VoltageProperty(_Property):
         value = 0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == switch.DOMAIN:
+        elif self.state.domain == switch.DOMAIN or self.state.domain == light.DOMAIN:
             value = self.state.attributes.get(ATTR_VOLTAGE)
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
@@ -304,8 +335,8 @@ class CurrentProperty(_Property):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN: 
-            return attributes.get(DEVICE_CLASS_CURRENT) is not None
-        elif domain == switch.DOMAIN:
+            return  attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CURRENT
+        elif domain == switch.DOMAIN or domain == light.DOMAIN:
             return 'current' in attributes
 
         return False
@@ -320,7 +351,7 @@ class CurrentProperty(_Property):
         value = 0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == switch.DOMAIN:
+        elif self.state.domain == switch.DOMAIN or self.state.domain == light.DOMAIN:
             value = self.state.attributes.get('current')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
@@ -336,11 +367,9 @@ class PowerProperty(_Property):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN: 
-            return attributes.get(DEVICE_CLASS_POWER) is not None
-        elif domain == switch.DOMAIN and 'power' in attributes:
-            return 'power' in attributes
-        elif domain == switch.DOMAIN and 'load_power' in attributes:
-            return 'load_power' in attributes
+            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_POWER
+        elif domain == switch.DOMAIN or domain == light.DOMAIN:
+            return 'power' or 'load_power' in attributes
 
         return False
 
@@ -354,10 +383,11 @@ class PowerProperty(_Property):
         value = 0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == switch.DOMAIN and 'power' in self.state.attributes:
-            value = self.state.attributes.get('power')
-        elif self.state.domain == switch.DOMAIN and 'load_power' in self.state.attributes:
-            value = self.state.attributes.get('load_power')
+        elif self.state.domain == switch.DOMAIN or self.state.domain == light.DOMAIN:
+            if 'power' in self.state.attributes:
+                value = self.state.attributes.get('power')
+            elif 'load_power' in self.state.attributes:
+                value = self.state.attributes.get('load_power')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid power property value")
@@ -371,7 +401,9 @@ class BatteryProperty(_Property):
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
-        if domain == vacuum.DOMAIN:
+        if domain == sensor.DOMAIN: 
+            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY 
+        elif domain == vacuum.DOMAIN:
             return vacuum.ATTR_BATTERY_LEVEL in attributes
         elif domain == sensor.DOMAIN or domain == binary_sensor.DOMAIN: 
             return attributes.get(ATTR_BATTERY_LEVEL) is not None
@@ -386,7 +418,9 @@ class BatteryProperty(_Property):
 
     def get_value(self):
         value = 0
-        if self.state.domain == vacuum.DOMAIN:
+        if self.state.domain == sensor.DOMAIN:
+            value = self.state.state
+        elif self.state.domain == vacuum.DOMAIN:
             value = self.state.attributes.get(vacuum.ATTR_BATTERY_LEVEL)
         elif self.state.domain == sensor.DOMAIN or self.state.domain == binary_sensor.DOMAIN:
             value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
