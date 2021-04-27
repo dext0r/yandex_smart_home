@@ -11,6 +11,7 @@ from homeassistant.components import (
     climate,
     binary_sensor,
     fan,
+    humidifier,
     light,
     sensor,
     switch,
@@ -144,7 +145,7 @@ class TemperatureProperty(_Property):
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_TEMPERATURE
-        elif domain == climate.DOMAIN or domain == fan.DOMAIN:
+        elif domain == climate.DOMAIN or domain == fan.DOMAIN or domain == humidifier.DOMAIN:
             return attributes.get(climate.ATTR_CURRENT_TEMPERATURE) is not None
 
         return False
@@ -159,7 +160,7 @@ class TemperatureProperty(_Property):
         value = 0.0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == climate.DOMAIN or self.state.domain == fan.DOMAIN:
+        elif self.state.domain == climate.DOMAIN or self.state.domain == fan.DOMAIN or self.state.domain == humidifier.DOMAIN:
             value = self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE)
 
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
@@ -176,7 +177,7 @@ class HumidityProperty(_Property):
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_HUMIDITY
-        elif domain == climate.DOMAIN or domain == fan.DOMAIN:
+        elif domain == climate.DOMAIN or domain == fan.DOMAIN or domain == humidifier.DOMAIN:
             return attributes.get(climate.ATTR_CURRENT_HUMIDITY) is not None
 
         return False
@@ -191,7 +192,7 @@ class HumidityProperty(_Property):
         value = 0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == climate.DOMAIN or self.state.domain == fan.DOMAIN:
+        elif self.state.domain == climate.DOMAIN or self.state.domain == fan.DOMAIN or self.state.domain == humidifier.DOMAIN:
             value = self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY)
 
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
@@ -246,7 +247,7 @@ class WaterLevelProperty(_Property):
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
-        if domain == fan.DOMAIN:
+        if domain == fan.DOMAIN or domain == humidifier.DOMAIN:
             return 'water_level' in attributes
 
         return False
@@ -259,7 +260,7 @@ class WaterLevelProperty(_Property):
 
     def get_value(self):
         value = 0
-        if self.state.domain == fan.DOMAIN:
+        if self.state.domain == fan.DOMAIN or self.state.domain == humidifier.DOMAIN:
             value = self.state.attributes.get('water_level')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
@@ -369,7 +370,7 @@ class PowerProperty(_Property):
         if domain == sensor.DOMAIN: 
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_POWER
         elif domain == switch.DOMAIN or domain == light.DOMAIN:
-            return 'power' or 'load_power' in attributes
+            return 'power' in attributes or 'load_power' in attributes 
 
         return False
 
