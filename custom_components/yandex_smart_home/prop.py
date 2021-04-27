@@ -401,12 +401,11 @@ class BatteryProperty(_Property):
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN: 
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY 
-        elif domain == vacuum.DOMAIN:
+        if domain == vacuum.DOMAIN:
             return vacuum.ATTR_BATTERY_LEVEL in attributes
         elif domain == sensor.DOMAIN or domain == binary_sensor.DOMAIN: 
-            return attributes.get(ATTR_BATTERY_LEVEL) is not None
+            return attributes.get(ATTR_BATTERY_LEVEL) is not None or \
+                attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY
 
         return False
 
@@ -418,12 +417,13 @@ class BatteryProperty(_Property):
 
     def get_value(self):
         value = 0
-        if self.state.domain == sensor.DOMAIN:
-            value = self.state.state
-        elif self.state.domain == vacuum.DOMAIN:
+        if self.state.domain == vacuum.DOMAIN:
             value = self.state.attributes.get(vacuum.ATTR_BATTERY_LEVEL)
         elif self.state.domain == sensor.DOMAIN or self.state.domain == binary_sensor.DOMAIN:
-            value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
+            if attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
+                value = self.state.state
+            elif attributes.get(ATTR_BATTERY_LEVEL) is not None:
+                value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid battery property value")
