@@ -5,7 +5,8 @@ from homeassistant.core import HomeAssistant, Event
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from .const import (
     DOMAIN, CONFIG, DATA_CONFIG, CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN,
-    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED
+    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED,
+    CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, 
 )
 from .helpers import YandexEntity
 
@@ -27,7 +28,8 @@ def setup_notification(hass: HomeAssistant):
         if not notifier.init():
             _LOGGER.error("Notifier Setup Failed")
             hass.components.persistent_notification.async_create(
-                "Ошибка при инициализации (уведомление навыка об изменении состояния устройств работать не будет).",
+                "Notifier: Ошибка при инициализации (уведомление навыка об изменении состояния устройств работать не "
+                "будет).",
                 title="Yandex Smart Home")
             return False
 
@@ -43,10 +45,12 @@ def setup_notification(hass: HomeAssistant):
         return False
 
 
+
 class YandexNotifier:
 
     def __init__(self, hass: HomeAssistant):
         self.hass = hass
+        self.property_entities = []
         conf = hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]
         if CONF_SKILL_OAUTH_TOKEN in conf and CONF_SKILL_ID in conf and CONF_NOTIFIER_USER_ID in conf:
             self.oauth_token = conf[CONF_SKILL_OAUTH_TOKEN]
@@ -65,13 +69,9 @@ class YandexNotifier:
                 _LOGGER.error("Notifier Init Failed: No user ID")
                 return False
             self.session = async_create_clientsession(self.hass)
+            self.get_property_entities()
         except Exception:
             _LOGGER.exception("Notifier Init Failed")
-            self.hass.components.persistent_notification.async_create(
-                "Notifier: Ошибка при инициализации (уведомление навыка об изменении состояния устройств работать не "
-                "будет).",
-                title="Yandex Smart Home")
-            return False
         return True
 
     async def async_notify_skill(self, devices):
@@ -110,6 +110,14 @@ class YandexNotifier:
         if entity_id in CLOUD_NEVER_EXPOSED_ENTITIES or not self.hass.data[DOMAIN][DATA_CONFIG].should_expose(
                 entity_id):
             return
+        # if entity_id in CLOUD_NEVER_EXPOSED_ENTITIES or not self.hass.data[DOMAIN][DATA_CONFIG].should_expose(
+                # entity_id) or entity_id not in self.property_entities:
+            # return
+        #entity_id = property_entities.get(entity_id)
+        # if entity_id in self.property_entities:
+            # ent = self.property_entities.get(entity_id)
+            #_LOGGER.debug(entity_id)
+            # new_state = self.hass.states.get(ent)
         old_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], old_state)
         entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], new_state)
         device = entity.query_serialize()
@@ -119,3 +127,13 @@ class YandexNotifier:
                 if devices:
                     await self.async_notify_skill(devices)
                     _LOGGER.debug("Notify yandex about new state " + entity_id + ": " + new_state.state)
+                    
+    def get_property_entities(self):
+        cfg = self.hass.data[DOMAIN][DATA_CONFIG].entity_config
+        for entity in cfg:
+            custom_entity_config = cfg.get(entity, {})
+            for property_config in custom_entity_config.get(CONF_ENTITY_PROPERTIES):
+                if CONF_ENTITY_PROPERTY_ENTITY in property_config:
+                    property_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
+                    self.property_entities.append({property_entity_id: entity})
+        #_LOGGER.debug(self.property_entities)
