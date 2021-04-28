@@ -421,9 +421,9 @@ class BatteryProperty(_Property):
         if self.state.domain == vacuum.DOMAIN:
             value = self.state.attributes.get(vacuum.ATTR_BATTERY_LEVEL)
         elif self.state.domain == sensor.DOMAIN or self.state.domain == binary_sensor.DOMAIN:
-            if attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
                 value = self.state.state
-            elif attributes.get(ATTR_BATTERY_LEVEL) is not None:
+            elif self.state.attributes.get(ATTR_BATTERY_LEVEL) is not None:
                 value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
