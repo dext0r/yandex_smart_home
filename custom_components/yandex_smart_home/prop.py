@@ -25,6 +25,7 @@ from homeassistant.const import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_PRESSURE,
+    DEVICE_CLASS_ILLUMINANCE,
     DEVICE_CLASS_CURRENT,
     DEVICE_CLASS_VOLTAGE,
     DEVICE_CLASS_POWER,
@@ -241,6 +242,38 @@ class PressureProperty(_Property):
         return round(val, 2)
 
 @register_property
+class IlluminanceProperty(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'illumination'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == sensor.DOMAIN or \
+            domain == light.DOMAIN or domain == fan.DOMAIN:
+            return 'illuminance' in attributes or \
+                attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ILLUMINANCE
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.illumination.lux'
+        }
+        
+    def get_value(self):
+        value = 0
+        if self.state.domain == sensor.DOMAIN:
+            value = self.state.state
+        elif self.state.domain == light.DOMAIN or self.state.domain == fan.DOMAIN:
+            value = self.state.attributes.get('illuminance')
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid voltage property value")
+
+        return float(value)
+        
+@register_property
 class WaterLevelProperty(_Property):
     type = PROPERTY_FLOAT
     instance = 'water_level'
@@ -288,8 +321,10 @@ class CO2Property(_Property):
 
     def get_value(self):
         value = 0
-        if self.state.domain == sensor.DOMAIN or self.state.domain == fan.DOMAIN:
+        if self.state.domain == sensor.DOMAIN:
             value = self.state.state
+        elif self.state.domain == fan.DOMAIN:
+            value = self.state.attributes.get('carbon_dioxide')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid co2 level property value")
@@ -468,7 +503,8 @@ class CustomEntityProperty(_Property):
             'power': 'unit.watt',
             'voltage': 'unit.volt',
             'battery_level': 'unit.percent',
-            'amperage': 'unit.ampere'
+            'amperage': 'unit.ampere',
+            'illumination': 'unit.illumination.lux'
         }
 
         self.property_config = property_config
