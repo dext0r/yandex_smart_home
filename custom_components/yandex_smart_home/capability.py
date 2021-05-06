@@ -799,14 +799,14 @@ class CoverLevelCapability(_RangeCapability):
     def parameters(self):
         """Return parameters for a devices request."""
         return {
-				"instance": self.instance,
-				"range": {
-					"max": 100,
-					"min": 0,
-					"precision": 1
-				},
-				"unit": "unit.percent"
-			}
+                "instance": self.instance,
+                "range": {
+                    "max": 100,
+                    "min": 0,
+                    "precision": 1
+                },
+                "unit": "unit.percent"
+            }
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -1197,7 +1197,20 @@ class _ColorSettingCapability(_Capability):
     """
 
     type = CAPABILITIES_COLOR_SETTING
-
+    scenes = {
+        'Тревога': 'alarm',
+        'Алиса': 'alice',
+        'Свеча': 'candle',
+        'Ужин': 'dinner',
+        'Фантазия': 'fantasy',
+        'Гирлянда': 'garland',
+        'Джунгли': 'jungle',
+        'Кино': 'movie',
+        'Неон': 'neon',
+        'Ночь': 'night',
+        'Океан': 'ocean'
+    }
+    
     def parameters(self):
         """Return parameters for a devices request."""
         result = {}
@@ -1214,6 +1227,14 @@ class _ColorSettingCapability(_Capability):
                 'min': color_util.color_temperature_mired_to_kelvin(min_temp),
                 'max': color_util.color_temperature_mired_to_kelvin(max_temp)
             }
+            
+        if features & light.SUPPORT_EFFECT:
+            effects = self.state.attributes[light.ATTR_EFFECT_LIST]
+            supported_effects = list(set(effects) & set(self.scenes.keys()))
+            result['color_scene'] = [
+                {'id': self.scenes[s]}
+                for s in supported_effects
+            ] if supported_effects else []
 
         return result
 
@@ -1254,7 +1275,6 @@ class RgbCapability(_ColorSettingCapability):
                 light.ATTR_RGB_COLOR: (red, green, blue)
             }, blocking=True, context=data.context)
 
-
 @register_capability
 class TemperatureKCapability(_ColorSettingCapability):
     """Color temperature functionality."""
@@ -1281,6 +1301,30 @@ class TemperatureKCapability(_ColorSettingCapability):
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_KELVIN: state['value']
+            }, blocking=True, context=data.context)
+
+@register_capability
+class ColorSceneCapability(_ColorSettingCapability):
+    """Color temperature functionality."""
+
+    instance = 'scene'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        """Test if state is supported."""
+        return domain == light.DOMAIN and features & light.SUPPORT_EFFECT
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        return self.state.attributes.get(light.ATTR_EFFECT)
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await self.hass.services.async_call(
+            light.DOMAIN,
+            light.SERVICE_TURN_ON, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                light.ATTR_EFFECT: state['value']
             }, blocking=True, context=data.context)
 
 
