@@ -1208,7 +1208,14 @@ class _ColorSettingCapability(_Capability):
         'Кино': 'movie',
         'Неон': 'neon',
         'Ночь': 'night',
-        'Океан': 'ocean'
+        'Океан': 'ocean',
+        'Вечеринка': 'party',
+        'Чтение': 'reading',
+        'Отдых': 'rest',
+        'Романтика': 'romance',
+        'Сирена': 'siren',
+        'Рассвет': 'sunrise',
+        'Закат': 'sunset'
     }
     
     def parameters(self):
