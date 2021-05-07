@@ -1238,11 +1238,12 @@ class _ColorSettingCapability(_Capability):
         if features & light.SUPPORT_EFFECT:
             effects = self.state.attributes[light.ATTR_EFFECT_LIST]
             supported_effects = list(set(effects) & set(self.scenes.keys()))
-            result['color_scene'] = [
-                {'id': self.scenes[s]}
-                for s in supported_effects
-            ] if supported_effects else []
-
+            result['color_scene'] = {
+                'scenes': [
+                    {'id': self.scenes[s]}
+                    for s in supported_effects
+                ] if supported_effects else []
+            }
         return result
 
 
@@ -1323,15 +1324,20 @@ class ColorSceneCapability(_ColorSettingCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        return self.state.attributes.get(light.ATTR_EFFECT)
+        effect = self.state.attributes.get(light.ATTR_EFFECT)
+        if effect in self.scenes:
+            return self.scenes[effect]
+        
+        return None 
 
     async def set_state(self, data, state):
         """Set device state."""
+        effects = {v: k for k, v in self.scenes.items()}
         await self.hass.services.async_call(
             light.DOMAIN,
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_EFFECT: state['value']
+                light.ATTR_EFFECT: effects[state['value']]
             }, blocking=True, context=data.context)
 
 
