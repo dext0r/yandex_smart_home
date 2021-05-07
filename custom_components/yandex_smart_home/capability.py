@@ -1197,25 +1197,25 @@ class _ColorSettingCapability(_Capability):
     """
 
     type = CAPABILITIES_COLOR_SETTING
-    scenes = {
-        'Тревога': 'alarm',
-        'Алиса': 'alice',
-        'Свеча': 'candle',
-        'Ужин': 'dinner',
-        'Фантазия': 'fantasy',
-        'Гирлянда': 'garland',
-        'Джунгли': 'jungle',
-        'Кино': 'movie',
-        'Неон': 'neon',
-        'Ночь': 'night',
-        'Океан': 'ocean',
-        'Вечеринка': 'party',
-        'Чтение': 'reading',
-        'Отдых': 'rest',
-        'Романтика': 'romance',
-        'Сирена': 'siren',
-        'Рассвет': 'sunrise',
-        'Закат': 'sunset'
+    scenes_map = {
+        'alarm': ['Тревога','Alarm'],
+        'alice': ['Алиса','Alice'],
+        'candle': ['Свеча','Огонь','Candle','Fire'],
+        'dinner': ['Ужин','Dinner'],
+        'fantasy': ['Фантазия','Fantasy'],
+        'garland': ['Гирлянда','Garland'],
+        'jungle': ['Джунгли','Jungle'],
+        'movie': ['Кино','Movie'],
+        'neon': ['Неон','Neon'],
+        'night': ['Ночь','Night'],
+        'ocean': ['Океан','Ocean'],
+        'party': ['Вечеринка','Party'],
+        'reading': ['Чтение','Reading'],
+        'rest': ['Отдых','Rest'],
+        'romance': ['Романтика','Romance'],
+        'siren': ['Сирена','Siren'],
+        'sunrise': ['Рассвет','Sunrise'],
+        'sunset': ['Закат','Sunset']
     }
     
     def parameters(self):
@@ -1236,15 +1236,50 @@ class _ColorSettingCapability(_Capability):
             }
             
         if features & light.SUPPORT_EFFECT:
-            effects = self.state.attributes[light.ATTR_EFFECT_LIST]
-            supported_effects = list(set(effects) & set(self.scenes.keys()))
-            result['color_scene'] = {
-                'scenes': [
-                    {'id': self.scenes[s]}
-                    for s in supported_effects
-                ] if supported_effects else []
+            mapped_scenes = {
+                self.get_yandex_scene_by_ha_effect(e)
+                for e in self.state.attributes[light.ATTR_EFFECT_LIST]
             }
+            supported_scenes = list(set(mapped_scenes) & set(self.scenes_map.keys()))
+            if supported_scenes:
+                result['color_scene'] = {
+                    'scenes': [
+                        {'id': s}
+                        for s in supported_scenes
+                    ]
+                }
         return result
+
+    def get_effect_map_from_config(self):
+        if CONF_ENTITY_MODE_MAP in self.entity_config:
+            modes = self.entity_config.get(CONF_ENTITY_MODE_MAP)
+            _LOGGER.debug(modes)
+            if self.instance in modes:
+                return modes.get(self.instance)
+        return None
+
+    def get_yandex_scene_by_ha_effect(self, ha_effect):
+        scenes = self.get_effect_map_from_config()
+        if scenes is None:
+            scenes = self.scenes_map
+
+        for yandex_scene, names in scenes.items():
+            #map(lambda x:x.lower(),names)
+            if str(ha_effect) in names: #.lower()
+                return yandex_scene
+        return None
+
+    def get_ha_effect_by_yandex_scene(self, yandex_scene):
+        scenes = self.get_effect_map_from_config()
+        if scenes is None:
+            scenes = self.scenes_map
+
+        ha_effects = scenes[yandex_scene]
+        for ha_effect in ha_effects:
+            for am in self.state.attributes[light.ATTR_EFFECT_LIST]:
+                if str(am) == ha_effect: #.lower()
+                    return ha_effect
+        return None
 
 
 @register_capability
@@ -1324,20 +1359,15 @@ class ColorSceneCapability(_ColorSettingCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        effect = self.state.attributes.get(light.ATTR_EFFECT)
-        if effect in self.scenes:
-            return self.scenes[effect]
-        
-        return None 
+        return self.get_yandex_scene_by_ha_effect(self.state.attributes.get(light.ATTR_EFFECT))
 
     async def set_state(self, data, state):
         """Set device state."""
-        effects = {v: k for k, v in self.scenes.items()}
         await self.hass.services.async_call(
             light.DOMAIN,
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_EFFECT: effects[state['value']]
+                light.ATTR_EFFECT: self.get_ha_effect_by_yandex_scene(state['value']),
             }, blocking=True, context=data.context)
 
 
