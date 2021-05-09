@@ -1251,33 +1251,32 @@ class _ColorSettingCapability(_Capability):
         return result
 
     def get_effect_map_from_config(self):
+        scenes = self.scenes_map
         if CONF_ENTITY_MODE_MAP in self.entity_config:
             modes = self.entity_config.get(CONF_ENTITY_MODE_MAP)
-            _LOGGER.debug(modes)
             if self.instance in modes:
-                return modes.get(self.instance)
-        return None
+                cfg_scenes = modes.get(self.instance)
+                for yandex_scene in scenes:
+                    if yandex_scene in cfg_scenes.keys():
+                        scenes[yandex_scene] = cfg_scenes[yandex_scene]
+                
+        return scenes
 
     def get_yandex_scene_by_ha_effect(self, ha_effect):
         scenes = self.get_effect_map_from_config()
-        if scenes is None:
-            scenes = self.scenes_map
 
         for yandex_scene, names in scenes.items():
-            #map(lambda x:x.lower(),names)
-            if str(ha_effect) in names: #.lower()
+            if str(ha_effect) in names:
                 return yandex_scene
         return None
 
     def get_ha_effect_by_yandex_scene(self, yandex_scene):
         scenes = self.get_effect_map_from_config()
-        if scenes is None:
-            scenes = self.scenes_map
 
         ha_effects = scenes[yandex_scene]
         for ha_effect in ha_effects:
             for am in self.state.attributes[light.ATTR_EFFECT_LIST]:
-                if str(am) == ha_effect: #.lower()
+                if str(am) == ha_effect:
                     return ha_effect
         return None
 
