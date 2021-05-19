@@ -35,10 +35,15 @@ def setup_notification(hass: HomeAssistant):
 
         hass.data[DOMAIN][NOTIFIER_ENABLED] = True
 
-        async def listener(event: Event):
+        async def state_change_listener(event: Event):
             await notifier.async_event_handler(event)
+            
+        async def ha_start_listener(event: Event):
+            await notifier.async_notify_skill([])
+            _LOGGER.debug('Device list update initiated')
 
-        hass.bus.async_listen('state_changed', listener)
+        hass.bus.async_listen('state_changed', state_change_listener)
+        hass.bus.async_listen('homeassistant_start', ha_start_listener)
 
     except Exception:
         _LOGGER.exception("Notifier Setup Error")
