@@ -17,40 +17,28 @@ from homeassistant.components import (
     switch,
     vacuum,
 )
+
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_BATTERY_LEVEL,
     ATTR_VOLTAGE,
     ATTR_UNIT_OF_MEASUREMENT,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_TEMPERATURE,
-    DEVICE_CLASS_PRESSURE,
-    DEVICE_CLASS_ILLUMINANCE,
-    DEVICE_CLASS_CURRENT,
-    DEVICE_CLASS_VOLTAGE,
-    DEVICE_CLASS_POWER,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CO,
     DEVICE_CLASS_CO2,
+    DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_ILLUMINANCE,
+    DEVICE_CLASS_POWER,
+    DEVICE_CLASS_PRESSURE,
+    DEVICE_CLASS_TEMPERATURE,
+    DEVICE_CLASS_VOLTAGE,
     STATE_UNAVAILABLE,
     STATE_ON,
     STATE_OFF,
     STATE_OPEN,
     STATE_CLOSED,
     STATE_UNKNOWN
-)
-
-from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_BATTERY,
-    DEVICE_CLASS_DOOR,
-    DEVICE_CLASS_GARAGE_DOOR,
-    DEVICE_CLASS_GAS,
-    DEVICE_CLASS_MOISTURE,
-    DEVICE_CLASS_MOTION,
-    DEVICE_CLASS_OPENING,
-    DEVICE_CLASS_SMOKE,
-    DEVICE_CLASS_VIBRATION,
-    DEVICE_CLASS_WINDOW
 )
 
 from .const import (
@@ -76,9 +64,9 @@ EVENTS_VALUES = {
     'vibration': ['vibration','tilt','fall'],
     'open': ['opened','closed'],
     'button': ['click','double','long_press'],
-    'motion ': ['detected','not_detected'],
+    'motion': ['detected','not_detected'],
     'smoke': ['detected','not_detected','high'],
-    'gas ': ['detected','not_detected','high'],
+    'gas': ['detected','not_detected','high'],
     'battery_level': ['low','normal'],
     'water_level': ['low','normal'],
     'water_leak': ['leak','dry']
@@ -265,8 +253,7 @@ class PressureProperty(_Property):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN:
-            return attributes.get(
-                ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
+            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
 
         return False
 
@@ -325,7 +312,7 @@ class IlluminanceProperty(_Property):
             value = self.state.attributes.get('illuminance')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid voltage property value")
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid illuminance property value")
 
         return float(value)
         
@@ -353,7 +340,7 @@ class WaterLevelProperty(_Property):
             value = self.state.attributes.get('water_level')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid voltage property value")
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid water level property value")
 
         return float(value)
 
@@ -531,10 +518,10 @@ class ContactProperty(_EventProperty):
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) in [
-                DEVICE_CLASS_DOOR, 
-                DEVICE_CLASS_GARAGE_DOOR, 
-                DEVICE_CLASS_WINDOW, 
-                DEVICE_CLASS_OPENING
+                binary_sensor.DEVICE_CLASS_DOOR, 
+                binary_sensor.DEVICE_CLASS_GARAGE_DOOR, 
+                binary_sensor.DEVICE_CLASS_WINDOW, 
+                binary_sensor.DEVICE_CLASS_OPENING
             ]
 
         return False
@@ -547,7 +534,11 @@ class MotionProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_MOTION
+            return attributes.get(ATTR_DEVICE_CLASS) in [
+                binary_sensor.DEVICE_CLASS_MOTION, 
+                binary_sensor.DEVICE_CLASS_OCCUPANCY, 
+                binary_sensor.DEVICE_CLASS_PRESENCE
+            ]
 
         return False
 
@@ -559,7 +550,7 @@ class GasProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_GAS
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_GAS
 
         return False
 
@@ -571,7 +562,19 @@ class SmokeProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_SMOKE
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_SMOKE
+
+        return False
+
+@register_property
+class BatteryLevelLowProperty(_EventProperty):
+    instance = 'battery_level'
+    values = EVENTS_VALUES.get(instance)
+    
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN:
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_BATTERY
 
         return False
 
@@ -595,7 +598,7 @@ class WaterLeakProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_MOISTURE
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_MOISTURE
 
         return False
 
@@ -629,7 +632,7 @@ class CustomEntityProperty(_Property):
                 _LOGGER.error(f'Entity not found: {property_entity_id}')
                 raise SmartHomeError(ERR_DEVICE_NOT_FOUND, "Entity not found")
 
-            if entity.domain == binary_sensor.DOMAIN and self.instance in EVENTS_VALUES.keys():
+            if entity.domain in [binary_sensor.DOMAIN, sensor.DOMAIN] and self.instance in EVENTS_VALUES.keys() and self.instance not in self.instance_unit:
                 self.type = PROPERTY_EVENT
                 self.values = EVENTS_VALUES.get(self.instance)
 
