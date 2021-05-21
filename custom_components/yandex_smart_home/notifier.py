@@ -1,5 +1,5 @@
 import logging
-from time import time
+from time import time, sleep
 from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, Event
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
@@ -39,6 +39,7 @@ def setup_notification(hass: HomeAssistant):
             await notifier.async_event_handler(event)
             
         async def ha_start_listener(event: Event):
+            sleep(1)
             await notifier.async_notify_skill([])
             _LOGGER.debug('Device list update initiated')
 
