@@ -63,7 +63,7 @@ PROPERTY_EVENT = PREFIX_PROPERTIES + 'event'
 EVENTS_VALUES = {
     'vibration': ['vibration','tilt','fall'],
     'open': ['opened','closed'],
-    'button': ['click','double','long_press'],
+    'button': ['click','double_click','long_press'],
     'motion': ['detected','not_detected'],
     'smoke': ['detected','not_detected','high'],
     'gas': ['detected','not_detected','high'],
@@ -145,19 +145,31 @@ class _Property:
         elif self.instance in ['water_leak']:
             return 'leak' if self.bool_value(value) else 'dry'
         elif self.instance in ['button']:
+            if not value:
+                if 'last_action' in self.state.attributes:
+                    value = self.state.attributes.get('last_action')
+                elif 'action' in self.state.attributes:
+                    value = self.state.attributes.get('action')
             if value in ['single','click']:
                 return 'click'
             elif value in ['double','double_click']:
                 return 'double_click'
-            elif value in ['long','long_click','long_click_press','long_click_release','hold']:
+            elif value in ['long','long_click','long_click_press','long_click_release','hold','release']:
                 return 'long_press'
         elif self.instance in ['vibration']:
-            if value == 'vibrate':
+            if not value:
+                if 'last_action' in self.state.attributes:
+                    value = self.state.attributes.get('last_action')
+                elif 'action' in self.state.attributes:
+                    value = self.state.attributes.get('action')
+            if value in ['vibrate','vibration','actively','move','tap_twice','shake_air','swing'] or self.bool_value(value):
                 return 'vibration'
-            elif value == 'tilt':
+            elif value in ['tilt','flip90','flip180','rotate']:
                 return 'tilt'
-            elif value == 'free_fall':
+            elif value in ['free_fall','drop']:
                 return 'fall'
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None) and self.retrievable:
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid {} property value".format(self.instance))
 
 class _EventProperty(_Property):
     type = PROPERTY_EVENT
@@ -175,9 +187,6 @@ class _EventProperty(_Property):
         value = False
         if self.state.domain == binary_sensor.DOMAIN:
             value = self.state.state
-
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid {} property value".format(self.instance))
         
         return self.event_value(value)
 
@@ -602,6 +611,55 @@ class WaterLeakProperty(_EventProperty):
 
         return False
 
+@register_property
+class ButtonProperty(_EventProperty):
+    instance = 'button'
+    retrievable = False
+    values = EVENTS_VALUES.get(instance)
+    
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN: # XiaomiAqara
+            return ('last_action' in attributes and
+                attributes.get('last_action') in [
+                'single','click','double','double_click',
+                'long','long_click','long_click_press',
+                'long_click_release','hold','release',
+                'triple','quadruple','many'])
+        elif domain == sensor.DOMAIN: # XiaomiGateway3 and others
+            return ('action' in attributes and
+                attributes.get('action') in [
+                'single','click','double','double_click',
+                'long','long_click','long_click_press',
+                'long_click_release','hold','release',
+                'triple','quadruple','many'])
+
+        return False
+
+@register_property
+class VibrationProperty(_EventProperty):
+    instance = 'vibration'
+    retrievable = False
+    values = EVENTS_VALUES.get(instance)
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN: # XiaomiAqara
+            return (('last_action' in attributes and
+                attributes.get('last_action') in [
+                'vibrate','tilt','free_fall','actively',
+                'move','tap_twice','shake_air','swing',
+                'flip90','flip180','rotate', 'drop']) or
+                attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_VIBRATION)
+        elif domain == sensor.DOMAIN: # XiaomiGateway3 and others
+            return ('action' in attributes and
+                attributes.get('action') in [
+                'vibrate','tilt','free_fall','actively',
+                'move','tap_twice','shake_air','swing',
+                'flip90','flip180','rotate', 'drop'])
+
+        return False
+
 class CustomEntityProperty(_Property):
     """Represents a Property."""
 
@@ -632,8 +690,9 @@ class CustomEntityProperty(_Property):
                 _LOGGER.error(f'Entity not found: {property_entity_id}')
                 raise SmartHomeError(ERR_DEVICE_NOT_FOUND, "Entity not found")
 
-            if entity.domain in [binary_sensor.DOMAIN, sensor.DOMAIN] and self.instance in EVENTS_VALUES.keys() and self.instance not in self.instance_unit:
+            if entity.domain in [binary_sensor.DOMAIN, sensor.DOMAIN] and self.instance in EVENTS_VALUES.keys() and self.instance not in self.instance_unit: # !battery_level & !water_level
                 self.type = PROPERTY_EVENT
+                if self.instance in ['button','vibration']: self.retrievable = False
                 self.values = EVENTS_VALUES.get(self.instance)
 
     def parameters(self):
@@ -673,7 +732,7 @@ class CustomEntityProperty(_Property):
             else:
                 value = entity.state
 
-            if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None) and self.retrievable:
                 _LOGGER.error(f'Invalid value: {entity}')
                 raise SmartHomeError(ERR_INVALID_VALUE, "Invalid value")
 

@@ -218,7 +218,8 @@ class YandexEntity:
 
         properties = []
         for ppt in self.properties():
-            properties.append(ppt.get_state())
+            if ppt.retrievable:
+                properties.append(ppt.get_state())
 
         return {
             'id': state.entity_id,
