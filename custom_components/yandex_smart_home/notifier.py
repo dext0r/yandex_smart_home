@@ -99,10 +99,10 @@ class YandexNotifier:
             data = await r.json()
             error = data.get('error_message')
             if error:
-                _LOGGER.error(f"Notification sending error: {error}")
+                _LOGGER.error(f"Error sending notification: {error}")
                 return
         except Exception:
-            _LOGGER.error("Notification sending error")
+            _LOGGER.error("Error sending notification")
 
     async def async_event_handler(self, event: Event):
         devices = []
