@@ -1,5 +1,6 @@
 import logging
-from time import time, sleep
+from asyncio import sleep
+from time import time
 from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, Event
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
@@ -39,12 +40,12 @@ def setup_notification(hass: HomeAssistant):
             await notifier.async_event_handler(event)
             
         async def ha_start_listener(event: Event):
-            sleep(1)
+            await sleep(10)
             await notifier.async_notify_skill([])
             _LOGGER.debug('Device list update initiated')
 
         hass.bus.async_listen('state_changed', state_change_listener)
-        hass.bus.async_listen('homeassistant_start', ha_start_listener)
+        hass.bus.async_listen('homeassistant_started', ha_start_listener)
 
     except Exception:
         _LOGGER.exception("Notifier Setup Error")
