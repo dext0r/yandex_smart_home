@@ -227,6 +227,30 @@ class YandexEntity:
             'properties': properties,
         }
 
+    @callback
+    def notification_serialize(self):
+        """Serialize entity for a notification."""
+        state = self.state
+
+        if state.state == STATE_UNAVAILABLE:
+            return {'error_code': ERR_DEVICE_UNREACHABLE}
+
+        capabilities = []
+        for cpb in self.capabilities():
+            if cpb.reportable:
+                capabilities.append(cpb.get_state())
+
+        properties = []
+        for ppt in self.properties():
+            if ppt.reportable:
+                properties.append(ppt.get_state())
+
+        return {
+            'id': state.entity_id,
+            'capabilities': capabilities,
+            'properties': properties,
+        }
+
     async def execute(self, data, capability_type, state):
         """Execute action.
 

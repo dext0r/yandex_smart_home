@@ -120,10 +120,10 @@ class YandexNotifier:
                 continue
             state = new_state if entity == event_entity_id else self.hass.states.get(entity)
             yandex_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], state)
-            device = yandex_entity.query_serialize()
+            device = yandex_entity.notification_serialize()
             if entity == event_entity_id:
                 old_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], old_state)
-                if old_entity.query_serialize() == device: # нет изменений
+                if old_entity.notification_serialize() == device: # нет изменений
                     continue
             if device['capabilities'] or device['properties']:
                 devices.append(device)
