@@ -445,9 +445,13 @@ class ThermostatCapability(_ModeCapability):
         """Return parameters for a devices request."""
         operation_list = self.state.attributes.get(climate.ATTR_HVAC_MODES)
         modes = []
-        for operation in operation_list:
-            if operation in self.climate_map:
-                modes.append({'value': self.climate_map[operation]})
+        added = []
+
+        for ha_value in operation_list:
+            value = self.get_yandex_mode_by_ha_mode(ha_value)
+            if value is not None and value not in added:
+                modes.append({'value': value})
+                added.append(value)
 
         return {
             'instance': self.instance,
@@ -457,30 +461,23 @@ class ThermostatCapability(_ModeCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        operation = self.state.attributes.get(climate.ATTR_HVAC_MODE)
-
-        if operation is not None and operation in self.climate_map:
-            return self.climate_map[operation]
-        
-        # Try to take current mode from device state
         operation = self.state.state
+
         if operation is not None and operation in self.climate_map:
             return self.climate_map[operation]
 
-        # Return first value if current one is not acceptable
-        for operation in self.state.attributes.get(climate.ATTR_HVAC_MODES):
-            if operation in self.climate_map:
-                return self.climate_map[operation]
+        if operation is not None:
+            yandex_value = self.get_yandex_mode_by_ha_mode(operation)
+            if yandex_value is not None:
+                return yandex_value
 
-        return 'auto'
+        modes = self.parameters()['modes']
+
+        return modes[0]['value'] if len(modes) > 0 else 'auto'
 
     async def set_state(self, data, state):
         """Set device state."""
-        value = None
-        for climate_value, yandex_value in self.climate_map.items():
-            if yandex_value == state['value']:
-                value = climate_value
-                break
+        value = self.get_ha_mode_by_yandex_mode(state['value'], self.state.attributes.get(climate.ATTR_HVAC_MODES))
 
         if value is None:
             raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
