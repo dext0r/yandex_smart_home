@@ -799,14 +799,14 @@ class CoverLevelCapability(_RangeCapability):
     def parameters(self):
         """Return parameters for a devices request."""
         return {
-				"instance": self.instance,
-				"range": {
-					"max": 100,
-					"min": 0,
-					"precision": 1
-				},
-				"unit": "unit.percent"
-			}
+                "instance": self.instance,
+                "range": {
+                    "max": 100,
+                    "min": 0,
+                    "precision": 1
+                },
+                "unit": "unit.percent"
+            }
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -1197,7 +1197,27 @@ class _ColorSettingCapability(_Capability):
     """
 
     type = CAPABILITIES_COLOR_SETTING
-
+    scenes_map = {
+        'alarm': ['Тревога','Alarm'],
+        'alice': ['Алиса','Alice'],
+        'candle': ['Свеча','Огонь','Candle','Fire'],
+        'dinner': ['Ужин','Dinner'],
+        'fantasy': ['Фантазия','Fantasy'],
+        'garland': ['Гирлянда','Garland'],
+        'jungle': ['Джунгли','Jungle'],
+        'movie': ['Кино','Movie'],
+        'neon': ['Неон','Neon'],
+        'night': ['Ночь','Night'],
+        'ocean': ['Океан','Ocean'],
+        'party': ['Вечеринка','Party'],
+        'reading': ['Чтение','Reading'],
+        'rest': ['Отдых','Rest'],
+        'romance': ['Романтика','Romance'],
+        'siren': ['Сирена','Siren'],
+        'sunrise': ['Рассвет','Sunrise'],
+        'sunset': ['Закат','Sunset']
+    }
+    
     def parameters(self):
         """Return parameters for a devices request."""
         result = {}
@@ -1214,8 +1234,51 @@ class _ColorSettingCapability(_Capability):
                 'min': color_util.color_temperature_mired_to_kelvin(min_temp),
                 'max': color_util.color_temperature_mired_to_kelvin(max_temp)
             }
-
+            
+        if features & light.SUPPORT_EFFECT:
+            mapped_scenes = {
+                self.get_yandex_scene_by_ha_effect(e)
+                for e in self.state.attributes[light.ATTR_EFFECT_LIST]
+            }
+            supported_scenes = list(set(mapped_scenes) & set(self.scenes_map.keys()))
+            if supported_scenes:
+                result['color_scene'] = {
+                    'scenes': [
+                        {'id': s}
+                        for s in supported_scenes
+                    ]
+                }
         return result
+
+    def get_effect_map_from_config(self):
+        scenes = self.scenes_map
+        if CONF_ENTITY_MODE_MAP in self.entity_config:
+            modes = self.entity_config.get(CONF_ENTITY_MODE_MAP)
+            if self.instance in modes:
+                cfg_scenes = modes.get(self.instance)
+                for yandex_scene in scenes:
+                    if yandex_scene in cfg_scenes.keys():
+                        scenes[yandex_scene] = cfg_scenes[yandex_scene]
+                
+        return scenes
+
+    def get_yandex_scene_by_ha_effect(self, ha_effect):
+        scenes = self.get_effect_map_from_config()
+
+        for yandex_scene, names in scenes.items():
+            if str(ha_effect) in names:
+                return yandex_scene
+        return None
+
+    def get_ha_effect_by_yandex_scene(self, yandex_scene):
+        scenes = self.get_effect_map_from_config()
+
+        ha_effects = scenes[yandex_scene]
+        for ha_effect in ha_effects:
+            for am in self.state.attributes[light.ATTR_EFFECT_LIST]:
+                if str(am) == ha_effect:
+                    return ha_effect
+        return None
 
 
 @register_capability
@@ -1254,7 +1317,6 @@ class RgbCapability(_ColorSettingCapability):
                 light.ATTR_RGB_COLOR: (red, green, blue)
             }, blocking=True, context=data.context)
 
-
 @register_capability
 class TemperatureKCapability(_ColorSettingCapability):
     """Color temperature functionality."""
@@ -1281,6 +1343,30 @@ class TemperatureKCapability(_ColorSettingCapability):
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_KELVIN: state['value']
+            }, blocking=True, context=data.context)
+
+@register_capability
+class ColorSceneCapability(_ColorSettingCapability):
+    """Color temperature functionality."""
+
+    instance = 'scene'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        """Test if state is supported."""
+        return domain == light.DOMAIN and features & light.SUPPORT_EFFECT
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        return self.get_yandex_scene_by_ha_effect(self.state.attributes.get(light.ATTR_EFFECT))
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await self.hass.services.async_call(
+            light.DOMAIN,
+            light.SERVICE_TURN_ON, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                light.ATTR_EFFECT: self.get_ha_effect_by_yandex_scene(state['value']),
             }, blocking=True, context=data.context)
 
 

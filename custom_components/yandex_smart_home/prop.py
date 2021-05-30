@@ -30,7 +30,6 @@ from homeassistant.const import (
     DEVICE_CLASS_VOLTAGE,
     DEVICE_CLASS_POWER,
     DEVICE_CLASS_BATTERY,
-    DEVICE_CLASS_CO,
     DEVICE_CLASS_CO2,
     STATE_UNAVAILABLE,
     STATE_ON,
@@ -325,7 +324,7 @@ class IlluminanceProperty(_Property):
             value = self.state.attributes.get('illuminance')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid voltage property value")
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid illuminance property value")
 
         return float(value)
         
@@ -353,7 +352,7 @@ class WaterLevelProperty(_Property):
             value = self.state.attributes.get('water_level')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid voltage property value")
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid water level property value")
 
         return float(value)
 
