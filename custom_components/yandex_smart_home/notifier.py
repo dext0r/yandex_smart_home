@@ -1,4 +1,5 @@
 import logging
+from asyncio import sleep
 from time import time
 from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, Event
@@ -35,10 +36,16 @@ def setup_notification(hass: HomeAssistant):
 
         hass.data[DOMAIN][NOTIFIER_ENABLED] = True
 
-        async def listener(event: Event):
+        async def state_change_listener(event: Event):
             await notifier.async_event_handler(event)
+            
+        async def ha_start_listener(event: Event):
+            await sleep(10)
+            await notifier.async_notify_skill([])
+            _LOGGER.debug('Device list update initiated')
 
-        hass.bus.async_listen('state_changed', listener)
+        hass.bus.async_listen('state_changed', state_change_listener)
+        hass.bus.async_listen('homeassistant_started', ha_start_listener)
 
     except Exception:
         _LOGGER.exception("Notifier Setup Error")
@@ -93,10 +100,10 @@ class YandexNotifier:
             data = await r.json()
             error = data.get('error_message')
             if error:
-                _LOGGER.error(f"Notification sending error: {error}")
+                _LOGGER.error(f"Error sending notification: {error}")
                 return
         except Exception:
-            _LOGGER.error("Notification sending error")
+            _LOGGER.error("Error sending notification")
 
     async def async_event_handler(self, event: Event):
         devices = []
