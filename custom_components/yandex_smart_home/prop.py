@@ -16,6 +16,7 @@ from homeassistant.components import (
     sensor,
     switch,
     vacuum,
+    air_quality,
 )
 
 from homeassistant.const import (
@@ -359,8 +360,11 @@ class CO2Property(_Property):
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN or domain == fan.DOMAIN: 
+        if domain == sensor.DOMAIN: 
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CO2
+        elif domain == air_quality.DOMAIN or domain == fan.DOMAIN:
+            return air_quality.ATTR_CO2 in attributes
+            
 
         return False
 
@@ -374,8 +378,8 @@ class CO2Property(_Property):
         value = 0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == fan.DOMAIN:
-            value = self.state.attributes.get('carbon_dioxide')
+        elif self.state.domain == air_quality.DOMAIN or self.state.domain == fan.DOMAIN:
+            value = self.state.attributes.get(air_quality.ATTR_CO2)
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid co2 level property value")
