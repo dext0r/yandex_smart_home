@@ -213,8 +213,9 @@ class YandexEntity:
 
         capabilities = []
         for cpb in self.capabilities():
-            if cpb.retrievable:
-                capabilities.append(cpb.get_state())
+            cpb_state = cpb.get_state()
+            if cpb.retrievable and cpb_state is not None:
+                capabilities.append(cpb_state)
 
         properties = []
         for ppt in self.properties():
