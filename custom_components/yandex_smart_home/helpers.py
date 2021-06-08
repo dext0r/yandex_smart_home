@@ -238,9 +238,10 @@ class YandexEntity:
 
         capabilities = []
         for cpb in self.capabilities():
-            if cpb.reportable:
-                capabilities.append(cpb.get_state())
-
+            cpb_state = cpb.get_state()
+            if cpb.reportable and cpb_state is not None:
+                capabilities.append(cpb_state)
+                
         properties = []
         for ppt in self.properties():
             if ppt.reportable:
