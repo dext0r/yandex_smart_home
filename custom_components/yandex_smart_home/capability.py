@@ -980,7 +980,9 @@ class BrightnessCapability(_RangeCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == light.DOMAIN and features & light.SUPPORT_BRIGHTNESS
+        return domain == light.DOMAIN and (
+            features & light.SUPPORT_BRIGHTNESS or light.brightness_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
+        )
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -1223,11 +1225,12 @@ class _ColorSettingCapability(_Capability):
         result = {}
 
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
 
-        if features & light.SUPPORT_COLOR:
+        if features & light.SUPPORT_COLOR or light.COLOR_MODE_RGB in supported_color_modes:
             result['color_model'] = 'rgb'
 
-        if features & light.SUPPORT_COLOR_TEMP:
+        if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
             max_temp = self.state.attributes[light.ATTR_MIN_MIREDS]
             min_temp = self.state.attributes[light.ATTR_MAX_MIREDS]
             result['temperature_k'] = {
@@ -1290,7 +1293,9 @@ class RgbCapability(_ColorSettingCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == light.DOMAIN and features & light.SUPPORT_COLOR
+        return domain == light.DOMAIN and (
+            features & light.SUPPORT_COLOR or light.COLOR_MODE_RGB in attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+        )
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -1326,7 +1331,9 @@ class TemperatureKCapability(_ColorSettingCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == light.DOMAIN and features & light.SUPPORT_COLOR_TEMP
+        return domain == light.DOMAIN and (
+            features & light.SUPPORT_COLOR or light.color_temp_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
+        )
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
