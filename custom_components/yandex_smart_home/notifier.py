@@ -103,7 +103,7 @@ class YandexNotifier:
                 _LOGGER.error(f"Error sending notification: {error}")
                 return
         except Exception:
-            _LOGGER.error("Error sending notification")
+            _LOGGER.exception("Error sending notification")
 
     async def async_event_handler(self, event: Event):
         devices = []
