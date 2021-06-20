@@ -95,13 +95,14 @@ class _Capability:
 
     def get_state(self):
         """Return the state of this capability for this entity."""
+        value = self.get_value()
         return {
             'type': self.type,
             'state':  {
                 'instance': self.instance,
-                'value': self.get_value()
+                'value': value
             }
-        }
+        } if value is not None else None
 
     def parameters(self):
         """Return parameters for a devices request."""
