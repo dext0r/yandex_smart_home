@@ -446,9 +446,13 @@ class ThermostatCapability(_ModeCapability):
         """Return parameters for a devices request."""
         operation_list = self.state.attributes.get(climate.ATTR_HVAC_MODES)
         modes = []
-        for operation in operation_list:
-            if operation in self.climate_map:
-                modes.append({'value': self.climate_map[operation]})
+        added = []
+
+        for ha_value in operation_list:
+            value = self.get_yandex_mode_by_ha_mode(ha_value)
+            if value is not None and value not in added:
+                modes.append({'value': value})
+                added.append(value)
 
         return {
             'instance': self.instance,
@@ -458,30 +462,23 @@ class ThermostatCapability(_ModeCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        operation = self.state.attributes.get(climate.ATTR_HVAC_MODE)
-
-        if operation is not None and operation in self.climate_map:
-            return self.climate_map[operation]
-        
-        # Try to take current mode from device state
         operation = self.state.state
+
         if operation is not None and operation in self.climate_map:
             return self.climate_map[operation]
 
-        # Return first value if current one is not acceptable
-        for operation in self.state.attributes.get(climate.ATTR_HVAC_MODES):
-            if operation in self.climate_map:
-                return self.climate_map[operation]
+        if operation is not None:
+            yandex_value = self.get_yandex_mode_by_ha_mode(operation)
+            if yandex_value is not None:
+                return yandex_value
 
-        return 'auto'
+        modes = self.parameters()['modes']
+
+        return modes[0]['value'] if len(modes) > 0 else 'auto'
 
     async def set_state(self, data, state):
         """Set device state."""
-        value = None
-        for climate_value, yandex_value in self.climate_map.items():
-            if yandex_value == state['value']:
-                value = climate_value
-                break
+        value = self.get_ha_mode_by_yandex_mode(state['value'], self.state.attributes.get(climate.ATTR_HVAC_MODES))
 
         if value is None:
             raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
@@ -491,6 +488,75 @@ class ThermostatCapability(_ModeCapability):
             climate.SERVICE_SET_HVAC_MODE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_HVAC_MODE: value
+            }, blocking=True, context=data.context)
+
+
+@register_capability
+class SwingCapability(_ModeCapability):
+    """Swing functionality"""
+
+    instance = 'swing'
+
+    modes_map = {
+        climate.const.SWING_VERTICAL: 'vertical',
+        climate.const.SWING_HORIZONTAL: 'horizontal',
+        climate.const.SWING_OFF: 'stationary',
+        climate.const.SWING_BOTH: 'auto'
+    }
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        """Test if state is supported."""
+        if domain == climate.DOMAIN:
+            return features & climate.SUPPORT_SWING_MODE
+        return False
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        operation_list = self.state.attributes.get(climate.ATTR_SWING_MODES)
+        modes = []
+        added = []
+
+        for ha_value in operation_list:
+            value = self.get_yandex_mode_by_ha_mode(ha_value)
+            if value is not None and value not in added:
+                modes.append({'value': value})
+                added.append(value)
+
+        return {
+            'instance': self.instance,
+            'modes': modes,
+            'ordered': False
+        }
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        operation = self.state.attributes.get(climate.ATTR_SWING_MODE)
+
+        if operation is not None and operation in self.modes_map:
+            return self.modes_map[operation]
+
+        if operation is not None:
+            yandex_value = self.get_yandex_mode_by_ha_mode(operation)
+            if yandex_value is not None:
+                return yandex_value
+
+        modes = self.parameters()['modes']
+
+        return modes[0]['value'] if len(modes) > 0 else 'auto'
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        value = self.get_ha_mode_by_yandex_mode(state['value'], self.state.attributes.get(climate.ATTR_SWING_MODES))
+
+        if value is None:
+            raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
+
+        await self.hass.services.async_call(
+            climate.DOMAIN,
+            climate.SERVICE_SET_SWING_MODE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                climate.ATTR_SWING_MODE: value
             }, blocking=True, context=data.context)
 
 
@@ -784,6 +850,7 @@ class _RangeCapability(_Capability):
 
     type = CAPABILITIES_RANGE
 
+
 @register_capability
 class CoverLevelCapability(_RangeCapability):
     """Set cover level"""
@@ -838,6 +905,7 @@ class CoverLevelCapability(_RangeCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 attr: value
             }, blocking=True, context=data.context)
+
 
 @register_capability
 class TemperatureCapability(_RangeCapability):
@@ -981,7 +1049,9 @@ class BrightnessCapability(_RangeCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == light.DOMAIN and features & light.SUPPORT_BRIGHTNESS
+        return domain == light.DOMAIN and (
+            features & light.SUPPORT_BRIGHTNESS or light.brightness_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
+        )
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -1224,11 +1294,12 @@ class _ColorSettingCapability(_Capability):
         result = {}
 
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
 
-        if features & light.SUPPORT_COLOR:
+        if features & light.SUPPORT_COLOR or light.COLOR_MODE_RGB in supported_color_modes:
             result['color_model'] = 'rgb'
 
-        if features & light.SUPPORT_COLOR_TEMP:
+        if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
             max_temp = self.state.attributes[light.ATTR_MIN_MIREDS]
             min_temp = self.state.attributes[light.ATTR_MAX_MIREDS]
             result['temperature_k'] = {
@@ -1291,7 +1362,9 @@ class RgbCapability(_ColorSettingCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == light.DOMAIN and features & light.SUPPORT_COLOR
+        return domain == light.DOMAIN and (
+            features & light.SUPPORT_COLOR or light.COLOR_MODE_RGB in attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+        )
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -1318,6 +1391,7 @@ class RgbCapability(_ColorSettingCapability):
                 light.ATTR_RGB_COLOR: (red, green, blue)
             }, blocking=True, context=data.context)
 
+
 @register_capability
 class TemperatureKCapability(_ColorSettingCapability):
     """Color temperature functionality."""
@@ -1327,7 +1401,9 @@ class TemperatureKCapability(_ColorSettingCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == light.DOMAIN and features & light.SUPPORT_COLOR_TEMP
+        return domain == light.DOMAIN and (
+            features & light.SUPPORT_COLOR or light.color_temp_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
+        )
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -1345,6 +1421,7 @@ class TemperatureKCapability(_ColorSettingCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_KELVIN: state['value']
             }, blocking=True, context=data.context)
+
 
 @register_capability
 class ColorSceneCapability(_ColorSettingCapability):

@@ -18,7 +18,7 @@ from homeassistant.components import (
     vacuum,
     air_quality,
 )
-
+from homeassistant.components.xiaomi_miio.air_quality import ATTR_TVOC
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_BATTERY_LEVEL,
@@ -387,6 +387,118 @@ class CO2Property(_Property):
         return float(value)
 
 @register_property
+class PM1Property(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'pm1_density'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == air_quality.DOMAIN: 
+            return air_quality.ATTR_PM_0_1 in attributes
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.density.mcg_m3'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == air_quality.DOMAIN:
+            value = self.state.attributes.get(air_quality.ATTR_PM_0_1)
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid pm1 density property value")
+
+        return float(value)
+
+@register_property
+class PM2_5Property(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'pm2.5_density'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == air_quality.DOMAIN: 
+            return air_quality.ATTR_PM_2_5 in attributes
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.density.mcg_m3'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == air_quality.DOMAIN:
+            value = self.state.attributes.get(air_quality.ATTR_PM_2_5)
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid pm2.5 density property value")
+
+        return float(value)
+
+@register_property
+class PM10Property(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'pm10_density'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == air_quality.DOMAIN: 
+            return air_quality.ATTR_PM_10 in attributes
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.density.mcg_m3'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == air_quality.DOMAIN:
+            value = self.state.attributes.get(air_quality.ATTR_PM_10)
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid pm10 density property value")
+
+        return float(value)
+
+@register_property
+class TVOCProperty(_Property):
+    type = PROPERTY_FLOAT
+    instance = 'tvoc'
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == air_quality.DOMAIN: 
+            return ATTR_TVOC in attributes
+
+        return False
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': 'unit.density.mcg_m3'
+        }
+
+    def get_value(self):
+        value = 0
+        if self.state.domain == air_quality.DOMAIN:
+            value = self.state.attributes.get(ATTR_TVOC)
+			
+        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid tvoc property value")
+
+        return float(value)
+
+@register_property
 class VoltageProperty(_Property):
     type = PROPERTY_FLOAT
     instance = 'voltage'
@@ -679,7 +791,11 @@ class CustomEntityProperty(_Property):
             'voltage': 'unit.volt',
             'battery_level': 'unit.percent',
             'amperage': 'unit.ampere',
-            'illumination': 'unit.illumination.lux'
+            'illumination': 'unit.illumination.lux',
+            'tvoc': 'unit.density.mcg_m3',
+            'pm1_density': 'unit.density.mcg_m3',
+            'pm2.5_density': 'unit.density.mcg_m3',
+            'pm10_density': 'unit.density.mcg_m3'
         }
 
         self.property_config = property_config
