@@ -24,34 +24,21 @@ from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     ATTR_VOLTAGE,
     ATTR_UNIT_OF_MEASUREMENT,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_TEMPERATURE,
-    DEVICE_CLASS_PRESSURE,
-    DEVICE_CLASS_ILLUMINANCE,
-    DEVICE_CLASS_CURRENT,
-    DEVICE_CLASS_VOLTAGE,
-    DEVICE_CLASS_POWER,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CO2,
+    DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_ILLUMINANCE,
+    DEVICE_CLASS_POWER,
+    DEVICE_CLASS_PRESSURE,
+    DEVICE_CLASS_TEMPERATURE,
+    DEVICE_CLASS_VOLTAGE,
     STATE_UNAVAILABLE,
     STATE_ON,
     STATE_OFF,
     STATE_OPEN,
     STATE_CLOSED,
     STATE_UNKNOWN
-)
-
-from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_BATTERY,
-    DEVICE_CLASS_DOOR,
-    DEVICE_CLASS_GARAGE_DOOR,
-    DEVICE_CLASS_GAS,
-    DEVICE_CLASS_MOISTURE,
-    DEVICE_CLASS_MOTION,
-    DEVICE_CLASS_OPENING,
-    DEVICE_CLASS_SMOKE,
-    DEVICE_CLASS_VIBRATION,
-    DEVICE_CLASS_WINDOW
 )
 
 from .const import (
@@ -266,8 +253,7 @@ class PressureProperty(_Property):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN:
-            return attributes.get(
-                ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
+            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
 
         return False
 
@@ -644,10 +630,10 @@ class ContactProperty(_EventProperty):
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) in [
-                DEVICE_CLASS_DOOR, 
-                DEVICE_CLASS_GARAGE_DOOR, 
-                DEVICE_CLASS_WINDOW, 
-                DEVICE_CLASS_OPENING
+                binary_sensor.DEVICE_CLASS_DOOR, 
+                binary_sensor.DEVICE_CLASS_GARAGE_DOOR, 
+                binary_sensor.DEVICE_CLASS_WINDOW, 
+                binary_sensor.DEVICE_CLASS_OPENING
             ]
 
         return False
@@ -672,7 +658,7 @@ class GasProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_GAS
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_GAS
 
         return False
 
@@ -684,7 +670,7 @@ class SmokeProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_SMOKE
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_SMOKE
 
         return False
 
@@ -708,7 +694,7 @@ class WaterLeakProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_MOISTURE
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_MOISTURE
 
         return False
 
