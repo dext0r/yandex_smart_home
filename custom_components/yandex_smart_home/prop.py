@@ -18,7 +18,6 @@ from homeassistant.components import (
     vacuum,
     air_quality,
 )
-from homeassistant.components.xiaomi_miio.air_quality import ATTR_TVOC
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_BATTERY_LEVEL,
@@ -469,7 +468,7 @@ class TVOCProperty(_Property):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == air_quality.DOMAIN: 
-            return ATTR_TVOC in attributes
+            return 'total_volatile_organic_compounds' in attributes
 
         return False
 
@@ -482,7 +481,7 @@ class TVOCProperty(_Property):
     def get_value(self):
         value = 0
         if self.state.domain == air_quality.DOMAIN:
-            value = self.state.attributes.get(ATTR_TVOC)
+            value = self.state.attributes.get('total_volatile_organic_compounds')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid tvoc property value")
