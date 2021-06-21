@@ -42,7 +42,7 @@ def setup_notification(hass: HomeAssistant):
         async def ha_start_listener(event: Event):
             await sleep(10)
             await notifier.async_notify_skill([])
-            _LOGGER.debug('Device list update initiated')
+            _LOGGER.debug("Device list update initiated")
 
         hass.bus.async_listen('state_changed', state_change_listener)
         hass.bus.async_listen('homeassistant_started', ha_start_listener)
@@ -50,8 +50,6 @@ def setup_notification(hass: HomeAssistant):
     except Exception:
         _LOGGER.exception("Notifier Setup Error")
         return False
-
-
 
 class YandexNotifier:
 
@@ -80,6 +78,17 @@ class YandexNotifier:
         except Exception:
             _LOGGER.exception("Notifier Init Failed")
         return True
+        
+    def get_property_entities(self):
+        cfg = self.hass.data[DOMAIN][DATA_CONFIG].entity_config
+        for entity in cfg:
+            custom_entity_config = cfg.get(entity, {})
+            for property_config in custom_entity_config.get(CONF_ENTITY_PROPERTIES):
+                if CONF_ENTITY_PROPERTY_ENTITY in property_config:
+                    property_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
+                    devs = set(self.property_entities.get(property_entity_id, []))
+                    devs.add(entity)
+                    self.property_entities.update({property_entity_id: devs})
 
     async def async_notify_skill(self, devices):
         try:
@@ -127,10 +136,10 @@ class YandexNotifier:
                 continue
             state = new_state if entity == event_entity_id else self.hass.states.get(entity)
             yandex_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], state)
-            device = yandex_entity.query_serialize()
+            device = yandex_entity.notification_serialize(event_entity_id)
             if entity == event_entity_id:
                 old_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], old_state)
-                if old_entity.query_serialize() == device: # нет изменений
+                if old_entity.notification_serialize(event_entity_id) == device: # нет изменений
                     continue
             if device['capabilities'] or device['properties']:
                 devices.append(device)
@@ -140,15 +149,5 @@ class YandexNotifier:
                 _LOGGER.debug("Notify Yandex about new state " + entity_text + ": " + new_state.state)
         
         if devices:
+            await sleep(.1)
             await self.async_notify_skill(devices)
-                    
-    def get_property_entities(self):
-        cfg = self.hass.data[DOMAIN][DATA_CONFIG].entity_config
-        for entity in cfg:
-            custom_entity_config = cfg.get(entity, {})
-            for property_config in custom_entity_config.get(CONF_ENTITY_PROPERTIES):
-                if CONF_ENTITY_PROPERTY_ENTITY in property_config:
-                    property_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
-                    devs = set(self.property_entities.get(property_entity_id, []))
-                    devs.add(entity)
-                    self.property_entities.update({property_entity_id: devs})

@@ -18,40 +18,26 @@ from homeassistant.components import (
     vacuum,
     air_quality,
 )
-from homeassistant.components.xiaomi_miio.air_quality import ATTR_TVOC
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_BATTERY_LEVEL,
     ATTR_VOLTAGE,
     ATTR_UNIT_OF_MEASUREMENT,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_TEMPERATURE,
-    DEVICE_CLASS_PRESSURE,
-    DEVICE_CLASS_ILLUMINANCE,
-    DEVICE_CLASS_CURRENT,
-    DEVICE_CLASS_VOLTAGE,
-    DEVICE_CLASS_POWER,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CO2,
+    DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_ILLUMINANCE,
+    DEVICE_CLASS_POWER,
+    DEVICE_CLASS_PRESSURE,
+    DEVICE_CLASS_TEMPERATURE,
+    DEVICE_CLASS_VOLTAGE,
     STATE_UNAVAILABLE,
     STATE_ON,
     STATE_OFF,
     STATE_OPEN,
     STATE_CLOSED,
     STATE_UNKNOWN
-)
-
-from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_BATTERY,
-    DEVICE_CLASS_DOOR,
-    DEVICE_CLASS_GARAGE_DOOR,
-    DEVICE_CLASS_GAS,
-    DEVICE_CLASS_MOISTURE,
-    DEVICE_CLASS_MOTION,
-    DEVICE_CLASS_OPENING,
-    DEVICE_CLASS_SMOKE,
-    DEVICE_CLASS_VIBRATION,
-    DEVICE_CLASS_WINDOW
 )
 
 from .const import (
@@ -275,8 +261,7 @@ class PressureProperty(_Property):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN:
-            return attributes.get(
-                ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
+            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
 
         return False
 
@@ -374,8 +359,11 @@ class CO2Property(_Property):
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN or domain == fan.DOMAIN: 
+        if domain == sensor.DOMAIN: 
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CO2
+        elif domain == air_quality.DOMAIN or domain == fan.DOMAIN:
+            return air_quality.ATTR_CO2 in attributes
+            
 
         return False
 
@@ -389,8 +377,8 @@ class CO2Property(_Property):
         value = 0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == fan.DOMAIN:
-            value = self.state.attributes.get('carbon_dioxide')
+        elif self.state.domain == air_quality.DOMAIN or self.state.domain == fan.DOMAIN:
+            value = self.state.attributes.get(air_quality.ATTR_CO2)
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid co2 level property value")
@@ -489,7 +477,7 @@ class TVOCProperty(_Property):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == air_quality.DOMAIN: 
-            return ATTR_TVOC in attributes
+            return 'total_volatile_organic_compounds' in attributes
 
         return False
 
@@ -502,7 +490,7 @@ class TVOCProperty(_Property):
     def get_value(self):
         value = 0
         if self.state.domain == air_quality.DOMAIN:
-            value = self.state.attributes.get(ATTR_TVOC)
+            value = self.state.attributes.get('total_volatile_organic_compounds')
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid tvoc property value")
@@ -582,7 +570,7 @@ class PowerProperty(_Property):
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN: 
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_POWER
-        elif domain == switch.DOMAIN or domain == light.DOMAIN:
+        elif domain == switch.DOMAIN:
             return 'power' in attributes or 'load_power' in attributes 
 
         return False
@@ -597,7 +585,7 @@ class PowerProperty(_Property):
         value = 0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
-        elif self.state.domain == switch.DOMAIN or self.state.domain == light.DOMAIN:
+        elif self.state.domain == switch.DOMAIN:
             if 'power' in self.state.attributes:
                 value = self.state.attributes.get('power')
             elif 'load_power' in self.state.attributes:
@@ -617,9 +605,11 @@ class BatteryProperty(_Property):
     def supported(domain, features, entity_config, attributes):
         if domain == vacuum.DOMAIN:
             return vacuum.ATTR_BATTERY_LEVEL in attributes
-        elif domain == sensor.DOMAIN or domain == binary_sensor.DOMAIN: 
+        elif domain == sensor.DOMAIN: 
             return attributes.get(ATTR_BATTERY_LEVEL) is not None or \
                 attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY
+        elif domain == binary_sensor.DOMAIN:
+            return attributes.get(ATTR_BATTERY_LEVEL) is not None
 
         return False
 
@@ -633,10 +623,13 @@ class BatteryProperty(_Property):
         value = 0
         if self.state.domain == vacuum.DOMAIN:
             value = self.state.attributes.get(vacuum.ATTR_BATTERY_LEVEL)
-        elif self.state.domain == sensor.DOMAIN or self.state.domain == binary_sensor.DOMAIN:
+        elif self.state.domain == sensor.DOMAIN:
             if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
                 value = self.state.state
             elif self.state.attributes.get(ATTR_BATTERY_LEVEL) is not None:
+                value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
+        elif self.state.domain == binary_sensor.DOMAIN:
+            if self.state.attributes.get(ATTR_BATTERY_LEVEL) is not None:
                 value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
 			
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
@@ -653,10 +646,10 @@ class ContactProperty(_EventProperty):
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) in [
-                DEVICE_CLASS_DOOR, 
-                DEVICE_CLASS_GARAGE_DOOR, 
-                DEVICE_CLASS_WINDOW, 
-                DEVICE_CLASS_OPENING
+                binary_sensor.DEVICE_CLASS_DOOR, 
+                binary_sensor.DEVICE_CLASS_GARAGE_DOOR, 
+                binary_sensor.DEVICE_CLASS_WINDOW, 
+                binary_sensor.DEVICE_CLASS_OPENING
             ]
 
         return False
@@ -669,7 +662,11 @@ class MotionProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_MOTION
+            return attributes.get(ATTR_DEVICE_CLASS) in [
+                binary_sensor.DEVICE_CLASS_MOTION, 
+                binary_sensor.DEVICE_CLASS_OCCUPANCY, 
+                binary_sensor.DEVICE_CLASS_PRESENCE
+            ]
 
         return False
 
@@ -681,7 +678,7 @@ class GasProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_GAS
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_GAS
 
         return False
 
@@ -693,7 +690,7 @@ class SmokeProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_SMOKE
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_SMOKE
 
         return False
 
@@ -729,7 +726,7 @@ class WaterLeakProperty(_EventProperty):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_MOISTURE
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_MOISTURE
 
         return False
 

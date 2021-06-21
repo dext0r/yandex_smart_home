@@ -14,7 +14,8 @@ from . import capability, prop
 from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
-    ERR_INVALID_VALUE, CONF_ROOM, CONF_TYPE, CONF_ENTITY_PROPERTIES
+    ERR_INVALID_VALUE, CONF_ROOM, CONF_TYPE, CONF_ENTITY_PROPERTIES,
+    CONF_ENTITY_PROPERTY_ENTITY
 )
 from .error import SmartHomeError
 
@@ -208,7 +209,7 @@ class YandexEntity:
         """
         state = self.state
 
-        if state.state == STATE_UNAVAILABLE:
+        if state is None or state.state == STATE_UNAVAILABLE:
             return {'error_code': ERR_DEVICE_UNREACHABLE}
 
         capabilities = []
@@ -219,7 +220,34 @@ class YandexEntity:
 
         properties = []
         for ppt in self.properties():
-            properties.append(ppt.get_state())
+            if ppt.retrievable:
+                properties.append(ppt.get_state())
+
+        return {
+            'id': state.entity_id,
+            'capabilities': capabilities,
+            'properties': properties,
+        }
+
+    @callback
+    def notification_serialize(self, event_entity_id = None):
+        """Serialize entity for a notification."""
+        state = self.state
+
+        if state is None or state.state == STATE_UNAVAILABLE:
+            return {'error_code': ERR_DEVICE_UNREACHABLE}
+
+        capabilities = []
+        for cpb in self.capabilities():
+            cpb_state = cpb.get_state()
+            if cpb.reportable and cpb_state is not None:
+                capabilities.append(cpb_state)
+                
+        properties = []
+        for ppt in self.properties():
+            entity_id = ppt.property_config.get(CONF_ENTITY_PROPERTY_ENTITY, None) if hasattr(ppt, 'property_config') and CONF_ENTITY_PROPERTY_ENTITY in ppt.property_config else ppt.state.entity_id
+            if ppt.reportable and event_entity_id == entity_id:
+                properties.append(ppt.get_state())
 
         return {
             'id': state.entity_id,
