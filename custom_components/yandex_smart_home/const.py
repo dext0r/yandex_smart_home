@@ -1,5 +1,6 @@
 """Constants for Yandex Smart Home."""
 from homeassistant.components import (
+    air_quality,
     binary_sensor,
     camera,
     climate,
