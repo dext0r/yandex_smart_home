@@ -46,9 +46,9 @@ ENTITY_SCHEMA = vol.Schema({
 })
 
 NOTIFIER_SCHEMA = vol.Schema({
-    vol.Optional(CONF_SKILL_OAUTH_TOKEN): cv.string,
-    vol.Optional(CONF_SKILL_ID): cv.string,
-    vol.Optional(CONF_NOTIFIER_USER_ID): cv.string,
+    vol.Required(CONF_SKILL_OAUTH_TOKEN): cv.string,
+    vol.Required(CONF_SKILL_ID): cv.string,
+    vol.Required(CONF_NOTIFIER_USER_ID): cv.string,
 }, extra=vol.PREVENT_EXTRA)
 
 def pressure_unit_validate(unit):

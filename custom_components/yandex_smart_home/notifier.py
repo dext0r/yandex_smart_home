@@ -38,7 +38,7 @@ def setup_notification(hass: HomeAssistant):
                     title="Yandex Smart Home")
                 return False
 
-        hass.data[DOMAIN][NOTIFIER_ENABLED] = True
+            hass.data[DOMAIN][NOTIFIER_ENABLED] = True
 
         async def state_change_listener(event: Event):
             await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
