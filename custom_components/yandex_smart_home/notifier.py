@@ -47,7 +47,8 @@ def setup_notification(hass: HomeAssistant):
             await asyncio.sleep(10)
             for notifier in hass.data[DOMAIN][NOTIFIERS]:
                 await notifier.async_notify_skill([])
-                _LOGGER.debug("[" + notifier.skill_id + "] Device list update initiated")
+                _LOGGER.debug(("[" + notifier.skill_id + "] " if \
+                len(hass.data[DOMAIN][NOTIFIERS]) > 1 else "") + "Device list update initiated")
 
         hass.bus.async_listen('state_changed', state_change_listener)
         hass.bus.async_listen('homeassistant_started', ha_start_listener)
@@ -113,10 +114,12 @@ class YandexNotifier:
             data = await r.json()
             error = data.get('error_message')
             if error:
-                _LOGGER.error(f"[{self.skill_id}] Error sending notification: {error}")
+                _LOGGER.error(("[" + self.skill_id + "] " if \
+                len(self.hass.data[DOMAIN][NOTIFIERS]) > 1 else "") + "Error sending notification: " + error)
                 return
         except Exception:
-            _LOGGER.exception("[" + self.skill_id + "] Error sending notification")
+            _LOGGER.exception(("[" + self.skill_id + "] " if \
+            len(self.hass.data[DOMAIN][NOTIFIERS]) > 1 else "") + "Error sending notification")
 
     async def async_event_handler(self, event: Event):
         devices = []
@@ -137,6 +140,7 @@ class YandexNotifier:
         for entity in entity_list:
             if entity in CLOUD_NEVER_EXPOSED_ENTITIES or \
                 not self.hass.data[DOMAIN][DATA_CONFIG].should_expose(entity): 
+                # and entity not in self.hass.data[DOMAIN][DATA_CONFIG].entity_config.keys()
                 continue
             state = new_state if entity == event_entity_id else self.hass.states.get(entity)
             yandex_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], state)
@@ -150,7 +154,10 @@ class YandexNotifier:
                 entity_text = entity
                 if entity != event_entity_id:
                     entity_text = entity_text + " => " + event_entity_id
-                _LOGGER.debug("[" + self.skill_id + "] Notify Yandex about new state " + entity_text + ": " + new_state.state)
+                _LOGGER.debug(("[" + self.skill_id + "] " if \
+                len(self.hass.data[DOMAIN][NOTIFIERS]) > 1 else "") + \
+                "Notify Yandex about new state " + \
+                entity_text + ": " + new_state.state)
         
         if devices:
             await asyncio.sleep(.1)
