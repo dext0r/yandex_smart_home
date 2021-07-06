@@ -160,3 +160,4 @@ class YandexNotifier:
         if devices:
             await asyncio.sleep(.1)
             await self.async_notify_skill(devices)
+
