@@ -47,8 +47,7 @@ def setup_notification(hass: HomeAssistant):
             await asyncio.sleep(10)
             for notifier in hass.data[DOMAIN][NOTIFIERS]:
                 await notifier.async_notify_skill([])
-                _LOGGER.debug(("[" + notifier.skill_id + "] " if \
-                len(hass.data[DOMAIN][NOTIFIERS]) > 1 else "") + "Device list update initiated")
+                _LOGGER.debug(notifier.log_id() + "Device list update initiated")
 
         hass.bus.async_listen('state_changed', state_change_listener)
         hass.bus.async_listen('homeassistant_started', ha_start_listener)
@@ -83,7 +82,10 @@ class YandexNotifier:
         except Exception:
             _LOGGER.exception("Notifier Init Failed")
         return True
-        
+
+    def log_id(self):
+        return "[ " + self.skill_id + " | " + self.user_id + " ] " if len(self.hass.data[DOMAIN][NOTIFIERS]) > 1 else ""
+
     def get_property_entities(self):
         cfg = self.hass.data[DOMAIN][DATA_CONFIG].entity_config
         for entity in cfg:
@@ -114,12 +116,10 @@ class YandexNotifier:
             data = await r.json()
             error = data.get('error_message')
             if error:
-                _LOGGER.error(("[" + self.skill_id + "] " if \
-                len(self.hass.data[DOMAIN][NOTIFIERS]) > 1 else "") + "Error sending notification: " + error)
+                _LOGGER.error(self.log_id() + "Error sending notification: " + error)
                 return
         except Exception:
-            _LOGGER.exception(("[" + self.skill_id + "] " if \
-            len(self.hass.data[DOMAIN][NOTIFIERS]) > 1 else "") + "Error sending notification")
+            _LOGGER.exception(self.log_id() + "Error sending notification")
 
     async def async_event_handler(self, event: Event):
         devices = []
@@ -154,9 +154,7 @@ class YandexNotifier:
                 entity_text = entity
                 if entity != event_entity_id:
                     entity_text = entity_text + " => " + event_entity_id
-                _LOGGER.debug(("[" + self.skill_id + "] " if \
-                len(self.hass.data[DOMAIN][NOTIFIERS]) > 1 else "") + \
-                "Notify Yandex about new state " + \
+                _LOGGER.debug(self.log_id() + "Notify Yandex about new state " + \
                 entity_text + ": " + new_state.state)
         
         if devices:
