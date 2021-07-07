@@ -140,7 +140,6 @@ class YandexNotifier:
         for entity in entity_list:
             if entity in CLOUD_NEVER_EXPOSED_ENTITIES or \
                 not self.hass.data[DOMAIN][DATA_CONFIG].should_expose(entity): 
-                # and entity not in self.hass.data[DOMAIN][DATA_CONFIG].entity_config.keys()
                 continue
             state = new_state if entity == event_entity_id else self.hass.states.get(entity)
             yandex_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], state)
