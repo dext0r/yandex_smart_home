@@ -150,7 +150,7 @@ yandex_smart_home:
           (float) (Optional) Range Precision (adjustment step)
       modes:
         (map) (Optional) Map of yandex mode functions (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-docpage/)
-        fan_speed|cleanup_mode|program|scene:
+        fan_speed|cleanup_mode|program|scene|thermostat|swing:
           (map) (Optional) Map of yandex modes (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-modes-docpage/) to HA modes.
           yandex_mode1:
             - ha_mode1
