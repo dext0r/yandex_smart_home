@@ -210,7 +210,7 @@ class YandexEntity:
         state = self.state
 
         if state is None or state.state == STATE_UNAVAILABLE:
-            return {'error_code': ERR_DEVICE_UNREACHABLE}
+            return {'id': state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
 
         capabilities = []
         for cpb in self.capabilities():
@@ -235,7 +235,7 @@ class YandexEntity:
         state = self.state
 
         if state is None or state.state == STATE_UNAVAILABLE:
-            return {'error_code': ERR_DEVICE_UNREACHABLE}
+            return {'id': state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
 
         capabilities = []
         for cpb in self.capabilities():
