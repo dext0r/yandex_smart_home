@@ -423,6 +423,7 @@ class ThermostatCapability(_ModeCapability):
     """Thermostat functionality"""
 
     instance = 'thermostat'
+
     modes_map = {
         'heat': [climate.const.HVAC_MODE_HEAT],
         'cool': [climate.const.HVAC_MODE_COOL],
@@ -1392,16 +1393,21 @@ class TemperatureKCapability(_ColorSettingCapability):
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
         return domain == light.DOMAIN and (
-            features & light.SUPPORT_COLOR or light.color_temp_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
+            features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
         )
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        kelvin = self.state.attributes.get(light.ATTR_COLOR_TEMP)
-        if kelvin is None:
-            kelvin = self.state.attributes[light.ATTR_MAX_MIREDS]
 
-        return color_util.color_temperature_mired_to_kelvin(kelvin)
+        return color_util.color_temperature_mired_to_kelvin(
+            self.state.attributes.get(
+                light.ATTR_COLOR_TEMP, 
+                self.state.attributes.get(
+                    light.ATTR_MAX_MIREDS, 
+                    500
+                )
+            )
+        )
 
     async def set_state(self, data, state):
         """Set device state."""
