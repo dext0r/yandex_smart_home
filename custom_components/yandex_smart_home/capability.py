@@ -425,11 +425,11 @@ class ThermostatCapability(_ModeCapability):
     instance = 'thermostat'
 
     modes_map = {
-        climate.const.HVAC_MODE_HEAT: 'heat',
-        climate.const.HVAC_MODE_COOL: 'cool',
-        climate.const.HVAC_MODE_AUTO: 'auto',
-        climate.const.HVAC_MODE_DRY: 'dry',
-        climate.const.HVAC_MODE_FAN_ONLY: 'fan_only'
+        'heat': [climate.const.HVAC_MODE_HEAT],
+        'cool': [climate.const.HVAC_MODE_COOL],
+        'auto': [climate.const.HVAC_MODE_AUTO],
+        'dry': [climate.const.HVAC_MODE_DRY],
+        'fan_only': [climate.const.HVAC_MODE_FAN_ONLY],
     }
 
     @staticmethod
@@ -464,9 +464,6 @@ class ThermostatCapability(_ModeCapability):
         """Return the state value of this capability for this entity."""
         operation = self.state.state
 
-        if operation is not None and operation in self.modes_map:
-            return self.modes_map[operation]
-
         if operation is not None:
             yandex_value = self.get_yandex_mode_by_ha_mode(operation)
             if yandex_value is not None:
@@ -498,10 +495,10 @@ class SwingCapability(_ModeCapability):
     instance = 'swing'
 
     modes_map = {
-        climate.const.SWING_VERTICAL: 'vertical',
-        climate.const.SWING_HORIZONTAL: 'horizontal',
-        climate.const.SWING_OFF: 'stationary',
-        climate.const.SWING_BOTH: 'auto'
+        'vertical': [climate.const.SWING_VERTICAL],
+        'horizontal': [climate.const.SWING_HORIZONTAL],
+        'stationary': [climate.const.SWING_OFF],
+        'auto': [climate.const.SWING_BOTH]
     }
 
     @staticmethod
@@ -532,9 +529,6 @@ class SwingCapability(_ModeCapability):
     def get_value(self):
         """Return the state value of this capability for this entity."""
         operation = self.state.attributes.get(climate.ATTR_SWING_MODE)
-
-        if operation is not None and operation in self.modes_map:
-            return self.modes_map[operation]
 
         if operation is not None:
             yandex_value = self.get_yandex_mode_by_ha_mode(operation)
