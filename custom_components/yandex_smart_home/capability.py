@@ -1051,7 +1051,7 @@ class BrightnessCapability(_RangeCapability):
             'instance': self.instance,
             'unit': 'unit.percent',
             'range': {
-                'min': 0,
+                'min': 1,
                 'max': 100,
                 'precision': 1
             }
