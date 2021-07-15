@@ -1,5 +1,8 @@
 """Implement the Yandex Smart Home capabilities."""
+from __future__ import annotations
+
 import logging
+from typing import Any, Optional
 
 from homeassistant.components import (
     climate,
@@ -1260,27 +1263,27 @@ class _ColorSettingCapability(_Capability):
     """
 
     type = CAPABILITIES_COLOR_SETTING
-    scenes_map = {
-        'alarm': ['Тревога','Alarm'],
-        'alice': ['Алиса','Alice'],
-        'candle': ['Свеча','Огонь','Candle','Fire'],
-        'dinner': ['Ужин','Dinner'],
-        'fantasy': ['Фантазия','Fantasy'],
-        'garland': ['Гирлянда','Garland'],
-        'jungle': ['Джунгли','Jungle'],
-        'movie': ['Кино','Movie'],
-        'neon': ['Неон','Neon'],
-        'night': ['Ночь','Night'],
-        'ocean': ['Океан','Ocean'],
-        'party': ['Вечеринка','Party'],
-        'reading': ['Чтение','Reading'],
-        'rest': ['Отдых','Rest'],
-        'romance': ['Романтика','Romance'],
-        'siren': ['Сирена','Siren'],
-        'sunrise': ['Рассвет','Sunrise'],
-        'sunset': ['Закат','Sunset']
+    scenes_map_default = {
+        'alarm': ['Тревога', 'Alarm'],
+        'alice': ['Алиса', 'Alice'],
+        'candle': ['Свеча', 'Огонь', 'Candle', 'Fire'],
+        'dinner': ['Ужин', 'Dinner'],
+        'fantasy': ['Фантазия', 'Fantasy'],
+        'garland': ['Гирлянда', 'Garland'],
+        'jungle': ['Джунгли', 'Jungle'],
+        'movie': ['Кино', 'Movie'],
+        'neon': ['Неон', 'Neon'],
+        'night': ['Ночь', 'Night'],
+        'ocean': ['Океан', 'Ocean'],
+        'party': ['Вечеринка', 'Party'],
+        'reading': ['Чтение', 'Reading'],
+        'rest': ['Отдых', 'Rest'],
+        'romance': ['Романтика', 'Romance'],
+        'siren': ['Сирена', 'Siren'],
+        'sunrise': ['Рассвет', 'Sunrise'],
+        'sunset': ['Закат', 'Sunset']
     }
-    
+
     def parameters(self):
         """Return parameters for a devices request."""
         result = {}
@@ -1298,13 +1301,12 @@ class _ColorSettingCapability(_Capability):
                 'min': color_util.color_temperature_mired_to_kelvin(min_temp),
                 'max': color_util.color_temperature_mired_to_kelvin(max_temp)
             }
-            
+
         if features & light.SUPPORT_EFFECT:
-            mapped_scenes = {
-                self.get_yandex_scene_by_ha_effect(e)
-                for e in self.state.attributes[light.ATTR_EFFECT_LIST]
-            }
-            supported_scenes = list(set(mapped_scenes) & set(self.scenes_map.keys()))
+            supported_scenes = self.get_supported_scenes(
+                self.get_scenes_map_from_config(self.entity_config),
+                self.state.attributes[light.ATTR_EFFECT_LIST]
+            )
             if supported_scenes:
                 result['color_scene'] = {
                     'scenes': [
@@ -1312,36 +1314,57 @@ class _ColorSettingCapability(_Capability):
                         for s in supported_scenes
                     ]
                 }
+
         return result
 
-    def get_effect_map_from_config(self):
-        scenes = self.scenes_map
-        if CONF_ENTITY_MODE_MAP in self.entity_config:
-            modes = self.entity_config.get(CONF_ENTITY_MODE_MAP)
-            if self.instance in modes:
-                cfg_scenes = modes.get(self.instance)
-                for yandex_scene in scenes:
-                    if yandex_scene in cfg_scenes.keys():
-                        scenes[yandex_scene] = cfg_scenes[yandex_scene]
-                
-        return scenes
+    @staticmethod
+    def get_supported_scenes(scenes_map: dict[str, list[str]],
+                             entity_effect_list: list[str]) -> set[str]:
+        yandex_scenes = set()
+        for effect in entity_effect_list:
+            for yandex_scene, ha_effects in scenes_map.items():
+                if effect in ha_effects:
+                    yandex_scenes.add(yandex_scene)
 
-    def get_yandex_scene_by_ha_effect(self, ha_effect):
-        scenes = self.get_effect_map_from_config()
+        return yandex_scenes
 
-        for yandex_scene, names in scenes.items():
-            if str(ha_effect) in names:
+    @staticmethod
+    def get_scenes_map_from_config(entity_config: dict[str, Any]) -> dict[str, list[str]]:
+        scenes_map = _ColorSettingCapability.scenes_map_default.copy()
+        instance = 'scene'
+
+        if CONF_ENTITY_MODE_MAP in entity_config:
+            modes = entity_config.get(CONF_ENTITY_MODE_MAP)
+            if instance in modes:
+                config_scenes = modes.get(instance)
+                for yandex_scene in scenes_map.keys():
+                    if yandex_scene in config_scenes.keys():
+                        scenes_map[yandex_scene] = config_scenes[yandex_scene]
+
+        return scenes_map
+
+    def get_yandex_scene_by_ha_effect(self, ha_effect: str) -> Optional[str]:
+        scenes_map = self.get_scenes_map_from_config(self.entity_config)
+
+        for yandex_scene, ha_effects in scenes_map.items():
+            if str(ha_effect) in ha_effects:
                 return yandex_scene
+
         return None
 
-    def get_ha_effect_by_yandex_scene(self, yandex_scene):
-        scenes = self.get_effect_map_from_config()
+    def get_ha_effect_by_yandex_scene(self, yandex_scene: str) -> Optional[str]:
+        scenes_map = self.get_scenes_map_from_config(self.entity_config)
 
-        ha_effects = scenes[yandex_scene]
+        ha_effects = scenes_map.get(yandex_scene)
+        if not ha_effects:
+            _LOGGER.warning(f'Missing mapping for scene {yandex_scene}')
+            return None
+
         for ha_effect in ha_effects:
             for am in self.state.attributes[light.ATTR_EFFECT_LIST]:
                 if str(am) == ha_effect:
                     return ha_effect
+
         return None
 
 
@@ -1427,7 +1450,13 @@ class ColorSceneCapability(_ColorSettingCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == light.DOMAIN and features & light.SUPPORT_EFFECT
+        if domain == light.DOMAIN and features & light.SUPPORT_EFFECT:
+            return bool(
+                ColorSceneCapability.get_supported_scenes(
+                    ColorSceneCapability.get_scenes_map_from_config(entity_config),
+                    attributes[light.ATTR_EFFECT_LIST] or []
+                )
+            )
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
