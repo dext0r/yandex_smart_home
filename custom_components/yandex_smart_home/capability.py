@@ -1288,7 +1288,9 @@ class _ColorSettingCapability(_Capability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
 
-        if features & light.SUPPORT_COLOR or light.COLOR_MODE_RGB in supported_color_modes:
+        if features & light.SUPPORT_COLOR or \
+                light.COLOR_MODE_RGB in supported_color_modes or \
+                light.COLOR_MODE_HS in supported_color_modes:
             result['color_model'] = 'rgb'
 
         if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
@@ -1354,21 +1356,29 @@ class RgbCapability(_ColorSettingCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == light.DOMAIN and (
-            features & light.SUPPORT_COLOR or light.COLOR_MODE_RGB in attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
-        )
+        if domain == light.DOMAIN:
+            supported_color_modes = attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+
+            return features & light.SUPPORT_COLOR or \
+                light.COLOR_MODE_RGB in supported_color_modes or \
+                light.COLOR_MODE_HS in supported_color_modes
+
+        return False
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        color = self.state.attributes.get(light.ATTR_RGB_COLOR)
-        if color is None:
-            return 0
+        rgb_color = self.state.attributes.get(light.ATTR_RGB_COLOR)
+        if rgb_color is None:
+            hs_color = self.state.attributes.get(light.ATTR_HS_COLOR)
+            if hs_color is not None:
+                rgb_color = color_util.color_hs_to_RGB(*hs_color)
 
-        rgb = color[0]
-        rgb = (rgb << 8) + color[1]
-        rgb = (rgb << 8) + color[2]
+        if rgb_color is not None:
+            value = rgb_color[0]
+            value = (value << 8) + rgb_color[1]
+            value = (value << 8) + rgb_color[2]
 
-        return rgb
+            return value
 
     async def set_state(self, data, state):
         """Set device state."""
