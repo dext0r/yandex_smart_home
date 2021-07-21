@@ -47,7 +47,8 @@ CONF_NOTIFIER = 'notifier'
 CONF_SKILL_OAUTH_TOKEN = 'oauth_token'
 CONF_SKILL_ID = 'skill_id'
 CONF_NOTIFIER_USER_ID = 'user_id'  
-NOTIFIER_ENABLED = 'notifier_enabled'    
+NOTIFIER_ENABLED = 'notifier_enabled'   
+NOTIFIERS = 'notifiers' 
 
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types.html/
 PREFIX_TYPES = 'devices.types.'

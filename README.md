@@ -224,3 +224,14 @@ yandex_smart_home:
     skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
     user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
+If you need to notify multiple skills, you can enter their details in a list.
+```
+yandex_smart_home:
+  notifier:
+    - oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
+      user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    - oauth_token: YYYYYYYYYYYYYYYYYYYYYYYYYYY
+      skill_id: yyyyyyyy-yyyy-yyyy-yyyyyyyyyyyy
+      user_id: yyyyyyyyyyyyyyyyyyyyyyyyyyyy
+```
