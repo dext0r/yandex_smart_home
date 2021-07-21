@@ -1060,9 +1060,7 @@ class BrightnessCapability(_RangeCapability):
     def get_value(self):
         """Return the state value of this capability for this entity."""
         brightness = self.state.attributes.get(light.ATTR_BRIGHTNESS)
-        if brightness is None:
-            return 0
-        else:
+        if brightness is not None:
             return int(100 * (brightness / 255))
 
     async def set_state(self, data, state):
@@ -1398,16 +1396,9 @@ class TemperatureKCapability(_ColorSettingCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-
-        return color_util.color_temperature_mired_to_kelvin(
-            self.state.attributes.get(
-                light.ATTR_COLOR_TEMP, 
-                self.state.attributes.get(
-                    light.ATTR_MAX_MIREDS, 
-                    500
-                )
-            )
-        )
+        temperature_mired = self.state.attributes.get(light.ATTR_COLOR_TEMP)
+        if temperature_mired is not None:
+            return color_util.color_temperature_mired_to_kelvin(temperature_mired)
 
     async def set_state(self, data, state):
         """Set device state."""
