@@ -65,7 +65,7 @@ SETTINGS_SCHEMA = vol.Schema({
 
 YANDEX_SMART_HOME_SCHEMA = vol.All(
     vol.Schema({
-        vol.Optional(CONF_NOTIFIER, default={}): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
+        vol.Optional(CONF_NOTIFIER, default=[]): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
         vol.Optional(CONF_SETTINGS, default={}): SETTINGS_SCHEMA,
         vol.Optional(CONF_FILTER, default={}): entityfilter.FILTER_SCHEMA,
         vol.Optional(CONF_ENTITY_CONFIG, default={}): {cv.entity_id: ENTITY_SCHEMA},
