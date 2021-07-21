@@ -40,6 +40,13 @@ yandex_smart_home:
       name: CUSTOM_NAME_FOR_YANDEX_SMART_HOME
     light.living_room:
       room: LIVING_ROOM
+    light.led_strip:
+      modes:
+        scene:
+          sunrise:
+            - Wake up
+          alarm:
+            - Blink
     media_player.tv_lg:
       channel_set_via_media_content_id: true
     fan.xiaomi_miio_device:
@@ -152,6 +159,7 @@ yandex_smart_home:
         (map) (Optional) Map of yandex mode functions (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-docpage/)
         fan_speed|cleanup_mode|program|scene|thermostat|swing:
           (map) (Optional) Map of yandex modes (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-modes-docpage/) to HA modes.
+          Map of scene mode - https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html#discovery__discovery-parameters-color-setting-table__entry__75 
           yandex_mode1:
             - ha_mode1
           yandex_mode2: [ha_mode2, ha_mode2b]
