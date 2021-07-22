@@ -235,3 +235,6 @@ yandex_smart_home:
       skill_id: yyyyyyyy-yyyy-yyyy-yyyyyyyyyyyy
       user_id: yyyyyyyyyyyyyyyyyyyyyyyyyyyy
 ```
+
+## Usefull links
+* https://github.com/allmazz/yandex_smart_home_ip
