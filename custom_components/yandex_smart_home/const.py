@@ -119,6 +119,9 @@ PRESSURE_TO_PASCAL = {
     PRESSURE_UNIT_MBAR: 0.01
 }
 
+# Additional states
+STATE_NONE = 'none'
+
 # Multiplier to convert from pascal to given pressure unit
 PRESSURE_FROM_PASCAL = {
     PRESSURE_UNIT_PASCAL: 1,
