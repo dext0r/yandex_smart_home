@@ -318,6 +318,9 @@ class PauseCapability(_ToggleCapability):
             return features & media_player.SUPPORT_PAUSE and features & media_player.SUPPORT_PLAY
         elif domain == vacuum.DOMAIN:
             return features & vacuum.SUPPORT_PAUSE
+        elif domain == cover.DOMAIN:
+            return features & cover.SUPPORT_STOP
+
         return False
 
     def get_value(self):
@@ -326,6 +329,9 @@ class PauseCapability(_ToggleCapability):
             return bool(self.state.state != media_player.STATE_PLAYING)
         elif self.state.domain == vacuum.DOMAIN:
             return self.state.state == vacuum.STATE_PAUSED
+        elif self.state.domain == cover.DOMAIN:
+            return False
+
         return None
 
     async def set_state(self, data, state):
@@ -343,6 +349,8 @@ class PauseCapability(_ToggleCapability):
                 service = vacuum.SERVICE_PAUSE
             else:
                 service = vacuum.SERVICE_START
+        elif self.state.domain == cover.DOMAIN:
+            service = cover.SERVICE_STOP_COVER
         else:
             raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
 
