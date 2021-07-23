@@ -33,8 +33,12 @@ yandex_smart_home:
       - media_player.tv
       - media_player.tv_lg
       - media_player.receiver
+    include_entity_globs:
+      - sensor.temperature_*
     exclude_entities:
       - light.highlight
+    exclude_entity_globs:
+      - sensor.weather_* 
   entity_config:
     switch.kitchen:
       name: CUSTOM_NAME_FOR_YANDEX_SMART_HOME
