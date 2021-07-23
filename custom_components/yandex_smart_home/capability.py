@@ -430,7 +430,7 @@ class ThermostatCapability(_ModeCapability):
     modes_map = {
         'heat': [climate.const.HVAC_MODE_HEAT],
         'cool': [climate.const.HVAC_MODE_COOL],
-        'auto': [climate.const.HVAC_MODE_AUTO],
+        'auto': [climate.const.HVAC_MODE_HEAT_COOL],
         'dry': [climate.const.HVAC_MODE_DRY],
         'fan_only': [climate.const.HVAC_MODE_FAN_ONLY],
     }
