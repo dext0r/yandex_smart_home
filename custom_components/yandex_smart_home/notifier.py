@@ -110,6 +110,7 @@ class YandexNotifier:
                 payload = {"user_id": self.user_id}
             data = {"ts": ts, "payload": payload}
 
+            _LOGGER.debug(f"Request: {url}{url_tail} (POST data: {data})")
             r = await self.session.post(f"{url}{url_tail}", headers=headers,
                                         json=data)
             assert r.status == 202, await r.read()
