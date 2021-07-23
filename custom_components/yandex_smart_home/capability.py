@@ -760,7 +760,7 @@ class FanSpeedCapability(_ModeCapability):
         if domain == climate.DOMAIN:
             return features & climate.SUPPORT_FAN_MODE
         elif domain == fan.DOMAIN:
-            return features & fan.SUPPORT_SET_SPEED
+            return features & fan.SUPPORT_PRESET_MODE or features & fan.SUPPORT_SET_SPEED
         return False
 
     def parameters(self):
@@ -768,7 +768,8 @@ class FanSpeedCapability(_ModeCapability):
         if self.state.domain == climate.DOMAIN:
             speed_list = self.state.attributes.get(climate.ATTR_FAN_MODES)
         elif self.state.domain == fan.DOMAIN:
-            speed_list = self.state.attributes.get(fan.ATTR_SPEED_LIST)
+            speed_list = self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or \
+                         self.state.attributes.get(fan.ATTR_SPEED_LIST, [])
         else:
             speed_list = []
 
@@ -790,7 +791,8 @@ class FanSpeedCapability(_ModeCapability):
         if self.state.domain == climate.DOMAIN:
             speed_list = self.state.attributes.get(climate.ATTR_FAN_MODES)
         elif self.state.domain == fan.DOMAIN:
-            speed_list = self.state.attributes.get(fan.ATTR_SPEED_LIST)
+            speed_list = self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or \
+                         self.state.attributes.get(fan.ATTR_SPEED_LIST, [])
         else:
             return None
 
@@ -801,7 +803,8 @@ class FanSpeedCapability(_ModeCapability):
         if self.state.domain == climate.DOMAIN:
             ha_value = self.state.attributes.get(climate.ATTR_FAN_MODE)
         elif self.state.domain == fan.DOMAIN:
-            ha_value = self.state.attributes.get(fan.ATTR_SPEED)
+            ha_value = self.state.attributes.get(fan.ATTR_PRESET_MODE) or \
+                       self.state.attributes.get(fan.ATTR_SPEED)
         else:
             ha_value = None
 
@@ -825,8 +828,15 @@ class FanSpeedCapability(_ModeCapability):
             service = climate.SERVICE_SET_FAN_MODE
             attr = climate.ATTR_FAN_MODE
         elif self.state.domain == fan.DOMAIN:
-            service = fan.SERVICE_SET_SPEED
-            attr = fan.ATTR_SPEED
+            if value in self.state.attributes.get(fan.ATTR_PRESET_MODES, []):
+                service = fan.SERVICE_SET_PRESET_MODE
+                attr = fan.ATTR_PRESET_MODE
+            elif value in self.state.attributes.get(fan.ATTR_SPEED_LIST, []):
+                _LOGGER.warning('Usage fan attribute speed_list is deprecated, use attribute preset_modes instead')
+                service = fan.SERVICE_SET_SPEED
+                attr = fan.ATTR_SPEED
+            else:
+                raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported value")
         else:
             raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
 
