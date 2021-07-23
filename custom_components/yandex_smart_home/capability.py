@@ -140,6 +140,10 @@ class OnOffCapability(_Capability):
         self.retrievable = state.domain != scene.DOMAIN and state.domain != \
             script.DOMAIN
 
+        if self.state.domain == cover.DOMAIN:
+            if not self.state.attributes.get(ATTR_SUPPORTED_FEATURES) & cover.SUPPORT_SET_POSITION:
+                self.retrievable = False
+
     @staticmethod
     def get_water_heater_operation(required_mode, operations_list):
         for operation in OnOffCapability.water_heater_operations[required_mode]:
@@ -182,6 +186,11 @@ class OnOffCapability(_Capability):
 
     def parameters(self):
         """Return parameters for a devices request."""
+        if self.state.domain == cover.DOMAIN:
+            features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
+            if not features & cover.SUPPORT_SET_POSITION:
+                return {'split': True}
+
         return None
 
     def get_value(self):
