@@ -820,8 +820,10 @@ class FanSpeedCapability(_ModeCapability):
         if self.state.domain == climate.DOMAIN:
             ha_value = self.state.attributes.get(climate.ATTR_FAN_MODE)
         elif self.state.domain == fan.DOMAIN:
-            ha_value = self.state.attributes.get(fan.ATTR_PRESET_MODE) or \
-                       self.state.attributes.get(fan.ATTR_SPEED)
+            if fan.ATTR_PRESET_MODE in self.state.attributes:
+                ha_value = self.state.attributes.get(fan.ATTR_PRESET_MODE)
+            else:
+                ha_value = self.state.attributes.get(fan.ATTR_SPEED)
         else:
             ha_value = None
 
