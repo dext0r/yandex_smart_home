@@ -836,10 +836,10 @@ class FanSpeedCapability(_ModeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        value = self.get_ha_by_yandex_value(state['value'])
-
+        yandex_value = state['value']
+        value = self.get_ha_by_yandex_value(yandex_value)
         if value is None:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported value")
+            raise SmartHomeError(ERR_INVALID_VALUE, f'Unsupported value: {yandex_value} -> {value!r}')
 
         if self.state.domain == climate.DOMAIN:
             service = climate.SERVICE_SET_FAN_MODE
@@ -853,9 +853,9 @@ class FanSpeedCapability(_ModeCapability):
                 service = fan.SERVICE_SET_SPEED
                 attr = fan.ATTR_SPEED
             else:
-                raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported value")
+                raise SmartHomeError(ERR_INVALID_VALUE, f'Unsupported value: {yandex_value} -> {value!r}')
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+            raise SmartHomeError(ERR_INVALID_VALUE, f'Unsupported domain: {yandex_value} -> {value!r}')
 
         await self.hass.services.async_call(
             self.state.domain,
