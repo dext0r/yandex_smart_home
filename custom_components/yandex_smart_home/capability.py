@@ -421,8 +421,10 @@ class _ModeCapability(_Capability):
             modes = self.modes_map
 
         for yandex_mode, names in modes.items():
-            if str(ha_mode).lower() in names:
+            lower_names = [str(n).lower() for n in names]
+            if str(ha_mode).lower() in lower_names:
                 return yandex_mode
+
         return None
 
     def get_ha_mode_by_yandex_mode(self, yandex_mode, available_modes):
@@ -433,8 +435,9 @@ class _ModeCapability(_Capability):
         ha_modes = modes[yandex_mode]
         for ha_mode in ha_modes:
             for am in available_modes:
-                if str(am).lower() == ha_mode:
-                    return ha_mode
+                if str(am).lower() == str(ha_mode).lower():
+                    return am
+
         return None
 
 
