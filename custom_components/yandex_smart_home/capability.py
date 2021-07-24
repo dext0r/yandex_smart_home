@@ -766,7 +766,7 @@ class FanSpeedCapability(_ModeCapability):
         'auto': [climate.const.FAN_AUTO, climate.const.FAN_ON],
         'quiet': [fan.SPEED_OFF, climate.const.FAN_OFF, 'silent', 'level 1'],
         'low': [fan.SPEED_LOW, climate.const.FAN_LOW, 'min', 'level 2'],
-        'medium': [fan.SPEED_MEDIUM, climate.const.FAN_MEDIUM, climate.const.FAN_MIDDLE, 'level 3'],
+        'medium': [fan.SPEED_MEDIUM, climate.const.FAN_MEDIUM, climate.const.FAN_MIDDLE, 'mid', 'level 3'],
         'high': [fan.SPEED_HIGH, climate.const.FAN_HIGH, 'strong', 'favorite', 'level 4'],
         'turbo': [climate.const.FAN_FOCUS, 'max', 'level 5'],
     }
