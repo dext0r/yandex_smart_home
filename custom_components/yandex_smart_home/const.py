@@ -76,6 +76,12 @@ TYPE_IRON = PREFIX_TYPES + 'iron'
 TYPE_SENSOR = PREFIX_TYPES + 'sensor'
 TYPE_OTHER = PREFIX_TYPES + 'other'
 
+# Integration xiaomi_airpurifier
+ATTR_TARGET_HUMIDITY = 'target_humidity'
+DOMAIN_XIAOMI_AIRPURIFIER = 'xiaomi_miio_airpurifier'
+MODEL_PREFIX_XIAOMI_AIRPURIFIER = 'zhimi.'
+SERVICE_FAN_SET_TARGET_HUMIDITY = 'fan_set_target_humidity'
+
 # Error codes
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/response-codes-docpage/
 ERR_DEVICE_UNREACHABLE = "DEVICE_UNREACHABLE"
