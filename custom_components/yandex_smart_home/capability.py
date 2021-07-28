@@ -23,6 +23,7 @@ from homeassistant.components import (
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_SUPPORTED_FEATURES,
+    ATTR_MODEL,
     SERVICE_CLOSE_COVER,
     SERVICE_OPEN_COVER,
     SERVICE_TURN_OFF,
@@ -45,9 +46,12 @@ from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY,
-    CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN, 
+    CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_RANGE,
-    CONF_ENTITY_MODE_MAP, NOTIFIER_ENABLED)
+    CONF_ENTITY_MODE_MAP, NOTIFIER_ENABLED,
+    DOMAIN_XIAOMI_AIRPURIFIER, ATTR_TARGET_HUMIDITY, SERVICE_FAN_SET_TARGET_HUMIDITY,
+    MODEL_PREFIX_XIAOMI_AIRPURIFIER
+)
 from .error import SmartHomeError
 
 _LOGGER = logging.getLogger(__name__)
@@ -1020,6 +1024,11 @@ class HumidityCapability(_RangeCapability):
         """Test if state is supported."""
         if domain == humidifier.DOMAIN:
             return True
+        elif domain == fan.DOMAIN and \
+                attributes.get(ATTR_TARGET_HUMIDITY) and \
+                attributes.get(ATTR_MODEL, '').startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
+            return True
+
         return False
 
     def parameters(self):
@@ -1043,6 +1052,8 @@ class HumidityCapability(_RangeCapability):
         humidity = None
         if self.state.domain == humidifier.DOMAIN:
             humidity = self.state.attributes.get(humidifier.ATTR_HUMIDITY)
+        elif self.state.domain == fan.DOMAIN and self.state.attributes.get(ATTR_TARGET_HUMIDITY):
+            humidity = self.state.attributes.get(ATTR_TARGET_HUMIDITY)
 
         if humidity is None:
             return 0
@@ -1051,15 +1062,21 @@ class HumidityCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
+        domain = self.state.domain
 
         if self.state.domain == humidifier.DOMAIN:
             service = humidifier.SERVICE_SET_HUMIDITY
+            attr = humidifier.ATTR_HUMIDITY
+        elif self.state.domain == fan.DOMAIN and \
+                self.state.attributes.get(ATTR_MODEL, '').startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
+            domain = DOMAIN_XIAOMI_AIRPURIFIER
+            service = SERVICE_FAN_SET_TARGET_HUMIDITY
             attr = humidifier.ATTR_HUMIDITY
         else:
             raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
 
         await self.hass.services.async_call(
-            self.state.domain,
+            domain,
             service,
             {ATTR_ENTITY_ID: self.state.entity_id, attr: state["value"]},
             blocking=True,
