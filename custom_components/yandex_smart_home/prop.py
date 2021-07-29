@@ -74,7 +74,7 @@ PROPERTIES = []
 
 def register_property(prop):
     """Decorate a function to register a property."""
-    PROPERTIES.append(property)
+    PROPERTIES.append(prop)
     return prop
 
 
