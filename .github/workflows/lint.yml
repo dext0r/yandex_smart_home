@@ -1,0 +1,28 @@
+name: lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
+
+      - name: install deps
+        run: pip install flake8 flake8-quotes
+
+      - name: flake8 lint
+        uses: TrueBrain/actions-flake8@v2
+        with:
+          path: custom_components
+
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
