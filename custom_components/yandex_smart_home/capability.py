@@ -265,6 +265,19 @@ class OnOffCapability(_Capability):
         else:
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
 
+        if self.state.domain == climate.DOMAIN and state['value']:
+            hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES)
+            for mode in (climate.const.HVAC_MODE_HEAT_COOL,
+                         climate.const.HVAC_MODE_AUTO,
+                         climate.const.HVAC_MODE_HEAT,
+                         climate.const.HVAC_MODE_COOL):
+                if mode not in hvac_modes:
+                    continue
+
+                service_data[climate.ATTR_HVAC_MODE] = mode
+                service = climate.SERVICE_SET_HVAC_MODE
+                break
+
         await self.hass.services.async_call(service_domain, service, service_data,
                                             blocking=self.state.domain != script.DOMAIN, context=data.context)
 
