@@ -12,7 +12,7 @@ from homeassistant.helpers import entityfilter
 from .const import (
     DOMAIN, CONFIG, DATA_CONFIG, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_ATTRIBUTE, CONF_ENTITY_PROPERTY_TYPE,
-    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MAX, 
+    CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_RELATIVE_VOLUME_ONLY, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MAX,
     CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP,
     CONF_SETTINGS, CONF_PRESSURE_UNIT, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS,
     CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED)
@@ -51,11 +51,13 @@ NOTIFIER_SCHEMA = vol.Schema({
     vol.Required(CONF_NOTIFIER_USER_ID): cv.string,
 }, extra=vol.PREVENT_EXTRA)
 
+
 def pressure_unit_validate(unit):
-    if not unit in PRESSURE_UNITS_TO_YANDEX_UNITS:
+    if unit not in PRESSURE_UNITS_TO_YANDEX_UNITS:
         raise vol.Invalid(f'Pressure unit "{unit}" is not supported')
 
     return unit
+
 
 SETTINGS_SCHEMA = vol.Schema({
     vol.Optional(CONF_PRESSURE_UNIT, default=PRESSURE_UNIT_MMHG): vol.Schema(
@@ -78,7 +80,6 @@ CONFIG_SCHEMA = vol.Schema({
 
 async def async_setup(hass: HomeAssistant, yaml_config: Dict[str, Any]):
     """Activate Yandex Smart Home component."""
-    
     hass.data[DOMAIN] = {}
     hass.data[DOMAIN][CONFIG] = yaml_config.get(DOMAIN, {})
     hass.data[DOMAIN][DATA_CONFIG] = Config(

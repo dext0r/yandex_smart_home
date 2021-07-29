@@ -1,8 +1,9 @@
 """Helper classes for Yandex Smart Home integration."""
+from __future__ import annotations
 from asyncio import gather
 from collections.abc import Mapping
 
-from homeassistant.core import Context, callback
+from homeassistant.core import HomeAssistant, Context, callback, State
 from homeassistant.const import (
     CONF_NAME, STATE_UNAVAILABLE, ATTR_SUPPORTED_FEATURES,
     ATTR_DEVICE_CLASS
@@ -44,14 +45,13 @@ def get_yandex_type(domain, device_class):
     """Yandex type based on domain and device class."""
     yandex_type = DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class))
 
-    return yandex_type if yandex_type is not None else \
-        DOMAIN_TO_YANDEX_TYPES[domain]
+    return yandex_type if yandex_type is not None else DOMAIN_TO_YANDEX_TYPES[domain]
 
 
 class YandexEntity:
     """Adaptation of Entity expressed in Yandex's terms."""
 
-    def __init__(self, hass, config, state):
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a Yandex Smart Home entity."""
         self.hass = hass
         self.config = config
@@ -138,10 +138,10 @@ class YandexEntity:
         device_type = get_yandex_type(domain, device_class)
 
         entry = entity_reg.async_get(state.entity_id)
-        device = dev_reg.async_get(getattr(entry, 'device_id', ""))
+        device = dev_reg.async_get(getattr(entry, 'device_id', ''))
 
         manufacturer = state.entity_id
-        model = ""
+        model = ''
         if device is DeviceRegistry:
             if device.manufacturer is not None:
                 manufacturer += ' | ' + device.manufacturer
@@ -233,7 +233,7 @@ class YandexEntity:
         }
 
     @callback
-    def notification_serialize(self, event_entity_id = None):
+    def notification_serialize(self, event_entity_id=None):
         """Serialize entity for a notification."""
         state = self.state
 
@@ -248,10 +248,12 @@ class YandexEntity:
             cpb_state = cpb.get_state()
             if cpb.reportable and cpb_state is not None:
                 capabilities.append(cpb_state)
-                
+
         properties = []
         for ppt in self.properties():
-            entity_id = ppt.property_config.get(CONF_ENTITY_PROPERTY_ENTITY, None) if hasattr(ppt, 'property_config') and CONF_ENTITY_PROPERTY_ENTITY in ppt.property_config else ppt.state.entity_id
+            entity_id = ppt.property_config.get(CONF_ENTITY_PROPERTY_ENTITY, None) \
+                if hasattr(ppt, 'property_config') and CONF_ENTITY_PROPERTY_ENTITY in ppt.property_config \
+                else ppt.state.entity_id
             if ppt.reportable and event_entity_id == entity_id:
                 properties.append(ppt.get_state())
 
@@ -270,8 +272,8 @@ class YandexEntity:
         if state is None or 'instance' not in state:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
-                "Invalid request: no 'instance' field in state {} / {}"
-                    .format(capability_type, self.state.entity_id))
+                "Invalid request: no 'instance' field in state {} / {}" .format(capability_type, self.state.entity_id)
+            )
 
         instance = state['instance']
         for cpb in self.capabilities():
@@ -283,7 +285,7 @@ class YandexEntity:
         if not executed:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                "Unable to execute {} / {} for {}".format(capability_type,
+                'Unable to execute {} / {} for {}'.format(capability_type,
                                                           instance,
                                                           self.state.entity_id
                                                           ))

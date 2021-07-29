@@ -1,13 +1,9 @@
 """Support for Yandex Smart Home API."""
 import logging
 
+from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES
 from homeassistant.util.decorator import Registry
-
-from homeassistant.helpers import entity_registry
-from homeassistant.helpers import device_registry
-
-from homeassistant.const import (
-    CLOUD_NEVER_EXPOSED_ENTITIES, ATTR_ENTITY_ID)
+from homeassistant.helpers import entity_registry, device_registry
 
 from .const import (
     ERR_INTERNAL_ERROR, ERR_DEVICE_UNREACHABLE,
@@ -27,10 +23,8 @@ async def async_handle_message(hass, config, user_id, request_id, action,
 
     response = await _process(hass, data, action, message)
 
-    if response and 'payload' in response and 'error_code' in response[
-            'payload']:
-        _LOGGER.error('Error handling message %s: %s',
-                      message, response['payload'])
+    if response and 'payload' in response and 'error_code' in response['payload']:
+        _LOGGER.error('Error handling message %s: %s', message, response['payload'])
 
     return response
 
@@ -65,9 +59,11 @@ async def _process(hass, data, action, message):
             return None
         else:
             return {'request_id': data.request_id}
+
     return {'request_id': data.request_id, 'payload': result}
 
 
+# noinspection PyUnusedLocal
 @HANDLERS.register('/user/devices')
 async def async_devices_sync(hass, data, message):
     """Handle /user/devices request.
@@ -89,7 +85,7 @@ async def async_devices_sync(hass, data, message):
         serialized = await entity.devices_serialize(entity_reg, dev_reg)
 
         if serialized is None:
-            _LOGGER.debug("No mapping for %s domain", entity.state)
+            _LOGGER.debug('No mapping for %s domain', entity.state)
             continue
 
         devices.append(serialized)
@@ -160,7 +156,7 @@ async def handle_devices_execute(hass, data, message):
                                                   capability.get('type', ''),
                                                   capability.get('state', {}))
             except SmartHomeError as err:
-                _LOGGER.error("%s: %s" % (err.code, err.message))
+                _LOGGER.error('%s: %s' % (err.code, err.message))
                 if entity_id not in action_errors:
                     action_errors[entity_id] = {}
                 action_errors[entity_id][capability['type']] = err.code
@@ -210,6 +206,7 @@ async def handle_devices_execute(hass, data, message):
     return {'devices': final_results}
 
 
+# noinspection PyUnusedLocal
 @HANDLERS.register('/user/unlink')
 async def async_devices_disconnect(hass, data, message):
     """Handle /user/unlink request.

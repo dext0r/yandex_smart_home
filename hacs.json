@@ -1,6 +1,6 @@
 {
-  "name": "Yandex Smart Home",
   "country": ["RU", "BY"],
-  "render_readme": true,
-  "homeassistant": "2021.4"
+  "homeassistant": "2021.4",
+  "name": "Yandex Smart Home",
+  "render_readme": true
 }

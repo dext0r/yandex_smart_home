@@ -1,9 +1,7 @@
 """Support for Yandex Smart Home."""
 import logging
-
 from aiohttp.web import Request, Response
 
-# Typing imports
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import callback
 
@@ -18,7 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 @callback
 def async_register_http(hass):
     """Register HTTP views for Yandex Smart Home."""
-
     hass.http.register_view(YandexSmartHomeUnauthorizedView())
     hass.http.register_view(YandexSmartHomeView(hass.data[DOMAIN][DATA_CONFIG]))
 
@@ -30,9 +27,10 @@ class YandexSmartHomeUnauthorizedView(HomeAssistantView):
     name = 'api:yandex_smart_home:unauthorized'
     requires_auth = False
 
+    # noinspection PyMethodMayBeStatic
     async def head(self, request: Request) -> Response:
         """Handle Yandex Smart Home HEAD requests."""
-        _LOGGER.debug("Request: %s (HEAD)" % request.url)
+        _LOGGER.debug('Request: %s (HEAD)' % request.url)
         return Response(status=200)
 
 
@@ -56,7 +54,7 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
     async def post(self, request: Request) -> Response:
         """Handle Yandex Smart Home POST requests."""
         message = await request.json()  # type: dict
-        _LOGGER.debug("Request: %s (POST data: %s)" % (request.url,  message))
+        _LOGGER.debug('Request: %s (POST data: %s)' % (request.url,  message))
         result = await async_handle_message(
             request.app['hass'],
             self.config,
@@ -64,12 +62,12 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
             request.headers.get('X-Request-Id'),
             request.path.replace(self.url, '', 1),
             message)
-        _LOGGER.debug("Response: %s", result)
+        _LOGGER.debug('Response: %s', result)
         return self.json(result)
 
     async def get(self, request: Request) -> Response:
         """Handle Yandex Smart Home GET requests."""
-        _LOGGER.debug("Request: %s" % request.url)
+        _LOGGER.debug('Request: %s' % request.url)
         result = await async_handle_message(
              request.app['hass'],
              self.config,
@@ -77,5 +75,5 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
              request.headers.get('X-Request-Id'),
              request.path.replace(self.url, '', 1),
              {})
-        _LOGGER.debug("Response: %s" % result)
+        _LOGGER.debug('Response: %s' % result)
         return self.json(result)

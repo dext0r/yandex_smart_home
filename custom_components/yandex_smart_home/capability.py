@@ -34,7 +34,6 @@ from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
 )
-
 from homeassistant.components.water_heater import (
     STATE_ELECTRIC, SERVICE_SET_OPERATION_MODE
 )
@@ -87,6 +86,10 @@ class _Capability:
         self.retrievable = True
         self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
 
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        raise NotImplementedError
+
     def description(self):
         """Return description for a devices request."""
         response = {
@@ -133,7 +136,6 @@ class OnOffCapability(_Capability):
 
     type = CAPABILITIES_ONOFF
     instance = 'on'
-
     water_heater_operations = {
         STATE_ON: [STATE_ON, 'On', 'ON', STATE_ELECTRIC],
         STATE_OFF: [STATE_OFF, 'Off', 'OFF'],
@@ -220,7 +222,7 @@ class OnOffCapability(_Capability):
         domain = self.state.domain
 
         if type(state['value']) is not bool:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
 
         service_domain = domain
         service_data = {
@@ -246,8 +248,7 @@ class OnOffCapability(_Capability):
                     service = vacuum.SERVICE_STOP
                 else:
                     service = SERVICE_TURN_OFF
-        elif self.state.domain == scene.DOMAIN or self.state.domain == \
-                script.DOMAIN:
+        elif self.state.domain in (scene.DOMAIN, script.DOMAIN):
             service = SERVICE_TURN_ON
         elif self.state.domain == lock.DOMAIN:
             service = SERVICE_UNLOCK if state['value'] else \
@@ -268,10 +269,12 @@ class OnOffCapability(_Capability):
                                             blocking=self.state.domain != script.DOMAIN, context=data.context)
 
 
+# noinspection PyAbstractClass
 class _ToggleCapability(_Capability):
     """Base toggle functionality.
-        https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
-        """
+
+    https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
+    """
 
     type = CAPABILITIES_TOGGLE
 
@@ -291,8 +294,7 @@ class MuteCapability(_ToggleCapability):
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
-        return domain == media_player.DOMAIN and features & \
-            media_player.SUPPORT_VOLUME_MUTE
+        return domain == media_player.DOMAIN and features & media_player.SUPPORT_VOLUME_MUTE
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -303,12 +305,12 @@ class MuteCapability(_ToggleCapability):
     async def set_state(self, data, state):
         """Set device state."""
         if type(state['value']) is not bool:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
 
         muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
         if muted is None:
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                                 "Device probably turned off")
+                                 'Device probably turned off')
 
         await self.hass.services.async_call(
             self.state.domain,
@@ -350,7 +352,7 @@ class PauseCapability(_ToggleCapability):
     async def set_state(self, data, state):
         """Set device state."""
         if type(state['value']) is not bool:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
 
         if self.state.domain == media_player.DOMAIN:
             if state['value']:
@@ -365,7 +367,7 @@ class PauseCapability(_ToggleCapability):
         elif self.state.domain == cover.DOMAIN:
             service = cover.SERVICE_STOP_COVER
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
 
         await self.hass.services.async_call(
             self.state.domain,
@@ -392,7 +394,7 @@ class OscillationCapability(_ToggleCapability):
     async def set_state(self, data, state):
         """Set device state."""
         if type(state['value']) is not bool:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Value is not boolean")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
 
         await self.hass.services.async_call(
             self.state.domain,
@@ -402,6 +404,7 @@ class OscillationCapability(_ToggleCapability):
             }, blocking=True, context=data.context)
 
 
+# noinspection PyAbstractClass
 class _ModeCapability(_Capability):
     """Base class of capabilities with mode functionality like thermostat mode
     or fan speed.
@@ -417,6 +420,7 @@ class _ModeCapability(_Capability):
             modes = self.entity_config.get(CONF_ENTITY_MODE_MAP)
             if self.instance in modes:
                 return modes.get(self.instance)
+
         return None
 
     def get_yandex_mode_by_ha_mode(self, ha_mode):
@@ -450,7 +454,6 @@ class ThermostatCapability(_ModeCapability):
     """Thermostat functionality"""
 
     instance = 'thermostat'
-
     modes_map = {
         'heat': [climate.const.HVAC_MODE_HEAT],
         'cool': [climate.const.HVAC_MODE_COOL],
@@ -505,7 +508,7 @@ class ThermostatCapability(_ModeCapability):
         value = self.get_ha_mode_by_yandex_mode(state['value'], self.state.attributes.get(climate.ATTR_HVAC_MODES))
 
         if value is None:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unacceptable value')
 
         await self.hass.services.async_call(
             climate.DOMAIN,
@@ -520,7 +523,6 @@ class SwingCapability(_ModeCapability):
     """Swing functionality"""
 
     instance = 'swing'
-
     modes_map = {
         'vertical': [climate.const.SWING_VERTICAL],
         'horizontal': [climate.const.SWING_HORIZONTAL],
@@ -533,6 +535,7 @@ class SwingCapability(_ModeCapability):
         """Test if state is supported."""
         if domain == climate.DOMAIN:
             return features & climate.SUPPORT_SWING_MODE
+
         return False
 
     def parameters(self):
@@ -571,7 +574,7 @@ class SwingCapability(_ModeCapability):
         value = self.get_ha_mode_by_yandex_mode(state['value'], self.state.attributes.get(climate.ATTR_SWING_MODES))
 
         if value is None:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unacceptable value')
 
         await self.hass.services.async_call(
             climate.DOMAIN,
@@ -585,7 +588,7 @@ class SwingCapability(_ModeCapability):
 class ProgramCapability(_ModeCapability):
     """Program functionality"""
 
-    instance = "program"
+    instance = 'program'
 
     # Because there is no 1 to 1 compatibility between default humidifier modes and yandex modes,
     # we just chose what is closest or at least not too confusing
@@ -603,16 +606,16 @@ class ProgramCapability(_ModeCapability):
 
     # For custom modes we fallback to its number
     fallback_program_map = {
-        0: "one",
-        1: "two",
-        2: "three",
-        3: "four",
-        4: "five",
-        5: "six",
-        6: "seven",
-        7: "eight",
-        8: "nine",
-        9: "ten",
+        0: 'one',
+        1: 'two',
+        2: 'three',
+        3: 'four',
+        4: 'five',
+        5: 'six',
+        6: 'seven',
+        7: 'eight',
+        8: 'nine',
+        9: 'ten',
     }
 
     @staticmethod
@@ -620,6 +623,7 @@ class ProgramCapability(_ModeCapability):
         """Test if state is supported."""
         if domain == humidifier.DOMAIN:
             return features & humidifier.SUPPORT_MODES
+
         return False
 
     def parameters(self):
@@ -630,17 +634,17 @@ class ProgramCapability(_ModeCapability):
             for mode in mode_list:
                 value = self.get_yandex_mode_by_ha_mode(mode)
                 if value is not None:
-                    modes.append({"value": value})
+                    modes.append({'value': value})
                 # If mapping not found in configuration or default map,
                 # enumerate the mode by its position in the mode list
                 else:
                     mode_index = mode_list.index(mode)
                     if mode_index <= 10:
-                        modes.append({"value": self.fallback_program_map[mode_index]})
+                        modes.append({'value': self.fallback_program_map[mode_index]})
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
 
-        return {"instance": self.instance, "modes": modes, "ordered": False}
+        return {'instance': self.instance, 'modes': modes, 'ordered': False}
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -657,9 +661,9 @@ class ProgramCapability(_ModeCapability):
                 if mode_index <= 10:
                     return self.fallback_program_map[mode_index]
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
 
-        return "auto"
+        return 'auto'
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -670,20 +674,20 @@ class ProgramCapability(_ModeCapability):
 
             mode_list = self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES)
             try:
-                value = self.get_ha_mode_by_yandex_mode(state["value"], mode_list)
+                value = self.get_ha_mode_by_yandex_mode(state['value'], mode_list)
             except KeyError:
                 pass
 
             if value is None:
                 for humidifier_value, yandex_value in self.fallback_program_map.items():
-                    if yandex_value == state["value"]:
+                    if yandex_value == state['value']:
                         value = mode_list[humidifier_value]
                         break
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
 
         if value is None or value not in mode_list:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unacceptable value')
 
         await self.hass.services.async_call(
             self.state.domain,
@@ -699,7 +703,6 @@ class InputSourceCapability(_ModeCapability):
     """Input Source functionality"""
 
     instance = 'input_source'
-
     media_player_source_map = {
         1: 'one',
         2: 'two',
@@ -740,6 +743,7 @@ class InputSourceCapability(_ModeCapability):
         source_list = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST)
         if source_list is not None and source in source_list:
             return self.media_player_source_map[min(source_list.index(source) + 1, 10)]
+
         return self.media_player_source_map[1]
 
     async def set_state(self, data, state):
@@ -753,7 +757,7 @@ class InputSourceCapability(_ModeCapability):
                 break
 
         if value is None:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unacceptable value")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unacceptable value')
 
         await self.hass.services.async_call(
             media_player.DOMAIN,
@@ -768,7 +772,6 @@ class FanSpeedCapability(_ModeCapability):
     """Fan speed functionality."""
 
     instance = 'fan_speed'
-
     modes_map = {
         'auto': [climate.const.FAN_AUTO, climate.const.FAN_ON],
         'quiet': [fan.SPEED_OFF, climate.const.FAN_OFF, 'silent', 'level 1'],
@@ -785,6 +788,7 @@ class FanSpeedCapability(_ModeCapability):
             return features & climate.SUPPORT_FAN_MODE
         elif domain == fan.DOMAIN:
             return features & fan.SUPPORT_PRESET_MODE or features & fan.SUPPORT_SET_SPEED
+
         return False
 
     def parameters(self):
@@ -874,6 +878,7 @@ class FanSpeedCapability(_ModeCapability):
             }, blocking=True, context=data.context)
 
 
+# noinspection PyAbstractClass
 class _RangeCapability(_Capability):
     """Base class of capabilities with range functionality like volume or
     brightness.
@@ -883,10 +888,11 @@ class _RangeCapability(_Capability):
 
     type = CAPABILITIES_RANGE
 
+
 @register_capability
 class CoverLevelCapability(_RangeCapability):
     """Set cover level"""
-    
+
     instance = 'open'
 
     @staticmethod
@@ -894,19 +900,20 @@ class CoverLevelCapability(_RangeCapability):
         """Test if state is supported."""
         if domain == cover.DOMAIN:
             return features & cover.SUPPORT_SET_POSITION
+
         return False
 
     def parameters(self):
         """Return parameters for a devices request."""
         return {
-                "instance": self.instance,
-                "range": {
-                    "max": 100,
-                    "min": 0,
-                    "precision": 1
-                },
-                "unit": "unit.percent"
-            }
+            'instance': self.instance,
+            'range': {
+                'max': 100,
+                'min': 0,
+                'precision': 1
+            },
+            'unit': 'unit.percent'
+        }
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -925,18 +932,19 @@ class CoverLevelCapability(_RangeCapability):
             service = cover.SERVICE_SET_COVER_POSITION
             attr = cover.ATTR_POSITION
         else:
-             raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
-             
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
+
         value = state['value']
         if value < 0:
             value = min(self.get_value() + value, 0)
-        
+
         await self.hass.services.async_call(
             self.state.domain,
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 attr: value
             }, blocking=True, context=data.context)
+
 
 @register_capability
 class TemperatureCapability(_RangeCapability):
@@ -951,6 +959,7 @@ class TemperatureCapability(_RangeCapability):
             return features & water_heater.SUPPORT_TARGET_TEMPERATURE
         elif domain == climate.DOMAIN:
             return features & climate.const.SUPPORT_TARGET_TEMPERATURE
+
         return False
 
     def parameters(self):
@@ -984,6 +993,7 @@ class TemperatureCapability(_RangeCapability):
             temperature = self.state.attributes.get(water_heater.ATTR_TEMPERATURE)
         elif self.state.domain == climate.DOMAIN:
             temperature = self.state.attributes.get(climate.ATTR_TEMPERATURE)
+
         if temperature is None:
             return 0
         else:
@@ -991,7 +1001,6 @@ class TemperatureCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-
         if self.state.domain == water_heater.DOMAIN:
             service = water_heater.SERVICE_SET_TEMPERATURE
             attr = water_heater.ATTR_TEMPERATURE
@@ -999,7 +1008,7 @@ class TemperatureCapability(_RangeCapability):
             service = climate.SERVICE_SET_TEMPERATURE
             attr = climate.ATTR_TEMPERATURE
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
 
         new_value = state['value']
         if 'relative' in state and state['relative'] and self.state.domain == climate.DOMAIN:
@@ -1017,7 +1026,7 @@ class TemperatureCapability(_RangeCapability):
 class HumidityCapability(_RangeCapability):
     """Set humidity functionality."""
 
-    instance = "humidity"
+    instance = 'humidity'
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -1042,9 +1051,9 @@ class HumidityCapability(_RangeCapability):
             max_humidity = 100
             precision = 1
         return {
-            "instance": self.instance,
-            "unit": "unit.percent",
-            "range": {"min": min_humidity, "max": max_humidity, "precision": precision},
+            'instance': self.instance,
+            'unit': 'unit.percent',
+            'range': {'min': min_humidity, 'max': max_humidity, 'precision': precision},
         }
 
     def get_value(self):
@@ -1073,12 +1082,12 @@ class HumidityCapability(_RangeCapability):
             service = SERVICE_FAN_SET_TARGET_HUMIDITY
             attr = humidifier.ATTR_HUMIDITY
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
 
         await self.hass.services.async_call(
             domain,
             service,
-            {ATTR_ENTITY_ID: self.state.entity_id, attr: state["value"]},
+            {ATTR_ENTITY_ID: self.state.entity_id, attr: state['value']},
             blocking=True,
             context=data.context,
         )
@@ -1094,7 +1103,8 @@ class BrightnessCapability(_RangeCapability):
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
         return domain == light.DOMAIN and (
-            features & light.SUPPORT_BRIGHTNESS or light.brightness_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
+            features & light.SUPPORT_BRIGHTNESS or
+            light.brightness_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
         )
 
     def parameters(self):
@@ -1121,12 +1131,13 @@ class BrightnessCapability(_RangeCapability):
             attr_name = light.ATTR_BRIGHTNESS_STEP_PCT
         else:
             attr_name = light.ATTR_BRIGHTNESS_PCT
+
         await self.hass.services.async_call(
             light.DOMAIN,
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 attr_name: state['value']
-        }, blocking=True, context=data.context)
+            }, blocking=True, context=data.context)
 
 
 @register_capability
@@ -1172,11 +1183,11 @@ class VolumeCapability(_RangeCapability):
             }
 
     def is_relative_volume_only(self):
-        _LOGGER.debug("CONF_RELATIVE_VOLUME_ONLY: %r" % self.entity_config.get(
+        _LOGGER.debug('CONF_RELATIVE_VOLUME_ONLY: %r' % self.entity_config.get(
             CONF_RELATIVE_VOLUME_ONLY))
         return not self.retrievable or self.entity_config.get(
             CONF_RELATIVE_VOLUME_ONLY)
-    
+
     def get_entity_range_value(self, range_entity, default_values):
         if CONF_ENTITY_RANGE in self.entity_config and range_entity in self.entity_config.get(CONF_ENTITY_RANGE):
             return int(self.entity_config.get(CONF_ENTITY_RANGE).get(range_entity))
@@ -1184,7 +1195,7 @@ class VolumeCapability(_RangeCapability):
             try:
                 return int(default_values[range_entity])
             except KeyError as e:
-                _LOGGER.error("Invalid element of range object: %r" % range_entity)
+                _LOGGER.error('Invalid element of range object: %r' % range_entity)
                 _LOGGER.error('Undefined unit: {}'.format(e.args[0]))
                 return 0
 
@@ -1192,6 +1203,7 @@ class VolumeCapability(_RangeCapability):
         """Return the state value of this capability for this entity."""
         level = self.state.attributes.get(
             media_player.ATTR_MEDIA_VOLUME_LEVEL)
+
         if level is None:
             return 0
         else:
@@ -1217,6 +1229,7 @@ class VolumeCapability(_RangeCapability):
                 set_volume_level = (self.get_value() + state['value']) / 100
         else:
             set_volume_level = state['value'] / 100
+
         if set_volume_level is not None:
             await self.hass.services.async_call(
                 media_player.DOMAIN,
@@ -1303,6 +1316,7 @@ class ChannelCapability(_RangeCapability):
                 }, blocking=True, context=data.context)
 
 
+# noinspection PyAbstractClass
 class _ColorSettingCapability(_Capability):
     """Base color setting functionality.
 
@@ -1463,6 +1477,7 @@ class RgbCapability(_ColorSettingCapability):
                 light.ATTR_RGB_COLOR: (red, green, blue)
             }, blocking=True, context=data.context)
 
+
 @register_capability
 class TemperatureKCapability(_ColorSettingCapability):
     """Color temperature functionality."""
@@ -1473,12 +1488,14 @@ class TemperatureKCapability(_ColorSettingCapability):
     def supported(domain, features, entity_config, attributes):
         """Test if state is supported."""
         return domain == light.DOMAIN and (
-            features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
+            features & light.SUPPORT_COLOR_TEMP or
+            light.color_temp_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
         )
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
         temperature_mired = self.state.attributes.get(light.ATTR_COLOR_TEMP)
+
         if temperature_mired is not None:
             return color_util.color_temperature_mired_to_kelvin(temperature_mired)
 
@@ -1490,6 +1507,7 @@ class TemperatureKCapability(_ColorSettingCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_KELVIN: state['value']
             }, blocking=True, context=data.context)
+
 
 @register_capability
 class ColorSceneCapability(_ColorSettingCapability):
@@ -1527,7 +1545,6 @@ class CleanupModeCapability(_ModeCapability):
     """Vacuum cleanup mode functionality."""
 
     instance = 'cleanup_mode'
-
     modes_map = {
         'auto': {'auto', 'automatic', '102'},
         'turbo': {'turbo', 'high', 'performance', '104'},
@@ -1543,6 +1560,7 @@ class CleanupModeCapability(_ModeCapability):
         """Test if state is supported."""
         if domain == vacuum.DOMAIN:
             return features & vacuum.SUPPORT_FAN_SPEED
+
         return False
 
     def parameters(self):
@@ -1594,13 +1612,13 @@ class CleanupModeCapability(_ModeCapability):
         value = self.get_ha_by_yandex_value(state['value'])
 
         if value is None:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported value")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported value')
 
         if self.state.domain == vacuum.DOMAIN:
             service = vacuum.SERVICE_SET_FAN_SPEED
             attr = vacuum.ATTR_FAN_SPEED
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, "Unsupported domain")
+            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
 
         await self.hass.services.async_call(
             self.state.domain,

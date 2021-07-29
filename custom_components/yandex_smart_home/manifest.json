@@ -2,10 +2,9 @@
   "domain": "yandex_smart_home",
   "name": "Yandex Smart Home",
   "documentation": "https://github.com/dmitry-k/yandex_smart_home",
+  "issue_tracker": "https://github.com/dmitry-k/yandex_smart_home/issues",
   "requirements": [],
-  "dependencies": [
-    "http"
-  ],
+  "dependencies": ["http"],
   "codeowners": [],
   "version": 0
 }
