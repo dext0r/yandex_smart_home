@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 import logging
 import asyncio
 from time import time
+from typing import Any
 
 from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, Event
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .const import (
     DOMAIN, CONFIG, DATA_CONFIG, CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN,
-    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED, NOTIFIERS,
+    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIERS,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY,
 )
 from .helpers import YandexEntity
@@ -20,85 +24,62 @@ DISCOVERY_URL = '/callback/discovery'
 STATE_URL = '/callback/state'
 
 
-def setup_notification(hass: HomeAssistant):
-    """Set up notification."""
-    try:
-        if not hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
-            _LOGGER.debug('Notifier disabled: no config')
-            return False
-
-        hass.data[DOMAIN][NOTIFIERS] = []
-        for conf in hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
-            hass.data[DOMAIN][NOTIFIERS].append(YandexNotifier(hass, conf))
-
-        for notifier in hass.data[DOMAIN][NOTIFIERS]:
-            if not notifier.init():
-                _LOGGER.error('Notifier Setup Failed')
-                hass.components.persistent_notification.async_create(
-                    'Notifier: Ошибка при инициализации (уведомление навыка об изменении состояния устройств '
-                    'работать не будет).',
-                    title='Yandex Smart Home')
-                return False
-
-            hass.data[DOMAIN][NOTIFIER_ENABLED] = True
-
-        async def state_change_listener(event: Event):
-            await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
-
-        # noinspection PyUnusedLocal
-        async def ha_start_listener(event: Event):
-            await asyncio.sleep(10)
-            for n in hass.data[DOMAIN][NOTIFIERS]:
-                await n.async_notify_skill([])
-                _LOGGER.debug(n.log_id() + 'Device list update initiated')
-
-        hass.bus.async_listen('state_changed', state_change_listener)
-        hass.bus.async_listen('homeassistant_started', ha_start_listener)
-    except Exception:
-        _LOGGER.exception('Notifier Setup Error')
+def setup_notifier(hass: HomeAssistant) -> bool:
+    """Set up notifiers."""
+    if not hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
+        _LOGGER.debug('Notifier disabled: no config')
         return False
+
+    hass.data[DOMAIN][NOTIFIERS] = []
+    for conf in hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
+        try:
+            hass.data[DOMAIN][NOTIFIERS].append(YandexNotifier(hass, conf))
+        except Exception as exc:
+            raise ConfigEntryNotReady from exc
+
+    async def state_change_listener(event: Event):
+        await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
+
+    # noinspection PyUnusedLocal
+    async def ha_start_listener(event: Event):
+        await asyncio.sleep(10)
+        for n in hass.data[DOMAIN][NOTIFIERS]:
+            await n.async_notify_skill([])
+            _LOGGER.debug(n.log_id() + 'Device list update initiated')
+
+    hass.bus.async_listen('state_changed', state_change_listener)
+    hass.bus.async_listen('homeassistant_started', ha_start_listener)
+
+    return True
 
 
 class YandexNotifier:
-    def __init__(self, hass: HomeAssistant, conf):
+    def __init__(self, hass: HomeAssistant, conf: dict[str, str]):
         self.hass = hass
-        self.property_entities = {}
-        if CONF_SKILL_OAUTH_TOKEN in conf and CONF_SKILL_ID in conf and CONF_NOTIFIER_USER_ID in conf:
-            self.oauth_token = conf[CONF_SKILL_OAUTH_TOKEN]
-            self.skill_id = conf[CONF_SKILL_ID]
-            self.user_id = conf[CONF_NOTIFIER_USER_ID]
+        self.property_entities = self.get_property_entities()
+        self.oauth_token = conf[CONF_SKILL_OAUTH_TOKEN]
+        self.skill_id = conf[CONF_SKILL_ID]
+        self.user_id = conf[CONF_NOTIFIER_USER_ID]
 
-    def init(self):
-        try:
-            if self.oauth_token is None:
-                _LOGGER.error('Notifier Init Failed: No OAuth Token')
-                return False
-            if self.skill_id is None:
-                _LOGGER.error('Notifier Init Failed: No skill ID')
-                return False
-            if self.user_id is None:
-                _LOGGER.error('Notifier Init Failed: No user ID')
-                return False
-
-            self.session = async_create_clientsession(self.hass)
-            self.get_property_entities()
-        except Exception:
-            _LOGGER.exception('Notifier Init Failed')
-        return True
+        self.session = async_create_clientsession(self.hass)
 
     def log_id(self):
         return '[ ' + self.skill_id + ' | ' + self.user_id + ' ] ' if len(self.hass.data[DOMAIN][NOTIFIERS]) > 1 else ''
 
-    def get_property_entities(self):
+    def get_property_entities(self) -> dict[str, Any]:
         cfg = self.hass.data[DOMAIN][DATA_CONFIG].entity_config
+        rv = {}
+
         for entity in cfg:
             custom_entity_config = cfg.get(entity, {})
             for property_config in custom_entity_config.get(CONF_ENTITY_PROPERTIES):
                 if CONF_ENTITY_PROPERTY_ENTITY in property_config:
                     property_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
-                    devs = set(self.property_entities.get(property_entity_id, []))
+                    devs = set(rv.get(property_entity_id, []))
                     devs.add(entity)
-                    self.property_entities.update({property_entity_id: devs})
+                    rv.update({property_entity_id: devs})
+
+        return rv
 
     async def async_notify_skill(self, devices):
         try:
