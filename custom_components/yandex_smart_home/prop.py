@@ -726,20 +726,20 @@ class ButtonProperty(_EventProperty):
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN: # XiaomiAqara
+        if domain == binary_sensor.DOMAIN:  # XiaomiAqara
             return ('last_action' in attributes and
-                attributes.get('last_action') in [
-                'single', 'click', 'double', 'double_click',
-                'long', 'long_click', 'long_click_press',
-                'long_click_release', 'hold', 'release',
-                'triple', 'quadruple', 'many'])
-        elif domain == sensor.DOMAIN: # XiaomiGateway3 and others
+                    attributes.get('last_action') in [
+                    'single', 'click', 'double', 'double_click',
+                    'long', 'long_click', 'long_click_press',
+                    'long_click_release', 'hold', 'release',
+                    'triple', 'quadruple', 'many'])
+        elif domain == sensor.DOMAIN:  # XiaomiGateway3 and others
             return ('action' in attributes and
-                attributes.get('action') in [
-                'single', 'click', 'double', 'double_click',
-                'long', 'long_click', 'long_click_press',
-                'long_click_release', 'hold', 'release',
-                'triple', 'quadruple', 'many'])
+                    attributes.get('action') in [
+                    'single', 'click', 'double', 'double_click',
+                    'long', 'long_click', 'long_click_press',
+                    'long_click_release', 'hold', 'release',
+                    'triple', 'quadruple', 'many'])
 
         return False
 
@@ -751,19 +751,19 @@ class VibrationProperty(_EventProperty):
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN: # XiaomiAqara
+        if domain == binary_sensor.DOMAIN:  # XiaomiAqara
             return (('last_action' in attributes and
-                attributes.get('last_action') in [
-                'vibrate', 'tilt', 'free_fall', 'actively',
-                'move', 'tap_twice', 'shake_air', 'swing',
-                'flip90', 'flip180', 'rotate', 'drop']) or
-                attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_VIBRATION)
-        elif domain == sensor.DOMAIN: # XiaomiGateway3 and others
+                    attributes.get('last_action') in [
+                    'vibrate', 'tilt', 'free_fall', 'actively',
+                    'move', 'tap_twice', 'shake_air', 'swing',
+                    'flip90', 'flip180', 'rotate', 'drop']) or
+                    attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_VIBRATION)
+        elif domain == sensor.DOMAIN:  # XiaomiGateway3 and others
             return ('action' in attributes and
-                attributes.get('action') in [
-                'vibrate', 'tilt', 'free_fall', 'actively',
-                'move', 'tap_twice', 'shake_air', 'swing',
-                'flip90', 'flip180', 'rotate', 'drop'])
+                    attributes.get('action') in [
+                    'vibrate', 'tilt', 'free_fall', 'actively',
+                    'move', 'tap_twice', 'shake_air', 'swing',
+                    'flip90', 'flip180', 'rotate', 'drop'])
 
         return False
 
