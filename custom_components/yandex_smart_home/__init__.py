@@ -18,7 +18,7 @@ from .const import (
     CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED)
 from .helpers import Config
 from .http import async_register_http
-from .notifier import setup_notifier
+from .notifier import async_setup_notifier
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -87,6 +87,6 @@ async def async_setup(hass: HomeAssistant, yaml_config: Dict[str, Any]):
         entity_config=hass.data[DOMAIN][CONFIG].get(CONF_ENTITY_CONFIG)
     )
     async_register_http(hass)
-    hass.data[DOMAIN][NOTIFIER_ENABLED] = setup_notifier(hass)
+    hass.data[DOMAIN][NOTIFIER_ENABLED] = await async_setup_notifier(hass)
 
     return True

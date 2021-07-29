@@ -24,7 +24,7 @@ DISCOVERY_URL = '/callback/discovery'
 STATE_URL = '/callback/state'
 
 
-def setup_notifier(hass: HomeAssistant) -> bool:
+async def async_setup_notifier(hass: HomeAssistant) -> bool:
     """Set up notifiers."""
     if not hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
         _LOGGER.debug('Notifier disabled: no config')
@@ -33,7 +33,10 @@ def setup_notifier(hass: HomeAssistant) -> bool:
     hass.data[DOMAIN][NOTIFIERS] = []
     for conf in hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
         try:
-            hass.data[DOMAIN][NOTIFIERS].append(YandexNotifier(hass, conf))
+            notifier = YandexNotifier(hass, conf)
+            await notifier.async_validate_config()
+
+            hass.data[DOMAIN][NOTIFIERS].append(notifier)
         except Exception as exc:
             raise ConfigEntryNotReady from exc
 
@@ -80,6 +83,10 @@ class YandexNotifier:
                     rv.update({property_entity_id: devs})
 
         return rv
+
+    async def async_validate_config(self):
+        if await self.hass.auth.async_get_user(self.user_id) is None:
+            raise ValueError(f'User {self.user_id} does not exist')
 
     async def async_notify_skill(self, devices):
         try:
