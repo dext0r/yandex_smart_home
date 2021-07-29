@@ -208,7 +208,7 @@ class _EventProperty(_Property):
         if self.state.domain == binary_sensor.DOMAIN:
             value = self.state.state
 
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                 f'Invalid {self.instance} property value: {value!r}'
