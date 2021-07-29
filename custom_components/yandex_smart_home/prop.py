@@ -165,7 +165,7 @@ class _Property:
                 elif 'action' in self.state.attributes:
                     value = self.state.attributes.get('action')
             if value in ['vibrate', 'vibration', 'actively', 'move',
-                'tap_twice', 'shake_air', 'swing'] or self.bool_value(value):
+                         'tap_twice', 'shake_air', 'swing'] or self.bool_value(value):
                 return 'vibration'
             elif value in ['tilt', 'flip90', 'flip180', 'rotate']:
                 return 'tilt'
