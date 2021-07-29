@@ -5,6 +5,7 @@ import asyncio
 from time import time
 from typing import Any
 
+from aiohttp import ContentTypeError
 from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, Event
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -24,38 +25,6 @@ DISCOVERY_URL = '/callback/discovery'
 STATE_URL = '/callback/state'
 
 
-async def async_setup_notifier(hass: HomeAssistant) -> bool:
-    """Set up notifiers."""
-    if not hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
-        _LOGGER.debug('Notifier disabled: no config')
-        return False
-
-    hass.data[DOMAIN][NOTIFIERS] = []
-    for conf in hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
-        try:
-            notifier = YandexNotifier(hass, conf)
-            await notifier.async_validate_config()
-
-            hass.data[DOMAIN][NOTIFIERS].append(notifier)
-        except Exception as exc:
-            raise ConfigEntryNotReady from exc
-
-    async def state_change_listener(event: Event):
-        await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
-
-    # noinspection PyUnusedLocal
-    async def ha_start_listener(event: Event):
-        await asyncio.sleep(10)
-        for n in hass.data[DOMAIN][NOTIFIERS]:
-            await n.async_notify_skill([])
-            _LOGGER.debug(n.log_id() + 'Device list update initiated')
-
-    hass.bus.async_listen('state_changed', state_change_listener)
-    hass.bus.async_listen('homeassistant_started', ha_start_listener)
-
-    return True
-
-
 class YandexNotifier:
     def __init__(self, hass: HomeAssistant, conf: dict[str, str]):
         self.hass = hass
@@ -66,8 +35,11 @@ class YandexNotifier:
 
         self.session = async_create_clientsession(self.hass)
 
-    def log_id(self):
-        return '[ ' + self.skill_id + ' | ' + self.user_id + ' ] ' if len(self.hass.data[DOMAIN][NOTIFIERS]) > 1 else ''
+    def format_log_message(self, message: str) -> str:
+        if len(self.hass.data[DOMAIN][NOTIFIERS]) > 1:
+            return f'[{self.skill_id} | {self.user_id}] {message}'
+
+        return message
 
     def get_property_entities(self) -> dict[str, Any]:
         cfg = self.hass.data[DOMAIN][DATA_CONFIG].entity_config
@@ -93,25 +65,30 @@ class YandexNotifier:
             url = f'{SKILL_API_URL}/{self.skill_id}'
             headers = {'Authorization': f'OAuth {self.oauth_token}'}
             ts = time()
+
             if devices:
                 url_tail = STATE_URL
                 payload = {'user_id': self.user_id, 'devices': devices}
             else:
                 url_tail = DISCOVERY_URL
                 payload = {'user_id': self.user_id}
-            data = {'ts': ts, 'payload': payload}
 
-            _LOGGER.debug(f'Request: {url}{url_tail} (POST data: {data})')
-            r = await self.session.post(f'{url}{url_tail}', headers=headers,
-                                        json=data)
-            assert r.status == 202, await r.read()
-            data = await r.json()
-            error = data.get('error_message')
-            if error:
-                _LOGGER.error(self.log_id() + 'Error sending notification: ' + error)
-                return
+            request_data = {'ts': ts, 'payload': payload}
+            _LOGGER.debug(f'Request: {url}{url_tail} (POST data: {request_data})')
+            r = await self.session.post(f'{url}{url_tail}', headers=headers, json=request_data)
+
+            response_body, error_message = await r.read(), ''
+            try:
+                response_data = await r.json()
+                error_message = response_data['error_message']
+            except (ValueError, KeyError, ContentTypeError):
+                if r.status != 202:
+                    error_message = response_body[:100]
+
+            if r.status != 202 or error_message:
+                _LOGGER.error(self.format_log_message(f'Failed to send state notification: {error_message}'))
         except Exception:
-            _LOGGER.exception(self.log_id() + 'Error sending notification')
+            _LOGGER.exception(self.format_log_message('Failed to send state notification'))
 
     async def async_event_handler(self, event: Event):
         devices = []
@@ -145,9 +122,45 @@ class YandexNotifier:
                 devices.append(device)
                 entity_text = entity
                 if entity != event_entity_id:
-                    entity_text = entity_text + ' => ' + event_entity_id
-                _LOGGER.debug(self.log_id() + 'Notify Yandex about new state ' + entity_text + ': ' + new_state.state)
+                    entity_text = f'{entity_text} => {event_entity_id}'
+
+                _LOGGER.debug(self.format_log_message(
+                    f'Notify Yandex about new state {entity_text}: {new_state.state}'
+                ))
 
         if devices:
             await asyncio.sleep(.1)
             await self.async_notify_skill(devices)
+
+
+async def async_setup_notifier(hass: HomeAssistant) -> bool:
+    """Set up notifiers."""
+    if not hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
+        _LOGGER.debug('Notifier disabled: no config')
+        return False
+
+    hass.data[DOMAIN][NOTIFIERS] = []  # type: list[YandexNotifier]
+    for conf in hass.data[DOMAIN][CONFIG][CONF_NOTIFIER]:
+        try:
+            notifier = YandexNotifier(hass, conf)
+            await notifier.async_validate_config()
+
+            hass.data[DOMAIN][NOTIFIERS].append(notifier)
+        except Exception as exc:
+            raise ConfigEntryNotReady from exc
+
+    async def state_change_listener(event: Event):
+        await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
+
+    # noinspection PyUnusedLocal
+    async def ha_start_listener(event: Event):
+        await asyncio.sleep(10)
+
+        for n in hass.data[DOMAIN][NOTIFIERS]:  # type: YandexNotifier
+            await n.async_notify_skill([])
+            _LOGGER.debug(n.format_log_message('Device list update initiated'))
+
+    hass.bus.async_listen('state_changed', state_change_listener)
+    hass.bus.async_listen('homeassistant_started', ha_start_listener)
+
+    return True
