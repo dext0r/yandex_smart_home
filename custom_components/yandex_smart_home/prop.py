@@ -788,7 +788,7 @@ class CustomEntityProperty(_Property):
             else:
                 value = entity.state
 
-            if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+            if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
                 _LOGGER.error(f'Invalid value: {entity}')
                 raise SmartHomeError(ERR_INVALID_VALUE, "Invalid value")
 
