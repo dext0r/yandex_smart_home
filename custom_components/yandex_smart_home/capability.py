@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
+from homeassistant.core import HomeAssistant, State
 from homeassistant.components import (
     climate,
     cover,
@@ -62,7 +63,7 @@ CAPABILITIES_RANGE = PREFIX_CAPABILITIES + 'range'
 CAPABILITIES_MODE = PREFIX_CAPABILITIES + 'mode'
 CAPABILITIES_COLOR_SETTING = PREFIX_CAPABILITIES + 'color_setting'
 
-CAPABILITIES = []
+CAPABILITIES: list[Type[_Capability]] = []
 
 
 def register_capability(capability):
@@ -78,7 +79,7 @@ class _Capability:
     instance = ''
     reportable = False
 
-    def __init__(self, hass, state, entity_config):
+    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any]):
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
@@ -86,8 +87,8 @@ class _Capability:
         self.retrievable = True
         self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         raise NotImplementedError
 
     def description(self):
@@ -150,16 +151,15 @@ class OnOffCapability(_Capability):
             if not self.state.attributes.get(ATTR_SUPPORTED_FEATURES) & cover.SUPPORT_SET_POSITION:
                 self.retrievable = False
 
-    @staticmethod
-    def get_water_heater_operation(required_mode, operations_list):
-        for operation in OnOffCapability.water_heater_operations[required_mode]:
+    def get_water_heater_operation(self, required_mode, operations_list):
+        for operation in self.water_heater_operations[required_mode]:
             if operation in operations_list:
                 return operation
+
         return None
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == media_player.DOMAIN:
             return features & media_player.SUPPORT_TURN_ON and features & media_player.SUPPORT_TURN_OFF
 
@@ -170,9 +170,9 @@ class OnOffCapability(_Capability):
 
         if domain == water_heater.DOMAIN and features & water_heater.SUPPORT_OPERATION_MODE:
             operation_list = attributes.get(water_heater.ATTR_OPERATION_LIST)
-            if OnOffCapability.get_water_heater_operation(STATE_ON, operation_list) is None:
+            if self.get_water_heater_operation(STATE_ON, operation_list) is None:
                 return False
-            if OnOffCapability.get_water_heater_operation(STATE_OFF, operation_list) is None:
+            if self.get_water_heater_operation(STATE_OFF, operation_list) is None:
                 return False
             return True
 
@@ -213,7 +213,7 @@ class OnOffCapability(_Capability):
         elif self.state.domain == water_heater.DOMAIN:
             operation_mode = self.state.attributes.get(water_heater.ATTR_OPERATION_MODE)
             operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST)
-            return operation_mode != OnOffCapability.get_water_heater_operation(STATE_OFF, operation_list)
+            return operation_mode != self.get_water_heater_operation(STATE_OFF, operation_list)
         else:
             return self.state.state != STATE_OFF
 
@@ -258,10 +258,10 @@ class OnOffCapability(_Capability):
             service = SERVICE_SET_OPERATION_MODE
             if state['value']:
                 service_data[water_heater.ATTR_OPERATION_MODE] = \
-                    OnOffCapability.get_water_heater_operation(STATE_ON, operation_list)
+                    self.get_water_heater_operation(STATE_ON, operation_list)
             else:
                 service_data[water_heater.ATTR_OPERATION_MODE] = \
-                    OnOffCapability.get_water_heater_operation(STATE_OFF, operation_list)
+                    self.get_water_heater_operation(STATE_OFF, operation_list)
         else:
             service = SERVICE_TURN_ON if state['value'] else SERVICE_TURN_OFF
 
@@ -304,9 +304,8 @@ class MuteCapability(_ToggleCapability):
 
     instance = 'mute'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         return domain == media_player.DOMAIN and features & media_player.SUPPORT_VOLUME_MUTE
 
     def get_value(self):
@@ -339,9 +338,8 @@ class PauseCapability(_ToggleCapability):
 
     instance = 'pause'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == media_player.DOMAIN:
             return features & media_player.SUPPORT_PAUSE and features & media_player.SUPPORT_PLAY
         elif domain == vacuum.DOMAIN:
@@ -395,9 +393,8 @@ class OscillationCapability(_ToggleCapability):
 
     instance = 'oscillation'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         return domain == fan.DOMAIN and features & fan.SUPPORT_OSCILLATE
 
     def get_value(self):
@@ -475,14 +472,14 @@ class ThermostatCapability(_ModeCapability):
         'fan_only': [climate.const.HVAC_MODE_FAN_ONLY],
     }
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == climate.DOMAIN:
             operation_list = attributes.get(climate.ATTR_HVAC_MODES)
             for operation in operation_list:
-                if operation in ThermostatCapability.modes_map:
+                if operation in self.modes_map:
                     return True
+
         return False
 
     def parameters(self):
@@ -543,9 +540,8 @@ class SwingCapability(_ModeCapability):
         'auto': [climate.const.SWING_BOTH]
     }
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == climate.DOMAIN:
             return features & climate.SUPPORT_SWING_MODE
 
@@ -631,9 +627,8 @@ class ProgramCapability(_ModeCapability):
         9: 'ten',
     }
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == humidifier.DOMAIN:
             return features & humidifier.SUPPORT_MODES
 
@@ -729,9 +724,8 @@ class InputSourceCapability(_ModeCapability):
         10: 'ten'
     }
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         return domain == media_player.DOMAIN \
             and features & media_player.SUPPORT_SELECT_SOURCE \
             and attributes.get(media_player.ATTR_INPUT_SOURCE_LIST) is not None
@@ -794,9 +788,8 @@ class FanSpeedCapability(_ModeCapability):
         'turbo': [climate.const.FAN_FOCUS, 'max', 'level 5'],
     }
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == climate.DOMAIN:
             return features & climate.SUPPORT_FAN_MODE
         elif domain == fan.DOMAIN:
@@ -908,9 +901,8 @@ class CoverLevelCapability(_RangeCapability):
 
     instance = 'open'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == cover.DOMAIN:
             return features & cover.SUPPORT_SET_POSITION
 
@@ -965,9 +957,8 @@ class TemperatureCapability(_RangeCapability):
 
     instance = 'temperature'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == water_heater.DOMAIN:
             return features & water_heater.SUPPORT_TARGET_TEMPERATURE
         elif domain == climate.DOMAIN:
@@ -1041,9 +1032,8 @@ class HumidityCapability(_RangeCapability):
 
     instance = 'humidity'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == humidifier.DOMAIN:
             return True
         elif domain == fan.DOMAIN and \
@@ -1112,9 +1102,8 @@ class BrightnessCapability(_RangeCapability):
 
     instance = 'brightness'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         return domain == light.DOMAIN and (
             features & light.SUPPORT_BRIGHTNESS or
             light.brightness_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
@@ -1164,9 +1153,8 @@ class VolumeCapability(_RangeCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         self.retrievable = features & media_player.SUPPORT_VOLUME_SET != 0
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         return domain == media_player.DOMAIN and (
                     features & media_player.SUPPORT_VOLUME_STEP or features & media_player.SUPPORT_VOLUME_SET)
 
@@ -1264,9 +1252,8 @@ class ChannelCapability(_RangeCapability):
         self.retrievable = features & media_player.SUPPORT_PLAY_MEDIA != 0 and \
             self.entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         return domain == media_player.DOMAIN and (
                 (features & media_player.SUPPORT_PLAY_MEDIA and
                     entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)) or (
@@ -1450,9 +1437,8 @@ class RgbCapability(_ColorSettingCapability):
 
     instance = 'rgb'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == light.DOMAIN:
             supported_color_modes = attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
 
@@ -1497,9 +1483,8 @@ class TemperatureKCapability(_ColorSettingCapability):
 
     instance = 'temperature_k'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         return domain == light.DOMAIN and (
             features & light.SUPPORT_COLOR_TEMP or
             light.color_temp_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
@@ -1528,9 +1513,8 @@ class ColorSceneCapability(_ColorSettingCapability):
 
     instance = 'scene'
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == light.DOMAIN and features & light.SUPPORT_EFFECT:
             return bool(
                 ColorSceneCapability.get_supported_scenes(
@@ -1568,9 +1552,8 @@ class CleanupModeCapability(_ModeCapability):
         'quiet': {'quiet', 'low', 'min', 'silent', 'eco', '101'},
     }
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        """Test if state is supported."""
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         if domain == vacuum.DOMAIN:
             return features & vacuum.SUPPORT_FAN_SPEED
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 from asyncio import gather
 from collections.abc import Mapping
+from typing import Optional
 
 from homeassistant.core import HomeAssistant, Context, callback, State
 from homeassistant.const import (
@@ -11,7 +12,8 @@ from homeassistant.const import (
 from homeassistant.helpers.entity_registry import EntityRegistry
 from homeassistant.helpers.device_registry import DeviceRegistry
 
-from . import capability, prop
+from . import prop
+from .capability import CAPABILITIES, _Capability
 from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
@@ -56,7 +58,7 @@ class YandexEntity:
         self.hass = hass
         self.config = config
         self.state = state
-        self._capabilities = None
+        self._capabilities: Optional[list[_Capability]] = None
         self._properties = None
 
     @property
@@ -70,16 +72,16 @@ class YandexEntity:
         if self._capabilities is not None:
             return self._capabilities
 
+        self._capabilities = []
         state = self.state
-        domain = state.domain
-        features = state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         entity_config = self.config.entity_config.get(state.entity_id, {})
 
-        self._capabilities = [
-            Capability(self.hass, state, entity_config)
-            for Capability in capability.CAPABILITIES
-            if Capability.supported(domain, features, entity_config, state.attributes)
-        ]
+        for Capability in CAPABILITIES:
+            capability = Capability(self.hass, state, entity_config)
+            if capability.supported(state.domain, state.attributes.get(ATTR_SUPPORTED_FEATURES, 0),
+                                    entity_config, state.attributes):
+                self._capabilities.append(capability)
+
         return self._capabilities
 
     @callback
