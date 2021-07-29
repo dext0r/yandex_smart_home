@@ -64,10 +64,10 @@ PROPERTY_EVENT = PREFIX_PROPERTIES + 'event'
 EVENTS_VALUES = {
     'vibration': ['vibration','tilt','fall'],
     'open': ['opened','closed'],
-    'button': ['click','double','long_press'],
-    'motion ': ['detected','not_detected'],
+    'button': ['click','double_click','long_press'],
+    'motion': ['detected','not_detected'],
     'smoke': ['detected','not_detected','high'],
-    'gas ': ['detected','not_detected','high'],
+    'gas': ['detected','not_detected','high'],
     'battery_level': ['low','normal'],
     'water_level': ['low','normal'],
     'water_leak': ['leak','dry']
@@ -88,6 +88,7 @@ class _Property:
     instance = ''
     values = []
     reportable = False
+    retrievable = True
 
     def __init__(self, hass, state, entity_config):
         """Initialize a trait for a state."""
@@ -95,7 +96,6 @@ class _Property:
         self.state = state
         self.config = hass.data[DOMAIN][DATA_CONFIG]
         self.entity_config = entity_config
-        self.retrievable = True
         self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
 
     def description(self):
@@ -146,19 +146,34 @@ class _Property:
         elif self.instance in ['water_leak']:
             return 'leak' if self.bool_value(value) else 'dry'
         elif self.instance in ['button']:
+            if not value:
+                if 'last_action' in self.state.attributes:
+                    value = self.state.attributes.get('last_action')
+                elif 'action' in self.state.attributes:
+                    value = self.state.attributes.get('action')
             if value in ['single','click']:
                 return 'click'
             elif value in ['double','double_click']:
                 return 'double_click'
-            elif value in ['long','long_click','long_click_press','long_click_release','hold']:
+            elif value in ['long','long_click','long_click_press','hold']:
                 return 'long_press'
         elif self.instance in ['vibration']:
-            if value == 'vibrate':
+            if not value:
+                if 'last_action' in self.state.attributes:
+                    value = self.state.attributes.get('last_action')
+                elif 'action' in self.state.attributes:
+                    value = self.state.attributes.get('action')
+            if value in ['vibrate','vibration','actively','move','tap_twice','shake_air','swing'] or self.bool_value(value):
                 return 'vibration'
-            elif value == 'tilt':
+            elif value in ['tilt','flip90','flip180','rotate']:
                 return 'tilt'
-            elif value == 'free_fall':
+            elif value in ['free_fall','drop']:
                 return 'fall'
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'Invalid {self.instance} property value: {value!r}'
+            )
 
     def float_value(self, value: Any) -> float:
         try:
