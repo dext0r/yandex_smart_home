@@ -443,7 +443,7 @@ class _ModeCapability(_Capability):
         """Returns list of supported Yandex modes for this entity."""
         modes = []
 
-        for ha_value in self.state.attributes.get(self.modes_list_attribute):
+        for ha_value in self.state.attributes.get(self.modes_list_attribute, []):
             value = self.get_yandex_mode_by_ha_mode(ha_value)
             if value is not None and value not in modes:
                 modes.append(value)
@@ -477,7 +477,7 @@ class _ModeCapability(_Capability):
                 return yandex_mode
 
         if self.modes_map_index_fallback:
-            available_modes = self.state.attributes.get(self.modes_list_attribute)
+            available_modes = self.state.attributes.get(self.modes_list_attribute, [])
             try:
                 return self.modes_map_index_fallback[available_modes.index(ha_mode)]
             except (IndexError, ValueError, KeyError):
@@ -487,7 +487,7 @@ class _ModeCapability(_Capability):
 
     def get_ha_mode_by_yandex_mode(self, yandex_mode: str, available_modes: Optional[list[str]] = None) -> str:
         if available_modes is None:
-            available_modes = self.state.attributes.get(self.modes_list_attribute)
+            available_modes = self.state.attributes.get(self.modes_list_attribute, [])
 
         ha_modes = self.modes_map.get(yandex_mode, [])
         for ha_mode in ha_modes:
