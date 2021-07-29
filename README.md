@@ -224,7 +224,14 @@ yandex_smart_home:
 
 * Поддерживаемые домены: `vacuum`
 * Рекомендуемые значения режимов: `auto`, `turbo`, `min`, `max`, `express`, `normal`, `quiet`
-* Аттибут в Home Assistant: `fan_speed_list`
+* Атрибут в Home Assistant: `fan_speed_list`
+
+#### input_source
+Установка источника сигнала.
+
+* Поддерживаемые домены: `media_player`
+* Рекомендуемые значения режимов: `one`, `two`, `three`, `four`, `five`, `six`, `seven`, `eight`, `nine`, `ten`
+* Атрибут в Home Assistant: `source_list`
 
 #### scene
 Изменение режима работы светящихся элементов устройства в соответствии с предустановленными темами и сценариями освещения.
