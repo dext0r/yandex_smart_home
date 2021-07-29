@@ -1,10 +1,12 @@
 """Implement the Yandex Smart Home properties."""
 import logging
+from typing import Any
 
 from custom_components.yandex_smart_home.const import (
     ERR_DEVICE_NOT_FOUND,
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+    STATE_NONE,
 )
 from custom_components.yandex_smart_home.error import SmartHomeError
 from homeassistant.components import (
@@ -170,6 +172,16 @@ class _Property:
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None) and self.retrievable:
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid {} property value".format(self.instance))
 
+    def float_value(self, value: Any) -> float:
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'Invalid {self.instance} property value: {value!r}'
+            )
+
+
 class _EventProperty(_Property):
     type = PROPERTY_EVENT
 
@@ -186,8 +198,15 @@ class _EventProperty(_Property):
         value = False
         if self.state.domain == binary_sensor.DOMAIN:
             value = self.state.state
-        
+
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'Invalid {self.instance} property value: {value!r}'
+            )
+
         return self.event_value(value)
+
 
 @register_property
 class TemperatureProperty(_Property):
@@ -216,10 +235,8 @@ class TemperatureProperty(_Property):
         elif self.state.domain == climate.DOMAIN or self.state.domain == fan.DOMAIN or self.state.domain == humidifier.DOMAIN:
             value = self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE)
 
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid temperature property value")
+        return self.float_value(value)
 
-        return float(value)
 
 @register_property
 class HumidityProperty(_Property):
@@ -248,10 +265,8 @@ class HumidityProperty(_Property):
         elif self.state.domain == climate.DOMAIN or self.state.domain == fan.DOMAIN or self.state.domain == humidifier.DOMAIN:
             value = self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY)
 
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid humidity property value")
+        return self.float_value(value)
 
-        return float(value)
 
 @register_property
 class PressureProperty(_Property):
@@ -276,21 +291,17 @@ class PressureProperty(_Property):
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
 
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                "Invalid pressure property value")
-
         # Get a conversion multiplier to pascal
         unit = self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-        if not unit in PRESSURE_TO_PASCAL:
+        if unit not in PRESSURE_TO_PASCAL:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                 f"Unsupported pressure unit: {unit}")
 
         # Convert the value to pascal and then to the chosen Yandex unit
-        val = float(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]]
+        val = self.float_value(value) * PRESSURE_TO_PASCAL[unit] * PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]]
         return round(val, 2)
+
 
 @register_property
 class IlluminanceProperty(_Property):
@@ -311,19 +322,17 @@ class IlluminanceProperty(_Property):
             'instance': self.instance,
             'unit': 'unit.illumination.lux'
         }
-        
+
     def get_value(self):
         value = 0
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
         elif self.state.domain == light.DOMAIN or self.state.domain == fan.DOMAIN:
             value = self.state.attributes.get('illuminance')
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid illuminance property value")
 
-        return float(value)
-        
+        return self.float_value(value)
+
+
 @register_property
 class WaterLevelProperty(_Property):
     type = PROPERTY_FLOAT
@@ -346,11 +355,9 @@ class WaterLevelProperty(_Property):
         value = 0
         if self.state.domain == fan.DOMAIN or self.state.domain == humidifier.DOMAIN:
             value = self.state.attributes.get('water_level')
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid water level property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class CO2Property(_Property):
@@ -379,11 +386,9 @@ class CO2Property(_Property):
             value = self.state.state
         elif self.state.domain == air_quality.DOMAIN or self.state.domain == fan.DOMAIN:
             value = self.state.attributes.get(air_quality.ATTR_CO2)
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid co2 level property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class PM1Property(_Property):
@@ -407,11 +412,9 @@ class PM1Property(_Property):
         value = 0
         if self.state.domain == air_quality.DOMAIN:
             value = self.state.attributes.get(air_quality.ATTR_PM_0_1)
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid pm1 density property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class PM2_5Property(_Property):
@@ -435,11 +438,9 @@ class PM2_5Property(_Property):
         value = 0
         if self.state.domain == air_quality.DOMAIN:
             value = self.state.attributes.get(air_quality.ATTR_PM_2_5)
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid pm2.5 density property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class PM10Property(_Property):
@@ -463,11 +464,9 @@ class PM10Property(_Property):
         value = 0
         if self.state.domain == air_quality.DOMAIN:
             value = self.state.attributes.get(air_quality.ATTR_PM_10)
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid pm10 density property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class TVOCProperty(_Property):
@@ -491,11 +490,9 @@ class TVOCProperty(_Property):
         value = 0
         if self.state.domain == air_quality.DOMAIN:
             value = self.state.attributes.get('total_volatile_organic_compounds')
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid tvoc property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class VoltageProperty(_Property):
@@ -523,11 +520,12 @@ class VoltageProperty(_Property):
             value = self.state.state
         elif self.state.domain == switch.DOMAIN or self.state.domain == light.DOMAIN:
             value = self.state.attributes.get(ATTR_VOLTAGE)
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
             raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid voltage property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class CurrentProperty(_Property):
@@ -555,11 +553,9 @@ class CurrentProperty(_Property):
             value = self.state.state
         elif self.state.domain == switch.DOMAIN or self.state.domain == light.DOMAIN:
             value = self.state.attributes.get('current')
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid amperage property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class PowerProperty(_Property):
@@ -590,11 +586,9 @@ class PowerProperty(_Property):
                 value = self.state.attributes.get('power')
             elif 'load_power' in self.state.attributes:
                 value = self.state.attributes.get('load_power')
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid power property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class BatteryProperty(_Property):
@@ -631,11 +625,9 @@ class BatteryProperty(_Property):
         elif self.state.domain == binary_sensor.DOMAIN:
             if self.state.attributes.get(ATTR_BATTERY_LEVEL) is not None:
                 value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
-			
-        if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Invalid battery property value")
 
-        return float(value)
+        return self.float_value(value)
+
 
 @register_property
 class ContactProperty(_EventProperty):
@@ -855,7 +847,7 @@ class CustomEntityProperty(_Property):
             else:
                 value = entity.state
 
-            if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, None) and self.retrievable:
+            if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
                 _LOGGER.error(f'Invalid value: {entity}')
                 raise SmartHomeError(ERR_INVALID_VALUE, "Invalid value")
 
@@ -868,7 +860,7 @@ class CustomEntityProperty(_Property):
                         f"Unsupported pressure unit: {unit}")
 
                 # Convert the value to pascal and then to the chosen Yandex unit
-                value = round(float(value) * PRESSURE_TO_PASCAL[unit] * \
+                value = round(self.float_value(value) * PRESSURE_TO_PASCAL[unit] * \
                     PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2)
-                    
-        return float(value) if self.type != PROPERTY_EVENT else self.event_value(value)
+
+        return self.float_value(value) if self.type != PROPERTY_EVENT else self.event_value(value)

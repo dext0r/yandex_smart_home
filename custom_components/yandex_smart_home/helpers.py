@@ -209,8 +209,11 @@ class YandexEntity:
         """
         state = self.state
 
-        if state is None or state.state == STATE_UNAVAILABLE:
+        if state is None:
             return {'error_code': ERR_DEVICE_UNREACHABLE}
+
+        if state.state == STATE_UNAVAILABLE:
+            return {'id': state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
 
         capabilities = []
         for cpb in self.capabilities():
@@ -234,8 +237,11 @@ class YandexEntity:
         """Serialize entity for a notification."""
         state = self.state
 
-        if state is None or state.state == STATE_UNAVAILABLE:
+        if state is None:
             return {'error_code': ERR_DEVICE_UNREACHABLE}
+
+        if state.state == STATE_UNAVAILABLE:
+            return {'id': state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
 
         capabilities = []
         for cpb in self.capabilities():

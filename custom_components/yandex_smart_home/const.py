@@ -47,7 +47,8 @@ CONF_NOTIFIER = 'notifier'
 CONF_SKILL_OAUTH_TOKEN = 'oauth_token'
 CONF_SKILL_ID = 'skill_id'
 CONF_NOTIFIER_USER_ID = 'user_id'  
-NOTIFIER_ENABLED = 'notifier_enabled'    
+NOTIFIER_ENABLED = 'notifier_enabled'   
+NOTIFIERS = 'notifiers' 
 
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types.html/
 PREFIX_TYPES = 'devices.types.'
@@ -74,6 +75,12 @@ TYPE_DISHWASHER = PREFIX_TYPES + 'dishwasher'
 TYPE_IRON = PREFIX_TYPES + 'iron'
 TYPE_SENSOR = PREFIX_TYPES + 'sensor'
 TYPE_OTHER = PREFIX_TYPES + 'other'
+
+# Integration xiaomi_airpurifier
+ATTR_TARGET_HUMIDITY = 'target_humidity'
+DOMAIN_XIAOMI_AIRPURIFIER = 'xiaomi_miio_airpurifier'
+MODEL_PREFIX_XIAOMI_AIRPURIFIER = 'zhimi.'
+SERVICE_FAN_SET_TARGET_HUMIDITY = 'fan_set_target_humidity'
 
 # Error codes
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/response-codes-docpage/
@@ -117,6 +124,9 @@ PRESSURE_TO_PASCAL = {
     PRESSURE_UNIT_BAR: 100000,
     PRESSURE_UNIT_MBAR: 0.01
 }
+
+# Additional states
+STATE_NONE = 'none'
 
 # Multiplier to convert from pascal to given pressure unit
 PRESSURE_FROM_PASCAL = {

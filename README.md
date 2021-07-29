@@ -5,7 +5,7 @@
 ### Installation
 
 1. Configure SSL certificate if it was not done already (do not use self-signed certificate)
-1. Update home assistant to 0.112.0 at least
+1. Update home assistant to 2021.4 at least
 1. Install [HACS](https://hacs.xyz/) and search for "Yandex Smart Home" there. That way you get updates automatically. But you also can just copy and add files into custom_components directory manually instead
 1. Configure component via configuration.yaml (see instructions below)
 1. Restart home assistant
@@ -33,13 +33,24 @@ yandex_smart_home:
       - media_player.tv
       - media_player.tv_lg
       - media_player.receiver
+    include_entity_globs:
+      - sensor.temperature_*
     exclude_entities:
       - light.highlight
+    exclude_entity_globs:
+      - sensor.weather_* 
   entity_config:
     switch.kitchen:
       name: CUSTOM_NAME_FOR_YANDEX_SMART_HOME
     light.living_room:
       room: LIVING_ROOM
+    light.led_strip:
+      modes:
+        scene:
+          sunrise:
+            - Wake up
+          alarm:
+            - Blink
     media_player.tv_lg:
       channel_set_via_media_content_id: true
     fan.xiaomi_miio_device:
@@ -150,8 +161,9 @@ yandex_smart_home:
           (float) (Optional) Range Precision (adjustment step)
       modes:
         (map) (Optional) Map of yandex mode functions (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-docpage/)
-        fan_speed|cleanup_mode|program|scene:
+        fan_speed|cleanup_mode|program|scene|thermostat|swing:
           (map) (Optional) Map of yandex modes (https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-instance-modes-docpage/) to HA modes.
+          Map of scene mode - https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html#discovery__discovery-parameters-color-setting-table__entry__75 
           yandex_mode1:
             - ha_mode1
           yandex_mode2: [ha_mode2, ha_mode2b]
@@ -216,3 +228,17 @@ yandex_smart_home:
     skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
     user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
+If you need to notify multiple skills, you can enter their details in a list.
+```
+yandex_smart_home:
+  notifier:
+    - oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
+      skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
+      user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    - oauth_token: YYYYYYYYYYYYYYYYYYYYYYYYYYY
+      skill_id: yyyyyyyy-yyyy-yyyy-yyyyyyyyyyyy
+      user_id: yyyyyyyyyyyyyyyyyyyyyyyyyyyy
+```
+
+## Usefull links
+* https://github.com/allmazz/yandex_smart_home_ip
