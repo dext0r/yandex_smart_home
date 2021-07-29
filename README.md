@@ -40,8 +40,7 @@
 **Способ 1:** [HACS](https://hacs.xyz/)
 > HACS > Интеграции > Добавить > Yandex Smart Home > Установить
 
-**Способ 2:** Вручную скопируйте папку `yandex_smart_home` из [latest release](https://github.com/dmitry-k/yandex_smart_home/releases/latest)
-(TODO: заработает после первого релиза :)) в директорию `/config/custom_components`
+**Способ 2:** Вручную скопируйте папку `yandex_smart_home` из [latest release](https://github.com/dmitry-k/yandex_smart_home/releases/latest) в директорию `/config/custom_components`
 
 
 ## Настройка
