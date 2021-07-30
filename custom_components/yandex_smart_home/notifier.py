@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import asyncio
 from time import time
-from typing import Any
 
 from aiohttp import ContentTypeError
 from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -28,11 +27,11 @@ STATE_URL = '/callback/state'
 class YandexNotifier:
     def __init__(self, hass: HomeAssistant, conf: dict[str, str]):
         self.hass = hass
-        self.property_entities = self.get_property_entities()
         self.oauth_token = conf[CONF_SKILL_OAUTH_TOKEN]
         self.skill_id = conf[CONF_SKILL_ID]
         self.user_id = conf[CONF_NOTIFIER_USER_ID]
 
+        self.property_entities = self.get_property_entities()
         self.session = async_create_clientsession(self.hass)
 
     def format_log_message(self, message: str) -> str:
@@ -41,18 +40,15 @@ class YandexNotifier:
 
         return message
 
-    def get_property_entities(self) -> dict[str, Any]:
-        cfg = self.hass.data[DOMAIN][DATA_CONFIG].entity_config
+    def get_property_entities(self) -> dict[str, list[str]]:
         rv = {}
 
-        for entity in cfg:
-            custom_entity_config = cfg.get(entity, {})
-            for property_config in custom_entity_config.get(CONF_ENTITY_PROPERTIES):
-                if CONF_ENTITY_PROPERTY_ENTITY in property_config:
-                    property_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
-                    devs = set(rv.get(property_entity_id, []))
-                    devs.add(entity)
-                    rv.update({property_entity_id: devs})
+        for entity_id, entity_config in self.hass.data[DOMAIN][DATA_CONFIG].entity_config.items():
+            for property_config in entity_config.get(CONF_ENTITY_PROPERTIES):
+                property_entity_id = property_config[CONF_ENTITY_PROPERTY_ENTITY]
+                rv.setdefault(property_entity_id, [])
+                if entity_id not in rv[property_entity_id]:
+                    rv[property_entity_id].append(entity_id)
 
         return rv
 
@@ -106,22 +102,23 @@ class YandexNotifier:
         if event_entity_id in self.property_entities.keys():
             entity_list = entity_list + list(self.property_entities.get(event_entity_id, {}))
 
-        for entity in entity_list:
-            if entity in CLOUD_NEVER_EXPOSED_ENTITIES or not self.hass.data[DOMAIN][DATA_CONFIG].should_expose(entity):
+        for entity_id in entity_list:
+            if entity_id in CLOUD_NEVER_EXPOSED_ENTITIES or \
+                    not self.hass.data[DOMAIN][DATA_CONFIG].should_expose(entity_id):
                 continue
 
-            state = new_state if entity == event_entity_id else self.hass.states.get(entity)
+            state = new_state if entity_id == event_entity_id else self.hass.states.get(entity_id)
             yandex_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], state)
             device = yandex_entity.notification_serialize(event_entity_id)
-            if entity == event_entity_id:
+            if entity_id == event_entity_id:
                 old_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][DATA_CONFIG], old_state)
                 if old_entity.notification_serialize(event_entity_id) == device:  # нет изменений
                     continue
 
             if device['capabilities'] or device['properties']:
                 devices.append(device)
-                entity_text = entity
-                if entity != event_entity_id:
+                entity_text = entity_id
+                if entity_id != event_entity_id:
                     entity_text = f'{entity_text} => {event_entity_id}'
 
                 _LOGGER.debug(self.format_log_message(
