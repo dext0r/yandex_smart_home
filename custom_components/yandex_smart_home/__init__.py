@@ -15,6 +15,7 @@ from .const import (
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MAX,
     CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP,
     CONF_SETTINGS, CONF_PRESSURE_UNIT, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS,
+    PROPERTY_TYPE_TO_UNITS, PROPERTY_TYPE_EVENT_VALUES,
     CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED)
 from .helpers import Config
 from .http import async_register_http
@@ -22,11 +23,24 @@ from .notifier import async_setup_notifier
 
 _LOGGER = logging.getLogger(__name__)
 
-ENTITY_PROPERTY_SCHEMA = vol.Schema({
-    vol.Optional(CONF_ENTITY_PROPERTY_TYPE): cv.string,
-    vol.Optional(CONF_ENTITY_PROPERTY_ENTITY): cv.string,
-    vol.Optional(CONF_ENTITY_PROPERTY_ATTRIBUTE): cv.string,
-}, extra=vol.PREVENT_EXTRA)
+
+def property_type_validate(property_type: str) -> str:
+    if property_type not in PROPERTY_TYPE_TO_UNITS and property_type not in PROPERTY_TYPE_EVENT_VALUES:
+        raise vol.Invalid(f'Property type "{property_type}" is not supported')
+
+    return property_type
+
+
+ENTITY_PROPERTY_SCHEMA = vol.All(
+    cv.has_at_least_one_key(CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_ATTRIBUTE),
+    vol.Schema({
+        vol.Required(CONF_ENTITY_PROPERTY_TYPE): vol.Schema(
+            vol.All(str, property_type_validate)
+        ),
+        vol.Optional(CONF_ENTITY_PROPERTY_ENTITY): cv.entity_id,
+        vol.Optional(CONF_ENTITY_PROPERTY_ATTRIBUTE): cv.string,
+    }, extra=vol.PREVENT_EXTRA)
+)
 
 ENTITY_RANGE_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_RANGE_MAX): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),

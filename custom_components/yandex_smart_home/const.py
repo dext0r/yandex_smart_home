@@ -159,6 +159,57 @@ DOMAIN_TO_YANDEX_TYPES = {
     air_quality.DOMAIN: TYPE_SENSOR,
 }
 
+PROPERTY_TYPE_HUMIDITY = 'humidity'
+PROPERTY_TYPE_TEMPERATURE = 'temperature'
+PROPERTY_TYPE_PRESSURE = 'pressure'
+PROPERTY_TYPE_WATER_LEVEL = 'water_level'
+PROPERTY_TYPE_CO2_LEVEL = 'co2_level'
+PROPERTY_TYPE_POWER = 'power'
+PROPERTY_TYPE_VOLTAGE = 'voltage'
+PROPERTY_TYPE_BATTERY_LEVEL = 'battery_level'
+PROPERTY_TYPE_AMPERAGE = 'amperage'
+PROPERTY_TYPE_ILLUMINATION = 'illumination'
+PROPERTY_TYPE_TVOC = 'tvoc'
+PROPERTY_TYPE_PM1_DENSITY = 'pm1_density'
+PROPERTY_TYPE_PM2_5_DENSITY = 'pm2.5_density'
+PROPERTY_TYPE_PM10_DENSITY = 'pm10_density'
+PROPERTY_TYPE_VIBRATION = 'vibration'
+PROPERTY_TYPE_OPEN = 'open'
+PROPERTY_TYPE_BUTTON = 'button'
+PROPERTY_TYPE_MOTION = 'motion'
+PROPERTY_TYPE_SMOKE = 'smoke'
+PROPERTY_TYPE_GAS = 'gas'
+PROPERTY_TYPE_WATER_LEAK = 'water_leak'
+
+PROPERTY_TYPE_TO_UNITS = {
+    PROPERTY_TYPE_HUMIDITY: 'unit.percent',
+    PROPERTY_TYPE_TEMPERATURE: 'unit.temperature.celsius',
+    PROPERTY_TYPE_PRESSURE: PRESSURE_UNITS_TO_YANDEX_UNITS[PRESSURE_UNIT_MMHG],
+    PROPERTY_TYPE_WATER_LEVEL: 'unit.percent',
+    PROPERTY_TYPE_CO2_LEVEL: 'unit.ppm',
+    PROPERTY_TYPE_POWER: 'unit.watt',
+    PROPERTY_TYPE_VOLTAGE: 'unit.volt',
+    PROPERTY_TYPE_BATTERY_LEVEL: 'unit.percent',
+    PROPERTY_TYPE_AMPERAGE: 'unit.ampere',
+    PROPERTY_TYPE_ILLUMINATION: 'unit.illumination.lux',
+    PROPERTY_TYPE_TVOC: 'unit.density.mcg_m3',
+    PROPERTY_TYPE_PM1_DENSITY: 'unit.density.mcg_m3',
+    PROPERTY_TYPE_PM2_5_DENSITY: 'unit.density.mcg_m3',
+    PROPERTY_TYPE_PM10_DENSITY: 'unit.density.mcg_m3'
+}
+
+PROPERTY_TYPE_EVENT_VALUES = {
+    PROPERTY_TYPE_VIBRATION: ['vibration', 'tilt', 'fall'],
+    PROPERTY_TYPE_OPEN: ['opened', 'closed'],
+    PROPERTY_TYPE_BUTTON: ['click', 'double_click', 'long_press'],
+    PROPERTY_TYPE_MOTION: ['detected', 'not_detected'],
+    PROPERTY_TYPE_SMOKE: ['detected', 'not_detected', 'high'],
+    PROPERTY_TYPE_GAS: ['detected', 'not_detected', 'high'],
+    PROPERTY_TYPE_BATTERY_LEVEL: ['low', 'normal'],
+    PROPERTY_TYPE_WATER_LEVEL: ['low', 'normal'],
+    PROPERTY_TYPE_WATER_LEAK: ['leak', 'dry']
+}
+
 DEVICE_CLASS_TO_YANDEX_TYPES = {
     (media_player.DOMAIN, media_player.DEVICE_CLASS_TV): TYPE_MEDIA_DEVICE_TV,
 }

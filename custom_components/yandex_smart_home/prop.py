@@ -1,7 +1,8 @@
 """Implement the Yandex Smart Home properties."""
 import logging
-from typing import Any
+from typing import Any, Optional
 
+from homeassistant.core import State
 from homeassistant.components import (
     climate,
     binary_sensor,
@@ -48,6 +49,11 @@ from .const import (
     PRESSURE_UNITS_TO_YANDEX_UNITS,
     PRESSURE_FROM_PASCAL,
     PRESSURE_TO_PASCAL,
+    PROPERTY_TYPE_BUTTON,
+    PROPERTY_TYPE_VIBRATION,
+    PROPERTY_TYPE_EVENT_VALUES,
+    PROPERTY_TYPE_PRESSURE,
+    PROPERTY_TYPE_TO_UNITS,
     NOTIFIER_ENABLED,
 )
 
@@ -56,18 +62,7 @@ _LOGGER = logging.getLogger(__name__)
 PREFIX_PROPERTIES = 'devices.properties.'
 PROPERTY_FLOAT = PREFIX_PROPERTIES + 'float'
 PROPERTY_EVENT = PREFIX_PROPERTIES + 'event'
-
-EVENTS_VALUES = {
-    'vibration': ['vibration', 'tilt', 'fall'],
-    'open': ['opened', 'closed'],
-    'button': ['click', 'double_click', 'long_press'],
-    'motion': ['detected', 'not_detected'],
-    'smoke': ['detected', 'not_detected', 'high'],
-    'gas': ['detected', 'not_detected', 'high'],
-    'battery_level': ['low', 'normal'],
-    'water_level': ['low', 'normal'],
-    'water_leak': ['leak', 'dry']
-}
+EVENTS_VALUES = PROPERTY_TYPE_EVENT_VALUES
 
 PROPERTIES = []
 
@@ -791,91 +786,107 @@ class CustomEntityProperty(_Property):
     def __init__(self, hass, state, entity_config, property_config):
         super().__init__(hass, state, entity_config)
 
-        self.instance_unit = {
-            'humidity': 'unit.percent',
-            'temperature': 'unit.temperature.celsius',
-            'pressure': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
-            'water_level': 'unit.percent',
-            'co2_level': 'unit.ppm',
-            'power': 'unit.watt',
-            'voltage': 'unit.volt',
-            'battery_level': 'unit.percent',
-            'amperage': 'unit.ampere',
-            'illumination': 'unit.illumination.lux',
-            'tvoc': 'unit.density.mcg_m3',
-            'pm1_density': 'unit.density.mcg_m3',
-            'pm2.5_density': 'unit.density.mcg_m3',
-            'pm10_density': 'unit.density.mcg_m3'
-        }
-
-        self.property_config = property_config
         self.type = PROPERTY_FLOAT
-        self.instance = property_config.get(CONF_ENTITY_PROPERTY_TYPE)
+        self.property_entity_id: Optional[str] = None  # by default state used
+        self.property_config = property_config
+        self.instance = property_config[CONF_ENTITY_PROPERTY_TYPE]
+        self.instance_unit: Optional[str] = None
 
-        if CONF_ENTITY_PROPERTY_ENTITY in self.property_config:
-            property_entity_id = self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
-            entity = self.hass.states.get(property_entity_id)
-            if entity is None:
-                raise SmartHomeError(ERR_DEVICE_NOT_FOUND, f'Entity {property_entity_id} not found')
+        self.property_entity_id = self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
+        if self.property_entity_id:
+            property_state = self.hass.states.get(self.property_entity_id)
+            if property_state is None:
+                raise SmartHomeError(
+                    ERR_DEVICE_NOT_FOUND,
+                    f'Entity {self.property_entity_id} not found for instance {self.instance} of {self.state.entity_id}'
+                )
 
-            if entity.domain == binary_sensor.DOMAIN and self.instance in EVENTS_VALUES.keys():
+            if property_state.domain == binary_sensor.DOMAIN:
+                if self.instance not in PROPERTY_TYPE_EVENT_VALUES:
+                    raise SmartHomeError(
+                        ERR_DEVICE_NOT_FOUND,
+                        f'Unsupported entity {self.property_entity_id} for instance {self.instance} '
+                        f'of {self.state.entity_id}'
+                    )
+
                 self.type = PROPERTY_EVENT
-                self.values = EVENTS_VALUES.get(self.instance)
+                self.values = PROPERTY_TYPE_EVENT_VALUES.get(self.instance)
+                return
+            elif property_state.domain == sensor.DOMAIN:
+                if self.instance not in PROPERTY_TYPE_TO_UNITS and self.instance in PROPERTY_TYPE_EVENT_VALUES:
+                    # TODO: battery_level and water_level cannot be events
+                    self.type = PROPERTY_EVENT
+                    self.values = PROPERTY_TYPE_EVENT_VALUES.get(self.instance)
+
+            if self.instance in [PROPERTY_TYPE_BUTTON, PROPERTY_TYPE_VIBRATION]:
+                self.retrievable = False
+
+            if self.type == PROPERTY_FLOAT:
+                self.instance_unit = PROPERTY_TYPE_TO_UNITS[self.instance]
+
+                if self.instance == PROPERTY_TYPE_PRESSURE:
+                    self.instance_unit = PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
         return True
 
     def parameters(self):
-        if self.instance in self.instance_unit:
-            unit = self.instance_unit[self.instance]
-            return {'instance': self.instance, 'unit': unit}
+        if self.type == PROPERTY_FLOAT:
+            return {
+                'instance': self.instance,
+                'unit': self.instance_unit
+            }
         elif self.type == PROPERTY_EVENT:
+            if not self.values:
+                raise SmartHomeError(
+                    ERR_DEVICE_NOT_FOUND,
+                    f'No values for instance {self.instance} of {self.state.entity_id}'
+                )
+
             return {
                 'instance': self.instance,
                 'events': [
                     {'value': v}
                     for v in self.values
                 ]
-            } if self.values else {}
-
-        raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, f'Unit not found for type: {self.instance}')
+            }
 
     def get_value(self):
-        value = 0
-        attribute = None
+        if not self.retrievable:
+            return None
 
-        if CONF_ENTITY_PROPERTY_ATTRIBUTE in self.property_config:
-            attribute = self.property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
+        pressure_unit: Optional[str] = None
 
-        if attribute:
-            value = self.state.attributes.get(attribute)
+        if self.property_entity_id:
+            property_state: State = self.hass.states.get(self.property_entity_id)
+            if property_state is None:
+                raise SmartHomeError(
+                    ERR_DEVICE_NOT_FOUND,
+                    f'Entity {self.property_entity_id} not found for instance {self.instance} of {self.state.entity_id}'
+                )
 
-        if CONF_ENTITY_PROPERTY_ENTITY in self.property_config:
-            property_entity_id = self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
-            entity = self.hass.states.get(property_entity_id)
-            if entity is None:
-                raise SmartHomeError(ERR_DEVICE_NOT_FOUND, f'Entity {property_entity_id} not found')
+            value = property_state.state
+            if self.instance == PROPERTY_TYPE_PRESSURE:
+                pressure_unit = property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+        else:
+            value = self.state.attributes.get(self.property_config[CONF_ENTITY_PROPERTY_ATTRIBUTE])
 
-            if attribute:
-                value = entity.attributes.get(attribute)
-            else:
-                value = entity.state
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'Unsupported value "{value!r}" for instance {self.instance} of {self.state.entity_id}'
+            )
 
-            if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
-                raise SmartHomeError(ERR_INVALID_VALUE, f'Invalid entity {property_entity_id} value: {value!r}')
+        if self.instance == PROPERTY_TYPE_PRESSURE:
+            if pressure_unit not in PRESSURE_TO_PASCAL:
+                raise SmartHomeError(
+                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                    f'Unsupported pressure unit "{pressure_unit}" '
+                    f'for instance {self.instance} of {self.state.entity_id}'
+                )
 
-            if self.instance == 'pressure':
-                # Get a conversion multiplier to pascal
-                unit = entity.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-                if unit not in PRESSURE_TO_PASCAL:
-                    raise SmartHomeError(
-                        ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                        f'Unsupported pressure unit: {unit}'
-                    )
-
-                # Convert the value to pascal and then to the chosen Yandex unit
-                value = round(self.float_value(value) * PRESSURE_TO_PASCAL[unit] *
-                              PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2)
+            return round(self.float_value(value) * PRESSURE_TO_PASCAL[pressure_unit] *
+                         PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2)
 
         return self.float_value(value) if self.type != PROPERTY_EVENT else self.event_value(value)
