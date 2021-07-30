@@ -680,6 +680,19 @@ class SmokeProperty(_EventProperty):
 
 
 @register_property
+class BatteryLevelLowProperty(_EventProperty):
+    instance = 'battery_level'
+    values = EVENTS_VALUES.get(instance)
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN:
+            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_BATTERY
+
+        return False
+
+
+@register_property
 class WaterLevelLowProperty(_EventProperty):
     instance = 'water_level'
     values = EVENTS_VALUES.get(instance)
@@ -701,6 +714,57 @@ class WaterLeakProperty(_EventProperty):
     def supported(domain, features, entity_config, attributes):
         if domain == binary_sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_MOISTURE
+
+        return False
+
+
+@register_property
+class ButtonProperty(_EventProperty):
+    instance = 'button'
+    retrievable = False
+    values = EVENTS_VALUES.get(instance)
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN:  # XiaomiAqara
+            return ('last_action' in attributes and
+                    attributes.get('last_action') in [
+                        'single', 'click', 'double', 'double_click',
+                        'long', 'long_click', 'long_click_press',
+                        'long_click_release', 'hold', 'release',
+                        'triple', 'quadruple', 'many'])
+        elif domain == sensor.DOMAIN:  # XiaomiGateway3 and others
+            return ('action' in attributes and
+                    attributes.get('action') in [
+                        'single', 'click', 'double', 'double_click',
+                        'long', 'long_click', 'long_click_press',
+                        'long_click_release', 'hold', 'release',
+                        'triple', 'quadruple', 'many'])
+
+        return False
+
+
+@register_property
+class VibrationProperty(_EventProperty):
+    instance = 'vibration'
+    retrievable = False
+    values = EVENTS_VALUES.get(instance)
+
+    @staticmethod
+    def supported(domain, features, entity_config, attributes):
+        if domain == binary_sensor.DOMAIN:  # XiaomiAqara
+            return (('last_action' in attributes and
+                    attributes.get('last_action') in [
+                        'vibrate', 'tilt', 'free_fall', 'actively',
+                        'move', 'tap_twice', 'shake_air', 'swing',
+                        'flip90', 'flip180', 'rotate', 'drop']) or
+                    attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_VIBRATION)
+        elif domain == sensor.DOMAIN:  # XiaomiGateway3 and others
+            return ('action' in attributes and
+                    attributes.get('action') in [
+                        'vibrate', 'tilt', 'free_fall', 'actively',
+                        'move', 'tap_twice', 'shake_air', 'swing',
+                        'flip90', 'flip180', 'rotate', 'drop'])
 
         return False
 
