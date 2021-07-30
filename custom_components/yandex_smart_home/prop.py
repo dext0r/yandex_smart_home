@@ -168,7 +168,7 @@ class _Property:
                 return 'fall'
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
             raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                ERR_INVALID_VALUE,
                 f'Invalid {self.instance} property value: {value!r}'
             )
 
@@ -178,7 +178,7 @@ class _Property:
         except (ValueError, TypeError):
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Invalid {self.instance} property value: {value!r}'
+                f'Unsupported value "{value!r}" for instance {self.instance} of {self.state.entity_id}'
             )
 
 
@@ -206,7 +206,7 @@ class _EventProperty(_Property):
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Invalid {self.instance} property value: {value!r}'
+                f'Unsupported value "{value!r}" for instance {self.instance} of {self.state.entity_id}'
             )
 
         return self.event_value(value)
@@ -300,7 +300,7 @@ class PressureProperty(_Property):
         if unit not in PRESSURE_TO_PASCAL:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unsupported pressure unit: {unit}'
+                f'Unsupported pressure unit "{unit}" for instance {self.instance} of {self.state.entity_id}'
             )
 
         # Convert the value to pascal and then to the chosen Yandex unit

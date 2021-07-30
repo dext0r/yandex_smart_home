@@ -274,7 +274,7 @@ class YandexEntity:
         if state is None or 'instance' not in state:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
-                "Invalid request: no 'instance' field in state {} / {}" .format(capability_type, self.state.entity_id)
+                f'Invalid request: no instance field in state {capability_type} of {self.state.entity_id}'
             )
 
         instance = state['instance']
@@ -287,10 +287,8 @@ class YandexEntity:
         if not executed:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                'Unable to execute {} / {} for {}'.format(capability_type,
-                                                          instance,
-                                                          self.state.entity_id
-                                                          ))
+                f'Unable to execute request for instance {capability_type}.{instance} of {self.state.entity_id}'
+            )
 
     @callback
     def async_update(self):

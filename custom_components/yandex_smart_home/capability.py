@@ -219,12 +219,7 @@ class OnOffCapability(_Capability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        domain = self.state.domain
-
-        if type(state['value']) is not bool:
-            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
-
-        service_domain = domain
+        domain = service_domain = self.state.domain
         service_data = {
             ATTR_ENTITY_ID: self.state.entity_id
         }
@@ -316,13 +311,12 @@ class MuteCapability(_ToggleCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        if type(state['value']) is not bool:
-            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
-
         muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
         if muted is None:
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                                 'Device probably turned off')
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'Device {self.state.entity_id} probably turned off'
+            )
 
         await self.hass.services.async_call(
             self.state.domain,
@@ -362,9 +356,6 @@ class PauseCapability(_ToggleCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        if type(state['value']) is not bool:
-            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
-
         if self.state.domain == media_player.DOMAIN:
             if state['value']:
                 service = media_player.SERVICE_MEDIA_PAUSE
@@ -378,7 +369,10 @@ class PauseCapability(_ToggleCapability):
         elif self.state.domain == cover.DOMAIN:
             service = cover.SERVICE_STOP_COVER
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
+            raise SmartHomeError(
+                ERR_INVALID_VALUE,
+                f'Unsupported domain for instance {self.instance} of {self.state.entity_id}'
+            )
 
         await self.hass.services.async_call(
             self.state.domain,
@@ -403,9 +397,6 @@ class OscillationCapability(_ToggleCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        if type(state['value']) is not bool:
-            raise SmartHomeError(ERR_INVALID_VALUE, 'Value is not boolean')
-
         await self.hass.services.async_call(
             self.state.domain,
             fan.SERVICE_OSCILLATE, {
@@ -501,7 +492,7 @@ class _ModeCapability(_Capability):
 
         raise SmartHomeError(
             ERR_INVALID_VALUE,
-            f'Unknown mode "{yandex_mode}" for {self.state.entity_id} ({self.instance})'
+            f'Unsupported mode "{yandex_mode}" for instance {self.instance} of {self.state.entity_id}'
         )
 
     def get_value(self):
@@ -740,11 +731,14 @@ class FanSpeedCapability(_ModeCapability):
             else:
                 service = fan.SERVICE_SET_SPEED
                 attr = fan.ATTR_SPEED
-                _LOGGER.warning('Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" instead')
+                _LOGGER.warning(
+                    f'Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" '
+                    f'instead for instance {self.instance} of {self.state.entity_id}'
+                )
         else:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
-                f'Unsupported domain for {self.state.entity_id} ({self.instance})'
+                f'Unsupported domain for instance {self.instance} of {self.state.entity_id}'
             )
 
         await self.hass.services.async_call(
@@ -804,21 +798,15 @@ class CoverLevelCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        if self.state.domain == cover.DOMAIN:
-            service = cover.SERVICE_SET_COVER_POSITION
-            attr = cover.ATTR_POSITION
-        else:
-            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
-
         value = state['value']
         if value < 0:
             value = min(self.get_value() + value, 0)
 
         await self.hass.services.async_call(
             self.state.domain,
-            service, {
+            cover.SERVICE_SET_COVER_POSITION, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                attr: value
+                cover.ATTR_POSITION: value
             }, blocking=True, context=data.context)
 
 
@@ -883,7 +871,10 @@ class TemperatureCapability(_RangeCapability):
             service = climate.SERVICE_SET_TEMPERATURE
             attr = climate.ATTR_TEMPERATURE
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
+            raise SmartHomeError(
+                ERR_INVALID_VALUE,
+                f'Unsupported domain for instance {self.instance} of {self.state.entity_id}'
+            )
 
         new_value = state['value']
         if 'relative' in state and state['relative'] and self.state.domain == climate.DOMAIN:
@@ -956,7 +947,10 @@ class HumidityCapability(_RangeCapability):
             service = SERVICE_FAN_SET_TARGET_HUMIDITY
             attr = humidifier.ATTR_HUMIDITY
         else:
-            raise SmartHomeError(ERR_INVALID_VALUE, 'Unsupported domain')
+            raise SmartHomeError(
+                ERR_INVALID_VALUE,
+                f'Unsupported domain for instance {self.instance} of {self.state.entity_id}'
+            )
 
         await self.hass.services.async_call(
             domain,
@@ -1289,7 +1283,6 @@ class _ColorSettingCapability(_Capability):
 
         ha_effects = scenes_map.get(yandex_scene)
         if not ha_effects:
-            _LOGGER.warning(f'Missing mapping for scene {yandex_scene}')
             return None
 
         for ha_effect in ha_effects:
