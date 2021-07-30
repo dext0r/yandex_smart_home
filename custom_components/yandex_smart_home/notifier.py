@@ -45,10 +45,11 @@ class YandexNotifier:
 
         for entity_id, entity_config in self.hass.data[DOMAIN][DATA_CONFIG].entity_config.items():
             for property_config in entity_config.get(CONF_ENTITY_PROPERTIES):
-                property_entity_id = property_config[CONF_ENTITY_PROPERTY_ENTITY]
-                rv.setdefault(property_entity_id, [])
-                if entity_id not in rv[property_entity_id]:
-                    rv[property_entity_id].append(entity_id)
+                property_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
+                if property_entity_id:
+                    rv.setdefault(property_entity_id, [])
+                    if entity_id not in rv[property_entity_id]:
+                        rv[property_entity_id].append(entity_id)
 
         return rv
 
