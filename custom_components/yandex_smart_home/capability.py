@@ -707,6 +707,17 @@ class FanSpeedCapability(_ModeCapability):
         return False
 
     @property
+    def state_value_attribute(self) -> Optional[str]:
+        """Return HA attribute for state of this entity."""
+        if self.state.domain == climate.DOMAIN:
+            return climate.ATTR_FAN_MODE
+        elif self.state.domain == fan.DOMAIN:
+            if self.state.attributes.get(fan.ATTR_PRESET_MODES):
+                return fan.ATTR_PRESET_MODE
+            else:
+                return fan.ATTR_SPEED
+
+    @property
     def modes_list_attribute(self) -> Optional[str]:
         """Return HA attribute contains modes list for this entity."""
         if self.state.domain == climate.DOMAIN:
