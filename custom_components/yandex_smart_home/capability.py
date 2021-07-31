@@ -371,7 +371,7 @@ class PauseCapability(_ToggleCapability):
         else:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
-                f'Unsupported domain for instance {self.instance} of {self.state.entity_id}'
+                f'Unsupported domain for {self.instance} instance of {self.state.entity_id}'
             )
 
         await self.hass.services.async_call(
@@ -492,7 +492,8 @@ class _ModeCapability(_Capability):
 
         raise SmartHomeError(
             ERR_INVALID_VALUE,
-            f'Unsupported mode "{yandex_mode}" for instance {self.instance} of {self.state.entity_id}'
+            f'Unsupported mode "{yandex_mode}" for {self.instance} instance of {self.state.entity_id}. '
+            f'Check \"modes\" setting for this entity'
         )
 
     def get_value(self):
@@ -744,12 +745,12 @@ class FanSpeedCapability(_ModeCapability):
                 attr = fan.ATTR_SPEED
                 _LOGGER.warning(
                     f'Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" '
-                    f'instead for instance {self.instance} of {self.state.entity_id}'
+                    f'instead for {self.instance} instance of {self.state.entity_id}'
                 )
         else:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
-                f'Unsupported domain for instance {self.instance} of {self.state.entity_id}'
+                f'Unsupported domain for {self.instance} instance of {self.state.entity_id}'
             )
 
         await self.hass.services.async_call(
@@ -884,7 +885,7 @@ class TemperatureCapability(_RangeCapability):
         else:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
-                f'Unsupported domain for instance {self.instance} of {self.state.entity_id}'
+                f'Unsupported domain for {self.instance} instance of {self.state.entity_id}'
             )
 
         new_value = state['value']
@@ -960,7 +961,7 @@ class HumidityCapability(_RangeCapability):
         else:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
-                f'Unsupported domain for instance {self.instance} of {self.state.entity_id}'
+                f'Unsupported domain for {self.instance} instance of {self.state.entity_id}'
             )
 
         await self.hass.services.async_call(

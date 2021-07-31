@@ -798,14 +798,14 @@ class CustomEntityProperty(_Property):
             if property_state is None:
                 raise SmartHomeError(
                     ERR_DEVICE_NOT_FOUND,
-                    f'Entity {self.property_entity_id} not found for instance {self.instance} of {self.state.entity_id}'
+                    f'Entity {self.property_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
                 )
 
             if property_state.domain == binary_sensor.DOMAIN:
                 if self.instance not in PROPERTY_TYPE_EVENT_VALUES:
                     raise SmartHomeError(
                         ERR_DEVICE_NOT_FOUND,
-                        f'Unsupported entity {self.property_entity_id} for instance {self.instance} '
+                        f'Unsupported entity {self.property_entity_id} for {self.instance} instance '
                         f'of {self.state.entity_id}'
                     )
 
@@ -814,7 +814,7 @@ class CustomEntityProperty(_Property):
                 return
             elif property_state.domain == sensor.DOMAIN:
                 if self.instance not in PROPERTY_TYPE_TO_UNITS and self.instance in PROPERTY_TYPE_EVENT_VALUES:
-                    # TODO: battery_level and water_level cannot be events
+                    # TODO: battery_level and water_level cannot be events for sensor domain
                     self.type = PROPERTY_EVENT
                     self.values = PROPERTY_TYPE_EVENT_VALUES.get(self.instance)
 
@@ -841,7 +841,7 @@ class CustomEntityProperty(_Property):
             if not self.values:
                 raise SmartHomeError(
                     ERR_DEVICE_NOT_FOUND,
-                    f'No values for instance {self.instance} of {self.state.entity_id}'
+                    f'No values for {self.instance} instance of {self.state.entity_id}'
                 )
 
             return {
@@ -863,7 +863,7 @@ class CustomEntityProperty(_Property):
             if property_state is None:
                 raise SmartHomeError(
                     ERR_DEVICE_NOT_FOUND,
-                    f'Entity {self.property_entity_id} not found for instance {self.instance} of {self.state.entity_id}'
+                    f'Entity {self.property_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
                 )
 
             value = property_state.state
@@ -875,7 +875,7 @@ class CustomEntityProperty(_Property):
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unsupported value "{value!r}" for instance {self.instance} of {self.state.entity_id}'
+                f'Unsupported value "{value!r}" for {self.instance} instance of {self.state.entity_id}'
             )
 
         if self.instance == PROPERTY_TYPE_PRESSURE:
@@ -883,7 +883,7 @@ class CustomEntityProperty(_Property):
                 raise SmartHomeError(
                     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                     f'Unsupported pressure unit "{pressure_unit}" '
-                    f'for instance {self.instance} of {self.state.entity_id}'
+                    f'for {self.instance} instance of {self.state.entity_id}'
                 )
 
             return round(self.float_value(value) * PRESSURE_TO_PASCAL[pressure_unit] *
