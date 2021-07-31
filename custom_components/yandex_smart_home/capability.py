@@ -32,6 +32,8 @@ from homeassistant.const import (
     SERVICE_VOLUME_MUTE,
     SERVICE_LOCK,
     SERVICE_UNLOCK,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
     STATE_OFF,
     STATE_ON,
 )
@@ -50,7 +52,7 @@ from .const import (
     CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_RANGE,
     CONF_ENTITY_MODE_MAP, NOTIFIER_ENABLED,
     DOMAIN_XIAOMI_AIRPURIFIER, ATTR_TARGET_HUMIDITY, SERVICE_FAN_SET_TARGET_HUMIDITY,
-    MODEL_PREFIX_XIAOMI_AIRPURIFIER
+    MODEL_PREFIX_XIAOMI_AIRPURIFIER, STATE_NONE
 )
 from .error import SmartHomeError
 
@@ -434,7 +436,7 @@ class _ModeCapability(_Capability):
         """Returns list of supported Yandex modes for this entity."""
         modes = []
 
-        for ha_value in self.state.attributes.get(self.modes_list_attribute, []):
+        for ha_value in self.supported_ha_modes:
             value = self.get_yandex_mode_by_ha_mode(ha_value)
             if value is not None and value not in modes:
                 modes.append(value)
@@ -442,10 +444,15 @@ class _ModeCapability(_Capability):
         return modes
 
     @property
+    def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes for this entity."""
+        return self.state.attributes.get(self.modes_list_attribute, [])
+
+    @property
     def modes_map(self) -> dict[str, list[str]]:
         """Return modes mapping between Yandex and HA."""
         if CONF_ENTITY_MODE_MAP in self.entity_config:
-            modes = self.entity_config.get(CONF_ENTITY_MODE_MAP)
+            modes = self.entity_config.get(CONF_ENTITY_MODE_MAP, {})
             if self.instance in modes:
                 return modes.get(self.instance)
 
@@ -462,23 +469,38 @@ class _ModeCapability(_Capability):
         return None
 
     def get_yandex_mode_by_ha_mode(self, ha_mode: str) -> Optional[str]:
+        rv = None
         for yandex_mode, names in self.modes_map.items():
             lower_names = [str(n).lower() for n in names]
             if str(ha_mode).lower() in lower_names:
-                return yandex_mode
+                rv = yandex_mode
+                break
 
         if self.modes_map_index_fallback:
-            available_modes = self.state.attributes.get(self.modes_list_attribute, [])
             try:
-                return self.modes_map_index_fallback[available_modes.index(ha_mode)]
+                rv = self.modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
             except (IndexError, ValueError, KeyError):
                 pass
 
-        return None
+        if rv is not None and ha_mode not in self.supported_ha_modes:
+            err = f'Unsupported HA mode "{rv}" for {self.instance} instance of {self.state.entity_id}.'
+            if self.modes_list_attribute:
+                err += f' Maybe it missing in entity attribute {self.modes_list_attribute}?'
+
+            raise SmartHomeError(ERR_INVALID_VALUE, err)
+
+        if rv is None and str(ha_mode).lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+            _LOGGER.warning(
+                f'Unable to get Yandex mode for "{ha_mode}" for {self.instance} instance '
+                f'of {self.state.entity_id}. It may cause inconsistencies between Yandex and HA. '
+                f'Check \"modes\" setting for this entity'
+            )
+
+        return rv
 
     def get_ha_mode_by_yandex_mode(self, yandex_mode: str, available_modes: Optional[list[str]] = None) -> str:
         if available_modes is None:
-            available_modes = self.state.attributes.get(self.modes_list_attribute, [])
+            available_modes = self.supported_ha_modes
 
         ha_modes = self.modes_map.get(yandex_mode, [])
         for ha_mode in ha_modes:
