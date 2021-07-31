@@ -43,6 +43,7 @@ from homeassistant.components.water_heater import (
 from homeassistant.core import DOMAIN as HA_DOMAIN
 from homeassistant.util import color as color_util
 
+from . import const
 from .const import (
     DOMAIN,
     ERR_INVALID_VALUE,
@@ -531,13 +532,13 @@ class _ModeCapability(_Capability):
 class ThermostatCapability(_ModeCapability):
     """Thermostat functionality"""
 
-    instance = 'thermostat'
+    instance = const.MODE_INSTANCE_THERMOSTAT
     modes_map_default = {
-        'heat': [climate.const.HVAC_MODE_HEAT],
-        'cool': [climate.const.HVAC_MODE_COOL],
-        'auto': [climate.const.HVAC_MODE_HEAT_COOL],
-        'dry': [climate.const.HVAC_MODE_DRY],
-        'fan_only': [climate.const.HVAC_MODE_FAN_ONLY],
+        const.MODE_INSTANCE_MODE_HEAT: [climate.const.HVAC_MODE_HEAT],
+        const.MODE_INSTANCE_MODE_COOL: [climate.const.HVAC_MODE_COOL],
+        const.MODE_INSTANCE_MODE_AUTO: [climate.const.HVAC_MODE_HEAT_COOL, climate.const.HVAC_MODE_AUTO],
+        const.MODE_INSTANCE_MODE_DRY: [climate.const.HVAC_MODE_DRY],
+        const.MODE_INSTANCE_MODE_FAN_ONLY: [climate.const.HVAC_MODE_FAN_ONLY],
     }
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
@@ -567,12 +568,12 @@ class ThermostatCapability(_ModeCapability):
 class SwingCapability(_ModeCapability):
     """Swing functionality"""
 
-    instance = 'swing'
+    instance = const.MODE_INSTANCE_SWING
     modes_map_default = {
-        'vertical': [climate.const.SWING_VERTICAL],
-        'horizontal': [climate.const.SWING_HORIZONTAL],
-        'stationary': [climate.const.SWING_OFF],
-        'auto': [climate.const.SWING_BOTH]
+        const.MODE_INSTANCE_MODE_VERTICAL: [climate.const.SWING_VERTICAL],
+        const.MODE_INSTANCE_MODE_HORIZONTAL: [climate.const.SWING_HORIZONTAL],
+        const.MODE_INSTANCE_MODE_STATIONARY: [climate.const.SWING_OFF],
+        const.MODE_INSTANCE_MODE_AUTO: [climate.const.SWING_BOTH]
     }
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
@@ -608,29 +609,29 @@ class SwingCapability(_ModeCapability):
 class ProgramCapability(_ModeCapability):
     """Program functionality"""
 
-    instance = 'program'
+    instance = const.MODE_INSTANCE_PROGRAM
     modes_map_default = {
-        'normal': [humidifier.const.MODE_NORMAL],
-        'eco': [humidifier.const.MODE_ECO],
-        'min': [humidifier.const.MODE_AWAY],
-        'turbo': [humidifier.const.MODE_BOOST],
-        'medium': [humidifier.const.MODE_COMFORT],
-        'max': [humidifier.const.MODE_HOME],
-        'quiet': [humidifier.const.MODE_SLEEP],
-        'auto': [humidifier.const.MODE_AUTO],
-        'high': [humidifier.const.MODE_BABY],
+        const.MODE_INSTANCE_MODE_NORMAL: [humidifier.const.MODE_NORMAL],
+        const.MODE_INSTANCE_MODE_ECO: [humidifier.const.MODE_ECO],
+        const.MODE_INSTANCE_MODE_MIN: [humidifier.const.MODE_AWAY],
+        const.MODE_INSTANCE_MODE_TURBO: [humidifier.const.MODE_BOOST],
+        const.MODE_INSTANCE_MODE_MEDIUM: [humidifier.const.MODE_COMFORT],
+        const.MODE_INSTANCE_MODE_MAX: [humidifier.const.MODE_HOME],
+        const.MODE_INSTANCE_MODE_QUIET: [humidifier.const.MODE_SLEEP],
+        const.MODE_INSTANCE_MODE_AUTO: [humidifier.const.MODE_AUTO],
+        const.MODE_INSTANCE_MODE_HIGH: [humidifier.const.MODE_BABY],
     }
     modes_map_index_fallback = {
-        0: 'one',
-        1: 'two',
-        2: 'three',
-        3: 'four',
-        4: 'five',
-        5: 'six',
-        6: 'seven',
-        7: 'eight',
-        8: 'nine',
-        9: 'ten',
+        0: const.MODE_INSTANCE_MODE_ONE,
+        1: const.MODE_INSTANCE_MODE_TWO,
+        2: const.MODE_INSTANCE_MODE_THREE,
+        3: const.MODE_INSTANCE_MODE_FOUR,
+        4: const.MODE_INSTANCE_MODE_FIVE,
+        5: const.MODE_INSTANCE_MODE_SIX,
+        6: const.MODE_INSTANCE_MODE_SEVEN,
+        7: const.MODE_INSTANCE_MODE_EIGHT,
+        8: const.MODE_INSTANCE_MODE_NINE,
+        9: const.MODE_INSTANCE_MODE_TEN,
     }
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
@@ -662,18 +663,18 @@ class ProgramCapability(_ModeCapability):
 class InputSourceCapability(_ModeCapability):
     """Input Source functionality"""
 
-    instance = 'input_source'
+    instance = const.MODE_INSTANCE_INPUT_SOURCE
     modes_map_index_fallback = {
-        0: 'one',
-        1: 'two',
-        2: 'three',
-        3: 'four',
-        4: 'five',
-        5: 'six',
-        6: 'seven',
-        7: 'eight',
-        8: 'nine',
-        9: 'ten'
+        0: const.MODE_INSTANCE_MODE_ONE,
+        1: const.MODE_INSTANCE_MODE_TWO,
+        2: const.MODE_INSTANCE_MODE_THREE,
+        3: const.MODE_INSTANCE_MODE_FOUR,
+        4: const.MODE_INSTANCE_MODE_FIVE,
+        5: const.MODE_INSTANCE_MODE_SIX,
+        6: const.MODE_INSTANCE_MODE_SEVEN,
+        7: const.MODE_INSTANCE_MODE_EIGHT,
+        8: const.MODE_INSTANCE_MODE_NINE,
+        9: const.MODE_INSTANCE_MODE_TEN,
     }
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
@@ -709,14 +710,15 @@ class InputSourceCapability(_ModeCapability):
 class FanSpeedCapability(_ModeCapability):
     """Fan speed functionality."""
 
-    instance = 'fan_speed'
+    instance = const.MODE_INSTANCE_FAN_SPEED
     modes_map_default = {
-        'auto': [climate.const.FAN_AUTO, climate.const.FAN_ON],
-        'quiet': [fan.SPEED_OFF, climate.const.FAN_OFF, 'silent', 'level 1'],
-        'low': [fan.SPEED_LOW, climate.const.FAN_LOW, 'min', 'level 2'],
-        'medium': [fan.SPEED_MEDIUM, climate.const.FAN_MEDIUM, climate.const.FAN_MIDDLE, 'mid', 'level 3'],
-        'high': [fan.SPEED_HIGH, climate.const.FAN_HIGH, 'strong', 'favorite', 'level 4'],
-        'turbo': [climate.const.FAN_FOCUS, 'max', 'level 5'],
+        const.MODE_INSTANCE_MODE_AUTO: [climate.const.FAN_AUTO, climate.const.FAN_ON],
+        const.MODE_INSTANCE_MODE_QUIET: [fan.SPEED_OFF, climate.const.FAN_OFF, 'silent', 'level 1'],
+        const.MODE_INSTANCE_MODE_LOW: [fan.SPEED_LOW, climate.const.FAN_LOW, 'min', 'level 2'],
+        const.MODE_INSTANCE_MODE_MEDIUM: [fan.SPEED_MEDIUM, climate.const.FAN_MEDIUM, climate.const.FAN_MIDDLE,
+                                          'mid', 'level 3'],
+        const.MODE_INSTANCE_MODE_HIGH: [fan.SPEED_HIGH, climate.const.FAN_HIGH, 'strong', 'favorite', 'level 4'],
+        const.MODE_INSTANCE_MODE_TURBO: [climate.const.FAN_FOCUS, 'max', 'level 5'],
     }
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
@@ -1209,24 +1211,24 @@ class _ColorSettingCapability(_Capability):
 
     type = CAPABILITIES_COLOR_SETTING
     scenes_map_default = {
-        'alarm': ['Тревога', 'Alarm'],
-        'alice': ['Алиса', 'Alice'],
-        'candle': ['Свеча', 'Огонь', 'Candle', 'Fire'],
-        'dinner': ['Ужин', 'Dinner'],
-        'fantasy': ['Фантазия', 'Fantasy'],
-        'garland': ['Гирлянда', 'Garland'],
-        'jungle': ['Джунгли', 'Jungle'],
-        'movie': ['Кино', 'Movie'],
-        'neon': ['Неон', 'Neon'],
-        'night': ['Ночь', 'Night'],
-        'ocean': ['Океан', 'Ocean'],
-        'party': ['Вечеринка', 'Party'],
-        'reading': ['Чтение', 'Reading'],
-        'rest': ['Отдых', 'Rest'],
-        'romance': ['Романтика', 'Romance'],
-        'siren': ['Сирена', 'Siren'],
-        'sunrise': ['Рассвет', 'Sunrise'],
-        'sunset': ['Закат', 'Sunset']
+        const.COLOR_SCENE_ALARM: ['Тревога', 'Alarm'],
+        const.COLOR_SCENE_ALICE: ['Алиса', 'Alice'],
+        const.COLOR_SCENE_CANDLE: ['Свеча', 'Огонь', 'Candle', 'Fire'],
+        const.COLOR_SCENE_DINNER: ['Ужин', 'Dinner'],
+        const.COLOR_SCENE_FANTASY: ['Фантазия', 'Fantasy'],
+        const.COLOR_SCENE_GARLAND: ['Гирлянда', 'Garland'],
+        const.COLOR_SCENE_JUNGLE: ['Джунгли', 'Jungle'],
+        const.COLOR_SCENE_MOVIE: ['Кино', 'Movie'],
+        const.COLOR_SCENE_NEON: ['Неон', 'Neon'],
+        const.COLOR_SCENE_NIGHT: ['Ночь', 'Night'],
+        const.COLOR_SCENE_OCEAN: ['Океан', 'Ocean'],
+        const.COLOR_SCENE_PARTY: ['Вечеринка', 'Party'],
+        const.COLOR_SCENE_READING: ['Чтение', 'Reading'],
+        const.COLOR_SCENE_REST: ['Отдых', 'Rest'],
+        const.COLOR_SCENE_ROMANCE: ['Романтика', 'Romance'],
+        const.COLOR_SCENE_SIREN: ['Сирена', 'Siren'],
+        const.COLOR_SCENE_SUNRISE: ['Рассвет', 'Sunrise'],
+        const.COLOR_SCENE_SUNSET: ['Закат', 'Sunset']
     }
 
     def parameters(self):
@@ -1424,15 +1426,15 @@ class ColorSceneCapability(_ColorSettingCapability):
 class CleanupModeCapability(_ModeCapability):
     """Vacuum cleanup mode functionality."""
 
-    instance = 'cleanup_mode'
+    instance = const.MODE_INSTANCE_CLEANUP_MODE
     modes_map_default = {
-        'auto': ['auto', 'automatic', '102'],
-        'turbo': ['turbo', 'high', 'performance', '104'],
-        'min': ['min', 'mop'],
-        'max': ['max', 'strong'],
-        'express': ['express', '105'],
-        'normal': ['normal', 'medium', 'middle', 'standard', '103'],
-        'quiet': ['quiet', 'low', 'min', 'silent', 'eco', '101'],
+        const.MODE_INSTANCE_MODE_AUTO: ['auto', 'automatic', '102'],
+        const.MODE_INSTANCE_MODE_TURBO: ['turbo', 'high', 'performance', '104'],
+        const.MODE_INSTANCE_MODE_MIN: ['min', 'mop'],
+        const.MODE_INSTANCE_MODE_MAX: ['max', 'strong'],
+        const.MODE_INSTANCE_MODE_EXPRESS: ['express', '105'],
+        const.MODE_INSTANCE_MODE_NORMAL: ['normal', 'medium', 'middle', 'standard', '103'],
+        const.MODE_INSTANCE_MODE_QUIET: ['quiet', 'low', 'min', 'silent', 'eco', '101'],
     }
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
