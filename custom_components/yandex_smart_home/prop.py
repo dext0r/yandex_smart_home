@@ -34,6 +34,7 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 
+from . import const
 from .error import SmartHomeError
 from .const import (
     DOMAIN,
@@ -46,14 +47,11 @@ from .const import (
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
+    PROPERTY_TYPE_TO_UNITS,
+    PROPERTY_TYPE_EVENT_VALUES,
     PRESSURE_UNITS_TO_YANDEX_UNITS,
     PRESSURE_FROM_PASCAL,
     PRESSURE_TO_PASCAL,
-    PROPERTY_TYPE_BUTTON,
-    PROPERTY_TYPE_VIBRATION,
-    PROPERTY_TYPE_EVENT_VALUES,
-    PROPERTY_TYPE_PRESSURE,
-    PROPERTY_TYPE_TO_UNITS,
     NOTIFIER_ENABLED,
 )
 
@@ -212,10 +210,20 @@ class _EventProperty(_Property):
         return self.event_value(value)
 
 
-@register_property
-class TemperatureProperty(_Property):
+# noinspection PyAbstractClass
+class _FloatProperty(_Property):
     type = PROPERTY_FLOAT
-    instance = 'temperature'
+
+    def parameters(self):
+        return {
+            'instance': self.instance,
+            'unit': const.PROPERTY_TYPE_TO_UNITS[self.instance]
+        }
+
+
+@register_property
+class TemperatureProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_TEMPERATURE
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -225,12 +233,6 @@ class TemperatureProperty(_Property):
             return attributes.get(climate.ATTR_CURRENT_TEMPERATURE) is not None
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.temperature.celsius'
-        }
 
     def get_value(self):
         value = 0.0
@@ -243,9 +245,8 @@ class TemperatureProperty(_Property):
 
 
 @register_property
-class HumidityProperty(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'humidity'
+class HumidityProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_HUMIDITY
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -255,12 +256,6 @@ class HumidityProperty(_Property):
             return attributes.get(climate.ATTR_CURRENT_HUMIDITY) is not None
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.percent'
-        }
 
     def get_value(self):
         value = 0
@@ -273,9 +268,8 @@ class HumidityProperty(_Property):
 
 
 @register_property
-class PressureProperty(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'pressure'
+class PressureProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_PRESSURE
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -310,9 +304,8 @@ class PressureProperty(_Property):
 
 
 @register_property
-class IlluminanceProperty(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'illumination'
+class IlluminanceProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_ILLUMINATION
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -320,12 +313,6 @@ class IlluminanceProperty(_Property):
             return 'illuminance' in attributes or attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ILLUMINANCE
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.illumination.lux'
-        }
 
     def get_value(self):
         value = 0
@@ -338,9 +325,8 @@ class IlluminanceProperty(_Property):
 
 
 @register_property
-class WaterLevelProperty(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'water_level'
+class WaterLevelProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_WATER_LEVEL
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -348,12 +334,6 @@ class WaterLevelProperty(_Property):
             return 'water_level' in attributes
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.percent'
-        }
 
     def get_value(self):
         value = 0
@@ -364,9 +344,8 @@ class WaterLevelProperty(_Property):
 
 
 @register_property
-class CO2Property(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'co2_level'
+class CO2Property(_FloatProperty):
+    instance = const.PROPERTY_TYPE_CO2_LEVEL
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -376,12 +355,6 @@ class CO2Property(_Property):
             return air_quality.ATTR_CO2 in attributes
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.ppm'
-        }
 
     def get_value(self):
         value = 0
@@ -394,9 +367,8 @@ class CO2Property(_Property):
 
 
 @register_property
-class PM1Property(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'pm1_density'
+class PM1Property(_FloatProperty):
+    instance = const.PROPERTY_TYPE_PM1_DENSITY
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -404,12 +376,6 @@ class PM1Property(_Property):
             return air_quality.ATTR_PM_0_1 in attributes
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.density.mcg_m3'
-        }
 
     def get_value(self):
         value = 0
@@ -420,9 +386,8 @@ class PM1Property(_Property):
 
 
 @register_property
-class PM25Property(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'pm2.5_density'
+class PM25Property(_FloatProperty):
+    instance = const.PROPERTY_TYPE_PM2_5_DENSITY
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -430,12 +395,6 @@ class PM25Property(_Property):
             return air_quality.ATTR_PM_2_5 in attributes
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.density.mcg_m3'
-        }
 
     def get_value(self):
         value = 0
@@ -446,9 +405,8 @@ class PM25Property(_Property):
 
 
 @register_property
-class PM10Property(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'pm10_density'
+class PM10Property(_FloatProperty):
+    instance = const.PROPERTY_TYPE_PM10_DENSITY
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -456,12 +414,6 @@ class PM10Property(_Property):
             return air_quality.ATTR_PM_10 in attributes
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.density.mcg_m3'
-        }
 
     def get_value(self):
         value = 0
@@ -472,9 +424,8 @@ class PM10Property(_Property):
 
 
 @register_property
-class TVOCProperty(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'tvoc'
+class TVOCProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_TVOC
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -482,12 +433,6 @@ class TVOCProperty(_Property):
             return 'total_volatile_organic_compounds' in attributes
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.density.mcg_m3'
-        }
 
     def get_value(self):
         value = 0
@@ -498,9 +443,8 @@ class TVOCProperty(_Property):
 
 
 @register_property
-class VoltageProperty(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'voltage'
+class VoltageProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_VOLTAGE
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -510,12 +454,6 @@ class VoltageProperty(_Property):
             return ATTR_VOLTAGE in attributes
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.volt'
-        }
 
     def get_value(self):
         value = 0
@@ -528,9 +466,8 @@ class VoltageProperty(_Property):
 
 
 @register_property
-class CurrentProperty(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'amperage'
+class CurrentProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_AMPERAGE
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -540,12 +477,6 @@ class CurrentProperty(_Property):
             return 'current' in attributes
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.ampere'
-        }
 
     def get_value(self):
         value = 0
@@ -558,9 +489,8 @@ class CurrentProperty(_Property):
 
 
 @register_property
-class PowerProperty(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'power'
+class PowerProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_POWER
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -570,12 +500,6 @@ class PowerProperty(_Property):
             return 'power' in attributes or 'load_power' in attributes
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.watt'
-        }
 
     def get_value(self):
         value = 0
@@ -591,9 +515,8 @@ class PowerProperty(_Property):
 
 
 @register_property
-class BatteryProperty(_Property):
-    type = PROPERTY_FLOAT
-    instance = 'battery_level'
+class BatteryProperty(_FloatProperty):
+    instance = const.PROPERTY_TYPE_BATTERY_LEVEL
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -606,12 +529,6 @@ class BatteryProperty(_Property):
             return attributes.get(ATTR_BATTERY_LEVEL) is not None
 
         return False
-
-    def parameters(self):
-        return {
-            'instance': self.instance,
-            'unit': 'unit.percent'
-        }
 
     def get_value(self):
         value = 0
@@ -631,7 +548,7 @@ class BatteryProperty(_Property):
 
 @register_property
 class ContactProperty(_EventProperty):
-    instance = 'open'
+    instance = const.PROPERTY_TYPE_OPEN
     values = EVENTS_VALUES.get(instance)
 
     @staticmethod
@@ -649,7 +566,7 @@ class ContactProperty(_EventProperty):
 
 @register_property
 class MotionProperty(_EventProperty):
-    instance = 'motion'
+    instance = const.PROPERTY_TYPE_MOTION
     values = EVENTS_VALUES.get(instance)
 
     @staticmethod
@@ -666,7 +583,7 @@ class MotionProperty(_EventProperty):
 
 @register_property
 class GasProperty(_EventProperty):
-    instance = 'gas'
+    instance = const.PROPERTY_TYPE_GAS
     values = EVENTS_VALUES.get(instance)
 
     @staticmethod
@@ -679,7 +596,7 @@ class GasProperty(_EventProperty):
 
 @register_property
 class SmokeProperty(_EventProperty):
-    instance = 'smoke'
+    instance = const.PROPERTY_TYPE_SMOKE
     values = EVENTS_VALUES.get(instance)
 
     @staticmethod
@@ -692,7 +609,7 @@ class SmokeProperty(_EventProperty):
 
 @register_property
 class BatteryLevelLowProperty(_EventProperty):
-    instance = 'battery_level'
+    instance = const.PROPERTY_TYPE_BATTERY_LEVEL
     values = EVENTS_VALUES.get(instance)
 
     @staticmethod
@@ -705,7 +622,7 @@ class BatteryLevelLowProperty(_EventProperty):
 
 @register_property
 class WaterLevelLowProperty(_EventProperty):
-    instance = 'water_level'
+    instance = const.PROPERTY_TYPE_WATER_LEVEL
     values = EVENTS_VALUES.get(instance)
 
     @staticmethod
@@ -718,7 +635,7 @@ class WaterLevelLowProperty(_EventProperty):
 
 @register_property
 class WaterLeakProperty(_EventProperty):
-    instance = 'water_leak'
+    instance = const.PROPERTY_TYPE_WATER_LEAK
     values = EVENTS_VALUES.get(instance)
 
     @staticmethod
@@ -731,7 +648,7 @@ class WaterLeakProperty(_EventProperty):
 
 @register_property
 class ButtonProperty(_EventProperty):
-    instance = 'button'
+    instance = const.PROPERTY_TYPE_BUTTON
     retrievable = False
     values = EVENTS_VALUES.get(instance)
 
@@ -757,7 +674,7 @@ class ButtonProperty(_EventProperty):
 
 @register_property
 class VibrationProperty(_EventProperty):
-    instance = 'vibration'
+    instance = const.PROPERTY_TYPE_VIBRATION
     retrievable = False
     values = EVENTS_VALUES.get(instance)
 
@@ -818,13 +735,13 @@ class CustomEntityProperty(_Property):
                     self.type = PROPERTY_EVENT
                     self.values = PROPERTY_TYPE_EVENT_VALUES.get(self.instance)
 
-            if self.instance in [PROPERTY_TYPE_BUTTON, PROPERTY_TYPE_VIBRATION]:
+            if self.instance in [const.PROPERTY_TYPE_BUTTON, const.PROPERTY_TYPE_VIBRATION]:
                 self.retrievable = False
 
             if self.type == PROPERTY_FLOAT:
                 self.instance_unit = PROPERTY_TYPE_TO_UNITS[self.instance]
 
-                if self.instance == PROPERTY_TYPE_PRESSURE:
+                if self.instance == const.PROPERTY_TYPE_PRESSURE:
                     self.instance_unit = PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
 
     @staticmethod
@@ -867,7 +784,7 @@ class CustomEntityProperty(_Property):
                 )
 
             value = property_state.state
-            if self.instance == PROPERTY_TYPE_PRESSURE:
+            if self.instance == const.PROPERTY_TYPE_PRESSURE:
                 pressure_unit = property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
         else:
             value = self.state.attributes.get(self.property_config[CONF_ENTITY_PROPERTY_ATTRIBUTE])
@@ -878,7 +795,7 @@ class CustomEntityProperty(_Property):
                 f'Unsupported value "{value!r}" for {self.instance} instance of {self.state.entity_id}'
             )
 
-        if self.instance == PROPERTY_TYPE_PRESSURE:
+        if self.instance == const.PROPERTY_TYPE_PRESSURE:
             if pressure_unit not in PRESSURE_TO_PASCAL:
                 raise SmartHomeError(
                     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
