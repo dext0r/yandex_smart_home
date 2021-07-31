@@ -1045,34 +1045,19 @@ class VolumeCapability(_RangeCapability):
                 'instance': self.instance
             }
         else:
-            default_values = {
-                CONF_ENTITY_RANGE_MAX: 100,
-                CONF_ENTITY_RANGE_MIN: 0,
-                CONF_ENTITY_RANGE_PRECISION: 1
-            }
-            vol_max = self.get_entity_range_value(CONF_ENTITY_RANGE_MAX, default_values)
-            vol_min = self.get_entity_range_value(CONF_ENTITY_RANGE_MIN, default_values)
-            vol_step = self.get_entity_range_value(CONF_ENTITY_RANGE_PRECISION, default_values)
+            volume_max = int(self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, 100))
+            volume_min = int(self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, 0))
+            volume_step = int(self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, 1))
+
             return {
                 'instance': self.instance,
                 'random_access': True,
                 'range': {
-                    'max': vol_max,
-                    'min': vol_min,
-                    'precision': vol_step
+                    'max': volume_max,
+                    'min': volume_min,
+                    'precision': volume_step
                 }
             }
-
-    def get_entity_range_value(self, range_entity, default_values):
-        if CONF_ENTITY_RANGE in self.entity_config and range_entity in self.entity_config.get(CONF_ENTITY_RANGE):
-            return int(self.entity_config.get(CONF_ENTITY_RANGE).get(range_entity))
-        else:
-            try:
-                return int(default_values[range_entity])
-            except KeyError as e:
-                _LOGGER.error('Invalid element of range object: %r' % range_entity)
-                _LOGGER.error('Undefined unit: {}'.format(e.args[0]))
-                return 0
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -1084,12 +1069,14 @@ class VolumeCapability(_RangeCapability):
     async def set_state(self, data, state):
         """Set device state."""
         if self.relative_volume and state.get('relative'):
-            volume_step = self.get_entity_range_value(CONF_ENTITY_RANGE_PRECISION, 1)
-
             if state['value'] > 0:
                 service = media_player.SERVICE_VOLUME_UP
             else:
                 service = media_player.SERVICE_VOLUME_DOWN
+
+            volume_step = int(self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, 1))
+            if abs(state['value']) != 1:
+                volume_step = abs(state['value'])
 
             for _ in range(volume_step):
                 await self.hass.services.async_call(
