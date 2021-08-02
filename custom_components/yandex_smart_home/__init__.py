@@ -13,10 +13,11 @@ from .const import (
     DOMAIN, CONFIG, DATA_CONFIG, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_ATTRIBUTE, CONF_ENTITY_PROPERTY_TYPE,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MAX,
-    CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP,
+    CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP, COLOR_SETTING_SCENE,
     CONF_SETTINGS, CONF_PRESSURE_UNIT, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS,
-    PROPERTY_TYPE_TO_UNITS, PROPERTY_TYPE_EVENT_VALUES,
-    CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED)
+    PROPERTY_TYPE_TO_UNITS, PROPERTY_TYPE_EVENT_VALUES, MODE_INSTANCES, MODE_INSTANCE_MODES, COLOR_SCENES,
+    CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED
+)
 from .helpers import Config
 from .http import async_register_http
 from .notifier import async_setup_notifier
@@ -26,7 +27,11 @@ _LOGGER = logging.getLogger(__name__)
 
 def property_type_validate(property_type: str) -> str:
     if property_type not in PROPERTY_TYPE_TO_UNITS and property_type not in PROPERTY_TYPE_EVENT_VALUES:
-        raise vol.Invalid(f'Property type "{property_type}" is not supported')
+        raise vol.Invalid(
+            f'Property type {property_type!r} is not supported. '
+            f'See valid types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html and '
+            f'https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html'
+        )
 
     return property_type
 
@@ -42,11 +47,45 @@ ENTITY_PROPERTY_SCHEMA = vol.All(
     }, extra=vol.PREVENT_EXTRA)
 )
 
+
+def mode_instance_validate(instance: str) -> str:
+    if instance not in MODE_INSTANCES and instance not in COLOR_SETTING_SCENE:
+        _LOGGER.error(
+            f'Mode instance {instance!r} is not supported. '
+            f'See valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html'
+        )
+
+        raise vol.Invalid(f'Mode instance {instance!r} is not supported.')
+
+    return instance
+
+
+def mode_validate(mode: str) -> str:
+    if mode not in MODE_INSTANCE_MODES and mode not in COLOR_SCENES:
+        _LOGGER.error(
+            f'Mode {mode!r} is not supported. '
+            f'See valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html and '
+            f'https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html#discovery__discovery-'
+            f'parameters-color-setting-table__entry__75'
+        )
+
+        raise vol.Invalid(f'Mode {mode!r} is not supported.')
+
+    return mode
+
+
+ENTITY_MODE_MAP_SCHEMA = vol.Schema({
+    vol.All(cv.string, mode_instance_validate): vol.Schema({
+        vol.All(cv.string, mode_validate): [cv.string]
+    })
+})
+
 ENTITY_RANGE_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_RANGE_MAX): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
     vol.Optional(CONF_ENTITY_RANGE_MIN): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
     vol.Optional(CONF_ENTITY_RANGE_PRECISION): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
 }, extra=vol.PREVENT_EXTRA)
+
 
 ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_NAME): cv.string,
@@ -55,7 +94,7 @@ ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
     vol.Optional(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID): cv.boolean,
     vol.Optional(CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
-    vol.Optional(CONF_ENTITY_MODE_MAP, default={}): {cv.string: {cv.string: [cv.string]}},
+    vol.Optional(CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
 })
 
 NOTIFIER_SCHEMA = vol.Schema({
