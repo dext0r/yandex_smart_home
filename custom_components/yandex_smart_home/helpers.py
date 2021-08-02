@@ -74,6 +74,7 @@ class YandexEntity:
 
         self._capabilities = []
         state = self.state
+        features = state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         entity_config = self.config.entity_config.get(state.entity_id, {})
 
         for capability_class, config_key in (
@@ -85,14 +86,12 @@ class YandexEntity:
                         self.hass, state, entity_config, instance, entity_config[config_key][instance]
                     )
 
-                    if capability.supported(state.domain, state.attributes.get(ATTR_SUPPORTED_FEATURES, 0),
-                                            entity_config, state.attributes):
+                    if capability.supported(state.domain, features, entity_config, state.attributes):
                         self._capabilities.append(capability)
 
         for Capability in CAPABILITIES:
             capability = Capability(self.hass, state, entity_config)
-            if capability.supported(state.domain, state.attributes.get(ATTR_SUPPORTED_FEATURES, 0),
-                                    entity_config, state.attributes) and \
+            if capability.supported(state.domain, features, entity_config, state.attributes) and \
                     capability.instance not in [c.instance for c in self._capabilities]:
                 self._capabilities.append(capability)
 
@@ -104,20 +103,20 @@ class YandexEntity:
         if self._properties is not None:
             return self._properties
 
+        self._properties = []
         state = self.state
-        domain = state.domain
         features = state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         entity_config = self.config.entity_config.get(state.entity_id, {})
 
-        self._properties = [
-            Property(self.hass, state, entity_config)
-            for Property in prop.PROPERTIES
-            if Property.supported(domain, features, entity_config, state.attributes)
-        ]
+        for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
+            self._properties.append(
+                prop.CustomEntityProperty(self.hass, state, entity_config, property_config)
+            )
 
-        if CONF_ENTITY_PROPERTIES in entity_config:
-            for property_config in entity_config.get(CONF_ENTITY_PROPERTIES):
-                entity_property = prop.CustomEntityProperty(self.hass, state, entity_config, property_config)
+        for Property in prop.PROPERTIES:
+            entity_property = Property(self.hass, state, entity_config)
+            if entity_property.supported(state.domain, features, entity_config, state.attributes) and \
+                    entity_property.instance not in [p.instance for p in self._properties]:
                 self._properties.append(entity_property)
 
         return self._properties
