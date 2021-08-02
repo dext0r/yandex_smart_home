@@ -164,19 +164,23 @@ class _Property:
                 return 'tilt'
             elif value in ['free_fall', 'drop']:
                 return 'fall'
+
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
                 f'Invalid {self.instance} property value: {value!r}'
             )
 
-    def float_value(self, value: Any) -> float:
+    def float_value(self, value: Any) -> Optional[float]:
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+            return None
+
         try:
             return float(value)
         except (ValueError, TypeError):
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unsupported value "{value!r}" for instance {self.instance} of {self.state.entity_id}'
+                f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
             )
 
 
@@ -204,7 +208,7 @@ class _EventProperty(_Property):
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unsupported value "{value!r}" for instance {self.instance} of {self.state.entity_id}'
+                f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
             )
 
         return self.event_value(value)
@@ -298,9 +302,12 @@ class PressureProperty(_FloatProperty):
             )
 
         # Convert the value to pascal and then to the chosen Yandex unit
-        val = self.float_value(value) * PRESSURE_TO_PASCAL[unit] * \
-            PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]]
-        return round(val, 2)
+        raw_value = self.float_value(value)
+        if raw_value:
+            return round(
+                raw_value * PRESSURE_TO_PASCAL[unit] *
+                PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2
+            )
 
 
 @register_property
@@ -790,9 +797,12 @@ class CustomEntityProperty(_Property):
             value = self.state.attributes.get(self.property_config[CONF_ENTITY_PROPERTY_ATTRIBUTE])
 
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+            if self.type == PROPERTY_FLOAT:
+                return None
+
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unsupported value "{value!r}" for {self.instance} instance of {self.state.entity_id}'
+                f'Unsupported value {value!r} for {self.instance} instance of {self.state.entity_id}'
             )
 
         if self.instance == const.PROPERTY_TYPE_PRESSURE:
