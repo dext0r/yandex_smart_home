@@ -714,7 +714,7 @@ class FanSpeedCapability(_ModeCapability):
     instance = const.MODE_INSTANCE_FAN_SPEED
     modes_map_default = {
         const.MODE_INSTANCE_MODE_AUTO: [climate.const.FAN_AUTO, climate.const.FAN_ON],
-        const.MODE_INSTANCE_MODE_QUIET: [fan.SPEED_OFF, climate.const.FAN_OFF, 'silent', 'level 1'],
+        const.MODE_INSTANCE_MODE_QUIET: [fan.SPEED_OFF, climate.const.FAN_OFF, 'silent', 'diffuse', 'level 1'],
         const.MODE_INSTANCE_MODE_LOW: [fan.SPEED_LOW, climate.const.FAN_LOW, 'min', 'level 2'],
         const.MODE_INSTANCE_MODE_MEDIUM: [fan.SPEED_MEDIUM, climate.const.FAN_MEDIUM, climate.const.FAN_MIDDLE,
                                           'mid', 'level 3'],
