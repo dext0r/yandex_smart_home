@@ -731,14 +731,14 @@ class CustomEntityProperty(_Property):
                     self.type = PROPERTY_EVENT
                     self.values = PROPERTY_TYPE_EVENT_VALUES.get(self.instance)
 
-            if self.instance in [const.PROPERTY_TYPE_BUTTON, const.PROPERTY_TYPE_VIBRATION]:
-                self.retrievable = False
+        if self.instance in [const.PROPERTY_TYPE_BUTTON, const.PROPERTY_TYPE_VIBRATION]:
+            self.retrievable = False
 
-            if self.type == PROPERTY_FLOAT:
-                self.instance_unit = PROPERTY_TYPE_TO_UNITS[self.instance]
+        if self.type == PROPERTY_FLOAT:
+            self.instance_unit = PROPERTY_TYPE_TO_UNITS[self.instance]
 
-                if self.instance == const.PROPERTY_TYPE_PRESSURE:
-                    self.instance_unit = PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
+            if self.instance == const.PROPERTY_TYPE_PRESSURE:
+                self.instance_unit = PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
