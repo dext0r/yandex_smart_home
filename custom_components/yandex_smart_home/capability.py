@@ -439,7 +439,7 @@ class _ModeCapability(_Capability):
         modes = []
 
         for ha_value in self.supported_ha_modes:
-            value = self.get_yandex_mode_by_ha_mode(ha_value)
+            value = self.get_yandex_mode_by_ha_mode(ha_value, hide_warnings=True)
             if value is not None and value not in modes:
                 modes.append(value)
 
@@ -470,7 +470,7 @@ class _ModeCapability(_Capability):
         """Return HA attribute for state of this entity."""
         return None
 
-    def get_yandex_mode_by_ha_mode(self, ha_mode: str) -> Optional[str]:
+    def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings=False) -> Optional[str]:
         rv = None
         for yandex_mode, names in self.modes_map.items():
             lower_names = [str(n).lower() for n in names]
@@ -491,7 +491,8 @@ class _ModeCapability(_Capability):
 
             raise SmartHomeError(ERR_INVALID_VALUE, err)
 
-        if rv is None and str(ha_mode).lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+        if not hide_warnings and rv is None and \
+                str(ha_mode).lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
             _LOGGER.warning(
                 f'Unable to get Yandex mode for "{ha_mode}" for {self.instance} instance '
                 f'of {self.state.entity_id}. It may cause inconsistencies between Yandex and HA. '
