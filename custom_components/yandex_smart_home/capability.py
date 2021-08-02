@@ -266,9 +266,7 @@ class OnOffCapability(_Capability):
         if self.state.domain == climate.DOMAIN and state['value']:
             hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES)
             for mode in (climate.const.HVAC_MODE_HEAT_COOL,
-                         climate.const.HVAC_MODE_AUTO,
-                         climate.const.HVAC_MODE_HEAT,
-                         climate.const.HVAC_MODE_COOL):
+                         climate.const.HVAC_MODE_AUTO):
                 if mode not in hvac_modes:
                     continue
 
