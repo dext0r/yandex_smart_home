@@ -1429,6 +1429,7 @@ class CleanupModeCapability(_ModeCapability):
         const.MODE_INSTANCE_MODE_AUTO: ['auto', 'automatic', '102'],
         const.MODE_INSTANCE_MODE_TURBO: ['turbo', 'high', 'performance', '104'],
         const.MODE_INSTANCE_MODE_MIN: ['min', 'mop'],
+        const.MODE_INSTANCE_MODE_LOW: ['gentle'],
         const.MODE_INSTANCE_MODE_MAX: ['max', 'strong'],
         const.MODE_INSTANCE_MODE_EXPRESS: ['express', '105'],
         const.MODE_INSTANCE_MODE_NORMAL: ['normal', 'medium', 'middle', 'standard', '103'],
