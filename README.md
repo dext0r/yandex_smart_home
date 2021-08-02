@@ -362,7 +362,7 @@ yandex_smart_home:
     yandex_smart_home:
       entity_config:
         fan.xiaomi_airfresh_va4:
-          custom_toggle:
+          custom_toggles:
             keep_warm:
               state_attribute: ptc
               turn_on:
