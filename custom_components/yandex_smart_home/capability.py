@@ -298,7 +298,7 @@ class _ToggleCapability(_Capability):
 class MuteCapability(_ToggleCapability):
     """Mute and unmute functionality."""
 
-    instance = 'mute'
+    instance = const.TOGGLE_INSTANCE_MUTE
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -331,7 +331,7 @@ class MuteCapability(_ToggleCapability):
 class PauseCapability(_ToggleCapability):
     """Pause and unpause functionality."""
 
-    instance = 'pause'
+    instance = const.TOGGLE_INSTANCE_PAUSE
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -386,7 +386,7 @@ class PauseCapability(_ToggleCapability):
 class OscillationCapability(_ToggleCapability):
     """Oscillation functionality."""
 
-    instance = 'oscillation'
+    instance = const.TOGGLE_INSTANCE_OSCILLATION
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""

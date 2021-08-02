@@ -78,6 +78,24 @@ TYPE_IRON = PREFIX_TYPES + 'iron'
 TYPE_SENSOR = PREFIX_TYPES + 'sensor'
 TYPE_OTHER = PREFIX_TYPES + 'other'
 
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html
+TOGGLE_INSTANCE_BACKLIGHT = 'backlight'
+TOGGLE_INSTANCE_CONTROLS_LOCKED = 'controls_locked'
+TOGGLE_INSTANCE_IONIZATION = 'ionization'
+TOGGLE_INSTANCE_KEEP_WARM = 'keep_warm'
+TOGGLE_INSTANCE_MUTE = 'mute'
+TOGGLE_INSTANCE_OSCILLATION = 'oscillation'
+TOGGLE_INSTANCE_PAUSE = 'pause'
+TOGGLE_INSTANCES = (
+    TOGGLE_INSTANCE_BACKLIGHT,
+    TOGGLE_INSTANCE_CONTROLS_LOCKED,
+    TOGGLE_INSTANCE_IONIZATION,
+    TOGGLE_INSTANCE_KEEP_WARM,
+    TOGGLE_INSTANCE_MUTE,
+    TOGGLE_INSTANCE_OSCILLATION,
+    TOGGLE_INSTANCE_PAUSE,
+)
+
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html
 MODE_INSTANCE_CLEANUP_MODE = 'cleanup_mode'
 MODE_INSTANCE_COFFEE_MODE = 'coffee_mode'
@@ -104,7 +122,8 @@ MODE_INSTANCES = (
     MODE_INSTANCE_WORK_SPEED,
 )
 
-# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html#discovery__discovery-parameters-color-setting-table__entry__75
+COLOR_SETTING_SCENE = 'scene'
 COLOR_SCENE_ALARM = 'alarm'
 COLOR_SCENE_ALICE = 'alice'
 COLOR_SCENE_CANDLE = 'candle'
@@ -374,6 +393,7 @@ DOMAIN_TO_YANDEX_TYPES = {
     air_quality.DOMAIN: TYPE_SENSOR,
 }
 
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html
 PROPERTY_TYPE_HUMIDITY = 'humidity'
 PROPERTY_TYPE_TEMPERATURE = 'temperature'
 PROPERTY_TYPE_PRESSURE = 'pressure'
@@ -413,6 +433,7 @@ PROPERTY_TYPE_TO_UNITS = {
     PROPERTY_TYPE_PM10_DENSITY: 'unit.density.mcg_m3'
 }
 
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html
 PROPERTY_TYPE_EVENT_VALUES = {
     PROPERTY_TYPE_VIBRATION: ['vibration', 'tilt', 'fall'],
     PROPERTY_TYPE_OPEN: ['opened', 'closed'],
