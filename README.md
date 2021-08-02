@@ -36,7 +36,7 @@
 
 
 ## Предварительные требования
-* Home Assistant версии 2021.4 или новее.
+* Home Assistant версии 2021.6 или новее.
 * Доступность Home Assistant из интернета по **доменному имени** используя белый IP адрес или
   сторонние сервисы: [Dataplicity](https://github.com/AlexxIT/Dataplicity), [KeenDNS](https://keenetic.link).
 * Настроенный HTTPS сертификат. Для белого IP адреса можно воспользоваться официальным аддоном Let's Encrypt.
