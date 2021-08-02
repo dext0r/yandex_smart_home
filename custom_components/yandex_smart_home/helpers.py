@@ -12,8 +12,8 @@ from homeassistant.const import (
 from homeassistant.helpers.entity_registry import EntityRegistry
 from homeassistant.helpers.device_registry import DeviceRegistry
 
-from . import prop
-from .capability import CAPABILITIES, _Capability
+from . import prop, const
+from .capability import CustomModeCapability, CustomToggleCapability, CAPABILITIES, _Capability
 from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
@@ -76,10 +76,24 @@ class YandexEntity:
         state = self.state
         entity_config = self.config.entity_config.get(state.entity_id, {})
 
+        for capability_class, config_key in (
+                (CustomModeCapability, const.CONF_ENTITY_CUSTOM_MODES),
+                (CustomToggleCapability, const.CONF_ENTITY_CUSTOM_TOGGLES)):
+            if config_key in entity_config:
+                for instance in entity_config[config_key]:
+                    capability = capability_class(
+                        self.hass, state, entity_config, instance, entity_config[config_key][instance]
+                    )
+
+                    if capability.supported(state.domain, state.attributes.get(ATTR_SUPPORTED_FEATURES, 0),
+                                            entity_config, state.attributes):
+                        self._capabilities.append(capability)
+
         for Capability in CAPABILITIES:
             capability = Capability(self.hass, state, entity_config)
             if capability.supported(state.domain, state.attributes.get(ATTR_SUPPORTED_FEATURES, 0),
-                                    entity_config, state.attributes):
+                                    entity_config, state.attributes) and \
+                    capability.instance not in [c.instance for c in self._capabilities]:
                 self._capabilities.append(capability)
 
         return self._capabilities

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import itertools
 from typing import Any, Optional, Type
 
 from homeassistant.core import HomeAssistant, State
@@ -42,12 +43,14 @@ from homeassistant.components.water_heater import (
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN
 from homeassistant.util import color as color_util
+from homeassistant.helpers.service import async_call_from_config
 
 from . import const
 from .const import (
     DOMAIN,
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+    ERR_DEVICE_NOT_FOUND,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID,
     CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_RANGE,
@@ -1463,3 +1466,99 @@ class CleanupModeCapability(_ModeCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 vacuum.ATTR_FAN_SPEED: self.get_ha_mode_by_yandex_mode(state['value'])
             }, blocking=True, context=data.context)
+
+
+# noinspection PyAbstractClass
+class _CustomCapability(_Capability):
+    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any],
+                 instance: str, capability_config: dict[str, Any]):
+        super().__init__(hass, state, entity_config)
+        self.instance = instance
+        self.capability_config = capability_config
+        self.state_entity_id = self.capability_config.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
+        self.retrievable = bool(self.state_entity_id or self.state_value_attribute)
+
+    @property
+    def state_value_attribute(self) -> Optional[str]:
+        """Return HA attribute for state of this entity."""
+        return self.capability_config.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        entity_state = self.state
+
+        if self.state_entity_id:
+            entity_state = self.hass.states.get(self.state_entity_id)
+            if not entity_state:
+                raise SmartHomeError(
+                    ERR_DEVICE_NOT_FOUND,
+                    f'Entity {self.state_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
+                )
+
+        if self.state_value_attribute:
+            value = entity_state.attributes.get(self.state_value_attribute)
+        else:
+            value = entity_state.state
+
+        return value
+
+
+class CustomModeCapability(_CustomCapability, _ModeCapability):
+    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any],
+                 instance: str, capability_config: dict[str, Any]):
+        super().__init__(hass, state, entity_config, instance, capability_config)
+
+        self.set_mode_config = self.capability_config[const.CONF_ENTITY_CUSTOM_MODE_SET_MODE]
+
+    @property
+    def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes for this entity."""
+        modes = self.entity_config.get(CONF_ENTITY_MODE_MAP, {}).get(self.instance, {})
+        rv = list(itertools.chain(*modes.values()))
+        return rv
+
+    @property
+    def modes_list_attribute(self) -> Optional[str]:
+        """Return HA attribute contains modes list for this entity."""
+        raise None
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        return self.get_yandex_mode_by_ha_mode(super().get_value())
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await async_call_from_config(
+            self.hass,
+            self.set_mode_config,
+            validate_config=False,
+            variables={'mode': self.get_ha_mode_by_yandex_mode(state['value'])},
+            blocking=True,
+            context=data.context,
+        )
+
+
+class CustomToggleCapability(_CustomCapability, _ToggleCapability):
+    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any],
+                 instance: str, capability_config: dict[str, Any]):
+        super().__init__(hass, state, entity_config, instance, capability_config)
+
+        self.turn_on_config = self.capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON]
+        self.turn_off_config = self.capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF]
+
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        return True
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        return super().get_value() in [STATE_ON, True]
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        await async_call_from_config(
+            self.hass,
+            self.turn_on_config if state['value'] else self.turn_off_config,
+            validate_config=False,
+            blocking=True,
+            context=data.context,
+        )

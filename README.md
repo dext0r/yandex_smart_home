@@ -18,6 +18,10 @@
     - [cleanup_mode](#cleanup_mode)
     - [input_source](#input_source)
     - [scene](#scene)
+  - [Пользователькие режимы/функции](#пользователькие-режимыфункции)
+    - [Примеры](#примеры)
+  - [Пользовательские переключатели](#пользовательские-переключатели)
+    - [Примеры](#примеры-1)
   - [Датчики](#датчики)
   - [Ограничение уровня громкости](#ограничение-уровня-громкости)
 - [Уведомления об изменении состояний устройств](#уведомления-об-изменении-состояний-устройств)
@@ -247,6 +251,127 @@ yandex_smart_home:
 * Значения режимов: `alarm`, `alice`, `candle`, `dinner`, `fantasy`, `garland`, `jungle`, `movie`, `neon`, `night`, `ocean`, `party`, `reading`, `rest`, `romance`, `siren`, `sunrise`, `sunset` (список фиксированный, другими значениями не расширяется)
 * Атрибут в Home Assistant: `effect_list`
 
+### Пользователькие режимы/функции
+Поведение функций и режимов выше полностью контролируется компонентом, но иногда хочется сделать "свой" режим, при выборе параметров
+которого будут выполняться произвольные сервисы. Примеры: коферка, которая варит кофе скриптом `script.makemeonecupofcoffee` или моющий
+пылесос Xiaomi, в котором хочется управлять количеством подаваемой воды через сервис `xiaomi_vacuum.set_water_level`.
+
+Для пользовательского режима автоматического связывание между значениями УДЯ и Home Assistant не производится. Вам нужно
+вручную задать соответствия через `modes`!
+
+Пользовательские режимы настраиваются через словарь `custom_modes` в `entity_config`.
+Ключ - название [функции](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html) в УДЯ. **Важно!** Пользовательские режимы
+имеют приоритет над встроенными в компонент.
+
+Параметры:
+* `set_mode`: Вызываемый сервис при выборе режима в УДЯ. В переменной `mode` - значение режима на стороне Home Assistant. Пример:
+  ```yaml
+  set_mode:
+    service: xiaomi_vacuum.set_water_level
+    entity_id: vacuum.xiaomi_mop
+    data:
+      water_level: '{{ mode }}'
+  ```
+* `state_entity_id`: Сущность, в которой хранится текущий режим работы устройства (в состоянии или атрибуте).
+  По умолчанию та, для которой настраивается пользовательский режим.
+* `state_attribute`: Атрибут, в котором хранится текущий режим для устройства. Если не задан - значение берётся из состояния.
+
+#### Примеры
+1. Моющий пылесос Xiaomi (`vacuum.xiaomi_mop`).
+
+    Атрибуты:
+    ```yaml
+    water_level: High
+    water_level_list:
+      - Low
+      - Med
+      - High
+    ```
+
+    Конфигурация компонента:
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        vacuum.xiaomi_mop:
+          modes:
+            work_speed:
+              eco: [Low]
+              medium: [Med]
+              max: [High]
+          custom_modes:
+            work_speed:
+              state_attribute: water_level
+              set_mode:
+                service: xiaomi_vacuum.set_water_level
+                entity_id: vacuum.xiaomi_mop
+                data:
+                  water_level: '{{ mode }}' # сюда подставятся Low/Med/High
+    ```
+
+2. Кофеварка, которая умеет варить кофе скриптами (`climate.hotcoffee`)
+
+    Конфигурация компонента:
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        climate.hotcoffee:
+          type: devices.types.cooking.coffee_maker
+          modes:
+            coffee_mode:
+              cappuccino: [cappuccino]
+              latte: [latte]
+          custom_modes:
+            coffee_mode:
+              set_mode:
+                service: script.make_me_{{ mode }}_coffee  # вызовется script.make_me_latte_coffee
+    ```
+
+### Пользовательские переключатели
+То же самое, что и [Пользовательские режимы](#пользователькие-режимыфункции), только для функций устройств, которые включаются и выключаются.
+
+Пользовательские переключатели настраиваются через словарь `custom_toggles` в `entity_config`.
+Ключ - название [функции](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html) в УДЯ. **Важно!** Пользовательские переключатели
+имеют приоритет над встроенными в компонент.
+
+Параметры:
+* `turn_on` и `turn_off`: Вызываемые сервисы при включении/выключении функции в УДЯ. Пример:
+  ```yaml
+  turn_on:
+    service: xiaomi_miio_airpurifier.fan_set_ptc_on
+    entity_id: fan.xiaomi_airfresh_va4
+  turn_off:
+    service: xiaomi_miio_airpurifier.fan_set_ptc_off
+    entity_id: fan.xiaomi_airfresh_va4
+  ```
+* `state_entity_id`: Сущность, в которой хранится текущий режим работы устройства (в состоянии или атрибуте).
+  По умолчанию та, для которой настраивается пользовательский переключатель.
+* `state_attribute`: Атрибут, в котором хранится текущий режим для устройства. Если не задан - значение берётся из состояния.
+
+
+#### Примеры
+1. Управление функцией подогрева для бризера Xiaomi (`fan.xiaomi_airfresh_va4`)
+
+    Атрибуты:
+    ```yaml
+    model: zhimi.airfresh.va4
+    ptc: false  # а может быть true (on/off тоже подходит)
+    ```
+
+    Конфигурация компонента:
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        fan.xiaomi_airfresh_va4:
+          custom_toggle:
+            keep_warm:
+              state_attribute: ptc
+              turn_on:
+                service: xiaomi_miio_airpurifier.fan_set_ptc_on
+                entity_id: fan.xiaomi_airfresh_va4
+              turn_off:
+                service: xiaomi_miio_airpurifier.fan_set_ptc_off
+                entity_id: fan.xiaomi_airfresh_va4
+    ```
 
 ### Датчики
 В УДЯ кроме устройств можно отдавать значения некоторых цифровых датчиков, таких как "температура", "заряд батареи" и других.

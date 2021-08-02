@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant, Event
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
+from . import const
 from .const import (
     DOMAIN, CONFIG, DATA_CONFIG, CONF_NOTIFIER, CONF_SKILL_OAUTH_TOKEN,
     CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIERS,
@@ -50,6 +51,14 @@ class YandexNotifier:
                     rv.setdefault(property_entity_id, [])
                     if entity_id not in rv[property_entity_id]:
                         rv[property_entity_id].append(entity_id)
+
+            for custom_capabilities_config in [entity_config.get(const.CONF_ENTITY_CUSTOM_MODES),
+                                               entity_config.get(const.CONF_ENTITY_CUSTOM_TOGGLES)]:
+                for custom_capability in custom_capabilities_config.values():
+                    state_entity_id = custom_capability.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
+                    if state_entity_id:
+                        rv.setdefault(state_entity_id, [])
+                        rv[state_entity_id].append(entity_id)
 
         return rv
 

@@ -9,6 +9,7 @@ from homeassistant.const import CONF_NAME
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entityfilter
 
+from . import const
 from .const import (
     DOMAIN, CONFIG, DATA_CONFIG, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_ATTRIBUTE, CONF_ENTITY_PROPERTY_TYPE,
@@ -80,12 +81,41 @@ ENTITY_MODE_MAP_SCHEMA = vol.Schema({
     })
 })
 
+
+def toggle_instance_validate(instance: str) -> str:
+    if instance not in const.TOGGLE_INSTANCES:
+        _LOGGER.error(
+            f'Toggle instance {instance!r} is not supported. '
+            f'See valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html'
+        )
+
+        raise vol.Invalid(f'Toggle instance {instance!r} is not supported.')
+
+    return instance
+
+
 ENTITY_RANGE_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_RANGE_MAX): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
     vol.Optional(CONF_ENTITY_RANGE_MIN): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
     vol.Optional(CONF_ENTITY_RANGE_PRECISION): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
 }, extra=vol.PREVENT_EXTRA)
 
+ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema({
+    vol.All(cv.string, mode_instance_validate): vol.Schema({
+        vol.Required(const.CONF_ENTITY_CUSTOM_MODE_SET_MODE): cv.SERVICE_SCHEMA,
+        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
+        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
+    })
+})
+
+ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema({
+    vol.All(cv.string, toggle_instance_validate): vol.Schema({
+        vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON): cv.SERVICE_SCHEMA,
+        vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF): cv.SERVICE_SCHEMA,
+        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
+        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
+    })
+})
 
 ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_NAME): cv.string,
@@ -95,6 +125,8 @@ ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID): cv.boolean,
     vol.Optional(CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
     vol.Optional(CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
+    vol.Optional(const.CONF_ENTITY_CUSTOM_MODES, default={}): ENTITY_CUSTOM_MODE_SCHEMA,
+    vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLES, default={}): ENTITY_CUSTOM_TOGGLE_SCHEMA,
 })
 
 NOTIFIER_SCHEMA = vol.Schema({
