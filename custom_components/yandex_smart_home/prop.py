@@ -1,8 +1,9 @@
 """Implement the Yandex Smart Home properties."""
+from __future__ import annotations
 import logging
 from typing import Any, Optional
 
-from homeassistant.core import State
+from homeassistant.core import HomeAssistant, State
 from homeassistant.components import (
     climate,
     binary_sensor,
@@ -11,7 +12,6 @@ from homeassistant.components import (
     light,
     sensor,
     switch,
-    vacuum,
     air_quality,
 )
 from homeassistant.const import (
@@ -80,7 +80,7 @@ class _Property:
     reportable = False
     retrievable = True
 
-    def __init__(self, hass, state, entity_config):
+    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any]):
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
@@ -522,33 +522,22 @@ class PowerProperty(_FloatProperty):
 
 
 @register_property
-class BatteryProperty(_FloatProperty):
+class BatteryLevelProperty(_FloatProperty):
     instance = const.PROPERTY_TYPE_BATTERY_LEVEL
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
-        if domain == vacuum.DOMAIN:
-            return vacuum.ATTR_BATTERY_LEVEL in attributes
-        elif domain == sensor.DOMAIN:
-            return attributes.get(ATTR_BATTERY_LEVEL) is not None or \
-                attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY
-        elif domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_BATTERY_LEVEL) is not None
-
-        return False
+        return ATTR_BATTERY_LEVEL in attributes or attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY
 
     def get_value(self):
         value = 0
-        if self.state.domain == vacuum.DOMAIN:
-            value = self.state.attributes.get(vacuum.ATTR_BATTERY_LEVEL)
-        elif self.state.domain == sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
-                value = self.state.state
-            elif self.state.attributes.get(ATTR_BATTERY_LEVEL) is not None:
-                value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
-        elif self.state.domain == binary_sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_BATTERY_LEVEL) is not None:
-                value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
+        if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
+            value = self.state.state
+        elif ATTR_BATTERY_LEVEL in self.state.attributes:
+            value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
+
+        if value in [const.STATE_LOW, const.STATE_CHARGING]:
+            return 0
 
         return self.float_value(value)
 

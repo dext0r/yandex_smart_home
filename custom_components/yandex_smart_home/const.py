@@ -363,6 +363,8 @@ PRESSURE_TO_PASCAL = {
 
 # Additional states
 STATE_NONE = 'none'
+STATE_CHARGING = 'charging'
+STATE_LOW = 'low'
 
 # Multiplier to convert from pascal to given pressure unit
 PRESSURE_FROM_PASCAL = {
