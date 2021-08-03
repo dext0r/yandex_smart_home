@@ -738,7 +738,7 @@ class CustomEntityProperty(_Property):
             self.instance_unit = PROPERTY_TYPE_TO_UNITS[self.instance]
 
             if self.instance == const.PROPERTY_TYPE_PRESSURE:
-                self.instance_unit = PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
+                self.instance_unit = PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]]
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
