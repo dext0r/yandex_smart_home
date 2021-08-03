@@ -1,7 +1,9 @@
 """Support for Yandex Smart Home."""
+from __future__ import annotations
 import logging
-from aiohttp.web import Request, Response
+from typing import Any
 
+from aiohttp.web import Request, Response
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import callback
 
@@ -51,29 +53,26 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
         """Initialize the Yandex Smart Home request handler."""
         self.config = config
 
-    async def post(self, request: Request) -> Response:
-        """Handle Yandex Smart Home POST requests."""
-        message = await request.json()  # type: dict
-        _LOGGER.debug('Request: %s (POST data: %s)' % (request.url,  message))
+    async def _async_handle_request(self, request: Request, message: dict[str, Any]) -> Response:
         result = await async_handle_message(
             request.app['hass'],
             self.config,
             request['hass_user'].id,
             request.headers.get('X-Request-Id'),
             request.path.replace(self.url, '', 1),
-            message)
-        _LOGGER.debug('Response: %s', result)
-        return self.json(result)
+            message
+        )
+
+        response = self.json(result)
+        _LOGGER.debug(f'Response: {response.text}')
+        return response
+
+    async def post(self, request: Request) -> Response:
+        """Handle Yandex Smart Home POST requests."""
+        _LOGGER.debug('Request: %s (POST data: %s)' % (request.url, await request.text()))
+        return await self._async_handle_request(request, await request.json())
 
     async def get(self, request: Request) -> Response:
         """Handle Yandex Smart Home GET requests."""
         _LOGGER.debug('Request: %s' % request.url)
-        result = await async_handle_message(
-             request.app['hass'],
-             self.config,
-             request['hass_user'].id,
-             request.headers.get('X-Request-Id'),
-             request.path.replace(self.url, '', 1),
-             {})
-        _LOGGER.debug('Response: %s' % result)
-        return self.json(result)
+        return await self._async_handle_request(request, {})

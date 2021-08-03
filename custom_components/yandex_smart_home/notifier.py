@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import asyncio
+import json
 from time import time
+from typing import Any
 
 from aiohttp import ContentTypeError
 from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -41,6 +43,11 @@ class YandexNotifier:
 
         return message
 
+    @staticmethod
+    def log_request(url: str, data: dict[str, Any]):
+        request_json = json.dumps(data)
+        _LOGGER.debug(f'Request: {url} (POST data: {request_json})')
+
     def get_property_entities(self) -> dict[str, list[str]]:
         rv = {}
 
@@ -73,15 +80,15 @@ class YandexNotifier:
             ts = time()
 
             if devices:
-                url_tail = STATE_URL
+                url += STATE_URL
                 payload = {'user_id': self.user_id, 'devices': devices}
             else:
-                url_tail = DISCOVERY_URL
+                url += DISCOVERY_URL
                 payload = {'user_id': self.user_id}
 
             request_data = {'ts': ts, 'payload': payload}
-            _LOGGER.debug(f'Request: {url}{url_tail} (POST data: {request_data})')
-            r = await self.session.post(f'{url}{url_tail}', headers=headers, json=request_data)
+            self.log_request(url, request_data)
+            r = await self.session.post(url, headers=headers, json=request_data)
 
             response_body, error_message = await r.read(), ''
             try:
