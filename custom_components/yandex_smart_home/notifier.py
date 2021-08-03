@@ -60,7 +60,8 @@ class YandexNotifier:
                         rv[property_entity_id].append(entity_id)
 
             for custom_capabilities_config in [entity_config.get(const.CONF_ENTITY_CUSTOM_MODES),
-                                               entity_config.get(const.CONF_ENTITY_CUSTOM_TOGGLES)]:
+                                               entity_config.get(const.CONF_ENTITY_CUSTOM_TOGGLES),
+                                               entity_config.get(const.CONF_ENTITY_CUSTOM_RANGES)]:
                 for custom_capability in custom_capabilities_config.values():
                     state_entity_id = custom_capability.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
                     if state_entity_id:

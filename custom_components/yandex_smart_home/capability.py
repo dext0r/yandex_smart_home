@@ -1537,3 +1537,52 @@ class CustomToggleCapability(_CustomCapability, _ToggleCapability):
             blocking=True,
             context=data.context,
         )
+
+
+class CustomRangeCapability(_CustomCapability, _RangeCapability):
+    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any],
+                 instance: str, capability_config: dict[str, Any]):
+        self.capability_config = capability_config
+        super().__init__(hass, state, entity_config, instance, capability_config)
+
+        self.set_value = self.capability_config[const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE]
+        self.default_range = (
+            self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, self.default_range[0]),
+            self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, self.default_range[1]),
+            self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, self.default_range[2])
+        )
+
+    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
+        return True
+
+    @property
+    def support_random_access(self) -> bool:
+        """Test if capability supports random access."""
+        for key in [CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_MAX]:
+            if key not in self.capability_config.get(CONF_ENTITY_RANGE, {}):
+                return False
+
+        return True
+
+    def get_value(self):
+        """Return the state value of this capability for this entity."""
+        if not self.support_random_access:
+            return None
+
+        return self.float_value(super().get_value())
+
+    async def set_state(self, data, state):
+        """Set device state."""
+        value = state['value']
+        if 'relative' in state and self.support_random_access:
+            value = self.get_value() + state['value']
+
+        await async_call_from_config(
+            self.hass,
+            self.set_value,
+            validate_config=False,
+            variables={'value': value},
+            blocking=True,
+            context=data.context,
+        )

@@ -109,6 +109,29 @@ ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema({
     })
 })
 
+
+def range_instance_validate(instance: str) -> str:
+    if instance not in const.RANGE_INSTANCES:
+        _LOGGER.error(
+            f'Range instance {instance!r} is not supported. '
+            f'See valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html'
+        )
+
+        raise vol.Invalid(f'Range instance {instance!r} is not supported.')
+
+    return instance
+
+
+ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema({
+    vol.All(cv.string, range_instance_validate): vol.Schema({
+        vol.Required(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE): cv.SERVICE_SCHEMA,
+        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
+        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
+        vol.Optional(const.CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
+    })
+})
+
+
 ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema({
     vol.All(cv.string, toggle_instance_validate): vol.Schema({
         vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON): cv.SERVICE_SCHEMA,

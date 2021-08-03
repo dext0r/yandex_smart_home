@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_registry import EntityRegistry
 from homeassistant.helpers.device_registry import DeviceRegistry
 
 from . import prop, const
-from .capability import CustomModeCapability, CustomToggleCapability, CAPABILITIES, _Capability
+from .capability import CustomModeCapability, CustomToggleCapability, CustomRangeCapability, CAPABILITIES, _Capability
 from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
@@ -74,7 +74,8 @@ class YandexEntity:
 
         for capability_class, config_key in (
                 (CustomModeCapability, const.CONF_ENTITY_CUSTOM_MODES),
-                (CustomToggleCapability, const.CONF_ENTITY_CUSTOM_TOGGLES)):
+                (CustomToggleCapability, const.CONF_ENTITY_CUSTOM_TOGGLES),
+                (CustomRangeCapability, const.CONF_ENTITY_CUSTOM_RANGES)):
             if config_key in entity_config:
                 for instance in entity_config[config_key]:
                     capability = capability_class(
