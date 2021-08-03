@@ -508,6 +508,21 @@ yandex_smart_home:
       ```
       Нужно только то, что в строчке Got Response и ниже (лучше файлом).
       Пожалуйста, не включайте строку "Sending request", в ней адрес вашего Home Assistant, пусть эта информация лучше остается в тайне :)
+  * Если в окне отладки пусто, а УДЯ выдает ошибку "Не получилось обновить список устройств" - нужен лог запросов и ответов со стороны Home Assistant. Для этого:
+     1. Включите отладку через `configuration.yaml`:
+          ```yaml
+          logger:
+            default: warning
+            logs:
+              custom_components.yandex_smart_home: debug
+          ```
+      2. Перезапустите Home Assistant
+      3. Выполните "Обновление устройств" в УДЯ, в логе Home Assistant появятся строчки:
+         ```
+         [custom_components.yandex_smart_home.http] Request: https://YOUR_HA_DOMAIN/api/yandex_smart_home/v1.0/user/devices
+         [custom_components.yandex_smart_home.http] Response: {"request_id": ...
+         ```
+         Нужно только то, что в строчке Response (лучше файлом). Если до этих строчек есть ошибки - их тоже приложить.
 
 
 ### Ошибка "Что-то пошло не так" при частых действиях
