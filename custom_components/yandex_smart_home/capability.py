@@ -796,13 +796,68 @@ class _RangeCapability(_Capability):
     """
 
     type = CAPABILITIES_RANGE
+    default_range = (0, 100, 1)
+
+    def __init__(self, hass, state, config):
+        super().__init__(hass, state, config)
+        self.retrievable = self.support_random_access
+
+    @property
+    def support_random_access(self) -> bool:
+        """Test if capability supports random access."""
+        raise NotImplementedError
+
+    @property
+    def range(self) -> (float, float, float):
+        """Return support range (min, max, precision)."""
+        return (
+            self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, self.default_range[0]),
+            self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, self.default_range[1]),
+            self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, self.default_range[2])
+        )
+
+    def parameters(self):
+        """Return parameters for a devices request."""
+        if self.support_random_access:
+            range_min, range_max, range_precision = self.range
+            rv = {
+                'instance': self.instance,
+                'random_access': True,
+                'range': {
+                    'min': range_min,
+                    'max': range_max,
+                    'precision': range_precision
+                }
+            }
+
+            if self.instance in const.RANGE_INSTANCE_TO_UNITS:
+                rv['unit'] = const.RANGE_INSTANCE_TO_UNITS[self.instance]
+
+            return rv
+
+        return {
+            'instance': self.instance,
+            'random_access': False,
+        }
+
+    def float_value(self, value: Any) -> Optional[float]:
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+            return None
+
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
+            )
 
 
 @register_capability
 class CoverLevelCapability(_RangeCapability):
     """Set cover level"""
 
-    instance = 'open'
+    instance = const.RANGE_INSTANCE_OPEN
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -811,28 +866,15 @@ class CoverLevelCapability(_RangeCapability):
 
         return False
 
-    def parameters(self):
-        """Return parameters for a devices request."""
-        return {
-            'instance': self.instance,
-            'range': {
-                'max': 100,
-                'min': 0,
-                'precision': 1
-            },
-            'unit': 'unit.percent'
-        }
+    @property
+    def support_random_access(self) -> bool:
+        """Test if capability supports random access."""
+        return True
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        position = None
         if self.state.domain == cover.DOMAIN:
-            position = self.state.attributes.get(cover.ATTR_CURRENT_POSITION)
-
-        if position is None:
-            return 0
-        else:
-            return float(position)
+            return self.float_value(self.state.attributes.get(cover.ATTR_CURRENT_POSITION))
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -852,7 +894,25 @@ class CoverLevelCapability(_RangeCapability):
 class TemperatureCapability(_RangeCapability):
     """Set temperature functionality."""
 
-    instance = 'temperature'
+    instance = const.RANGE_INSTANCE_TEMPERATURE
+    default_range = (0, 100, 0.5)
+
+    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any]):
+        """Initialize a trait for a state."""
+        super().__init__(hass, state, entity_config)
+
+        if self.state.domain == water_heater.DOMAIN:
+            self.default_range = (
+                self.state.attributes.get(water_heater.ATTR_MIN_TEMP),
+                self.state.attributes.get(water_heater.ATTR_MAX_TEMP),
+                0.5
+            )
+        elif self.state.domain == climate.DOMAIN:
+            self.default_range = (
+                self.state.attributes.get(climate.ATTR_MIN_TEMP),
+                self.state.attributes.get(climate.ATTR_MAX_TEMP),
+                self.state.attributes.get(climate.ATTR_TARGET_TEMP_STEP, 0.5),
+            )
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -863,42 +923,17 @@ class TemperatureCapability(_RangeCapability):
 
         return False
 
-    def parameters(self):
-        """Return parameters for a devices request."""
-        if self.state.domain == water_heater.DOMAIN:
-            min_temp = self.state.attributes.get(water_heater.ATTR_MIN_TEMP)
-            max_temp = self.state.attributes.get(water_heater.ATTR_MAX_TEMP)
-            precision = 0.5
-        elif self.state.domain == climate.DOMAIN:
-            min_temp = self.state.attributes.get(climate.ATTR_MIN_TEMP)
-            max_temp = self.state.attributes.get(climate.ATTR_MAX_TEMP)
-            precision = self.state.attributes.get(climate.ATTR_TARGET_TEMP_STEP, 0.5)
-        else:
-            min_temp = 0
-            max_temp = 100
-            precision = 0.5
-        return {
-            'instance': self.instance,
-            'unit': 'unit.temperature.celsius',
-            'range': {
-                'min': min_temp,
-                'max': max_temp,
-                'precision': precision
-            }
-        }
+    @property
+    def support_random_access(self) -> bool:
+        """Test if capability supports random access."""
+        return True
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        temperature = None
         if self.state.domain == water_heater.DOMAIN:
-            temperature = self.state.attributes.get(water_heater.ATTR_TEMPERATURE)
+            return self.float_value(self.state.attributes.get(water_heater.ATTR_TEMPERATURE))
         elif self.state.domain == climate.DOMAIN:
-            temperature = self.state.attributes.get(climate.ATTR_TEMPERATURE)
-
-        if temperature is None:
-            return 0
-        else:
-            return float(temperature)
+            return self.float_value(self.state.attributes.get(climate.ATTR_TEMPERATURE))
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -930,7 +965,18 @@ class TemperatureCapability(_RangeCapability):
 class HumidityCapability(_RangeCapability):
     """Set humidity functionality."""
 
-    instance = 'humidity'
+    instance = const.RANGE_INSTANCE_HUMIDITY
+
+    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any]):
+        """Initialize a trait for a state."""
+        super().__init__(hass, state, entity_config)
+
+        if self.state.domain == humidifier.DOMAIN:
+            self.default_range = (
+                self.state.attributes.get(humidifier.ATTR_MIN_HUMIDITY),
+                self.state.attributes.get(humidifier.ATTR_MAX_HUMIDITY),
+                1
+            )
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -943,34 +989,17 @@ class HumidityCapability(_RangeCapability):
 
         return False
 
-    def parameters(self):
-        """Return parameters for a devices request."""
-        if self.state.domain == humidifier.DOMAIN:
-            min_humidity = self.state.attributes.get(humidifier.ATTR_MIN_HUMIDITY)
-            max_humidity = self.state.attributes.get(humidifier.ATTR_MAX_HUMIDITY)
-            precision = 1
-        else:
-            min_humidity = 0
-            max_humidity = 100
-            precision = 1
-        return {
-            'instance': self.instance,
-            'unit': 'unit.percent',
-            'range': {'min': min_humidity, 'max': max_humidity, 'precision': precision},
-        }
+    @property
+    def support_random_access(self) -> bool:
+        """Test if capability supports random access."""
+        return True
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        humidity = None
         if self.state.domain == humidifier.DOMAIN:
-            humidity = self.state.attributes.get(humidifier.ATTR_HUMIDITY)
-        elif self.state.domain == fan.DOMAIN and self.state.attributes.get(ATTR_TARGET_HUMIDITY):
-            humidity = self.state.attributes.get(ATTR_TARGET_HUMIDITY)
-
-        if humidity is None:
-            return 0
-        else:
-            return float(humidity)
+            return self.float_value(self.state.attributes.get(humidifier.ATTR_HUMIDITY))
+        elif self.state.domain == fan.DOMAIN:
+            return self.float_value(self.state.attributes.get(ATTR_TARGET_HUMIDITY))
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -1003,7 +1032,8 @@ class HumidityCapability(_RangeCapability):
 class BrightnessCapability(_RangeCapability):
     """Set brightness functionality."""
 
-    instance = 'brightness'
+    instance = const.RANGE_INSTANCE_BRIGHTNESS
+    default_range = (1, 100, 1)
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -1012,23 +1042,16 @@ class BrightnessCapability(_RangeCapability):
             light.brightness_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
         )
 
-    def parameters(self):
-        """Return parameters for a devices request."""
-        return {
-            'instance': self.instance,
-            'unit': 'unit.percent',
-            'range': {
-                'min': 1,
-                'max': 100,
-                'precision': 1
-            }
-        }
+    @property
+    def support_random_access(self) -> bool:
+        """Test if capability supports random access."""
+        return True
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
         brightness = self.state.attributes.get(light.ATTR_BRIGHTNESS)
         if brightness is not None:
-            return int(100 * (brightness / 255))
+            return int(100 * (self.float_value(brightness) / 255))
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -1049,53 +1072,29 @@ class BrightnessCapability(_RangeCapability):
 class VolumeCapability(_RangeCapability):
     """Set volume functionality."""
 
-    instance = 'volume'
-
-    def __init__(self, hass, state, config):
-        super().__init__(hass, state, config)
-
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-        self.relative_volume = bool(
-            features & media_player.SUPPORT_VOLUME_STEP and not features & media_player.SUPPORT_VOLUME_SET
-        )
-        self.retrievable = not self.relative_volume
+    instance = const.RANGE_INSTANCE_VOLUME
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
         if domain == media_player.DOMAIN:
             return features & media_player.SUPPORT_VOLUME_STEP or features & media_player.SUPPORT_VOLUME_SET
 
-    def parameters(self):
-        """Return parameters for a devices request."""
-        if self.relative_volume:
-            return {
-                'instance': self.instance
-            }
-        else:
-            volume_max = int(self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, 100))
-            volume_min = int(self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, 0))
-            volume_step = int(self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, 1))
-
-            return {
-                'instance': self.instance,
-                'random_access': True,
-                'range': {
-                    'max': volume_max,
-                    'min': volume_min,
-                    'precision': volume_step
-                }
-            }
+    @property
+    def support_random_access(self) -> bool:
+        """Test if capability supports random access."""
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        return not (features & media_player.SUPPORT_VOLUME_STEP and not features & media_player.SUPPORT_VOLUME_SET)
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
         level = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_LEVEL)
 
         if level is not None:
-            return int(level * 100)
+            return int(self.float_value(level) * 100)
 
     async def set_state(self, data, state):
         """Set device state."""
-        if self.relative_volume and state.get('relative'):
+        if not self.support_random_access and state.get('relative'):
             if state['value'] > 0:
                 service = media_player.SERVICE_VOLUME_UP
             else:
@@ -1132,13 +1131,8 @@ class VolumeCapability(_RangeCapability):
 class ChannelCapability(_RangeCapability):
     """Set channel functionality."""
 
-    instance = 'channel'
-
-    def __init__(self, hass, state, config):
-        super().__init__(hass, state, config)
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-        self.retrievable = features & media_player.SUPPORT_PLAY_MEDIA != 0 and \
-            self.entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)
+    instance = const.RANGE_INSTANCE_CHANNEL
+    default_range = (0, 999, 1)
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -1149,37 +1143,16 @@ class ChannelCapability(_RangeCapability):
                     and features & media_player.SUPPORT_NEXT_TRACK)
         )
 
-    def parameters(self):
-        """Return parameters for a devices request."""
-        if self.retrievable:
-            return {
-                'instance': self.instance,
-                'random_access': True,
-                'range': {
-                    'max': 999,
-                    'min': 0,
-                    'precision': 1
-                }
-            }
-        else:
-            return {
-                'instance': self.instance,
-                'random_access': False
-            }
+    @property
+    def support_random_access(self) -> bool:
+        """Test if capability supports random access."""
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        return features & media_player.SUPPORT_PLAY_MEDIA != 0 and \
+            self.entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        if not self.retrievable or self.state.attributes.get(
-                media_player.ATTR_MEDIA_CONTENT_TYPE) \
-                != media_player.const.MEDIA_TYPE_CHANNEL:
-            return 0
-        try:
-            return int(self.state.attributes.get(
-                media_player.ATTR_MEDIA_CONTENT_ID))
-        except ValueError:
-            return 0
-        except TypeError:
-            return 0
+        return self.float_value(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID))
 
     async def set_state(self, data, state):
         """Set device state."""
@@ -1548,6 +1521,7 @@ class CustomToggleCapability(_CustomCapability, _ToggleCapability):
         self.turn_off_config = self.capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF]
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        """Test if capability is supported."""
         return True
 
     def get_value(self):

@@ -103,6 +103,29 @@ TOGGLE_INSTANCES = (
     TOGGLE_INSTANCE_PAUSE,
 )
 
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html
+RANGE_INSTANCE_BRIGHTNESS = 'brightness'
+RANGE_INSTANCE_CHANNEL = 'channel'
+RANGE_INSTANCE_HUMIDITY = 'humidity'
+RANGE_INSTANCE_OPEN = 'open'
+RANGE_INSTANCE_TEMPERATURE = 'temperature'
+RANGE_INSTANCE_VOLUME = 'volume'
+RANGE_INSTANCES = (
+    RANGE_INSTANCE_BRIGHTNESS,
+    RANGE_INSTANCE_CHANNEL,
+    RANGE_INSTANCE_HUMIDITY,
+    RANGE_INSTANCE_OPEN,
+    RANGE_INSTANCE_TEMPERATURE,
+    RANGE_INSTANCE_VOLUME,
+)
+
+RANGE_INSTANCE_TO_UNITS = {
+    RANGE_INSTANCE_BRIGHTNESS: 'unit.percent',
+    RANGE_INSTANCE_HUMIDITY: 'unit.percent',
+    RANGE_INSTANCE_OPEN: 'unit.percent',
+    RANGE_INSTANCE_TEMPERATURE: 'unit.temperature.celsius'
+}
+
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html
 MODE_INSTANCE_CLEANUP_MODE = 'cleanup_mode'
 MODE_INSTANCE_COFFEE_MODE = 'coffee_mode'
