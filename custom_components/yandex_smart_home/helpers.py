@@ -2,7 +2,7 @@
 from __future__ import annotations
 from asyncio import gather
 from collections.abc import Mapping
-from typing import Optional
+from typing import Optional, Any, Callable
 
 from homeassistant.core import HomeAssistant, Context, callback, State
 from homeassistant.const import (
@@ -26,9 +26,11 @@ from .error import SmartHomeError
 class Config:
     """Hold the configuration for Yandex Smart Home."""
 
-    def __init__(self, settings, should_expose, entity_config=None):
+    def __init__(self, settings: dict[str, Any], notifier: list[dict[str, Any]],
+                 should_expose: Callable[[str], bool], entity_config: Optional[dict[str, Any]] = None):
         """Initialize the configuration."""
         self.settings = settings
+        self.notifier = notifier
         self.should_expose = should_expose
         self.entity_config = entity_config or {}
 

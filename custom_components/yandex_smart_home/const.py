@@ -22,9 +22,7 @@ from homeassistant.components import (
 
 
 DOMAIN = 'yandex_smart_home'
-
-CONFIG = 'yaml_config'
-DATA_CONFIG = 'config'
+CONFIG = 'config'
 
 CONF_SETTINGS = 'settings'
 CONF_PRESSURE_UNIT = 'pressure_unit'

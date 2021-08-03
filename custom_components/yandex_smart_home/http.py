@@ -7,9 +7,7 @@ from aiohttp.web import Request, Response
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import callback
 
-from .const import (
-    DOMAIN, DATA_CONFIG,
-)
+from .const import DOMAIN, CONFIG
 from .smart_home import async_handle_message
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 def async_register_http(hass):
     """Register HTTP views for Yandex Smart Home."""
     hass.http.register_view(YandexSmartHomeUnauthorizedView())
-    hass.http.register_view(YandexSmartHomeView(hass.data[DOMAIN][DATA_CONFIG]))
+    hass.http.register_view(YandexSmartHomeView())
 
 
 class YandexSmartHomeUnauthorizedView(HomeAssistantView):
@@ -49,14 +47,10 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
     name = 'api:yandex_smart_home'
     requires_auth = True
 
-    def __init__(self, config):
-        """Initialize the Yandex Smart Home request handler."""
-        self.config = config
-
     async def _async_handle_request(self, request: Request, message: dict[str, Any]) -> Response:
         result = await async_handle_message(
             request.app['hass'],
-            self.config,
+            request.app['hass'].data[DOMAIN][CONFIG],
             request['hass_user'].id,
             request.headers.get('X-Request-Id'),
             request.path.replace(self.url, '', 1),

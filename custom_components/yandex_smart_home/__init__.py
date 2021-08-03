@@ -5,13 +5,14 @@ from typing import Dict, Any
 import voluptuous as vol
 
 from homeassistant.core import HomeAssistant
-from homeassistant.const import CONF_NAME
+from homeassistant.const import CONF_NAME, SERVICE_RELOAD
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entityfilter
+from homeassistant.helpers.reload import async_integration_yaml_config
 
 from . import const
 from .const import (
-    DOMAIN, CONFIG, DATA_CONFIG, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
+    DOMAIN, CONFIG, CONF_ENTITY_CONFIG, CONF_FILTER, CONF_ROOM, CONF_TYPE,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_ATTRIBUTE, CONF_ENTITY_PROPERTY_TYPE,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID, CONF_ENTITY_RANGE, CONF_ENTITY_RANGE_MAX,
     CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP, COLOR_SETTING_SCENE,
@@ -127,6 +128,7 @@ ENTITY_SCHEMA = vol.Schema({
     vol.Optional(CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
     vol.Optional(const.CONF_ENTITY_CUSTOM_MODES, default={}): ENTITY_CUSTOM_MODE_SCHEMA,
     vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLES, default={}): ENTITY_CUSTOM_TOGGLE_SCHEMA,
+    vol.Optional(const.CONF_ENTITY_CUSTOM_RANGES, default={}): ENTITY_CUSTOM_RANGE_SCHEMA,
 })
 
 NOTIFIER_SCHEMA = vol.Schema({
@@ -162,16 +164,38 @@ CONFIG_SCHEMA = vol.Schema({
 }, extra=vol.ALLOW_EXTRA)
 
 
-async def async_setup(hass: HomeAssistant, yaml_config: Dict[str, Any]):
+async def _async_update_config_from_yaml(hass: HomeAssistant, config: Dict[str, Any]):
+    domain_config = config.get(DOMAIN, {})
+    hass.data[DOMAIN][CONFIG] = Config(
+        settings=domain_config.get(CONF_SETTINGS, {}),
+        notifier=domain_config.get(CONF_NOTIFIER, []),
+        should_expose=domain_config.get(CONF_FILTER, {}),
+        entity_config=domain_config.get(CONF_ENTITY_CONFIG)
+    )
+
+
+async def async_setup(hass: HomeAssistant, config: Dict[str, Any]):
     """Activate Yandex Smart Home component."""
     hass.data[DOMAIN] = {}
-    hass.data[DOMAIN][CONFIG] = yaml_config.get(DOMAIN, {})
-    hass.data[DOMAIN][DATA_CONFIG] = Config(
-        settings=hass.data[DOMAIN][CONFIG].get(CONF_SETTINGS),
-        should_expose=hass.data[DOMAIN][CONFIG].get(CONF_FILTER),
-        entity_config=hass.data[DOMAIN][CONFIG].get(CONF_ENTITY_CONFIG)
-    )
+    await _async_update_config_from_yaml(hass, config)
+
     async_register_http(hass)
     hass.data[DOMAIN][NOTIFIER_ENABLED] = await async_setup_notifier(hass)
+
+    # noinspection PyUnusedLocal
+    async def _handle_reload(service):
+        """Handle reload service call."""
+        new_config = await async_integration_yaml_config(hass, DOMAIN)
+        if not new_config or DOMAIN not in new_config:
+            raise ValueError('Configuration invalid')
+
+        await _async_update_config_from_yaml(hass, new_config)
+        hass.data[DOMAIN][NOTIFIER_ENABLED] = await async_setup_notifier(hass, reload=True)
+
+    hass.helpers.service.async_register_admin_service(
+        DOMAIN,
+        SERVICE_RELOAD,
+        _handle_reload,
+    )
 
     return True

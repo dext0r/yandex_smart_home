@@ -42,7 +42,7 @@ from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     STATE_NONE,
-    DATA_CONFIG,
+    CONFIG,
     CONF_PRESSURE_UNIT,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_ENTITY,
@@ -84,7 +84,7 @@ class _Property:
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
-        self.config = hass.data[DOMAIN][DATA_CONFIG]
+        self.config = hass.data[DOMAIN][CONFIG]
         self.entity_config = entity_config
         self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
 
