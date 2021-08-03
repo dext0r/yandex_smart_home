@@ -273,8 +273,9 @@ class YandexEntity:
             entity_id = ppt.property_config.get(CONF_ENTITY_PROPERTY_ENTITY, None) \
                 if hasattr(ppt, 'property_config') and CONF_ENTITY_PROPERTY_ENTITY in ppt.property_config \
                 else ppt.state.entity_id
-            if ppt.reportable and event_entity_id == entity_id:
-                properties.append(ppt.get_state())
+            ppt_state = ppt.get_state()
+            if ppt.reportable and ppt_state is not None and event_entity_id == entity_id:
+                properties.append(ppt_state)
 
         return {
             'id': state.entity_id,

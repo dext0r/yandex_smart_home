@@ -239,13 +239,10 @@ class TemperatureProperty(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0.0
         if self.state.domain == sensor.DOMAIN:
-            value = self.state.state
+            return self.float_value(self.state.state)
         elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
-            value = self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE)
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE))
 
 
 @register_property
@@ -262,13 +259,10 @@ class HumidityProperty(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
         if self.state.domain == sensor.DOMAIN:
-            value = self.state.state
+            return self.float_value(self.state.state)
         elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
-            value = self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY)
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY))
 
 
 @register_property
@@ -289,11 +283,7 @@ class PressureProperty(_FloatProperty):
         }
 
     def get_value(self):
-        value = 0.0
-        if self.state.domain == sensor.DOMAIN:
-            value = self.state.state
-
-        # Get a conversion multiplier to pascal
+        value = self.state.state
         unit = self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
         if unit not in PRESSURE_TO_PASCAL:
             raise SmartHomeError(
@@ -322,13 +312,10 @@ class IlluminanceProperty(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
         if self.state.domain == sensor.DOMAIN:
-            value = self.state.state
+            return self.float_value(self.state.state)
         elif self.state.domain in (light.DOMAIN, fan.DOMAIN):
-            value = self.state.attributes.get('illuminance')
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get('illuminance'))
 
 
 @register_property
@@ -343,11 +330,8 @@ class WaterLevelProperty(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
         if self.state.domain in (fan.DOMAIN, humidifier.DOMAIN):
-            value = self.state.attributes.get('water_level')
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get('water_level'))
 
 
 @register_property
@@ -364,13 +348,10 @@ class CO2Property(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
         if self.state.domain == sensor.DOMAIN:
-            value = self.state.state
+            return self.float_value(self.state.state)
         elif self.state.domain in (air_quality.DOMAIN, fan.DOMAIN):
-            value = self.state.attributes.get(air_quality.ATTR_CO2)
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get(air_quality.ATTR_CO2))
 
 
 @register_property
@@ -385,11 +366,8 @@ class PM1Property(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
         if self.state.domain == air_quality.DOMAIN:
-            value = self.state.attributes.get(air_quality.ATTR_PM_0_1)
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get(air_quality.ATTR_PM_0_1))
 
 
 @register_property
@@ -423,11 +401,8 @@ class PM10Property(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
         if self.state.domain == air_quality.DOMAIN:
-            value = self.state.attributes.get(air_quality.ATTR_PM_10)
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get(air_quality.ATTR_PM_10))
 
 
 @register_property
@@ -442,11 +417,8 @@ class TVOCProperty(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
         if self.state.domain == air_quality.DOMAIN:
-            value = self.state.attributes.get('total_volatile_organic_compounds')
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get('total_volatile_organic_compounds'))
 
 
 @register_property
@@ -463,13 +435,10 @@ class VoltageProperty(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
         if self.state.domain == sensor.DOMAIN:
-            value = self.state.state
+            return self.float_value(self.state.state)
         elif self.state.domain in (switch.DOMAIN, light.DOMAIN):
-            value = self.state.attributes.get(ATTR_VOLTAGE)
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get(ATTR_VOLTAGE))
 
 
 @register_property
@@ -486,13 +455,10 @@ class CurrentProperty(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
         if self.state.domain == sensor.DOMAIN:
-            value = self.state.state
+            return self.float_value(self.state.state)
         elif self.state.domain in (switch.DOMAIN, light.DOMAIN):
-            value = self.state.attributes.get('current')
-
-        return self.float_value(value)
+            return self.float_value(self.state.attributes.get('current'))
 
 
 @register_property
@@ -509,7 +475,7 @@ class PowerProperty(_FloatProperty):
         return False
 
     def get_value(self):
-        value = 0
+        value = None
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
         elif self.state.domain == switch.DOMAIN:
@@ -530,7 +496,7 @@ class BatteryLevelProperty(_FloatProperty):
         return ATTR_BATTERY_LEVEL in attributes or attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY
 
     def get_value(self):
-        value = 0
+        value = None
         if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
             value = self.state.state
         elif ATTR_BATTERY_LEVEL in self.state.attributes:
