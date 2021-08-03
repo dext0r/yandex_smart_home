@@ -43,13 +43,6 @@ class RequestData:
         self.context = Context(user_id=user_id)
 
 
-def get_yandex_type(domain, device_class):
-    """Yandex type based on domain and device class."""
-    yandex_type = DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class))
-
-    return yandex_type if yandex_type is not None else DOMAIN_TO_YANDEX_TYPES[domain]
-
-
 class YandexEntity:
     """Adaptation of Entity expressed in Yandex's terms."""
 
@@ -121,6 +114,18 @@ class YandexEntity:
 
         return self._properties
 
+    @property
+    def supported(self) -> bool:
+        """Test if device is supported."""
+        return bool(self.yandex_device_type)
+
+    @property
+    def yandex_device_type(self) -> Optional[str]:
+        """Yandex type based on domain and device class."""
+        device_class = self.state.attributes.get(ATTR_DEVICE_CLASS)
+        domain = self.state.domain
+        return DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class), DOMAIN_TO_YANDEX_TYPES.get(domain))
+
     async def devices_serialize(self, entity_reg: EntityRegistry, dev_reg: DeviceRegistry):
         """Serialize entity for a devices response.
 
@@ -136,8 +141,6 @@ class YandexEntity:
 
         entity_config = self.config.entity_config.get(state.entity_id, {})
         name = (entity_config.get(CONF_NAME) or state.name).strip()
-        domain = state.domain
-        device_class = state.attributes.get(ATTR_DEVICE_CLASS)
 
         # If an empty string
         if not name:
@@ -149,8 +152,6 @@ class YandexEntity:
         # Found no supported capabilities for this entity
         if not capabilities and not properties:
             return None
-
-        device_type = get_yandex_type(domain, device_class)
 
         entry = entity_reg.async_get(state.entity_id)
         device = dev_reg.async_get(getattr(entry, 'device_id', ''))
@@ -171,7 +172,7 @@ class YandexEntity:
         device = {
             'id': state.entity_id,
             'name': name,
-            'type': device_type,
+            'type': self.yandex_device_type,
             'capabilities': [],
             'properties': [],
             'device_info': device_info,

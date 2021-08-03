@@ -81,11 +81,12 @@ async def async_devices_sync(hass, data, message):
         if not data.config.should_expose(state.entity_id):
             continue
 
-        entity = YandexEntity(hass, data.config, state)
-        serialized = await entity.devices_serialize(entity_reg, dev_reg)
+        entity, serialized = YandexEntity(hass, data.config, state), None
+        if entity.supported:
+            serialized = await entity.devices_serialize(entity_reg, dev_reg)
 
         if serialized is None:
-            _LOGGER.debug('No mapping for %s domain', entity.state)
+            _LOGGER.debug(f'Unsupported entity: {entity.state!r}')
             continue
 
         devices.append(serialized)
