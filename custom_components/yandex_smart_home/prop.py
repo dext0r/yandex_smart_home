@@ -419,7 +419,10 @@ class TVOCProperty(_FloatProperty):
 
     def get_value(self):
         if self.state.domain == air_quality.DOMAIN:
-            return self.float_value(self.state.attributes.get('total_volatile_organic_compounds'))
+            mcg_m3_factor = 4.5 if self.state.attributes.get('unit_of_measurement') == 'ppb' else 1
+            return round(
+                self.float_value(self.state.attributes.get('total_volatile_organic_compounds')) * mcg_m3_factor, 2
+            )
 
 
 @register_property
@@ -771,5 +774,9 @@ class CustomEntityProperty(_Property):
 
             return round(self.float_value(value) * PRESSURE_TO_PASCAL[pressure_unit] *
                          PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2)
+
+        if self.instance == const.PROPERTY_TYPE_TVOC:
+            mcg_m3_factor = 4.5 if self.state.attributes.get('unit_of_measurement') == 'ppb' else 1
+            return round(self.float_value(value) * mcg_m3_factor, 2)
 
         return self.float_value(value) if self.type != PROPERTY_EVENT else self.event_value(value)
