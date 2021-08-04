@@ -42,6 +42,7 @@ from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     STATE_NONE,
+    STATE_NONE_UI,
     CONFIG,
     CONF_PRESSURE_UNIT,
     CONF_ENTITY_PROPERTY_TYPE,
@@ -172,7 +173,7 @@ class _Property:
             )
 
     def float_value(self, value: Any) -> Optional[float]:
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI):
             return None
 
         try:
