@@ -1,10 +1,12 @@
 {
   "domain": "yandex_smart_home",
   "name": "Yandex Smart Home",
+  "config_flow": true,
   "documentation": "https://github.com/dmitry-k/yandex_smart_home",
   "issue_tracker": "https://github.com/dmitry-k/yandex_smart_home/issues",
   "requirements": [],
+  "iot_class": "cloud_polling",
   "dependencies": ["http"],
-  "codeowners": [],
-  "version": 0
+  "codeowners": ["@dmitry-k"],
+  "version": "0.2"
 }

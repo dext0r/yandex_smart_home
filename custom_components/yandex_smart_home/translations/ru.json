@@ -1,0 +1,8 @@
+{
+  "config": {
+    "abort": {
+      "missing_configuration": "Конфигурация не найдена или содержит ошибки. Проверьте журнал сервера Home Assistant.",
+      "single_instance_allowed": "Разрешена только одна настройка Yandex Smart Home."
+    }
+  }
+}

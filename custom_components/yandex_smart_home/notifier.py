@@ -15,7 +15,7 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from . import const
 from .const import (
     DOMAIN, CONFIG, CONF_SKILL_OAUTH_TOKEN,
-    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIERS,
+    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIERS, NOTIFIER_ENABLED,
     CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY,
 )
 from .helpers import YandexEntity
@@ -148,7 +148,7 @@ class YandexNotifier:
             await self.async_notify_skill(devices)
 
 
-async def async_setup_notifier(hass: HomeAssistant, reload=False) -> bool:
+async def async_setup_notifier(hass: HomeAssistant, reload=False):
     """Set up notifiers."""
     hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []
 
@@ -183,4 +183,9 @@ async def async_setup_notifier(hass: HomeAssistant, reload=False) -> bool:
         hass.bus.async_listen('state_changed', state_change_listener)
         hass.bus.async_listen('homeassistant_started', ha_start_listener)
 
-    return bool(hass.data[DOMAIN][NOTIFIERS])
+    hass.data[DOMAIN][NOTIFIER_ENABLED] = bool(hass.data[DOMAIN][NOTIFIERS])
+
+
+async def async_unload_notifier(hass: HomeAssistant):
+    hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []
+    hass.data[DOMAIN][NOTIFIER_ENABLED] = False

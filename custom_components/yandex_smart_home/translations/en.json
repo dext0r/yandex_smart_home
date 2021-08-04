@@ -1,0 +1,8 @@
+{
+  "config": {
+    "abort": {
+      "missing_configuration": "Missing or invalid configuration. Check Home Assistant logs.",
+      "single_instance_allowed": "Only a single configuration of Yandex Smart Home is allowed."
+    }
+  }
+}

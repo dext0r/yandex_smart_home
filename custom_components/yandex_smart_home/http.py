@@ -31,6 +31,11 @@ class YandexSmartHomeUnauthorizedView(HomeAssistantView):
     async def head(self, request: Request) -> Response:
         """Handle Yandex Smart Home HEAD requests."""
         _LOGGER.debug('Request: %s (HEAD)' % request.url)
+
+        if not request.app['hass'].data[DOMAIN][CONFIG]:
+            _LOGGER.debug('Integation is not enabled')
+            return Response(status=404)
+
         return Response(status=200)
 
 
@@ -48,6 +53,10 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
     requires_auth = True
 
     async def _async_handle_request(self, request: Request, message: dict[str, Any]) -> Response:
+        if not request.app['hass'].data[DOMAIN][CONFIG]:
+            _LOGGER.debug('Integation is not enabled')
+            return Response(status=404)
+
         result = await async_handle_message(
             request.app['hass'],
             request.app['hass'].data[DOMAIN][CONFIG],
