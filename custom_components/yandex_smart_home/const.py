@@ -393,6 +393,7 @@ PRESSURE_TO_PASCAL = {
 
 # Additional states
 STATE_NONE = 'none'
+STATE_NONE_UI = '-'
 STATE_CHARGING = 'charging'
 STATE_LOW = 'low'
 
