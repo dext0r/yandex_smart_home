@@ -670,36 +670,35 @@ class CustomEntityProperty(_Property):
         super().__init__(hass, state, entity_config)
 
         self.type = PROPERTY_FLOAT
-        self.property_entity_id: Optional[str] = None  # by default state used
         self.property_config = property_config
         self.instance = property_config[CONF_ENTITY_PROPERTY_TYPE]
         self.instance_unit: Optional[str] = None
+        self.property_state = state
 
-        self.property_entity_id = self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
-        if self.property_entity_id:
-            property_state = self.hass.states.get(self.property_entity_id)
-            if property_state is None:
+        property_entity_id = self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
+        if property_entity_id:
+            self.property_state = self.hass.states.get(property_entity_id)
+            if self.property_state is None:
                 raise SmartHomeError(
                     ERR_DEVICE_NOT_FOUND,
-                    f'Entity {self.property_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
+                    f'Entity {property_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
                 )
 
-            if property_state.domain == binary_sensor.DOMAIN:
-                if self.instance not in PROPERTY_TYPE_EVENT_VALUES:
-                    raise SmartHomeError(
-                        ERR_DEVICE_NOT_FOUND,
-                        f'Unsupported entity {self.property_entity_id} for {self.instance} instance '
-                        f'of {self.state.entity_id}'
-                    )
+        if self.property_state.domain == binary_sensor.DOMAIN:
+            if self.instance not in PROPERTY_TYPE_EVENT_VALUES:
+                raise SmartHomeError(
+                    ERR_DEVICE_NOT_FOUND,
+                    f'Unsupported entity {self.property_state.entity_id} for {self.instance} instance '
+                    f'of {self.state.entity_id}'
+                )
 
+            self.type = PROPERTY_EVENT
+            self.values = PROPERTY_TYPE_EVENT_VALUES.get(self.instance)
+        elif self.property_state.domain == sensor.DOMAIN:
+            if self.instance not in PROPERTY_TYPE_TO_UNITS and self.instance in PROPERTY_TYPE_EVENT_VALUES:
+                # TODO: battery_level and water_level cannot be events for sensor domain
                 self.type = PROPERTY_EVENT
                 self.values = PROPERTY_TYPE_EVENT_VALUES.get(self.instance)
-                return
-            elif property_state.domain == sensor.DOMAIN:
-                if self.instance not in PROPERTY_TYPE_TO_UNITS and self.instance in PROPERTY_TYPE_EVENT_VALUES:
-                    # TODO: battery_level and water_level cannot be events for sensor domain
-                    self.type = PROPERTY_EVENT
-                    self.values = PROPERTY_TYPE_EVENT_VALUES.get(self.instance)
 
         if self.instance in [const.PROPERTY_TYPE_BUTTON, const.PROPERTY_TYPE_VIBRATION]:
             self.retrievable = False
@@ -739,23 +738,22 @@ class CustomEntityProperty(_Property):
         if not self.retrievable:
             return None
 
-        pressure_unit: Optional[str] = None
+        value_unit: Optional[str] = None
+        value_attribute = self.property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
 
-        if self.property_entity_id:
-            property_state: State = self.hass.states.get(self.property_entity_id)
-            if property_state is None:
+        if value_attribute:
+            if value_attribute not in self.property_state.attributes:
                 raise SmartHomeError(
                     ERR_DEVICE_NOT_FOUND,
-                    f'Entity {self.property_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
+                    f'Attribute {value_attribute} not found in entity {self.property_state.entity_id} '
+                    f'for {self.instance} instance of {self.state.entity_id}'
                 )
 
-            value = property_state.state
-            if self.instance == const.PROPERTY_TYPE_PRESSURE:
-                pressure_unit = property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            value = self.property_state.attributes[value_attribute]
         else:
-            value = self.state.attributes.get(self.property_config[CONF_ENTITY_PROPERTY_ATTRIBUTE])
+            value = self.property_state.state
 
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI):
             if self.type == PROPERTY_FLOAT:
                 return None
 
@@ -764,19 +762,21 @@ class CustomEntityProperty(_Property):
                 f'Unsupported value {value!r} for {self.instance} instance of {self.state.entity_id}'
             )
 
+        if self.instance in [const.PROPERTY_TYPE_PRESSURE, const.PROPERTY_TYPE_TVOC]:
+            value_unit = self.property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+
         if self.instance == const.PROPERTY_TYPE_PRESSURE:
-            if pressure_unit not in PRESSURE_TO_PASCAL:
+            if value_unit not in PRESSURE_TO_PASCAL:
                 raise SmartHomeError(
                     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f'Unsupported pressure unit "{pressure_unit}" '
+                    f'Unsupported pressure unit "{value_unit}" '
                     f'for {self.instance} instance of {self.state.entity_id}'
                 )
 
-            return round(self.float_value(value) * PRESSURE_TO_PASCAL[pressure_unit] *
+            return round(self.float_value(value) * PRESSURE_TO_PASCAL[value_unit] *
                          PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2)
-
-        if self.instance == const.PROPERTY_TYPE_TVOC:
-            mcg_m3_factor = 4.5 if property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == 'ppb' else 1
+        elif self.instance == const.PROPERTY_TYPE_TVOC:
+            mcg_m3_factor = 4.5 if value_unit == 'ppb' else 1
             return round(self.float_value(value) * mcg_m3_factor, 2)
 
         return self.float_value(value) if self.type != PROPERTY_EVENT else self.event_value(value)
