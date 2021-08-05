@@ -19,6 +19,7 @@ from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     ATTR_VOLTAGE,
     ATTR_UNIT_OF_MEASUREMENT,
+    CONCENTRATION_PARTS_PER_BILLION,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CO2,
     DEVICE_CLASS_CURRENT,
@@ -184,6 +185,29 @@ class _Property:
                 f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
             )
 
+    def convert_value(self, value: Any, from_unit: Optional[str]):
+        float_value = self.float_value(value)
+        if float_value is None:
+            return None
+
+        if self.instance == const.PROPERTY_TYPE_PRESSURE:
+            if from_unit not in PRESSURE_TO_PASCAL:
+                raise SmartHomeError(
+                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                    f'Unsupported pressure unit "{from_unit}" '
+                    f'for {self.instance} instance of {self.state.entity_id}'
+                )
+
+            return round(
+                float_value * PRESSURE_TO_PASCAL[from_unit] *
+                PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2
+            )
+        elif self.instance == const.PROPERTY_TYPE_TVOC:
+            mcg_m3_factor = 4.5 if from_unit == CONCENTRATION_PARTS_PER_BILLION else 1
+            return round(float_value * mcg_m3_factor, 2)
+
+        return value
+
 
 class _EventProperty(_Property):
     type = PROPERTY_EVENT
@@ -284,21 +308,7 @@ class PressureProperty(_FloatProperty):
         }
 
     def get_value(self):
-        value = self.state.state
-        unit = self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-        if unit not in PRESSURE_TO_PASCAL:
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unsupported pressure unit "{unit}" for instance {self.instance} of {self.state.entity_id}'
-            )
-
-        # Convert the value to pascal and then to the chosen Yandex unit
-        raw_value = self.float_value(value)
-        if raw_value:
-            return round(
-                raw_value * PRESSURE_TO_PASCAL[unit] *
-                PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2
-            )
+        return self.convert_value(self.state.state, self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
 
 
 @register_property
@@ -419,9 +429,9 @@ class TVOCProperty(_FloatProperty):
 
     def get_value(self):
         if self.state.domain == air_quality.DOMAIN:
-            mcg_m3_factor = 4.5 if self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == 'ppb' else 1
-            return round(
-                self.float_value(self.state.attributes.get('total_volatile_organic_compounds')) * mcg_m3_factor, 2
+            return self.convert_value(
+                self.state.attributes.get('total_volatile_organic_compounds'),
+                self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
             )
 
 
@@ -738,7 +748,6 @@ class CustomEntityProperty(_Property):
         if not self.retrievable:
             return None
 
-        value_unit: Optional[str] = None
         value_attribute = self.property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
 
         if value_attribute:
@@ -764,19 +773,6 @@ class CustomEntityProperty(_Property):
 
         if self.instance in [const.PROPERTY_TYPE_PRESSURE, const.PROPERTY_TYPE_TVOC]:
             value_unit = self.property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-
-        if self.instance == const.PROPERTY_TYPE_PRESSURE:
-            if value_unit not in PRESSURE_TO_PASCAL:
-                raise SmartHomeError(
-                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f'Unsupported pressure unit "{value_unit}" '
-                    f'for {self.instance} instance of {self.state.entity_id}'
-                )
-
-            return round(self.float_value(value) * PRESSURE_TO_PASCAL[value_unit] *
-                         PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2)
-        elif self.instance == const.PROPERTY_TYPE_TVOC:
-            mcg_m3_factor = 4.5 if value_unit == 'ppb' else 1
-            return round(self.float_value(value) * mcg_m3_factor, 2)
+            return self.convert_value(value, value_unit)
 
         return self.float_value(value) if self.type != PROPERTY_EVENT else self.event_value(value)
