@@ -182,6 +182,9 @@ class OnOffCapability(_Capability):
                 return False
             return True
 
+        if const.CONF_TURN_ON in entity_config:
+            return True
+
         return domain in (
             cover.DOMAIN,
             group.DOMAIN,
@@ -225,6 +228,15 @@ class OnOffCapability(_Capability):
 
     async def set_state(self, data, state):
         """Set device state."""
+        for key, call in ((const.CONF_TURN_ON, state['value']), (const.CONF_TURN_OFF, not state['value'])):
+            if key in self.entity_config and call:
+                return await async_call_from_config(
+                    self.hass,
+                    self.entity_config[key],
+                    blocking=True,
+                    context=data.context,
+                )
+
         domain = service_domain = self.state.domain
         service_data = {
             ATTR_ENTITY_ID: self.state.entity_id

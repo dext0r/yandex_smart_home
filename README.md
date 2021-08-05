@@ -130,7 +130,9 @@ yandex_smart_home:
 | `name`        |                 | Русские буквы и пробелы           | Отображаемое название устройства
 | `room`        |                 | Русские буквы и пробелы           | Комната, в которой находится устройство, [подробнее о комнатах...](#поддержка-комнат)
 | `type`        | Автоматически   | [Список](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html#device-types__types) | Переопредление стандартного типа устройства. Например домен `switch` по умолчанию отдается как "выключатель" (`devices.types.switch`) и реагирует на команду "Алиса, включи ХХХ". А если задать `devices.types.openable`, то у такого устройства изменится иконка и фраза на "Алиса, **открой** XXX"
-| `channel_set_via`<br>`_media_content_id` | `false` | `true` / `false`     | Только для домена `media_player`. Выбор канала через `media_content_id`, [подробнее...](https://github.com/dmitry-k/yandex_smart_home/issues/36) (скорее всего устарело)
+| `turn_on`     | Автоматически   |                                   | Вызываемый сервис при включении устройства               |
+| `turn_off`    | Автоматически   |                                   | Вызываемый сервис при выключении устройства              |
+| `channel_set_via`<br>`_media_content_id` | `false` | `true` / `false`  | Только для домена `media_player`. Выбор конкретного канала через `media_content_id`, [подробнее...](https://github.com/dmitry-k/yandex_smart_home/issues/36)
 
 Пример конфигурации:
 ```yaml
@@ -144,6 +146,12 @@ yandex_smart_home:
       name: Ворота
       room: Улица
       type: devices.types.openable
+    climate.smart_ir:
+      name: Кондиционер
+      room: Кухня
+      turn_on:
+        service: climate.turn_on
+        entity_id: climate.smart_ir
 ```
 
 
