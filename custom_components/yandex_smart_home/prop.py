@@ -19,6 +19,10 @@ from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     ATTR_VOLTAGE,
     ATTR_UNIT_OF_MEASUREMENT,
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_FOOT,
+    CONCENTRATION_PARTS_PER_MILLION,
     CONCENTRATION_PARTS_PER_BILLION,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CO2,
@@ -204,8 +208,16 @@ class _Property:
                 PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2
             )
         elif self.instance == const.PROPERTY_TYPE_TVOC:
-            mcg_m3_factor = 4.5 if from_unit == CONCENTRATION_PARTS_PER_BILLION else 1
-            return round(float_value * mcg_m3_factor, 2)
+            # average molecular weight of tVOC = 110 g/mol
+            CONCENTRATION_TO_MCG_M3 = {
+                CONCENTRATION_PARTS_PER_BILLION: 4.49629381184,
+                CONCENTRATION_PARTS_PER_MILLION: 4496.29381184,
+                CONCENTRATION_MICROGRAMS_PER_CUBIC_FOOT: 35.3146667215,
+                CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER: 1000,
+                CONCENTRATION_MICROGRAMS_PER_CUBIC_METER: 1
+            }
+
+            return round(float_value * CONCENTRATION_TO_MCG_M3.get(from_unit, 1), 2)
 
         return value
 
