@@ -470,6 +470,9 @@ yandex_smart_home:
             entity: sensor.bedroom_temperature
           - type: humidity
             entity: sensor.bedroom_humidity
+          - type: tvoc
+            attribute: total_volatile_organic_compounds
+            unit_of_measurement: ppb  # для автоматической конвертации из миллиардных долей в мкг/м³
           - type: water_level
             entity: sensor.humidifier_level
           - type: battery_level  # если хочется переместить датчик "из атрибута" в конец списка

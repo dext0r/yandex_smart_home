@@ -49,6 +49,7 @@ from .const import (
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
+    CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
     PROPERTY_TYPE_TO_UNITS,
     PROPERTY_TYPE_EVENT_VALUES,
     PRESSURE_UNITS_TO_YANDEX_UNITS,
@@ -676,7 +677,8 @@ class VibrationProperty(_EventProperty):
 class CustomEntityProperty(_Property):
     """Represents a Property."""
 
-    def __init__(self, hass, state, entity_config, property_config):
+    def __init__(self, hass: HomeAssistant, state: State,
+                 entity_config: dict[str, Any], property_config: dict[str, str]):
         super().__init__(hass, state, entity_config)
 
         self.type = PROPERTY_FLOAT
@@ -772,7 +774,8 @@ class CustomEntityProperty(_Property):
             )
 
         if self.instance in [const.PROPERTY_TYPE_PRESSURE, const.PROPERTY_TYPE_TVOC]:
-            value_unit = self.property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            value_unit = self.property_config.get(CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
+                                                  self.property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
             return self.convert_value(value, value_unit)
 
         return self.float_value(value) if self.type != PROPERTY_EVENT else self.event_value(value)
