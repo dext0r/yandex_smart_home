@@ -73,6 +73,9 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
     async def post(self, request: Request) -> Response:
         """Handle Yandex Smart Home POST requests."""
         _LOGGER.debug('Request: %s (POST data: %s)' % (request.url, await request.text()))
+        if str(request.url).endswith('/user/unlink'):
+            return await self._async_handle_request(request, {})
+
         return await self._async_handle_request(request, await request.json())
 
     async def get(self, request: Request) -> Response:
