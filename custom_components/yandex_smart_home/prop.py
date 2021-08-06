@@ -271,7 +271,9 @@ class TemperatureProperty(_FloatProperty):
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_TEMPERATURE
-        elif domain in (air_quality.DOMAIN, climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
+        elif domain == air_quality.DOMAIN:
+            return attributes.get(climate.ATTR_TEMPERATURE) is not None
+        elif domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
             return attributes.get(climate.ATTR_CURRENT_TEMPERATURE) is not None
 
         return False
@@ -279,7 +281,9 @@ class TemperatureProperty(_FloatProperty):
     def get_value(self):
         if self.state.domain == sensor.DOMAIN:
             return self.float_value(self.state.state)
-        elif self.state.domain in (air_quality.DOMAIN, climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
+        elif self.state.domain == air_quality.DOMAIN:
+            return self.float_value(self.state.attributes.get(climate.ATTR_TEMPERATURE))
+        elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
             return self.float_value(self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE))
 
 
@@ -291,7 +295,9 @@ class HumidityProperty(_FloatProperty):
     def supported(domain, features, entity_config, attributes):
         if domain == sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_HUMIDITY
-        elif domain in (air_quality.DOMAIN, climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
+        elif domain == air_quality.DOMAIN:
+            return attributes.get(climate.ATTR_HUMIDITY) is not None
+        elif domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
             return attributes.get(climate.ATTR_CURRENT_HUMIDITY) is not None
 
         return False
@@ -299,7 +305,9 @@ class HumidityProperty(_FloatProperty):
     def get_value(self):
         if self.state.domain == sensor.DOMAIN:
             return self.float_value(self.state.state)
-        elif self.state.domain in (air_quality.DOMAIN, climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
+        elif self.state.domain == air_quality.DOMAIN:
+            return self.float_value(self.state.attributes.get(climate.ATTR_HUMIDITY))
+        elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
             return self.float_value(self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY))
 
 
