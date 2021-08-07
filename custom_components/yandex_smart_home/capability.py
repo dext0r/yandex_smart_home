@@ -661,6 +661,12 @@ class ProgramCapability(_ModeCapability):
         if self.state.domain == humidifier.DOMAIN:
             return humidifier.ATTR_AVAILABLE_MODES
 
+    @property
+    def state_value_attribute(self) -> Optional[str]:
+        """Return HA attribute for state of this entity."""
+        if self.state.domain == humidifier.DOMAIN:
+            return humidifier.ATTR_MODE
+
     async def set_state(self, data, state):
         """Set device state."""
         await self.hass.services.async_call(
