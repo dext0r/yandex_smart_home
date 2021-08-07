@@ -490,7 +490,7 @@ class _ModeCapability(_Capability):
                 rv = yandex_mode
                 break
 
-        if self.modes_map_index_fallback:
+        if rv is None and self.modes_map_index_fallback:
             try:
                 rv = self.modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
             except (IndexError, ValueError, KeyError):
