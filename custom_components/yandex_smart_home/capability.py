@@ -625,15 +625,18 @@ class ProgramCapability(_ModeCapability):
 
     instance = const.MODE_INSTANCE_PROGRAM
     modes_map_default = {
-        const.MODE_INSTANCE_MODE_NORMAL: [humidifier.const.MODE_NORMAL],
-        const.MODE_INSTANCE_MODE_ECO: [humidifier.const.MODE_ECO],
-        const.MODE_INSTANCE_MODE_MIN: [humidifier.const.MODE_AWAY],
-        const.MODE_INSTANCE_MODE_TURBO: [humidifier.const.MODE_BOOST],
-        const.MODE_INSTANCE_MODE_MEDIUM: [humidifier.const.MODE_COMFORT],
-        const.MODE_INSTANCE_MODE_MAX: [humidifier.const.MODE_HOME],
-        const.MODE_INSTANCE_MODE_QUIET: [humidifier.const.MODE_SLEEP],
+        const.MODE_INSTANCE_MODE_FAN_ONLY: [const.XIAOMI_AIRPURIFIER_PRESET_FAN],
         const.MODE_INSTANCE_MODE_AUTO: [humidifier.const.MODE_AUTO],
-        const.MODE_INSTANCE_MODE_HIGH: [humidifier.const.MODE_BABY],
+        const.MODE_INSTANCE_MODE_QUIET: [humidifier.const.MODE_SLEEP, const.XIAOMI_AIRPURIFIER_PRESET_SILENT],
+        const.MODE_INSTANCE_MODE_LOW: [const.XIAOMI_AIRPURIFIER_PRESET_LOW],
+        const.MODE_INSTANCE_MODE_MIN: [humidifier.const.MODE_AWAY],
+        const.MODE_INSTANCE_MODE_ECO: [humidifier.const.MODE_ECO, const.XIAOMI_AIRPURIFIER_PRESET_IDLE],
+        const.MODE_INSTANCE_MODE_MEDIUM: [humidifier.const.MODE_COMFORT,
+                                          const.MODE_INSTANCE_MODE_MEDIUM, const.XIAOMI_AIRPURIFIER_PRESET_MIDDLE],
+        const.MODE_INSTANCE_MODE_NORMAL: [humidifier.const.MODE_NORMAL, const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE],
+        const.MODE_INSTANCE_MODE_MAX: [humidifier.const.MODE_HOME],
+        const.MODE_INSTANCE_MODE_HIGH: [humidifier.const.MODE_BABY, const.XIAOMI_AIRPURIFIER_PRESET_HIGH],
+        const.MODE_INSTANCE_MODE_TURBO: [humidifier.const.MODE_BOOST, const.XIAOMI_AIRPURIFIER_PRESET_STRONG],
     }
     modes_map_index_fallback = {
         0: const.MODE_INSTANCE_MODE_ONE,

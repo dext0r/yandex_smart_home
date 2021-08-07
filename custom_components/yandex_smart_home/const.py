@@ -352,6 +352,18 @@ DOMAIN_XIAOMI_AIRPURIFIER = 'xiaomi_miio_airpurifier'
 MODEL_PREFIX_XIAOMI_AIRPURIFIER = 'zhimi.'
 SERVICE_FAN_SET_TARGET_HUMIDITY = 'fan_set_target_humidity'
 
+# https://github.com/home-assistant/core/blob/6830eec549c372946b19035000c10afecd2f2da3/homeassistant/components/xiaomi_miio/fan.py#L275
+XIAOMI_AIRPURIFIER_PRESET_AUTO = 'Auto'
+XIAOMI_AIRPURIFIER_PRESET_SILENT = 'Silent'
+XIAOMI_AIRPURIFIER_PRESET_LOW = 'Low'
+XIAOMI_AIRPURIFIER_PRESET_FAVORITE = 'Favorite'
+XIAOMI_AIRPURIFIER_PRESET_IDLE = 'Idle'
+XIAOMI_AIRPURIFIER_PRESET_MEDIUM = 'Medium'
+XIAOMI_AIRPURIFIER_PRESET_HIGH = 'High'
+XIAOMI_AIRPURIFIER_PRESET_STRONG = 'Strong'
+XIAOMI_AIRPURIFIER_PRESET_FAN = 'Fan'
+XIAOMI_AIRPURIFIER_PRESET_MIDDLE = 'Middle'
+
 # Error codes
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/response-codes-docpage/
 ERR_DEVICE_UNREACHABLE = 'DEVICE_UNREACHABLE'
