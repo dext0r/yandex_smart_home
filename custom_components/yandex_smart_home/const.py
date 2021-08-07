@@ -352,6 +352,13 @@ DOMAIN_XIAOMI_AIRPURIFIER = 'xiaomi_miio_airpurifier'
 MODEL_PREFIX_XIAOMI_AIRPURIFIER = 'zhimi.'
 SERVICE_FAN_SET_TARGET_HUMIDITY = 'fan_set_target_humidity'
 
+# https://github.com/syssi/xiaomi_airpurifier#service-fanset_preset_mode
+XIAOMI_FAN_PRESET_LEVEL_1 = 'Level 1'
+XIAOMI_FAN_PRESET_LEVEL_2 = 'Level 2'
+XIAOMI_FAN_PRESET_LEVEL_3 = 'Level 3'
+XIAOMI_FAN_PRESET_LEVEL_4 = 'Level 4'
+XIAOMI_FAN_PRESET_LEVEL_5 = 'Level 5'
+
 # https://github.com/home-assistant/core/blob/6830eec549c372946b19035000c10afecd2f2da3/homeassistant/components/xiaomi_miio/fan.py#L275
 XIAOMI_AIRPURIFIER_PRESET_AUTO = 'Auto'
 XIAOMI_AIRPURIFIER_PRESET_SILENT = 'Silent'

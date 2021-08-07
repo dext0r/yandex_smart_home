@@ -736,12 +736,17 @@ class FanSpeedCapability(_ModeCapability):
     instance = const.MODE_INSTANCE_FAN_SPEED
     modes_map_default = {
         const.MODE_INSTANCE_MODE_AUTO: [climate.const.FAN_AUTO, climate.const.FAN_ON],
-        const.MODE_INSTANCE_MODE_QUIET: [fan.SPEED_OFF, climate.const.FAN_OFF, 'silent', 'diffuse', 'level 1'],
-        const.MODE_INSTANCE_MODE_LOW: [fan.SPEED_LOW, climate.const.FAN_LOW, 'min', 'level 2'],
+        const.MODE_INSTANCE_MODE_ECO: [const.XIAOMI_AIRPURIFIER_PRESET_IDLE],
+        const.MODE_INSTANCE_MODE_QUIET: [fan.SPEED_OFF, climate.const.FAN_OFF, 'diffuse',
+                                         const.XIAOMI_AIRPURIFIER_PRESET_SILENT, const.XIAOMI_FAN_PRESET_LEVEL_1],
+        const.MODE_INSTANCE_MODE_LOW: [fan.SPEED_LOW, climate.const.FAN_LOW, 'min',
+                                       const.XIAOMI_FAN_PRESET_LEVEL_2],
         const.MODE_INSTANCE_MODE_MEDIUM: [fan.SPEED_MEDIUM, climate.const.FAN_MEDIUM, climate.const.FAN_MIDDLE,
-                                          'mid', 'level 3'],
-        const.MODE_INSTANCE_MODE_HIGH: [fan.SPEED_HIGH, climate.const.FAN_HIGH, 'strong', 'favorite', 'level 4'],
-        const.MODE_INSTANCE_MODE_TURBO: [climate.const.FAN_FOCUS, 'max', 'level 5'],
+                                          'mid', const.XIAOMI_FAN_PRESET_LEVEL_3],
+        const.MODE_INSTANCE_MODE_NORMAL: [const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE],
+        const.MODE_INSTANCE_MODE_HIGH: [fan.SPEED_HIGH, climate.const.FAN_HIGH, const.XIAOMI_FAN_PRESET_LEVEL_4],
+        const.MODE_INSTANCE_MODE_TURBO: [climate.const.FAN_FOCUS, 'max',
+                                         const.XIAOMI_AIRPURIFIER_PRESET_STRONG, const.XIAOMI_FAN_PRESET_LEVEL_5],
     }
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
