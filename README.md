@@ -35,6 +35,7 @@
   - [Устройство не появляется в УДЯ](#устройство-не-появляется-в-удя)
   - [Ошибка "Что-то пошло не так" при частых действиях](#ошибка-что-то-пошло-не-так-при-частых-действиях)
   - [Как отвязать диалог](#как-отвязать-диалог)
+  - [Появляются дубли устройств](#появляются-дубли-устройств)
 - [Полезные ссылки](#полезные-ссылки)
 - [Пример конфигурации](#пример-конфигурации)
 
@@ -83,7 +84,7 @@
     | URL для получения токена    | `https://[YOUR_HA_DOMAIN:PORT]/auth/token`        |
     | URL для обновления токена   | `https://[YOUR_HA_DOMAIN:PORT]/auth/token`        |
 
-* На вкладке "Настройки" нажать "Опубликовать" (для приватных навыков публикация автоматическая и моментальная).
+* На вкладке "Настройки" **обязательно нажать** "Опубликовать" (для приватных навыков публикация автоматическая и моментальная). **Не используйте навык в режиме "Черновик"**, это может вызывать различные проблемы (дубли уcтройств, ошибки в нотификаторе).
   В этот момент УДЯ попробует подключиться к вашему Home Assistant, и если у него не получится - появятся ошибки валидации.
 * В приложении Яндекс на Android/iOS (или в [квазаре](https://yandex.ru/quasar/iot)) добавить устройства умного дома,
   в производителях выбрать диалог, который создали ранее (ищите по названию).
@@ -94,7 +95,9 @@
 
 ## Фильтрация устройств
 По умолчанию в УДЯ отдаются все поддерживаемые компонентом устройства (в том числе из доменов `script` и `scene`).
-Отфильтровать устройства можно через словарь `filter`. Поддерживаемые фильтры: `include_domains`, `include_entities`,
+Отфильтровать устройства можно через словарь `filter`.
+
+Поддерживаемые фильтры: `include_domains`, `include_entities`,
 `include_entity_globs`, `exclude_domains`, `exlude_entities`, `exclude_entity_globs`.
 
 Приоритизация по фильтрам работает аналогично фильтрам в интеграции [Recorder](https://www.home-assistant.io/integrations/recorder/#configure-filter).
@@ -133,7 +136,7 @@ yandex_smart_home:
 | `type`        | Автоматически   | [Список](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html#device-types__types) | Переопредление стандартного типа устройства. Например домен `switch` по умолчанию отдается как "выключатель" (`devices.types.switch`) и реагирует на команду "Алиса, включи ХХХ". А если задать `devices.types.openable`, то у такого устройства изменится иконка и фраза на "Алиса, **открой** XXX"
 | `turn_on`     | Автоматически   |                                   | Вызываемый сервис при включении устройства               |
 | `turn_off`    | Автоматически   |                                   | Вызываемый сервис при выключении устройства              |
-| `channel_set_via`<br>`_media_content_id` | `false` | `true` / `false`  | Только для домена `media_player`. Выбор конкретного канала через `media_content_id`, [подробнее...](https://github.com/dmitry-k/yandex_smart_home/issues/36). Если у вас телевизор подключен через **SmartIR**, скорее всего вам нужно включить это параметр. 
+| `channel_set_via`<br>`_media_content_id` | `false` | `true` / `false`  | Только для домена `media_player`. Выбор конкретного канала через `media_content_id`, [подробнее...](https://github.com/dmitry-k/yandex_smart_home/issues/36). Если у вас телевизор подключен через **SmartIR**, скорее всего вам нужно включить это параметр.
 
 Пример конфигурации:
 ```yaml
@@ -605,10 +608,10 @@ yandex_smart_home:
   * **ID** и **атрибуты** проблемных устройств. Их можно найти в Панель разработчка (Developer Tools) -> Состояния (States).
   * Конфигурацию `yandex_smart_home` (лучше целиком, или только `filter` и `entity_config` для проблемного устройства).
   * Крайне желательно (но можно не сразу) приложить лог обновления списка устройства в УДЯ. Для его получения:
-    1. Зайти в диалог на [dialogs.yandex.ru/developer](https://dialogs.yandex.ru/developer)
-    2. Вкладка "Тестирование" -> выбрать "Опубликованная версия"
-    3. Нажать иконку "Добавить" -> "Устройство умного дома" -> "Обновить список устройств"
-    4. В окне отладки появится:
+    * Зайти в диалог на [dialogs.yandex.ru/developer](https://dialogs.yandex.ru/developer)
+    * Вкладка "Тестирование" -> выбрать "Опубликованная версия"
+    * Нажать иконку "Добавить" -> "Устройство умного дома" -> "Обновить список устройств"
+    * В окне отладки появится:
       ```
       Sending request to provider: GET https://YOUR_HA_DOMAIN/api/yandex_smart_home/v1.0/user/devices
       Got response from provider XXXXX: 200 {"request_id": .... (большой json)
@@ -616,15 +619,15 @@ yandex_smart_home:
       Нужно только то, что в строчке Got Response и ниже (лучше файлом).
       Пожалуйста, не включайте строку "Sending request", в ней адрес вашего Home Assistant, пусть эта информация лучше остается в тайне :)
   * Если в окне отладки пусто, а УДЯ выдает ошибку "Не получилось обновить список устройств" - нужен лог запросов и ответов со стороны Home Assistant. Для этого:
-     1. Включите отладку через `configuration.yaml`:
+     * Включите отладку через `configuration.yaml`:
           ```yaml
           logger:
             default: warning
             logs:
               custom_components.yandex_smart_home: debug
           ```
-      2. Перезапустите Home Assistant
-      3. Выполните "Обновление устройств" в УДЯ, в логе Home Assistant появятся строчки:
+      * Перезапустите Home Assistant
+      * Выполните "Обновление списка устройств" в УДЯ, в логе Home Assistant появятся строчки:
          ```
          [custom_components.yandex_smart_home.http] Request: https://YOUR_HA_DOMAIN/api/yandex_smart_home/v1.0/user/devices
          [custom_components.yandex_smart_home.http] Response: {"request_id": ...
@@ -649,6 +652,10 @@ yandex_smart_home:
 * Поставить галочку "Удалить устройства" и нажать "Отвязать от Яндекса".
 
 
+### Появляются дубли устройств
+Скорее всего часть устройств были добавлены в "Черновик" навыка. Удалите их оттуда вручную через [dialogs.yandex.ru/developer](https://dialogs.yandex.ru/developer) (вкладка "Тестирование").
+
+
 ## Полезные ссылки
 * https://t.me/yandex_smart_home - Чат по компоненту в Телеграме
 * https://github.com/AlexxIT/YandexStation - Управление колонками с Алисой из Home Assistant и проброс устройств из УДЯ в Home Assistant
@@ -668,6 +675,7 @@ yandex_smart_home:
     include_domains:
       - switch
       - light
+      - climate
     include_entities:
       - media_player.tv
       - media_player.tv_lg
@@ -733,4 +741,45 @@ yandex_smart_home:
           entity: sensor.bedroom_humidity
         - type: water_level
           entity: sensor.humidifier_level
+    climate.aс_living_room:
+      name: Кондиционер
+      room: Гостиная
+      type: devices.types.thermostat.ac
+      custom_toggles:
+        ionization:
+          state_entity_id: switch.aс_ionizer
+          turn_on:
+            service: switch.turn_on
+            entity_id: switch.aс_ionizer
+          turn_off:
+            service: switch.turn_off
+            entity_id: switch.aс_ionizer
+        backlight:
+          state_entity_id: input_boolean.ac_lighting
+          turn_on:
+            service: input_boolean.turn_on
+            entity_id: input_boolean.ac_lighting
+          turn_off:
+            service: input_boolean.turn_off
+            entity_id: input_boolean.ac_lighting
+    switch.r4s1_kettle_boil:
+      name: Чайник
+      room: Кухня
+      custom_ranges:
+        temperature:
+          state_attribute: temperature
+          set_value:
+            service: climate.set_temperature
+            data:
+              temperature: '{{ value }}'
+            target:
+              entity_id: climate.r4s1_kettle_temp
+          range:
+            min: 40
+            max: 90
+            precision: 10
+      properties:
+        - type: temperature
+          entity: climate.r4s1_kettle_temp
+          attribute: current_temperature
 ```
