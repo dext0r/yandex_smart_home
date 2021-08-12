@@ -8,7 +8,7 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import callback
 
 from .const import DOMAIN, CONFIG
-from .smart_home import async_handle_message
+from .smart_home import async_handle_message, RequestData, async_devices_sync
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 def async_register_http(hass):
     """Register HTTP views for Yandex Smart Home."""
     hass.http.register_view(YandexSmartHomeUnauthorizedView())
+    hass.http.register_view(YandexSmartHomePingView())
     hass.http.register_view(YandexSmartHomeView())
 
 
@@ -37,6 +38,32 @@ class YandexSmartHomeUnauthorizedView(HomeAssistantView):
             return Response(status=404)
 
         return Response(status=200)
+
+
+class YandexSmartHomePingView(HomeAssistantView):
+    """Handle Yandex Smart Home ping requests."""
+
+    url = '/api/yandex_smart_home/v1.0/ping'
+    name = 'api:yandex_smart_home:unauthorized'
+    requires_auth = False
+
+    # noinspection PyMethodMayBeStatic
+    async def get(self, request: Request) -> Response:
+        """Handle Yandex Smart Home Get requests."""
+        _LOGGER.debug('Request: %s (GET)' % request.url)
+
+        if not request.app['hass'].data[DOMAIN][CONFIG]:
+            _LOGGER.debug('Integation is not enabled')
+            return Response(text='Error: Integation is not enabled', status=503)
+
+        devices_sync_response = await async_devices_sync(
+            request.app['hass'],
+            RequestData(request.app['hass'].data[DOMAIN][CONFIG], None, 'ping'),
+            {}
+        )
+        device_count = len(devices_sync_response['devices'])
+
+        return Response(text=f'OK: {device_count}', status=200)
 
 
 class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
