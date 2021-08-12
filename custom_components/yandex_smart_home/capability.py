@@ -1212,11 +1212,11 @@ class _ColorSettingCapability(_Capability):
 
     type = CAPABILITIES_COLOR_SETTING
     scenes_map_default = {
-        const.COLOR_SCENE_ALARM: ['Тревога', 'Alarm'],
-        const.COLOR_SCENE_ALICE: ['Алиса', 'Alice'],
+        const.COLOR_SCENE_ALARM: ['Тревога', 'Alarm', 'Shine'],
+        const.COLOR_SCENE_ALICE: ['Алиса', 'Alice', 'Meeting'],
         const.COLOR_SCENE_CANDLE: ['Свеча', 'Огонь', 'Candle', 'Fire'],
         const.COLOR_SCENE_DINNER: ['Ужин', 'Dinner'],
-        const.COLOR_SCENE_FANTASY: ['Фантазия', 'Fantasy'],
+        const.COLOR_SCENE_FANTASY: ['Фантазия', 'Fantasy', 'Random', 'Beautiful'],
         const.COLOR_SCENE_GARLAND: ['Гирлянда', 'Garland'],
         const.COLOR_SCENE_JUNGLE: ['Джунгли', 'Jungle'],
         const.COLOR_SCENE_MOVIE: ['Кино', 'Movie'],
@@ -1224,10 +1224,10 @@ class _ColorSettingCapability(_Capability):
         const.COLOR_SCENE_NIGHT: ['Ночь', 'Night'],
         const.COLOR_SCENE_OCEAN: ['Океан', 'Ocean'],
         const.COLOR_SCENE_PARTY: ['Вечеринка', 'Party'],
-        const.COLOR_SCENE_READING: ['Чтение', 'Reading'],
-        const.COLOR_SCENE_REST: ['Отдых', 'Rest'],
-        const.COLOR_SCENE_ROMANCE: ['Романтика', 'Romance'],
-        const.COLOR_SCENE_SIREN: ['Сирена', 'Siren'],
+        const.COLOR_SCENE_READING: ['Чтение', 'Reading', 'Read'],
+        const.COLOR_SCENE_REST: ['Отдых', 'Rest', 'Soft'],
+        const.COLOR_SCENE_ROMANCE: ['Романтика', 'Romance', 'Leasure'],
+        const.COLOR_SCENE_SIREN: ['Сирена', 'Siren', 'Rainbow'],
         const.COLOR_SCENE_SUNRISE: ['Рассвет', 'Sunrise'],
         const.COLOR_SCENE_SUNSET: ['Закат', 'Sunset']
     }
