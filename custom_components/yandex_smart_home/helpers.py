@@ -7,7 +7,7 @@ from typing import Optional, Any, Callable
 from homeassistant.core import HomeAssistant, Context, callback, State
 from homeassistant.const import (
     CONF_NAME, STATE_UNAVAILABLE, ATTR_SUPPORTED_FEATURES,
-    ATTR_DEVICE_CLASS
+    ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES
 )
 from homeassistant.helpers.entity_registry import EntityRegistry
 from homeassistant.helpers.device_registry import DeviceRegistry
@@ -38,7 +38,7 @@ class Config:
 class RequestData:
     """Hold data associated with a particular request."""
 
-    def __init__(self, config, user_id, request_id):
+    def __init__(self, config: Config, user_id: Optional[str], request_id: str):
         """Initialize the request data."""
         self.config = config
         self.request_id = request_id
@@ -121,6 +121,14 @@ class YandexEntity:
     def supported(self) -> bool:
         """Test if device is supported."""
         return bool(self.yandex_device_type)
+
+    @property
+    def should_expose(self) -> bool:
+        """If device should be exposed."""
+        if self.entity_id in CLOUD_NEVER_EXPOSED_ENTITIES:
+            return False
+
+        return self.config.should_expose(self.entity_id)
 
     @property
     def yandex_device_type(self) -> Optional[str]:

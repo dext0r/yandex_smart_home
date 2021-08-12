@@ -1,7 +1,9 @@
 """Support for Yandex Smart Home API."""
+from __future__ import annotations
 import logging
+from typing import Any
 
-from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES
+from homeassistant.core import HomeAssistant
 from homeassistant.util.decorator import Registry
 from homeassistant.helpers import entity_registry, device_registry
 
@@ -65,7 +67,7 @@ async def _process(hass, data, action, message):
 
 # noinspection PyUnusedLocal
 @HANDLERS.register('/user/devices')
-async def async_devices_sync(hass, data, message):
+async def async_devices_sync(hass: HomeAssistant, data: RequestData, message: dict[str, Any]):
     """Handle /user/devices request.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
@@ -75,13 +77,10 @@ async def async_devices_sync(hass, data, message):
     dev_reg = await device_registry.async_get_registry(hass)
 
     for state in hass.states.async_all():
-        if state.entity_id in CLOUD_NEVER_EXPOSED_ENTITIES:
-            continue
-
-        if not data.config.should_expose(state.entity_id):
-            continue
-
         entity, serialized = YandexEntity(hass, data.config, state), None
+        if not entity.should_expose:
+            continue
+
         if entity.supported:
             serialized = await entity.devices_serialize(entity_reg, dev_reg)
 
@@ -119,6 +118,12 @@ async def async_devices_query(hass, data, message):
             continue
 
         entity = YandexEntity(hass, data.config, state)
+        if not entity.should_expose:
+            _LOGGER.warning(
+                f'State requested for unexposed entity {entity.entity_id}. Please either expose the entity via '
+                f'filters in component configuration or delete the device from Yandex.'
+            )
+
         devices.append(entity.query_serialize())
 
     return {'devices': devices}
