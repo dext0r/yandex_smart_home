@@ -133,7 +133,7 @@ class YandexNotifier:
                 if old_entity.notification_serialize(event_entity_id) == device:  # нет изменений
                     continue
 
-            if device['capabilities'] or device['properties']:
+            if device.get('capabilities') or device.get('properties'):
                 devices.append(device)
                 entity_text = entity_id
                 if entity_id != event_entity_id:
