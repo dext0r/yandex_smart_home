@@ -44,10 +44,10 @@ from .error import SmartHomeError
 from .const import (
     DOMAIN,
     ERR_DEVICE_NOT_FOUND,
-    ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     STATE_NONE,
     STATE_NONE_UI,
+    STATE_EMPTY,
     CONFIG,
     CONF_PRESSURE_UNIT,
     CONF_ENTITY_PROPERTY_TYPE,
@@ -172,14 +172,15 @@ class _Property:
             elif value in ['free_fall', 'drop']:
                 return 'fall'
 
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_EMPTY) and \
+                self.retrievable:
             raise SmartHomeError(
-                ERR_INVALID_VALUE,
-                f'Invalid {self.instance} property value: {value!r}'
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
             )
 
     def float_value(self, value: Any) -> Optional[float]:
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI):
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
             return None
 
         try:
@@ -243,7 +244,7 @@ class _EventProperty(_Property):
         if self.state.domain == binary_sensor.DOMAIN:
             value = self.state.state
 
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE) and self.retrievable:
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_EMPTY) and self.retrievable:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                 f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
@@ -784,7 +785,7 @@ class CustomEntityProperty(_Property):
         else:
             value = self.property_state.state
 
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI):
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
             if self.type == PROPERTY_FLOAT:
                 return None
 
