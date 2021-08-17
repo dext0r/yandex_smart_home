@@ -476,6 +476,7 @@ yandex_smart_home:
     filter:
       include_entities:
         - humidifier.bedroom
+        - sensor.kitchen_meteo_temperature
     entity_config:
       humidifier.bedroom:
         properties:
@@ -490,6 +491,16 @@ yandex_smart_home:
             entity: sensor.humidifier_level
           - type: battery_level  # если хочется переместить датчик "из атрибута" в конец списка
             attribute: battery_level
+      sensor.kitchen_meteo_temperature:
+        name: Погода на кухне
+        properties:
+          # температуру отдельно можно не прописывать, она подхватится сама
+          - type: temperature
+            entity: sensor.kitchen_meteo_temperature
+          - type: humidity
+            entity: sensor.kitchen_meteo_humidity
+          - type: battery_level
+            entity: sensor.kitchen_meteo_battery
   ```
   Возможные значения `type`:
   * [Для цифровых датчиков](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html)
