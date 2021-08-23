@@ -1363,6 +1363,9 @@ class RgbCapability(_ColorSettingCapability):
                 rgb_color = color_util.color_hs_to_RGB(*hs_color)
 
         if rgb_color is not None:
+            if rgb_color == (255, 255, 255):
+                return None
+
             value = rgb_color[0]
             value = (value << 8) + rgb_color[1]
             value = (value << 8) + rgb_color[2]
