@@ -584,10 +584,10 @@ class SwingCapability(_ModeCapability):
 
     instance = const.MODE_INSTANCE_SWING
     modes_map_default = {
-        const.MODE_INSTANCE_MODE_VERTICAL: [climate.const.SWING_VERTICAL],
-        const.MODE_INSTANCE_MODE_HORIZONTAL: [climate.const.SWING_HORIZONTAL],
+        const.MODE_INSTANCE_MODE_VERTICAL: [climate.const.SWING_VERTICAL, 'ud'],
+        const.MODE_INSTANCE_MODE_HORIZONTAL: [climate.const.SWING_HORIZONTAL, 'lr'],
         const.MODE_INSTANCE_MODE_STATIONARY: [climate.const.SWING_OFF],
-        const.MODE_INSTANCE_MODE_AUTO: [climate.const.SWING_BOTH]
+        const.MODE_INSTANCE_MODE_AUTO: [climate.const.SWING_BOTH, 'all']
     }
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
