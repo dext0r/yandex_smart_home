@@ -1268,7 +1268,7 @@ class _ColorSettingCapability(_Capability):
         if features & light.SUPPORT_EFFECT:
             supported_scenes = self.get_supported_scenes(
                 self.get_scenes_map_from_config(self.entity_config),
-                self.state.attributes[light.ATTR_EFFECT_LIST]
+                self.state.attributes.get(light.ATTR_EFFECT_LIST, [])
             )
             if supported_scenes:
                 result['color_scene'] = {
@@ -1337,7 +1337,7 @@ class _ColorSettingCapability(_Capability):
             return None
 
         for ha_effect in ha_effects:
-            for am in self.state.attributes[light.ATTR_EFFECT_LIST]:
+            for am in self.state.attributes.get(light.ATTR_EFFECT_LIST, []):
                 if str(am) == ha_effect:
                     return ha_effect
 
@@ -1475,7 +1475,7 @@ class ColorSceneCapability(_ColorSettingCapability):
             return bool(
                 ColorSceneCapability.get_supported_scenes(
                     ColorSceneCapability.get_scenes_map_from_config(entity_config),
-                    attributes[light.ATTR_EFFECT_LIST] or []
+                    attributes.get(light.ATTR_EFFECT_LIST, [])
                 )
             )
 
