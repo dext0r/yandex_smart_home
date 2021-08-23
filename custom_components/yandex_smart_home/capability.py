@@ -1168,23 +1168,33 @@ class ChannelCapability(_RangeCapability):
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
-        return domain == media_player.DOMAIN and (
-                (features & media_player.SUPPORT_PLAY_MEDIA and
-                    entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)) or (
-                    features & media_player.SUPPORT_PREVIOUS_TRACK
-                    and features & media_player.SUPPORT_NEXT_TRACK)
-        )
+        if domain == media_player.DOMAIN:
+            if features & media_player.SUPPORT_PLAY_MEDIA and entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID):
+                return True
+
+            if features & media_player.SUPPORT_PREVIOUS_TRACK and features & media_player.SUPPORT_NEXT_TRACK:
+                return True
+
+            if self.state.entity_id == const.YANDEX_STATION_INTENTS_MEDIA_PLAYER:
+                return True
+
+        return False
 
     @property
     def support_random_access(self) -> bool:
         """Test if capability supports random access."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-        return features & media_player.SUPPORT_PLAY_MEDIA != 0 and \
-            self.entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID)
+        if features & media_player.SUPPORT_PLAY_MEDIA and self.entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID):
+            return True
+
+        if self.state.entity_id == const.YANDEX_STATION_INTENTS_MEDIA_PLAYER:
+            return True
+
+        return False
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        if self.support_random_access:
+        if self.support_random_access and self.state.entity_id != const.YANDEX_STATION_INTENTS_MEDIA_PLAYER:
             return self.float_value(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID))
 
     async def set_state(self, data, state):
