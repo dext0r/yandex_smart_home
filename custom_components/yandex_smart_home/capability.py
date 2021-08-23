@@ -1180,7 +1180,8 @@ class ChannelCapability(_RangeCapability):
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        return self.float_value(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID))
+        if self.support_random_access:
+            return self.float_value(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID))
 
     async def set_state(self, data, state):
         """Set device state."""
