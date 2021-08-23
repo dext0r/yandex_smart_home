@@ -703,6 +703,10 @@ class InputSourceCapability(_ModeCapability):
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
         if domain == media_player.DOMAIN and features & media_player.SUPPORT_SELECT_SOURCE:
+            if len(self.supported_yandex_modes) == len(self.modes_map_index_fallback) and \
+                    len(self.supported_ha_modes) > len(self.modes_map_index_fallback):
+                return False
+
             return super().supported(domain, features, entity_config, attributes)
 
         return False
