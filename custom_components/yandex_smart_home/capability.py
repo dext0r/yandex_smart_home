@@ -1432,32 +1432,27 @@ class TemperatureKCapability(_ColorSettingCapability):
         """Set device state."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
-        attr_name = None
-        attr_value = value = state['value']
+        value = state['value']
+        service_data = {}
 
         if features & light.SUPPORT_COLOR_TEMP or \
                 light.color_temp_supported(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])):
-            attr_name = light.ATTR_KELVIN
+            service_data[light.ATTR_KELVIN] = value
+
         elif light.COLOR_MODE_RGBW in supported_color_modes:
-            brightness = self.state.attributes.get(light.ATTR_BRIGHTNESS, 255)
-            attr_name = light.ATTR_RGBW_COLOR
-
             if value == self.default_white_temperature_k:
-                attr_value = (0, 0, 0, brightness)
+                service_data[light.ATTR_RGBW_COLOR] = (0, 0, 0, self.state.attributes.get(light.ATTR_BRIGHTNESS, 255))
             else:
-                attr_value = (255, 255, 255, 0)
-        elif light.COLOR_MODE_RGB in supported_color_modes or light.COLOR_MODE_HS in supported_color_modes:
-            if value == self.default_white_temperature_k:
-                attr_name = light.ATTR_RGB_COLOR
-                attr_value = (255, 255, 255)
+                service_data[light.ATTR_RGBW_COLOR] = (255, 255, 255, 0)
 
-        if attr_name:
+        elif light.COLOR_MODE_RGB in supported_color_modes or light.COLOR_MODE_HS in supported_color_modes:
+            service_data[light.ATTR_RGB_COLOR] = (255, 255, 255)
+
+        if service_data:
+            service_data[ATTR_ENTITY_ID] = self.state.entity_id
             await self.hass.services.async_call(
-                light.DOMAIN,
-                light.SERVICE_TURN_ON, {
-                    ATTR_ENTITY_ID: self.state.entity_id,
-                    attr_name: attr_value
-                }, blocking=True, context=data.context)
+                light.DOMAIN, light.SERVICE_TURN_ON, service_data, blocking=True, context=data.context
+            )
         else:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
