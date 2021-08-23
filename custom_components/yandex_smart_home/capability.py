@@ -1234,6 +1234,8 @@ class _ColorSettingCapability(_Capability):
         const.COLOR_SCENE_SUNRISE: ['Рассвет', 'Sunrise'],
         const.COLOR_SCENE_SUNSET: ['Закат', 'Sunset']
     }
+    default_white_temperature_k = 4500
+    cold_white_temperature_k = 6500
 
     def parameters(self):
         """Return parameters for a devices request."""
@@ -1242,9 +1244,7 @@ class _ColorSettingCapability(_Capability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
 
-        if features & light.SUPPORT_COLOR or \
-                light.COLOR_MODE_RGB in supported_color_modes or \
-                light.COLOR_MODE_HS in supported_color_modes:
+        if self.support_color:
             result['color_model'] = 'rgb'
 
         if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
@@ -1253,6 +1253,16 @@ class _ColorSettingCapability(_Capability):
             result['temperature_k'] = {
                 'min': color_util.color_temperature_mired_to_kelvin(min_temp),
                 'max': color_util.color_temperature_mired_to_kelvin(max_temp)
+            }
+        elif light.COLOR_MODE_RGBW in supported_color_modes:
+            result['temperature_k'] = {
+                'min': self.default_white_temperature_k,
+                'max': self.cold_white_temperature_k
+            }
+        elif light.COLOR_MODE_RGB in supported_color_modes or light.COLOR_MODE_HS in supported_color_modes:
+            result['temperature_k'] = {
+                'min': self.default_white_temperature_k,
+                'max': self.default_white_temperature_k
             }
 
         if features & light.SUPPORT_EFFECT:
@@ -1269,6 +1279,20 @@ class _ColorSettingCapability(_Capability):
                 }
 
         return result
+
+    @property
+    def support_color(self) -> bool:
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+
+        if features & light.SUPPORT_COLOR:  # legacy
+            return True
+
+        for color_mode in supported_color_modes:
+            if color_mode in [light.COLOR_MODE_RGB, light.COLOR_MODE_RGBW, light.COLOR_MODE_RGBWW, light.COLOR_MODE_HS]:
+                return True
+
+        return False
 
     @staticmethod
     def get_supported_scenes(scenes_map: dict[str, list[str]],
@@ -1328,14 +1352,7 @@ class RgbCapability(_ColorSettingCapability):
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
-        if domain == light.DOMAIN:
-            supported_color_modes = attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
-
-            return features & light.SUPPORT_COLOR or \
-                light.COLOR_MODE_RGB in supported_color_modes or \
-                light.COLOR_MODE_HS in supported_color_modes
-
-        return False
+        return self.support_color
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -1374,26 +1391,78 @@ class TemperatureKCapability(_ColorSettingCapability):
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
-        return domain == light.DOMAIN and (
-            features & light.SUPPORT_COLOR_TEMP or
-            light.color_temp_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
-        )
+        if domain == light.DOMAIN:
+            supported_color_modes = attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+
+            if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
+                return True
+            elif light.COLOR_MODE_RGBW in supported_color_modes:
+                return True
+            elif light.COLOR_MODE_RGB in supported_color_modes or light.COLOR_MODE_HS in supported_color_modes:
+                return True
+
+        return False
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
         temperature_mired = self.state.attributes.get(light.ATTR_COLOR_TEMP)
+        supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
 
         if temperature_mired is not None:
             return color_util.color_temperature_mired_to_kelvin(temperature_mired)
 
+        if light.COLOR_MODE_RGBW in supported_color_modes:
+            rgbw_color = self.state.attributes.get(light.ATTR_RGBW_COLOR)
+            if rgbw_color is not None:
+                if rgbw_color[:3] == (0, 0, 0) and rgbw_color[3] > 0:
+                    return self.default_white_temperature_k
+                elif rgbw_color[:3] == (255, 255, 255):
+                    return self.cold_white_temperature_k
+
+            return None
+
+        if light.COLOR_MODE_RGB in supported_color_modes or light.COLOR_MODE_HS in supported_color_modes:
+            rgb_color = self.state.attributes.get(light.ATTR_RGB_COLOR)
+            if rgb_color is not None and rgb_color == (255, 255, 255):
+                return self.default_white_temperature_k
+
+            return None
+
     async def set_state(self, data, state):
         """Set device state."""
-        await self.hass.services.async_call(
-            light.DOMAIN,
-            light.SERVICE_TURN_ON, {
-                ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_KELVIN: state['value']
-            }, blocking=True, context=data.context)
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+        attr_name = None
+        attr_value = value = state['value']
+
+        if features & light.SUPPORT_COLOR_TEMP or \
+                light.color_temp_supported(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])):
+            attr_name = light.ATTR_KELVIN
+        elif light.COLOR_MODE_RGBW in supported_color_modes:
+            brightness = self.state.attributes.get(light.ATTR_BRIGHTNESS, 255)
+            attr_name = light.ATTR_RGBW_COLOR
+
+            if value == self.default_white_temperature_k:
+                attr_value = (0, 0, 0, brightness)
+            else:
+                attr_value = (255, 255, 255, 0)
+        elif light.COLOR_MODE_RGB in supported_color_modes or light.COLOR_MODE_HS in supported_color_modes:
+            if value == self.default_white_temperature_k:
+                attr_name = light.ATTR_RGB_COLOR
+                attr_value = (255, 255, 255)
+
+        if attr_name:
+            await self.hass.services.async_call(
+                light.DOMAIN,
+                light.SERVICE_TURN_ON, {
+                    ATTR_ENTITY_ID: self.state.entity_id,
+                    attr_name: attr_value
+                }, blocking=True, context=data.context)
+        else:
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
+            )
 
 
 @register_capability
