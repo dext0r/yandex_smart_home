@@ -1299,6 +1299,9 @@ class _ColorSettingCapability(_Capability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
 
+        if self.state.domain != light.DOMAIN:
+            return False
+
         if features & light.SUPPORT_COLOR:  # legacy
             return True
 
