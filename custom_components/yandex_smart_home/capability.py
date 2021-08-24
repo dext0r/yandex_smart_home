@@ -1262,8 +1262,8 @@ class _ColorSettingCapability(_Capability):
             result['color_model'] = 'rgb'
 
         if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
-            max_temp = self.state.attributes[light.ATTR_MIN_MIREDS]
-            min_temp = self.state.attributes[light.ATTR_MAX_MIREDS]
+            min_temp = self.state.attributes.get(light.ATTR_MAX_MIREDS, 153)
+            max_temp = self.state.attributes.get(light.ATTR_MIN_MIREDS, 500)
             result['temperature_k'] = {
                 'min': color_util.color_temperature_mired_to_kelvin(min_temp),
                 'max': color_util.color_temperature_mired_to_kelvin(max_temp)
