@@ -121,7 +121,7 @@ class _Capability:
             }
         } if value is not None else None
 
-    def parameters(self):
+    def parameters(self) -> Optional[dict[str, Any]]:
         """Return parameters for a devices request."""
         raise NotImplementedError
 
@@ -154,7 +154,7 @@ class OnOffCapability(_Capability):
             script.DOMAIN
 
         if self.state.domain == cover.DOMAIN:
-            if not self.state.attributes.get(ATTR_SUPPORTED_FEATURES) & cover.SUPPORT_SET_POSITION:
+            if not self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0) & cover.SUPPORT_SET_POSITION:
                 self.retrievable = False
 
     def get_water_heater_operation(self, required_mode, operations_list):
@@ -202,7 +202,7 @@ class OnOffCapability(_Capability):
     def parameters(self):
         """Return parameters for a devices request."""
         if self.state.domain == cover.DOMAIN:
-            features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
+            features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
             if not features & cover.SUPPORT_SET_POSITION:
                 return {'split': True}
 
