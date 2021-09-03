@@ -22,11 +22,6 @@ jobs:
         with:
           path: custom_components
 
-      - name: HACS validation
-        uses: hacs/action@main
-        with:
-          category: integration
-
       - name: run tests
         run: |
           pytest \
@@ -37,3 +32,8 @@ jobs:
             -o console_output_style=count \
             -p no:sugar \
             tests
+
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
