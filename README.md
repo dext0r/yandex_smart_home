@@ -758,19 +758,19 @@ yandex_smart_home:
           entity: sensor.bedroom_humidity
         - type: water_level
           entity: sensor.humidifier_level
-    climate.aс_living_room:
+    climate.ac_living_room:
       name: Кондиционер
       room: Гостиная
       type: devices.types.thermostat.ac
       custom_toggles:
         ionization:
-          state_entity_id: switch.aс_ionizer
+          state_entity_id: switch.ac_ionizer
           turn_on:
             service: switch.turn_on
-            entity_id: switch.aс_ionizer
+            entity_id: switch.ac_ionizer
           turn_off:
             service: switch.turn_off
-            entity_id: switch.aс_ionizer
+            entity_id: switch.ac_ionizer
         backlight:
           state_entity_id: input_boolean.ac_lighting
           turn_on:
