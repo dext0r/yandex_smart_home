@@ -15,7 +15,7 @@ jobs:
           python-version: "3.9"
 
       - name: install deps
-        run: pip install flake8 flake8-quotes
+        run: pip install -r requirements_test.txt
 
       - name: flake8 lint
         uses: TrueBrain/actions-flake8@v2
@@ -26,3 +26,14 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+
+      - name: run tests
+        run: |
+          pytest \
+            -qq \
+            --timeout=9 \
+            --durations=10 \
+            -n auto \
+            -o console_output_style=count \
+            -p no:sugar \
+            tests
