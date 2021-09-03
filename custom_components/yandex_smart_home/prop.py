@@ -1,7 +1,7 @@
 """Implement the Yandex Smart Home properties."""
 from __future__ import annotations
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
 from homeassistant.core import HomeAssistant, State
 from homeassistant.components import (
@@ -40,15 +40,14 @@ from homeassistant.const import (
 )
 
 from . import const
+from .helpers import Config
 from .error import SmartHomeError
 from .const import (
-    DOMAIN,
     ERR_DEVICE_NOT_FOUND,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     STATE_NONE,
     STATE_NONE_UI,
     STATE_EMPTY,
-    CONFIG,
     CONF_PRESSURE_UNIT,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_ENTITY,
@@ -59,7 +58,6 @@ from .const import (
     PRESSURE_UNITS_TO_YANDEX_UNITS,
     PRESSURE_FROM_PASCAL,
     PRESSURE_TO_PASCAL,
-    NOTIFIER_ENABLED,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -69,7 +67,7 @@ PROPERTY_FLOAT = PREFIX_PROPERTIES + 'float'
 PROPERTY_EVENT = PREFIX_PROPERTIES + 'event'
 EVENTS_VALUES = PROPERTY_TYPE_EVENT_VALUES
 
-PROPERTIES = []
+PROPERTIES: list[Type[_Property]] = []
 
 
 def register_property(prop):
@@ -84,16 +82,16 @@ class _Property:
     type = ''
     instance = ''
     values = []
-    reportable = False
-    retrievable = True
 
-    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any]):
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a trait for a state."""
         self.hass = hass
+        self.config = config
         self.state = state
-        self.config = hass.data[DOMAIN][CONFIG]
-        self.entity_config = entity_config
-        self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
+
+        self.entity_config = config.get_entity_config(state.entity_id)
+        self.retrievable = True
+        self.reportable = config.is_reporting_state
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -698,9 +696,8 @@ class VibrationProperty(_EventProperty):
 class CustomEntityProperty(_Property):
     """Represents a Property."""
 
-    def __init__(self, hass: HomeAssistant, state: State,
-                 entity_config: dict[str, Any], property_config: dict[str, str]):
-        super().__init__(hass, state, entity_config)
+    def __init__(self, hass: HomeAssistant, config: Config, state: State, property_config: dict[str, str]):
+        super().__init__(hass, config, state)
 
         self.type = PROPERTY_FLOAT
         self.property_config = property_config

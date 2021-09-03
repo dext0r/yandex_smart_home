@@ -11,7 +11,8 @@ from .const import (
     ERR_INTERNAL_ERROR, ERR_DEVICE_UNREACHABLE,
     ERR_DEVICE_NOT_FOUND
 )
-from .helpers import RequestData, YandexEntity
+from .helpers import RequestData
+from .entity import YandexEntity
 from .error import SmartHomeError
 
 HANDLERS = Registry()
