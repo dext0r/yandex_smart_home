@@ -46,15 +46,15 @@ from homeassistant.util import color as color_util
 from homeassistant.helpers.service import async_call_from_config
 
 from . import const
+from .helpers import Config
 from .const import (
-    DOMAIN,
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     ERR_DEVICE_NOT_FOUND,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID,
     CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_RANGE,
-    CONF_ENTITY_MODE_MAP, NOTIFIER_ENABLED,
+    CONF_ENTITY_MODE_MAP,
     DOMAIN_XIAOMI_AIRPURIFIER, ATTR_TARGET_HUMIDITY, SERVICE_FAN_SET_TARGET_HUMIDITY,
     MODEL_PREFIX_XIAOMI_AIRPURIFIER, STATE_NONE
 )
@@ -83,15 +83,15 @@ class _Capability:
 
     type = ''
     instance = ''
-    reportable = False
 
-    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any]):
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a trait for a state."""
         self.hass = hass
         self.state = state
-        self.entity_config = entity_config
+
+        self.entity_config = config.get_entity_config(state.entity_id)
         self.retrievable = True
-        self.reportable = hass.data[DOMAIN][NOTIFIER_ENABLED]
+        self.reportable = config.is_reporting_state
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -148,8 +148,8 @@ class OnOffCapability(_Capability):
         STATE_OFF: [STATE_OFF, 'Off', 'OFF'],
     }
 
-    def __init__(self, hass, state, config):
-        super().__init__(hass, state, config)
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        super().__init__(hass, config, state)
         self.retrievable = state.domain != scene.DOMAIN and state.domain != \
             script.DOMAIN
 
@@ -830,8 +830,8 @@ class _RangeCapability(_Capability):
     type = CAPABILITIES_RANGE
     default_range = (0, 100, 1)
 
-    def __init__(self, hass, state, config):
-        super().__init__(hass, state, config)
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        super().__init__(hass, config, state)
         self.retrievable = self.support_random_access
 
     @property
@@ -929,9 +929,9 @@ class TemperatureCapability(_RangeCapability):
     instance = const.RANGE_INSTANCE_TEMPERATURE
     default_range = (0, 100, 0.5)
 
-    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any]):
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a trait for a state."""
-        super().__init__(hass, state, entity_config)
+        super().__init__(hass, config, state)
 
         if self.state.domain == water_heater.DOMAIN:
             self.default_range = (
@@ -999,9 +999,9 @@ class HumidityCapability(_RangeCapability):
 
     instance = const.RANGE_INSTANCE_HUMIDITY
 
-    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any]):
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a trait for a state."""
-        super().__init__(hass, state, entity_config)
+        super().__init__(hass, config, state)
 
         if self.state.domain == humidifier.DOMAIN:
             self.default_range = (
@@ -1557,9 +1557,9 @@ class CleanupModeCapability(_ModeCapability):
 
 # noinspection PyAbstractClass
 class _CustomCapability(_Capability):
-    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any],
+    def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
-        super().__init__(hass, state, entity_config)
+        super().__init__(hass, config, state)
         self.instance = instance
         self.capability_config = capability_config
         self.state_entity_id = self.capability_config.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
@@ -1591,9 +1591,9 @@ class _CustomCapability(_Capability):
 
 
 class CustomModeCapability(_CustomCapability, _ModeCapability):
-    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any],
+    def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
-        super().__init__(hass, state, entity_config, instance, capability_config)
+        super().__init__(hass, config, state, instance, capability_config)
 
         self.set_mode_config = self.capability_config[const.CONF_ENTITY_CUSTOM_MODE_SET_MODE]
 
@@ -1626,9 +1626,9 @@ class CustomModeCapability(_CustomCapability, _ModeCapability):
 
 
 class CustomToggleCapability(_CustomCapability, _ToggleCapability):
-    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any],
+    def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
-        super().__init__(hass, state, entity_config, instance, capability_config)
+        super().__init__(hass, config, state, instance, capability_config)
 
         self.turn_on_config = self.capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON]
         self.turn_off_config = self.capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF]
@@ -1653,10 +1653,9 @@ class CustomToggleCapability(_CustomCapability, _ToggleCapability):
 
 
 class CustomRangeCapability(_CustomCapability, _RangeCapability):
-    def __init__(self, hass: HomeAssistant, state: State, entity_config: dict[str, Any],
+    def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
-        self.capability_config = capability_config
-        super().__init__(hass, state, entity_config, instance, capability_config)
+        super().__init__(hass, config, state, instance, capability_config)
 
         self.set_value = self.capability_config[const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE]
         self.default_range = (

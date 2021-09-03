@@ -21,7 +21,7 @@ from .const import (
     CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_MODE_MAP, COLOR_SETTING_SCENE,
     CONF_SETTINGS, CONF_PRESSURE_UNIT, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS,
     PROPERTY_TYPE_TO_UNITS, PROPERTY_TYPE_EVENT_VALUES, MODE_INSTANCES, MODE_INSTANCE_MODES, COLOR_SCENES,
-    CONF_NOTIFIER, NOTIFIERS, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIER_ENABLED
+    CONF_NOTIFIER, NOTIFIERS, CONF_SKILL_OAUTH_TOKEN, CONF_SKILL_ID, CONF_NOTIFIER_USER_ID
 )
 from .helpers import Config
 from .http import async_register_http
@@ -196,6 +196,7 @@ CONFIG_SCHEMA = vol.Schema({
 async def _async_update_config_from_yaml(hass: HomeAssistant, config: Dict[str, Any]):
     domain_config = config.get(DOMAIN, {})
     hass.data[DOMAIN][CONFIG] = Config(
+        hass=hass,
         settings=domain_config.get(CONF_SETTINGS, {}),
         notifier=domain_config.get(CONF_NOTIFIER, []),
         should_expose=domain_config.get(CONF_FILTER, {}),
@@ -207,7 +208,6 @@ async def async_setup(hass: HomeAssistant, config: Dict[str, Any]):
     """Activate Yandex Smart Home component."""
     hass.data[DOMAIN] = {
         NOTIFIERS: [],
-        NOTIFIER_ENABLED: False,
         CONFIG: None,
     }
 
