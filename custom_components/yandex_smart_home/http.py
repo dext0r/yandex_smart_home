@@ -1,20 +1,21 @@
 """Support for Yandex Smart Home."""
 from __future__ import annotations
+
 import logging
 from typing import Any
 
 from aiohttp.web import Request, Response
 from homeassistant.components.http import HomeAssistantView
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 
-from .const import DOMAIN, CONFIG
-from .smart_home import async_handle_message, RequestData, async_devices_sync
+from .const import CONFIG, DOMAIN
+from .smart_home import RequestData, async_devices_sync, async_handle_message
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @callback
-def async_register_http(hass):
+def async_register_http(hass: HomeAssistant):
     """Register HTTP views for Yandex Smart Home."""
     hass.http.register_view(YandexSmartHomeUnauthorizedView())
     hass.http.register_view(YandexSmartHomePingView())
