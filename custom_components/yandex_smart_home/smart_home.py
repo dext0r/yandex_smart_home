@@ -79,13 +79,11 @@ async def async_devices_sync(hass: HomeAssistant, data: RequestData, message: di
     area_reg = await area_registry.async_get_registry(hass)
 
     for state in hass.states.async_all():
-        entity, serialized = YandexEntity(hass, data.config, state), None
+        entity = YandexEntity(hass, data.config, state)
         if not entity.should_expose:
             continue
 
-        if entity.supported:
-            serialized = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-
+        serialized = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
         if serialized is None:
             _LOGGER.debug(f'Unsupported entity: {entity.state!r}')
             continue
