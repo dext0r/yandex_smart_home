@@ -706,13 +706,12 @@ class CustomEntityProperty(_Property):
         self.instance_unit: Optional[str] = None
         self.property_state = state
 
-        property_entity_id = self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
-        if property_entity_id:
-            self.property_state = self.hass.states.get(property_entity_id)
+        if self.property_entity_id:
+            self.property_state = self.hass.states.get(self.property_entity_id)
             if self.property_state is None:
                 raise SmartHomeError(
                     ERR_DEVICE_NOT_FOUND,
-                    f'Entity {property_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
+                    f'Entity {self.property_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
                 )
 
         if self.property_state.domain == binary_sensor.DOMAIN:
@@ -798,3 +797,7 @@ class CustomEntityProperty(_Property):
             return self.convert_value(value, value_unit)
 
         return self.float_value(value) if self.type != PROPERTY_EVENT else self.event_value(value)
+
+    @property
+    def property_entity_id(self) -> str | None:
+        return self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
