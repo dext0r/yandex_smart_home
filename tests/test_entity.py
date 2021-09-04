@@ -1,9 +1,15 @@
-from homeassistant.const import STATE_ON, STATE_UNAVAILABLE
+from homeassistant.components.media_player import DEVICE_CLASS_TV
+from homeassistant.const import ATTR_DEVICE_CLASS, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import State
 import pytest
 from pytest_homeassistant_custom_component.common import mock_area_registry, mock_device_registry, mock_registry
 
-from custom_components.yandex_smart_home.const import TYPE_OPENABLE, TYPE_SWITCH
+from custom_components.yandex_smart_home.const import (
+    TYPE_MEDIA_DEVICE,
+    TYPE_MEDIA_DEVICE_TV,
+    TYPE_OPENABLE,
+    TYPE_SWITCH,
+)
 from custom_components.yandex_smart_home.entity import YandexEntity
 
 from . import BASIC_CONFIG, MockConfig
@@ -127,3 +133,32 @@ async def test_yandex_entity_serialize_device(hass, registries):
     assert s['id'] == 'switch.test_3'
     assert s['room'] == 'Кухня'
     assert s['device_info'] == {'model': 'switch.test_3'}
+
+
+async def test_yandex_entity_should_expose(hass):
+    entity = YandexEntity(hass, BASIC_CONFIG, State('group.all_locks', STATE_ON))
+    assert not entity.should_expose
+
+    entity = YandexEntity(hass, BASIC_CONFIG, State('fake.unsupported', STATE_ON))
+    assert not entity.should_expose
+
+    config = MockConfig(
+        should_expose=lambda s: s != 'switch.not_expose'
+    )
+    entity = YandexEntity(hass, config, State('switch.test', STATE_ON))
+    assert entity.should_expose
+
+    entity = YandexEntity(hass, config, State('switch.not_expose', STATE_ON))
+    assert not entity.should_expose
+
+
+async def test_yandex_entity_device_type(hass):
+    state = State('media_player.tv', STATE_ON)
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == TYPE_MEDIA_DEVICE
+
+    state = State('media_player.tv', STATE_ON, attributes={
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TV
+    })
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == TYPE_MEDIA_DEVICE_TV

@@ -95,20 +95,18 @@ class YandexEntity:
         return self._properties
 
     @property
-    def supported(self) -> bool:
-        """Test if device is supported."""
-        return bool(self.yandex_device_type)
-
-    @property
     def should_expose(self) -> bool:
         """If device should be exposed."""
         if self.entity_id in CLOUD_NEVER_EXPOSED_ENTITIES:
             return False
 
+        if not self.yandex_device_type:
+            return False
+
         return self.config.should_expose(self.entity_id)
 
     @property
-    def yandex_device_type(self) -> Optional[str]:
+    def yandex_device_type(self) -> str | None:
         """Yandex type based on domain and device class."""
         device_class = self.state.attributes.get(ATTR_DEVICE_CLASS)
         domain = self.state.domain
