@@ -1,11 +1,11 @@
-name: lint
+name: tests
 
 on:
   push:
   pull_request:
 
 jobs:
-  lint:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -16,11 +16,6 @@ jobs:
 
       - name: install deps
         run: pip install -r requirements_test.txt
-
-      - name: flake8 lint
-        uses: TrueBrain/actions-flake8@v2
-        with:
-          path: custom_components
 
       - name: run tests
         run: |
@@ -35,10 +30,5 @@ jobs:
             -p no:sugar \
             tests
 
-      - name: upload coverage
+      - name: upload coverage report
         uses: codecov/codecov-action@v2
-
-      - name: HACS validation
-        uses: hacs/action@main
-        with:
-          category: integration
