@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Optional
+from typing import Any
 
 from homeassistant.core import HomeAssistant, callback, State
 from homeassistant.const import (
@@ -13,11 +14,11 @@ from homeassistant.helpers.area_registry import AreaRegistry, AreaEntry
 from . import prop, const
 from .helpers import Config
 from .capability import CustomModeCapability, CustomToggleCapability, CustomRangeCapability, CAPABILITIES, _Capability
+from .prop import _Property, CustomEntityProperty
 from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
-    ERR_INVALID_VALUE, CONF_ROOM, CONF_TYPE, CONF_ENTITY_PROPERTIES,
-    CONF_ENTITY_PROPERTY_ENTITY
+    ERR_INVALID_VALUE, CONF_ROOM, CONF_TYPE, CONF_ENTITY_PROPERTIES
 )
 from .error import SmartHomeError
 
@@ -166,68 +167,63 @@ class YandexEntity:
         return device
 
     @callback
-    def query_serialize(self):
+    def query_serialize(self) -> dict[str, Any]:
         """Serialize entity for a query response.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-devices-query-docpage/
         """
-        state = self.state
+        if self.state.state == STATE_UNAVAILABLE:
+            return {
+                'id': self.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE
+            }
 
-        if state is None:
-            return {'error_code': ERR_DEVICE_UNREACHABLE}
-
-        if state.state == STATE_UNAVAILABLE:
-            return {'id': state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
-
-        capabilities = []
-        for cpb in self.capabilities():
-            cpb_state = cpb.get_state()
-            if cpb.retrievable and cpb_state is not None:
-                capabilities.append(cpb_state)
-
-        properties = []
-        for ppt in self.properties():
-            ppt_state = ppt.get_state()
-            if ppt.retrievable and ppt_state is not None:
-                properties.append(ppt_state)
-
-        return {
-            'id': state.entity_id,
-            'capabilities': capabilities,
-            'properties': properties,
+        device = {
+            'id': self.entity_id,
+            'capabilities': [],
+            'properties': [],
         }
+
+        for item in [c for c in self.capabilities() if c.retrievable]:
+            state = item.get_state()
+            if state is not None:
+                device['capabilities'].append(state)
+
+        for item in [p for p in self.properties() if p.retrievable]:
+            state = item.get_state()
+            if state is not None:
+                device['properties'].append(state)
+
+        return device
 
     @callback
-    def notification_serialize(self, event_entity_id=None):
+    def notification_serialize(self, event_entity_id: str) -> dict[str, Any]:
         """Serialize entity for a notification."""
-        state = self.state
+        if self.state.state == STATE_UNAVAILABLE:
+            return {'id': self.state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
 
-        if state is None:
-            return {'error_code': ERR_DEVICE_UNREACHABLE}
-
-        if state.state == STATE_UNAVAILABLE:
-            return {'id': state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
-
-        capabilities = []
-        for cpb in self.capabilities():
-            cpb_state = cpb.get_state()
-            if cpb.reportable and cpb_state is not None:
-                capabilities.append(cpb_state)
-
-        properties = []
-        for ppt in self.properties():
-            entity_id = ppt.property_config.get(CONF_ENTITY_PROPERTY_ENTITY, None) \
-                if hasattr(ppt, 'property_config') and CONF_ENTITY_PROPERTY_ENTITY in ppt.property_config \
-                else ppt.state.entity_id
-            ppt_state = ppt.get_state()
-            if ppt.reportable and ppt_state is not None and event_entity_id == entity_id:
-                properties.append(ppt_state)
-
-        return {
-            'id': state.entity_id,
-            'capabilities': capabilities,
-            'properties': properties,
+        device = {
+            'id': self.entity_id,
+            'capabilities': [],
+            'properties': [],
         }
+
+        for item in [c for c in self.capabilities() if c.reportable]:
+            state = item.get_state()
+            if state is not None:
+                device['capabilities'].append(state)
+
+        for item in [c for c in self.properties() if c.reportable]:
+            if isinstance(item, CustomEntityProperty):
+                if item.property_entity_id != event_entity_id:
+                    continue
+            elif item.state.entity_id != event_entity_id:
+                continue
+
+            state = item.get_state()
+            if state is not None:
+                device['properties'].append(state)
+
+        return device
 
     async def execute(self, data, capability_type, state):
         """Execute action.
