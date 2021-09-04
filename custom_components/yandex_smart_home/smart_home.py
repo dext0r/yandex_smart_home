@@ -5,7 +5,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.util.decorator import Registry
-from homeassistant.helpers import entity_registry, device_registry
+from homeassistant.helpers import entity_registry, device_registry, area_registry
 
 from .const import (
     ERR_INTERNAL_ERROR, ERR_DEVICE_UNREACHABLE,
@@ -74,8 +74,9 @@ async def async_devices_sync(hass: HomeAssistant, data: RequestData, message: di
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
     """
     devices = []
-    entity_reg = await entity_registry.async_get_registry(hass)
+    ent_reg = await entity_registry.async_get_registry(hass)
     dev_reg = await device_registry.async_get_registry(hass)
+    area_reg = await area_registry.async_get_registry(hass)
 
     for state in hass.states.async_all():
         entity, serialized = YandexEntity(hass, data.config, state), None
@@ -83,7 +84,7 @@ async def async_devices_sync(hass: HomeAssistant, data: RequestData, message: di
             continue
 
         if entity.supported:
-            serialized = await entity.devices_serialize(entity_reg, dev_reg)
+            serialized = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
 
         if serialized is None:
             _LOGGER.debug(f'Unsupported entity: {entity.state!r}')

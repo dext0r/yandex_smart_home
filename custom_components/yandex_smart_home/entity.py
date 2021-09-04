@@ -1,5 +1,4 @@
 from __future__ import annotations
-from asyncio import gather
 from typing import Optional
 
 from homeassistant.core import HomeAssistant, callback, State
@@ -7,8 +6,9 @@ from homeassistant.const import (
     CONF_NAME, STATE_UNAVAILABLE, ATTR_SUPPORTED_FEATURES,
     ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES
 )
-from homeassistant.helpers.entity_registry import EntityRegistry
-from homeassistant.helpers.device_registry import DeviceRegistry
+from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
+from homeassistant.helpers.device_registry import DeviceRegistry, DeviceEntry
+from homeassistant.helpers.area_registry import AreaRegistry, AreaEntry
 
 from . import prop, const
 from .helpers import Config
@@ -114,94 +114,56 @@ class YandexEntity:
         domain = self.state.domain
         return DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class), DOMAIN_TO_YANDEX_TYPES.get(domain))
 
-    async def devices_serialize(self, entity_reg: EntityRegistry, dev_reg: DeviceRegistry):
+    async def devices_serialize(self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry,
+                                area_reg: AreaRegistry):
         """Serialize entity for a devices response.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
         """
-        state = self.state
-
-        # When a state is unavailable, the attributes that describe
-        # capabilities will be stripped. For example, a light entity will miss
-        # the min/max mireds. Therefore they will be excluded from a sync.
-        if state.state == STATE_UNAVAILABLE:
+        if self.state.state == STATE_UNAVAILABLE:
             return None
 
-        entity_config = self.config.entity_config.get(state.entity_id, {})
-        name = (entity_config.get(CONF_NAME) or state.name).strip()
-
-        # If an empty string
-        if not name:
+        if not self.capabilities() and not self.properties():
             return None
 
-        capabilities = self.capabilities()
-        properties = self.properties()
-
-        # Found no supported capabilities for this entity
-        if not capabilities and not properties:
-            return None
-
-        entry = entity_reg.async_get(state.entity_id)
-        device = dev_reg.async_get(getattr(entry, 'device_id', ''))
-
-        manufacturer = state.entity_id
-        model = ''
-        if device is DeviceRegistry:
-            if device.manufacturer is not None:
-                manufacturer += ' | ' + device.manufacturer
-            if device.model is not None:
-                model = device.model
-
-        device_info = {
-            'manufacturer': manufacturer,
-            'model': model
-        }
+        entity_config = self.config.get_entity_config(self.entity_id)
+        name = (entity_config.get(CONF_NAME) or self.state.name).strip() or self.entity_id
+        entity_entry, device_entry = await self._get_entity_and_device(ent_reg, dev_reg)
 
         device = {
-            'id': state.entity_id,
+            'id': self.entity_id,
             'name': name,
-            'type': self.yandex_device_type,
+            'type': entity_config.get(CONF_TYPE, self.yandex_device_type),
             'capabilities': [],
             'properties': [],
-            'device_info': device_info,
+            'device_info': {
+                'model': self.entity_id,
+            },
         }
-
-        for cpb in capabilities:
-            description = cpb.description()
-            if description not in device['capabilities']:
-                device['capabilities'].append(description)
-
-        for ppt in properties:
-            description = ppt.description()
-            if description not in device['properties']:
-                device['properties'].append(description)
-
-        override_type = entity_config.get(CONF_TYPE)
-        if override_type:
-            device['type'] = override_type
 
         room = entity_config.get(CONF_ROOM)
         if room:
             device['room'] = room
-            return device
+        else:
+            area = await self._get_area(entity_entry, device_entry, area_reg)
+            if area and area.name:
+                device['room'] = area.name
 
-        dev_reg, ent_reg, area_reg = await gather(
-            self.hass.helpers.device_registry.async_get_registry(),
-            self.hass.helpers.entity_registry.async_get_registry(),
-            self.hass.helpers.area_registry.async_get_registry(),
-        )
+        if device_entry:
+            if device_entry.manufacturer:
+                device['device_info']['manufacturer'] = device_entry.manufacturer
+            if device_entry.model:
+                device['device_info']['model'] = f'{device_entry.model} | {self.entity_id}'
+            if device_entry.sw_version:
+                device['device_info']['sw_version'] = device_entry.sw_version
 
-        entity_entry = ent_reg.async_get(state.entity_id)
-        if not (entity_entry and entity_entry.device_id):
-            return device
+        for item in [c.description() for c in self.capabilities()]:
+            if item not in device['capabilities']:
+                device['capabilities'].append(item)
 
-        device_entry = dev_reg.devices.get(entity_entry.device_id)
-        if not (device_entry and device_entry.area_id):
-            return device
-
-        area_entry = area_reg.areas.get(device_entry.area_id)
-        if area_entry and area_entry.name:
-            device['room'] = area_entry.name
+        for item in [p.description() for p in self.properties()]:
+            if item not in device['properties']:
+                device['properties'].append(item)
 
         return device
 
@@ -303,3 +265,26 @@ class YandexEntity:
 
         for trt in self._capabilities:
             trt.state = self.state
+
+    async def _get_entity_and_device(self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry) -> \
+            tuple[RegistryEntry, DeviceEntry] | tuple[None, None]:
+        """Fetch the entity and device entries."""
+        entity_entry = ent_reg.async_get(self.entity_id)
+        if not entity_entry:
+            return None, None
+
+        device_entry = dev_reg.devices.get(entity_entry.device_id)
+        return entity_entry, device_entry
+
+    @staticmethod
+    async def _get_area(entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None,
+                        area_reg: AreaRegistry) -> AreaEntry | None:
+        """Calculate the area for an entity."""
+        if entity_entry and entity_entry.area_id:
+            area_id = entity_entry.area_id
+        elif device_entry and device_entry.area_id:
+            area_id = device_entry.area_id
+        else:
+            return None
+
+        return area_reg.areas.get(area_id)
