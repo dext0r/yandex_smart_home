@@ -5,6 +5,9 @@ import pytest
 from pytest_homeassistant_custom_component.common import mock_area_registry, mock_device_registry, mock_registry
 
 from custom_components.yandex_smart_home.const import (
+    CONF_NAME,
+    CONF_ROOM,
+    CONF_TYPE,
     TYPE_MEDIA_DEVICE,
     TYPE_MEDIA_DEVICE_TV,
     TYPE_OPENABLE,
@@ -45,9 +48,9 @@ async def test_yandex_entity_serialize_state(hass, registries):
 
     config = MockConfig(entity_config={
         'switch.test_1': {
-            'name': 'Тест',
-            'type': TYPE_OPENABLE,
-            'room': 'Кухня'
+            CONF_NAME: 'Тест',
+            CONF_TYPE: TYPE_OPENABLE,
+            CONF_ROOM: 'Кухня'
         }
     })
     entity = YandexEntity(hass, config, State('switch.test_1', STATE_ON))
@@ -107,7 +110,7 @@ async def test_yandex_entity_serialize_device(hass, registries):
 
     config = MockConfig(entity_config={
         'switch.test_2': {
-            'room': 'Комната'
+            CONF_ROOM: 'Комната'
         }
     })
     entity = YandexEntity(hass, config, state)
