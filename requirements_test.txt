@@ -1,3 +1,2 @@
 pytest-homeassistant-custom-component==0.4.3
-flake8
-flake8-quotes
+aiohttp-cors==0.7.0
