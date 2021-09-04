@@ -187,8 +187,9 @@ class YandexEntity:
 
         properties = []
         for ppt in self.properties():
-            if ppt.retrievable:
-                properties.append(ppt.get_state())
+            ppt_state = ppt.get_state()
+            if ppt.retrievable and ppt_state is not None:
+                properties.append(ppt_state)
 
         return {
             'id': state.entity_id,
