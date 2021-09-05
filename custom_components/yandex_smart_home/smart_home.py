@@ -129,7 +129,7 @@ async def async_devices_query(hass, data, message):
 
 
 @HANDLERS.register('/user/devices/action')
-async def handle_devices_execute(hass: HomeAssistant, data: RequestData, message: dict[str, Any]) -> dict[str, Any]:
+async def async_devices_execute(hass: HomeAssistant, data: RequestData, message: dict[str, Any]) -> dict[str, Any]:
     """Handle /user/devices/action request.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
