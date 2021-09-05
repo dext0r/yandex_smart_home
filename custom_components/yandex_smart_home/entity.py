@@ -12,7 +12,7 @@ from homeassistant.helpers.device_registry import DeviceRegistry, DeviceEntry
 from homeassistant.helpers.area_registry import AreaRegistry, AreaEntry
 
 from . import prop, const
-from .helpers import Config
+from .helpers import Config, RequestData
 from .capability import CustomModeCapability, CustomToggleCapability, CustomRangeCapability, CAPABILITIES, _Capability
 from .prop import _Property, CustomEntityProperty
 from .const import (
@@ -225,30 +225,24 @@ class YandexEntity:
 
         return device
 
-    async def execute(self, data, capability_type, state):
+    async def execute(self,
+                      data: RequestData,
+                      capability_type: str,
+                      instance: str,
+                      state: dict[str, str | int | bool]) -> None:
         """Execute action.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
         """
-        executed = False
-        if state is None or 'instance' not in state:
-            raise SmartHomeError(
-                ERR_INVALID_VALUE,
-                f'Invalid request: no instance field in state {capability_type} of {self.state.entity_id}'
-            )
-
-        instance = state['instance']
-        for cpb in self.capabilities():
-            if capability_type == cpb.type and instance == cpb.instance:
-                await cpb.set_state(data, state)
-                executed = True
-                break
-
-        if not executed:
+        target_capabilities = [c for c in self.capabilities() if c.type == capability_type and c.instance == instance]
+        if not target_capabilities:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                 f'Unable to execute request for instance {capability_type}.{instance} of {self.state.entity_id}'
             )
+
+        for capability in target_capabilities:
+            await capability.set_state(data, state)
 
     @callback
     def async_update(self):

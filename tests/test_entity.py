@@ -6,12 +6,14 @@ from unittest.mock import patch
 from homeassistant.components.media_player import DEVICE_CLASS_TV
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
+    ATTR_ENTITY_ID,
     ATTR_UNIT_OF_MEASUREMENT,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
     ELECTRIC_POTENTIAL_VOLT,
     PERCENTAGE,
+    SERVICE_TURN_OFF,
     STATE_OFF,
     STATE_ON,
     STATE_UNAVAILABLE,
@@ -19,9 +21,19 @@ from homeassistant.const import (
 )
 from homeassistant.core import State
 import pytest
-from pytest_homeassistant_custom_component.common import mock_area_registry, mock_device_registry, mock_registry
+from pytest_homeassistant_custom_component.common import (
+    async_mock_service,
+    mock_area_registry,
+    mock_device_registry,
+    mock_registry,
+)
 
-from custom_components.yandex_smart_home.capability import OnOffCapability, _ToggleCapability
+from custom_components.yandex_smart_home.capability import (
+    CAPABILITIES_ONOFF,
+    CAPABILITIES_TOGGLE,
+    OnOffCapability,
+    _ToggleCapability,
+)
 from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_TYPE,
@@ -29,6 +41,7 @@ from custom_components.yandex_smart_home.const import (
     CONF_ROOM,
     CONF_TYPE,
     ERR_DEVICE_UNREACHABLE,
+    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     PROPERTY_TYPE_HUMIDITY,
     TOGGLE_INSTANCE_PAUSE,
     TYPE_MEDIA_DEVICE,
@@ -37,9 +50,10 @@ from custom_components.yandex_smart_home.const import (
     TYPE_SWITCH,
 )
 from custom_components.yandex_smart_home.entity import YandexEntity
+from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.prop import CustomEntityProperty, TemperatureProperty, VoltageProperty
 
-from . import BASIC_CONFIG, MockConfig
+from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 
 
 @pytest.fixture
@@ -351,3 +365,17 @@ async def test_yandex_entity_serialize(hass):
                 'state': {'instance': 'temperature', 'value': 5.0}
             }]
         }
+
+
+async def test_yandex_entity_execute(hass):
+    state = State('switch.test', STATE_ON)
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    with pytest.raises(SmartHomeError) as e:
+        await entity.execute(BASIC_DATA, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE, {'value': True})
+
+    assert e.value.code == ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+
+    off_calls = async_mock_service(hass, state.domain, SERVICE_TURN_OFF)
+    await entity.execute(BASIC_DATA, CAPABILITIES_ONOFF, 'on', {'value': False})
+    assert len(off_calls) == 1
+    assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
