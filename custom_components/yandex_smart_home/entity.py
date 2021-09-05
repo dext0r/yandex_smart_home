@@ -244,17 +244,6 @@ class YandexEntity:
         for capability in target_capabilities:
             await capability.set_state(data, state)
 
-    @callback
-    def async_update(self):
-        """Update the entity with latest info from Home Assistant."""
-        self.state = self.hass.states.get(self.entity_id)
-
-        if self._capabilities is None:
-            return
-
-        for trt in self._capabilities:
-            trt.state = self.state
-
     async def _get_entity_and_device(self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry) -> \
             tuple[RegistryEntry, DeviceEntry] | tuple[None, None]:
         """Fetch the entity and device entries."""
