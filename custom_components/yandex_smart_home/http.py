@@ -85,15 +85,12 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
             _LOGGER.debug('Integation is not enabled')
             return Response(status=404)
 
-        result = await async_handle_message(
-            request.app['hass'],
-            request.app['hass'].data[DOMAIN][CONFIG],
-            request['hass_user'].id,
-            request.headers.get('X-Request-Id'),
-            request.path.replace(self.url, '', 1),
-            message
-        )
+        data = RequestData(request.app['hass'].data[DOMAIN][CONFIG],
+                           request['hass_user'].id,
+                           request.headers.get('X-Request-Id'))
+        action = request.path.replace(self.url, '', 1)
 
+        result = await async_handle_message(request.app['hass'], data, action, message)
         response = self.json(result)
         _LOGGER.debug(f'Response: {response.text}')
         return response
