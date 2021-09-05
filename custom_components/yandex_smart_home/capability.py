@@ -50,7 +50,7 @@ from .helpers import Config
 from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-    ERR_DEVICE_NOT_FOUND,
+    ERR_DEVICE_UNREACHABLE,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID,
     CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_RANGE,
@@ -1578,7 +1578,7 @@ class _CustomCapability(_Capability):
             entity_state = self.hass.states.get(self.state_entity_id)
             if not entity_state:
                 raise SmartHomeError(
-                    ERR_DEVICE_NOT_FOUND,
+                    ERR_DEVICE_UNREACHABLE,
                     f'Entity {self.state_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
                 )
 

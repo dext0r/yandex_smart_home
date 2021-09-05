@@ -377,7 +377,6 @@ YANDEX_STATION_INTENTS_MEDIA_PLAYER = media_player.DOMAIN + '.yandex_intents'
 # Error codes
 # https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/response-codes-docpage/
 ERR_DEVICE_UNREACHABLE = 'DEVICE_UNREACHABLE'
-ERR_DEVICE_NOT_FOUND = 'DEVICE_NOT_FOUND'
 ERR_INTERNAL_ERROR = 'INTERNAL_ERROR'
 ERR_INVALID_ACTION = 'INVALID_ACTION'
 ERR_INVALID_VALUE = 'INVALID_VALUE'
