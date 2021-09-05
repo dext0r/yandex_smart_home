@@ -1655,6 +1655,7 @@ class CustomToggleCapability(_CustomCapability, _ToggleCapability):
 class CustomRangeCapability(_CustomCapability, _RangeCapability):
     def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
+        self.capability_config = capability_config
         super().__init__(hass, config, state, instance, capability_config)
 
         self.set_value = self.capability_config[const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE]
