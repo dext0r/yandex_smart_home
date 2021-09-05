@@ -173,8 +173,6 @@ async def handle_devices_execute(hass, data, message):
         if entity.entity_id in results:
             continue
 
-        entity.async_update()
-
         capabilities = []
         for capability in devices[entity.entity_id]['capabilities']:
             if capability['state'] is None or 'instance' not in capability[
