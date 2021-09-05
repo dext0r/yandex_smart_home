@@ -1,68 +1,59 @@
 """Support for Yandex Smart Home API."""
 from __future__ import annotations
+
 import logging
 from typing import Any
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
-from homeassistant.helpers import entity_registry, device_registry, area_registry
 
-from .const import (
-    ERR_INTERNAL_ERROR, ERR_DEVICE_UNREACHABLE
-)
-from .helpers import RequestData
+from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR
 from .entity import YandexEntity
 from .error import SmartHomeError
+from .helpers import RequestData
 
 HANDLERS = Registry()
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_handle_message(hass, config, user_id, request_id, action,
-                               message):
+async def async_handle_message(hass: HomeAssistant,
+                               data: RequestData,
+                               action: str,
+                               message: dict[str, Any] | None) -> dict[str, Any]:
     """Handle incoming API messages."""
-    data = RequestData(config, user_id, request_id)
-
-    response = await _process(hass, data, action, message)
-
-    if response and 'payload' in response and 'error_code' in response['payload']:
-        _LOGGER.error('Error handling message %s: %s', message, response['payload'])
-
-    return response
-
-
-async def _process(hass, data, action, message):
-    """Process a message."""
     handler = HANDLERS.get(action)
 
     if handler is None:
+        _LOGGER.error(f'Handler not found for {action!r}')
         return {
             'request_id': data.request_id,
             'payload': {'error_code': ERR_INTERNAL_ERROR}
         }
 
+    # noinspection PyBroadException
     try:
         result = await handler(hass, data, message)
     except SmartHomeError as err:
-        _LOGGER.error('Handler process error: %s %s', err.code, err.message)
+        _LOGGER.error('Handler error: %s %s', err.code, err.message)
         return {
             'request_id': data.request_id,
             'payload': {'error_code': err.code}
         }
-    except Exception:  # pylint: disable=broad-except
-        _LOGGER.exception('Handler process unexpected error')
+    except Exception:
+        _LOGGER.exception('Handler unexpected error')
         return {
             'request_id': data.request_id,
             'payload': {'error_code': ERR_INTERNAL_ERROR}
         }
 
     if result is None:
-        if data.request_id is None:
-            return None
-        else:
-            return {'request_id': data.request_id}
+        return {'request_id': data.request_id}
 
-    return {'request_id': data.request_id, 'payload': result}
+    return {
+        'request_id': data.request_id,
+        'payload': result
+    }
 
 
 # noinspection PyUnusedLocal

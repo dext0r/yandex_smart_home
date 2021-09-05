@@ -2,12 +2,65 @@ from unittest.mock import patch
 
 from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import State
+from homeassistant.util.decorator import Registry
 
 from custom_components.yandex_smart_home.capability import MuteCapability, OnOffCapability, PauseCapability
+from custom_components.yandex_smart_home.const import ERR_INTERNAL_ERROR, ERR_INVALID_ACTION
+from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.helpers import RequestData
-from custom_components.yandex_smart_home.smart_home import async_devices, async_devices_execute, async_devices_query
+from custom_components.yandex_smart_home.smart_home import (
+    async_devices,
+    async_devices_execute,
+    async_devices_query,
+    async_handle_message,
+)
 
 from . import BASIC_DATA, REQ_ID, MockConfig
+
+
+async def test_async_handle_message(hass):
+    handlers = Registry()
+
+    # noinspection PyUnusedLocal
+    @handlers.register('error')
+    async def error(*args, **kwargs):
+        raise SmartHomeError(ERR_INVALID_ACTION, '')
+
+    # noinspection PyUnusedLocal
+    @handlers.register('exception')
+    async def exception(*args, **kwargs):
+        raise ValueError('some handle error')
+
+    # noinspection PyUnusedLocal
+    @handlers.register('none')
+    async def none(*args, **kwargs):
+        return None
+
+    with patch('custom_components.yandex_smart_home.smart_home.HANDLERS', handlers):
+        assert await async_handle_message(hass, BASIC_DATA, 'missing', {}) == {
+            'request_id': REQ_ID,
+            'payload': {
+                'error_code': ERR_INTERNAL_ERROR
+            }
+        }
+
+        assert await async_handle_message(hass, BASIC_DATA, 'error', {}) == {
+            'request_id': REQ_ID,
+            'payload': {
+                'error_code': ERR_INVALID_ACTION
+            }
+        }
+
+        assert await async_handle_message(hass, BASIC_DATA, 'exception', {}) == {
+            'request_id': REQ_ID,
+            'payload': {
+                'error_code': ERR_INTERNAL_ERROR
+            }
+        }
+
+        assert await async_handle_message(hass, BASIC_DATA, 'none', {}) == {
+            'request_id': REQ_ID,
+        }
 
 
 async def test_async_devices_execute(hass):
