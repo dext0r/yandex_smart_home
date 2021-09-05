@@ -1,6 +1,6 @@
 """Helper classes for Yandex Smart Home integration."""
 from __future__ import annotations
-from typing import Optional, Any, Callable
+from typing import Any, Callable
 
 from homeassistant.core import HomeAssistant, Context
 
@@ -11,7 +11,7 @@ class Config:
     """Hold the configuration for Yandex Smart Home."""
 
     def __init__(self, hass: HomeAssistant, settings: dict[str, Any], notifier: list[dict[str, Any]],
-                 should_expose: Callable[[str], bool], entity_config: Optional[dict[str, Any]]):
+                 should_expose: Callable[[str], bool], entity_config: dict[str, Any] | None):
         """Initialize the configuration."""
         self._hass = hass
         self.settings = settings
@@ -31,8 +31,8 @@ class Config:
 class RequestData:
     """Hold data associated with a particular request."""
 
-    def __init__(self, config: Config, user_id: Optional[str], request_id: str):
+    def __init__(self, config: Config, user_id: str, request_id: str | None):
         """Initialize the request data."""
         self.config = config
-        self.request_id = request_id
         self.context = Context(user_id=user_id)
+        self.request_id = request_id
