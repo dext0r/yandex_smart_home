@@ -1,9 +1,10 @@
+import logging
+
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.helpers.reload import async_integration_yaml_config
 
 from . import DOMAIN
 
-import logging
 _LOGGER = logging.getLogger(__name__)
 
 
