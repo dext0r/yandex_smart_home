@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import patch
 
+from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.media_player import DEVICE_CLASS_TV
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
@@ -28,10 +29,17 @@ from pytest_homeassistant_custom_component.common import (
     mock_registry,
 )
 
+from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability import (
     CAPABILITIES_ONOFF,
     CAPABILITIES_TOGGLE,
+    BrightnessCapability,
+    CustomModeCapability,
+    CustomRangeCapability,
+    CustomToggleCapability,
     OnOffCapability,
+    RgbCapability,
+    TemperatureKCapability,
     _ToggleCapability,
 )
 from custom_components.yandex_smart_home.const import (
@@ -65,6 +73,103 @@ def registries(hass):
     ns.device = mock_device_registry(hass)
     ns.area = mock_area_registry(hass)
     return ns
+
+
+async def test_yandex_entity_duplicate_capabilities(hass):
+    class MockCapability(OnOffCapability):
+        def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+            return True
+
+    state = State('switch.test', STATE_ON)
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+
+    with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockCapability, MockCapability]):
+        assert len(entity.capabilities()) == 1
+        assert isinstance(entity.capabilities()[0], MockCapability)
+
+
+async def test_yandex_entity_capabilities(hass):
+    light = DemoLight(
+        unique_id='test_light',
+        name='Light',
+        available=True,
+        state=True,
+    )
+    light.hass = hass
+    light.entity_id = 'light.test'
+    await light.async_update_ha_state()
+
+    state = hass.states.get('light.test')
+    state_sensor = State('sensor.test', '33')
+    config = MockConfig(
+        entity_config={
+            light.entity_id: {
+                const.CONF_ENTITY_MODE_MAP: {
+                    const.MODE_INSTANCE_DISHWASHING: {
+                        const.MODE_INSTANCE_MODE_ECO: ['']
+                    }
+                },
+                const.CONF_ENTITY_CUSTOM_RANGES: {
+                    const.RANGE_INSTANCE_HUMIDITY: {
+                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
+                        const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {},
+                    }
+                },
+                const.CONF_ENTITY_CUSTOM_TOGGLES: {
+                    const.TOGGLE_INSTANCE_PAUSE: {
+                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
+                        const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: {},
+                        const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: {},
+                    }
+                },
+                const.CONF_ENTITY_CUSTOM_MODES: {
+                    const.MODE_INSTANCE_DISHWASHING: {
+                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
+                        const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {},
+                    }
+                }
+            }
+        }
+    )
+    entity = YandexEntity(hass, config, state)
+    assert [type(c) for c in entity.capabilities()] == [
+        CustomModeCapability, CustomToggleCapability, CustomRangeCapability,
+        OnOffCapability, BrightnessCapability, RgbCapability, TemperatureKCapability
+    ]
+
+
+async def test_yandex_entity_duplicate_properties(hass):
+    class MockProperty(TemperatureProperty):
+        @staticmethod
+        def supported(domain, features, entity_config, attributes):
+            return True
+
+    state = State('sensor.test', '33')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+
+    with patch('custom_components.yandex_smart_home.prop.PROPERTIES', [MockProperty, MockProperty]):
+        assert len(entity.properties()) == 1
+        assert isinstance(entity.properties()[0], MockProperty)
+
+
+async def test_yandex_entity_properties(hass):
+    state = State('sensor.temp', '5', attributes={
+        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+    })
+    config = MockConfig(
+        entity_config={
+            state.entity_id: {
+                const.CONF_ENTITY_PROPERTIES: [{
+                    const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_VOLTAGE
+                }]
+            }
+        }
+    )
+    entity = YandexEntity(hass, config, state)
+    assert [type(c) for c in entity.properties()] == [
+        CustomEntityProperty, TemperatureProperty
+    ]
 
 
 async def test_yandex_entity_devices_serialize_state(hass, registries):
