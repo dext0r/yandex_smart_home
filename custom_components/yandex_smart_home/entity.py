@@ -23,6 +23,7 @@ from .const import (
     DEVICE_CLASS_TO_YANDEX_TYPES,
     DOMAIN_TO_YANDEX_TYPES,
     ERR_DEVICE_UNREACHABLE,
+    ERR_INTERNAL_ERROR,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
 from .error import SmartHomeError
@@ -245,11 +246,20 @@ class YandexEntity:
         if not target_capabilities:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unable to execute request for instance {capability_type}.{instance} of {self.state.entity_id}'
+                f'Capability not found for instance {instance} ({capability_type}) of {self.state.entity_id}'
             )
 
         for capability in target_capabilities:
-            await capability.set_state(data, state)
+            try:
+                await capability.set_state(data, state)
+            except SmartHomeError:
+                raise
+            except Exception as e:
+                raise SmartHomeError(
+                    ERR_INTERNAL_ERROR,
+                    f'Failed to execute action for instance {instance} ({capability_type}) of {self.state.entity_id}: '
+                    f'{e!r}'
+                )
 
     async def _get_entity_and_device(self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry) -> \
             tuple[RegistryEntry, DeviceEntry] | tuple[None, None]:
