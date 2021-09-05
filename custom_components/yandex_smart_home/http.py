@@ -9,7 +9,7 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant, callback
 
 from .const import CONFIG, DOMAIN
-from .smart_home import RequestData, async_devices_sync, async_handle_message
+from .smart_home import RequestData, async_devices, async_handle_message
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class YandexSmartHomePingView(HomeAssistantView):
             _LOGGER.debug('Integation is not enabled')
             return Response(text='Error: Integation is not enabled', status=503)
 
-        devices_sync_response = await async_devices_sync(
+        devices_sync_response = await async_devices(
             request.app['hass'],
             RequestData(request.app['hass'].data[DOMAIN][CONFIG], None, 'ping'),
             {}
