@@ -130,84 +130,63 @@ async def async_devices_query(hass, data, message):
 
 
 @HANDLERS.register('/user/devices/action')
-async def handle_devices_execute(hass, data, message):
+async def handle_devices_execute(hass: HomeAssistant, data: RequestData, message: dict[str, Any]) -> dict[str, Any]:
     """Handle /user/devices/action request.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
     """
-    entities = {}
-    devices = {}
-    results = {}
-    action_errors = {}
+    devices = []
 
     for device in message['payload']['devices']:
         entity_id = device['id']
-        devices[entity_id] = device
+        state = hass.states.get(entity_id)
 
-        if entity_id not in entities:
-            state = hass.states.get(entity_id)
-
-            if state is None:
-                results[entity_id] = {
-                    'id': entity_id,
-                    'error_code': ERR_DEVICE_NOT_FOUND,
-                }
-                continue
-
-            entities[entity_id] = YandexEntity(hass, data.config, state)
-
-        for capability in device['capabilities']:
-            try:
-                await entities[entity_id].execute(data,
-                                                  capability.get('type', ''),
-                                                  capability.get('state', {}))
-            except SmartHomeError as err:
-                _LOGGER.error('%s: %s' % (err.code, err.message))
-                if entity_id not in action_errors:
-                    action_errors[entity_id] = {}
-                action_errors[entity_id][capability['type']] = err.code
-
-    final_results = list(results.values())
-
-    for entity in entities.values():
-        if entity.entity_id in results:
+        if state is None:
+            devices.append({
+                'id': entity_id,
+                'error_code': ERR_DEVICE_NOT_FOUND,
+            })
             continue
 
-        capabilities = []
-        for capability in devices[entity.entity_id]['capabilities']:
-            if capability['state'] is None or 'instance' not in capability[
-                    'state']:
-                continue
-            if entity.entity_id in action_errors and capability['type'] in \
-                    action_errors[entity.entity_id]:
-                capabilities.append({
-                    'type': capability['type'],
+        entity = YandexEntity(hass, data.config, state)
+        capabilities_result = []
+        for capability in device['capabilities']:
+            capability_type = capability['type']
+            instance = capability['state']['instance']
+
+            try:
+                await entity.execute(data, capability_type, instance, capability['state'])
+            except SmartHomeError as e:
+                _LOGGER.error(f'{e.code}: {e.message}')
+
+                capabilities_result.append({
+                    'type': capability_type,
                     'state': {
-                        'instance': capability['state']['instance'],
+                        'instance': instance,
                         'action_result': {
                             'status': 'ERROR',
-                            'error_code': action_errors[entity.entity_id][
-                                capability['type']],
+                            'error_code': e.code
                         }
                     }
                 })
-            else:
-                capabilities.append({
-                    'type': capability['type'],
-                    'state': {
-                        'instance': capability['state']['instance'],
-                        'action_result': {
-                            'status': 'DONE',
-                        }
-                    }
-                })
+                continue
 
-        final_results.append({
-            'id': entity.entity_id,
-            'capabilities': capabilities,
+            capabilities_result.append({
+                'type': capability_type,
+                'state': {
+                    'instance': instance,
+                    'action_result': {
+                        'status': 'DONE',
+                    }
+                }
+            })
+
+        devices.append({
+            'id': entity_id,
+            'capabilities': capabilities_result
         })
 
-    return {'devices': final_results}
+    return {'devices': devices}
 
 
 # noinspection PyUnusedLocal
