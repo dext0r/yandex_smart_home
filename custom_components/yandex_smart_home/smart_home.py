@@ -8,8 +8,7 @@ from homeassistant.util.decorator import Registry
 from homeassistant.helpers import entity_registry, device_registry, area_registry
 
 from .const import (
-    ERR_INTERNAL_ERROR, ERR_DEVICE_UNREACHABLE,
-    ERR_DEVICE_NOT_FOUND
+    ERR_INTERNAL_ERROR, ERR_DEVICE_UNREACHABLE
 )
 from .helpers import RequestData
 from .entity import YandexEntity
@@ -144,7 +143,7 @@ async def handle_devices_execute(hass: HomeAssistant, data: RequestData, message
         if state is None:
             devices.append({
                 'id': entity_id,
-                'error_code': ERR_DEVICE_NOT_FOUND,
+                'error_code': ERR_DEVICE_UNREACHABLE,
             })
             continue
 

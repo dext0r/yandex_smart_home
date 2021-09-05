@@ -43,7 +43,7 @@ from . import const
 from .helpers import Config
 from .error import SmartHomeError
 from .const import (
-    ERR_DEVICE_NOT_FOUND,
+    ERR_DEVICE_UNREACHABLE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     STATE_NONE,
     STATE_NONE_UI,
@@ -710,14 +710,14 @@ class CustomEntityProperty(_Property):
             self.property_state = self.hass.states.get(self.property_entity_id)
             if self.property_state is None:
                 raise SmartHomeError(
-                    ERR_DEVICE_NOT_FOUND,
+                    ERR_DEVICE_UNREACHABLE,
                     f'Entity {self.property_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
                 )
 
         if self.property_state.domain == binary_sensor.DOMAIN:
             if self.instance not in PROPERTY_TYPE_EVENT_VALUES:
                 raise SmartHomeError(
-                    ERR_DEVICE_NOT_FOUND,
+                    ERR_DEVICE_UNREACHABLE,
                     f'Unsupported entity {self.property_state.entity_id} for {self.instance} instance '
                     f'of {self.state.entity_id}'
                 )
@@ -752,7 +752,7 @@ class CustomEntityProperty(_Property):
         elif self.type == PROPERTY_EVENT:
             if not self.values:
                 raise SmartHomeError(
-                    ERR_DEVICE_NOT_FOUND,
+                    ERR_DEVICE_UNREACHABLE,
                     f'No values for {self.instance} instance of {self.state.entity_id}'
                 )
 
@@ -773,7 +773,7 @@ class CustomEntityProperty(_Property):
         if value_attribute:
             if value_attribute not in self.property_state.attributes:
                 raise SmartHomeError(
-                    ERR_DEVICE_NOT_FOUND,
+                    ERR_DEVICE_UNREACHABLE,
                     f'Attribute {value_attribute} not found in entity {self.property_state.entity_id} '
                     f'for {self.instance} instance of {self.state.entity_id}'
                 )

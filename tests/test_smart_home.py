@@ -123,6 +123,6 @@ async def test_devices_execute(hass):
                 }]
             }, {
                 'id': 'not_exist',
-                'error_code': 'DEVICE_NOT_FOUND'
+                'error_code': 'DEVICE_UNREACHABLE'
             }]
         }
