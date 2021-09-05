@@ -49,6 +49,8 @@ from custom_components.yandex_smart_home.const import (
     CONF_ROOM,
     CONF_TYPE,
     ERR_DEVICE_UNREACHABLE,
+    ERR_INTERNAL_ERROR,
+    ERR_INVALID_ACTION,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     PROPERTY_TYPE_HUMIDITY,
     TOGGLE_INSTANCE_PAUSE,
@@ -484,3 +486,32 @@ async def test_yandex_entity_execute(hass):
     await entity.execute(BASIC_DATA, CAPABILITIES_ONOFF, 'on', {'value': False})
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
+
+
+async def test_yandex_entity_execute_exception(hass):
+    class MockOnOffCapability(OnOffCapability):
+        async def set_state(self, *args, **kwargs):
+            raise Exception('fail set_state')
+
+    class MockBrightnessCapability(BrightnessCapability):
+        def supported(self, *args, **kwargs):
+            return True
+
+        async def set_state(self, *args, **kwargs):
+            raise SmartHomeError(ERR_INVALID_ACTION, '')
+
+    state = State('switch.test', STATE_ON)
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockOnOffCapability]):
+        with pytest.raises(SmartHomeError) as e:
+            await entity.execute(BASIC_DATA, MockOnOffCapability.type, MockOnOffCapability.instance, {'value': True})
+
+    assert e.value.code == ERR_INTERNAL_ERROR
+
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockBrightnessCapability]):
+        with pytest.raises(SmartHomeError) as e:
+            await entity.execute(BASIC_DATA, MockBrightnessCapability.type,
+                                 MockBrightnessCapability.instance, {'value': True})
+
+    assert e.value.code == ERR_INVALID_ACTION
