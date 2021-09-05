@@ -1,26 +1,33 @@
 from __future__ import annotations
-from typing import Optional
+
 from typing import Any
 
-from homeassistant.core import HomeAssistant, callback, State
 from homeassistant.const import (
-    CONF_NAME, STATE_UNAVAILABLE, ATTR_SUPPORTED_FEATURES,
-    ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES
+    ATTR_DEVICE_CLASS,
+    ATTR_SUPPORTED_FEATURES,
+    CLOUD_NEVER_EXPOSED_ENTITIES,
+    CONF_NAME,
+    STATE_UNAVAILABLE,
 )
+from homeassistant.core import HomeAssistant, State, callback
+from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
+from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
-from homeassistant.helpers.device_registry import DeviceRegistry, DeviceEntry
-from homeassistant.helpers.area_registry import AreaRegistry, AreaEntry
 
-from . import prop, const
-from .helpers import Config, RequestData
-from .capability import CustomModeCapability, CustomToggleCapability, CustomRangeCapability, CAPABILITIES, _Capability
-from .prop import _Property, CustomEntityProperty
+from . import capability as caps, const, prop
+from .capability import CustomModeCapability, CustomRangeCapability, CustomToggleCapability, _Capability
 from .const import (
-    DEVICE_CLASS_TO_YANDEX_TYPES, DOMAIN_TO_YANDEX_TYPES,
-    ERR_NOT_SUPPORTED_IN_CURRENT_MODE, ERR_DEVICE_UNREACHABLE,
-    ERR_INVALID_VALUE, CONF_ROOM, CONF_TYPE, CONF_ENTITY_PROPERTIES
+    CONF_ENTITY_PROPERTIES,
+    CONF_ROOM,
+    CONF_TYPE,
+    DEVICE_CLASS_TO_YANDEX_TYPES,
+    DOMAIN_TO_YANDEX_TYPES,
+    ERR_DEVICE_UNREACHABLE,
+    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
 from .error import SmartHomeError
+from .helpers import Config, RequestData
+from .prop import CustomEntityProperty, _Property
 
 
 class YandexEntity:
@@ -31,16 +38,16 @@ class YandexEntity:
         self.hass = hass
         self.config = config
         self.state = state
-        self._capabilities: Optional[list[_Capability]] = None
-        self._properties = None
+        self._capabilities: list[_Capability] | None = None
+        self._properties: list[_Property] | None = None
 
     @property
-    def entity_id(self):
+    def entity_id(self) -> str:
         """Return entity ID."""
         return self.state.entity_id
 
     @callback
-    def capabilities(self):
+    def capabilities(self) -> list[_Capability]:
         """Return capabilities for entity."""
         if self._capabilities is not None:
             return self._capabilities
@@ -63,7 +70,7 @@ class YandexEntity:
                     if capability.supported(state.domain, features, entity_config, state.attributes):
                         self._capabilities.append(capability)
 
-        for Capability in CAPABILITIES:
+        for Capability in caps.CAPABILITIES:
             capability = Capability(self.hass, self.config, state)
             if capability.supported(state.domain, features, entity_config, state.attributes) and \
                     capability.instance not in [c.instance for c in self._capabilities]:
@@ -72,7 +79,7 @@ class YandexEntity:
         return self._capabilities
 
     @callback
-    def properties(self):
+    def properties(self) -> list[_Property]:
         """Return properties for entity."""
         if self._properties is not None:
             return self._properties
@@ -80,7 +87,7 @@ class YandexEntity:
         self._properties = []
         state = self.state
         features = state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-        entity_config = self.config.entity_config.get(state.entity_id, {})
+        entity_config = self.config.get_entity_config(state.entity_id)
 
         for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
             self._properties.append(
@@ -114,7 +121,7 @@ class YandexEntity:
         return DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class), DOMAIN_TO_YANDEX_TYPES.get(domain))
 
     async def devices_serialize(self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry,
-                                area_reg: AreaRegistry):
+                                area_reg: AreaRegistry) -> dict[str, Any] | None:
         """Serialize entity for a devices response.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
