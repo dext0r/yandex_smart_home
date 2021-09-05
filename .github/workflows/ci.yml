@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: pip install -r requirements_lint.txt
+
+      - name: Flake8 lint
+        uses: TrueBrain/actions-flake8@v2
+        with:
+          path: custom_components
+
+      - name: Flake8 lint tests
+        uses: TrueBrain/actions-flake8@v2
+        with:
+          path: tests
+
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: pip install -r requirements_test.txt
+
+      - name: Test with pytest
+        run: |
+          pytest \
+            -qq \
+            --timeout 9 \
+            --durations 10 \
+            -n auto \
+            --cov custom_components.yandex_smart_home \
+            --cov-report xml \
+            -o console_output_style=count \
+            -p no:sugar \
+            tests
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v2
+
+  validate:
+    name: Validate for HACS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
