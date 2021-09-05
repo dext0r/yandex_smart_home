@@ -4,12 +4,12 @@ from homeassistant.const import STATE_OFF
 from homeassistant.core import State
 
 from custom_components.yandex_smart_home.capability import MuteCapability, OnOffCapability, PauseCapability
-from custom_components.yandex_smart_home.smart_home import handle_devices_execute
+from custom_components.yandex_smart_home.smart_home import async_devices_execute, async_devices_query
 
 from . import BASIC_DATA
 
 
-async def test_devices_execute(hass):
+async def test_async_devices_execute(hass):
     class MockOnOffCapability(OnOffCapability):
         def supported(self, *args, **kwargs):
             return True
@@ -84,7 +84,7 @@ async def test_devices_execute(hass):
             }
         }
 
-        assert await handle_devices_execute(hass, BASIC_DATA, message) == {
+        assert await async_devices_execute(hass, BASIC_DATA, message) == {
             'devices': [{
                 'id': 'switch.test_1',
                 'capabilities': [{
