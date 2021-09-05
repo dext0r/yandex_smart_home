@@ -105,13 +105,12 @@ async def async_devices_query(hass, data, message):
     """
     devices = []
     for device in message.get('devices', []):
-        devid = device['id']
-        state = hass.states.get(devid)
+        entity_id = device['id']
+        state = hass.states.get(entity_id)
 
-        if not state:
-            # If we can't find a state, the device is unreachable
+        if state is None:
             devices.append({
-                'id': devid,
+                'id': entity_id,
                 'error_code': ERR_DEVICE_UNREACHABLE
             })
             continue
