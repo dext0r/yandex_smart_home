@@ -5,7 +5,7 @@ from homeassistant.core import State
 
 from custom_components.yandex_smart_home.capability import MuteCapability, OnOffCapability, PauseCapability
 from custom_components.yandex_smart_home.helpers import RequestData
-from custom_components.yandex_smart_home.smart_home import async_devices_execute, async_devices_query
+from custom_components.yandex_smart_home.smart_home import async_devices, async_devices_execute, async_devices_query
 
 from . import BASIC_DATA, REQ_ID, MockConfig
 
@@ -129,11 +129,13 @@ async def test_async_devices_execute(hass):
         }
 
 
-async def test_async_devices_query(hass):
+async def test_async_devices(hass):
     switch_1 = State('switch.test_1', STATE_OFF)
     switch_not_expose = State('switch.not_expose', STATE_ON)
+    sensor = State('sensor.test', '33')
     hass.states.async_set(switch_1.entity_id, switch_1.state, switch_1.attributes)
     hass.states.async_set(switch_not_expose.entity_id, switch_not_expose.state, switch_not_expose.attributes)
+    hass.states.async_set(sensor.entity_id, sensor.state, sensor.attributes)
 
     config = MockConfig(
         should_expose=lambda s: s != 'switch.not_expose'
@@ -165,5 +167,20 @@ async def test_async_devices_query(hass):
         }, {
             'id': 'invalid',
             'error_code': 'DEVICE_UNREACHABLE'
+        }]
+    }
+    assert await async_devices(hass, data, {}) == {
+        'user_id': 'test',
+        'devices': [{
+            'id': 'switch.test_1',
+            'name': 'test 1',
+            'type': 'devices.types.switch',
+            'capabilities': [{
+                'type': 'devices.capabilities.on_off',
+                'retrievable': True,
+                'reportable': True}
+            ],
+            'properties': [],
+            'device_info': {'model': 'switch.test_1'}
         }]
     }

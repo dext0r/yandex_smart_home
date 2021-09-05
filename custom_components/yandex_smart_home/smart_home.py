@@ -67,7 +67,7 @@ async def _process(hass, data, action, message):
 
 # noinspection PyUnusedLocal
 @HANDLERS.register('/user/devices')
-async def async_devices_sync(hass: HomeAssistant, data: RequestData, message: dict[str, Any]):
+async def async_devices(hass: HomeAssistant, data: RequestData, message: dict[str, Any]):
     """Handle /user/devices request.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
@@ -89,12 +89,10 @@ async def async_devices_sync(hass: HomeAssistant, data: RequestData, message: di
 
         devices.append(serialized)
 
-    response = {
+    return {
         'user_id': data.context.user_id,
         'devices': devices,
     }
-
-    return response
 
 
 @HANDLERS.register('/user/devices/query')
