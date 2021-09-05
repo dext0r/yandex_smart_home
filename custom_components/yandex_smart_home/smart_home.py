@@ -178,7 +178,7 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
 
 # noinspection PyUnusedLocal
 @HANDLERS.register('/user/unlink')
-async def async_devices_disconnect(hass, data, message):
+async def async_devices_disconnect(hass: HomeAssistant, data: RequestData, message: dict[str, Any]):
     """Handle /user/unlink request.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/unlink-docpage/
