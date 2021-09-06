@@ -16,7 +16,7 @@ jobs:
           python-version: "3.9"
 
       - name: Install dependencies
-        run: pip install -r requirements_lint.txt
+        run: pip install -r requirements_dev.txt
 
       - name: Flake8 lint
         uses: TrueBrain/actions-flake8@v2
