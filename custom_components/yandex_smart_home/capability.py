@@ -142,7 +142,7 @@ class OnOffCapability(_Capability):
     """
 
     type = CAPABILITIES_ONOFF
-    instance = 'on'
+    instance = const.ON_OFF_INSTANCE_ON
     water_heater_operations = {
         STATE_ON: [STATE_ON, 'On', 'ON', STATE_ELECTRIC],
         STATE_OFF: [STATE_OFF, 'Off', 'OFF'],
