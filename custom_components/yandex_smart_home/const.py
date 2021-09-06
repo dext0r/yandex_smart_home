@@ -89,6 +89,8 @@ TYPE_IRON = PREFIX_TYPES + 'iron'
 TYPE_SENSOR = PREFIX_TYPES + 'sensor'
 TYPE_OTHER = PREFIX_TYPES + 'other'
 
+ON_OFF_INSTANCE_ON = 'on'
+
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html
 TOGGLE_INSTANCE_BACKLIGHT = 'backlight'
 TOGGLE_INSTANCE_CONTROLS_LOCKED = 'controls_locked'
