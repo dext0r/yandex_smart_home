@@ -25,8 +25,8 @@ def async_register_http(hass: HomeAssistant):
 class YandexSmartHomeUnauthorizedView(HomeAssistantView):
     """Handle Yandex Smart Home unauthorized requests."""
 
-    url = '/api/yandex_smart_home/v1.0'
-    name = 'api:yandex_smart_home:unauthorized'
+    url = f'/api/{DOMAIN}/v1.0'
+    name = f'api:{DOMAIN}:unauthorized'
     requires_auth = False
 
     # noinspection PyMethodMayBeStatic
@@ -44,8 +44,8 @@ class YandexSmartHomeUnauthorizedView(HomeAssistantView):
 class YandexSmartHomePingView(HomeAssistantView):
     """Handle Yandex Smart Home ping requests."""
 
-    url = '/api/yandex_smart_home/v1.0/ping'
-    name = 'api:yandex_smart_home:unauthorized'
+    url = f'/api/{DOMAIN}/v1.0/ping'
+    name = f'api:{DOMAIN}:unauthorized'
     requires_auth = False
 
     # noinspection PyMethodMayBeStatic
@@ -70,14 +70,14 @@ class YandexSmartHomePingView(HomeAssistantView):
 class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
     """Handle Yandex Smart Home requests."""
 
-    url = '/api/yandex_smart_home/v1.0'
+    url = f'/api/{DOMAIN}/v1.0'
     extra_urls = [
         url + '/user/unlink',
         url + '/user/devices',
         url + '/user/devices/query',
         url + '/user/devices/action',
     ]
-    name = 'api:yandex_smart_home'
+    name = f'api:{DOMAIN}'
     requires_auth = True
 
     async def _async_handle_request(self, request: Request, message: dict[str, Any]) -> Response:
