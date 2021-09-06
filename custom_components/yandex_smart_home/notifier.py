@@ -1,38 +1,35 @@
 from __future__ import annotations
 
-import logging
 import asyncio
 import json
-from time import time
+import logging
+import time
 from typing import Any
 
 from aiohttp import ContentTypeError
-from homeassistant.const import CLOUD_NEVER_EXPOSED_ENTITIES, STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import HomeAssistant, Event
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.core import Event, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from . import const
-from .const import (
-    DOMAIN, CONFIG, CONF_SKILL_OAUTH_TOKEN,
-    CONF_SKILL_ID, CONF_NOTIFIER_USER_ID, NOTIFIERS,
-    CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY,
-)
+from .const import CONF_NOTIFIER_USER_ID, CONF_SKILL_ID, CONF_SKILL_OAUTH_TOKEN, CONFIG, DOMAIN, NOTIFIERS
 from .entity import YandexEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 SKILL_API_URL = 'https://dialogs.yandex.net/api/v1/skills'
-DISCOVERY_URL = '/callback/discovery'
-STATE_URL = '/callback/state'
+DISCOVERY_URL = 'callback/discovery'
+DISCOVERY_REQUEST_DELAY = 10
+STATE_URL = 'callback/state'
 
 
 class YandexNotifier:
-    def __init__(self, hass: HomeAssistant, conf: dict[str, str]):
+    def __init__(self, hass: HomeAssistant, oauth_token: str, skill_id: str, user_id: str):
         self.hass = hass
-        self.oauth_token = conf[CONF_SKILL_OAUTH_TOKEN]
-        self.skill_id = conf[CONF_SKILL_ID]
-        self.user_id = conf[CONF_NOTIFIER_USER_ID]
+        self.oauth_token = oauth_token
+        self.skill_id = skill_id
+        self.user_id = user_id
 
         self.property_entities = self.get_property_entities()
         self.session = async_create_clientsession(self.hass)
@@ -52,8 +49,8 @@ class YandexNotifier:
         rv = {}
 
         for entity_id, entity_config in self.hass.data[DOMAIN][CONFIG].entity_config.items():
-            for property_config in entity_config.get(CONF_ENTITY_PROPERTIES):
-                property_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
+            for property_config in entity_config.get(const.CONF_ENTITY_PROPERTIES):
+                property_entity_id = property_config.get(const.CONF_ENTITY_PROPERTY_ENTITY)
                 if property_entity_id:
                     rv.setdefault(property_entity_id, [])
                     if entity_id not in rv[property_entity_id]:
@@ -74,20 +71,22 @@ class YandexNotifier:
         if await self.hass.auth.async_get_user(self.user_id) is None:
             raise ValueError(f'User {self.user_id} does not exist')
 
-    async def async_notify_skill(self, devices):
+    async def async_send_state(self, devices: list):
+        await self._async_send_callback(
+            f'{SKILL_API_URL}/{self.skill_id}/{STATE_URL}',
+            {'devices': devices}
+        )
+
+    async def async_send_discovery(self):
+        await self._async_send_callback(f'{SKILL_API_URL}/{self.skill_id}/{DISCOVERY_URL}', {})
+
+    # noinspection PyBroadException
+    async def _async_send_callback(self, url: str, payload: dict[str, Any]):
         try:
-            url = f'{SKILL_API_URL}/{self.skill_id}'
             headers = {'Authorization': f'OAuth {self.oauth_token}'}
-            ts = time()
+            payload['user_id'] = self.user_id
+            request_data = {'ts': time.time(), 'payload': payload}
 
-            if devices:
-                url += STATE_URL
-                payload = {'user_id': self.user_id, 'devices': devices}
-            else:
-                url += DISCOVERY_URL
-                payload = {'user_id': self.user_id}
-
-            request_data = {'ts': ts, 'payload': payload}
             self.log_request(url, request_data)
             r = await self.session.post(url, headers=headers, json=request_data)
 
@@ -95,7 +94,7 @@ class YandexNotifier:
             try:
                 response_data = await r.json()
                 error_message = response_data['error_message']
-            except (ValueError, KeyError, ContentTypeError):
+            except (AttributeError, ValueError, KeyError, ContentTypeError):
                 if r.status != 202:
                     error_message = response_body[:100]
 
@@ -106,7 +105,6 @@ class YandexNotifier:
 
     async def async_event_handler(self, event: Event):
         devices = []
-        entity_list = []
         event_entity_id = event.data.get('entity_id')
         old_state = event.data.get('old_state')
         new_state = event.data.get('new_state')
@@ -116,21 +114,23 @@ class YandexNotifier:
         if not new_state or new_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
             return
 
-        entity_list.append(event_entity_id)
+        reportable_entity_ids = [event_entity_id]
         if event_entity_id in self.property_entities.keys():
-            entity_list = entity_list + list(self.property_entities.get(event_entity_id, {}))
+            reportable_entity_ids.extend(list(self.property_entities.get(event_entity_id, {})))
 
-        for entity_id in entity_list:
-            if entity_id in CLOUD_NEVER_EXPOSED_ENTITIES or \
-                    not self.hass.data[DOMAIN][CONFIG].should_expose(entity_id):
+        for entity_id in reportable_entity_ids:
+            if entity_id == event_entity_id:
+                yandex_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][CONFIG], new_state)
+            else:
+                yandex_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][CONFIG], self.hass.states.get(entity_id))
+
+            if not yandex_entity.should_expose:
                 continue
 
-            state = new_state if entity_id == event_entity_id else self.hass.states.get(entity_id)
-            yandex_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][CONFIG], state)
             device = yandex_entity.notification_serialize(event_entity_id)
             if entity_id == event_entity_id:
-                old_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][CONFIG], old_state)
-                if old_entity.notification_serialize(event_entity_id) == device:  # нет изменений
+                old_yandex_entity = YandexEntity(self.hass, self.hass.data[DOMAIN][CONFIG], old_state)
+                if old_yandex_entity.notification_serialize(event_entity_id) == device:
                     continue
 
             if device.get('capabilities') or device.get('properties'):
@@ -144,8 +144,7 @@ class YandexNotifier:
                 ))
 
         if devices:
-            await asyncio.sleep(.1)
-            await self.async_notify_skill(devices)
+            await self.async_send_state(devices)
 
 
 async def async_setup_notifier(hass: HomeAssistant, reload=False):
@@ -157,7 +156,12 @@ async def async_setup_notifier(hass: HomeAssistant, reload=False):
 
     for conf in hass.data[DOMAIN][CONFIG].notifier:
         try:
-            notifier = YandexNotifier(hass, conf)
+            notifier = YandexNotifier(
+                hass,
+                conf[CONF_SKILL_OAUTH_TOKEN],
+                conf[CONF_SKILL_ID],
+                conf[CONF_NOTIFIER_USER_ID]
+            )
             await notifier.async_validate_config()
 
             hass.data[DOMAIN][NOTIFIERS].append(notifier)
@@ -170,18 +174,18 @@ async def async_setup_notifier(hass: HomeAssistant, reload=False):
     async def config_reload():
         for n in hass.data[DOMAIN][NOTIFIERS]:  # type: YandexNotifier
             _LOGGER.debug(n.format_log_message('Device list update initiated'))
-            await n.async_notify_skill([])
+            await n.async_send_discovery()
 
     # noinspection PyUnusedLocal
     async def ha_start_listener(event: Event):
-        await asyncio.sleep(10)
+        await asyncio.sleep(DISCOVERY_REQUEST_DELAY)
         await config_reload()
 
     if reload:
         await config_reload()
     else:
-        hass.bus.async_listen('state_changed', state_change_listener)
-        hass.bus.async_listen('homeassistant_started', ha_start_listener)
+        hass.bus.async_listen(EVENT_STATE_CHANGED, state_change_listener)
+        hass.bus.async_listen(EVENT_HOMEASSISTANT_STARTED, ha_start_listener)
 
 
 async def async_unload_notifier(hass: HomeAssistant):
