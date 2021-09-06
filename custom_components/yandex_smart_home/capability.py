@@ -166,6 +166,9 @@ class OnOffCapability(_Capability):
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
+        if const.CONF_TURN_ON in entity_config:
+            return True
+
         if domain == media_player.DOMAIN:
             return features & media_player.SUPPORT_TURN_ON and features & media_player.SUPPORT_TURN_OFF
 
@@ -180,9 +183,6 @@ class OnOffCapability(_Capability):
                 return False
             if self.get_water_heater_operation(STATE_OFF, operation_list) is None:
                 return False
-            return True
-
-        if const.CONF_TURN_ON in entity_config:
             return True
 
         return domain in (
