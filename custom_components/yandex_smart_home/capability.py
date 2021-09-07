@@ -912,7 +912,7 @@ class CoverLevelCapability(_RangeCapability):
         """Set device state."""
         value = state['value']
         if value < 0:
-            value = min(self.get_value() + value, 0)
+            value = max(self.get_value() + value, 0)
 
         await self.hass.services.async_call(
             self.state.domain,
