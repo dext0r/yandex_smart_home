@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from typing import Any, Optional
 
 from homeassistant.const import ATTR_SUPPORTED_FEATURES, STATE_ON
 from homeassistant.core import HomeAssistant, State
 
 # noinspection PyProtectedMember
-from custom_components.yandex_smart_home.capability import CAPABILITIES, _Capability
+from custom_components.yandex_smart_home.capability import CAPABILITIES, _Capability, _RangeCapability
 from custom_components.yandex_smart_home.helpers import Config
 
 from . import BASIC_CONFIG
@@ -30,7 +32,7 @@ def get_capabilities(hass: HomeAssistant, config: Config, state: State,
 
 
 def get_exact_one_capability(hass: HomeAssistant, config: Config, state: State,
-                             capability_type: str, instance: str) -> _Capability:
+                             capability_type: str, instance: str) -> _Capability | _RangeCapability:
 
     caps = get_capabilities(hass, config, state, capability_type, instance)
     assert len(caps) == 1

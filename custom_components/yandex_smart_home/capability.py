@@ -51,7 +51,7 @@ from .const import (
     ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     ERR_DEVICE_UNREACHABLE,
-    ERR_INVALID_ACTION, ERR_DEVICE_OFF,
+    ERR_DEVICE_OFF,
     CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID,
     CONF_ENTITY_RANGE_MAX, CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION, CONF_ENTITY_RANGE,
@@ -1141,7 +1141,10 @@ class VolumeCapability(_RangeCapability):
 
     async def set_state(self, data, state):
         """Set device state."""
-        if not self.support_random_access and state.get('relative'):
+        if not self.support_random_access:
+            if not state.get('relative'):
+                raise SmartHomeError(ERR_INVALID_VALUE, f'Failed to set absolute volume for {self.state.entity_id}')
+
             if state['value'] > 0:
                 service = media_player.SERVICE_VOLUME_UP
             else:
