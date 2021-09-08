@@ -159,6 +159,8 @@ MODE_INSTANCES = (
 )
 
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html#discovery__discovery-parameters-color-setting-table__entry__75
+COLOR_SETTING_RGB = 'rgb'
+COLOR_SETTING_TEMPERATURE_K = 'temperature_k'
 COLOR_SETTING_SCENE = 'scene'
 COLOR_SCENE_ALARM = 'alarm'
 COLOR_SCENE_ALICE = 'alice'
