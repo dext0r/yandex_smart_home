@@ -498,7 +498,7 @@ class _ModeCapability(_Capability):
                 pass
 
         if rv is not None and ha_mode not in self.supported_ha_modes:
-            err = f'Unsupported HA mode "{rv}" for {self.instance} instance of {self.state.entity_id}.'
+            err = f'Unsupported HA mode "{ha_mode}" for {self.instance} instance of {self.state.entity_id}.'
             if self.modes_list_attribute:
                 err += f' Maybe it missing in entity attribute {self.modes_list_attribute}?'
 
@@ -514,19 +514,16 @@ class _ModeCapability(_Capability):
 
         return rv
 
-    def get_ha_mode_by_yandex_mode(self, yandex_mode: str, available_modes: Optional[list[str]] = None) -> str:
-        if available_modes is None:
-            available_modes = self.supported_ha_modes
-
+    def get_ha_mode_by_yandex_mode(self, yandex_mode: str) -> str:
         ha_modes = self.modes_map.get(yandex_mode, [])
         for ha_mode in ha_modes:
-            for am in available_modes:
+            for am in self.supported_ha_modes:
                 if str(am).lower() == str(ha_mode).lower():
                     return am
 
         for ha_idx, yandex_mode_idx in self.modes_map_index_fallback.items():
             if yandex_mode_idx == yandex_mode:
-                return available_modes[ha_idx]
+                return self.supported_ha_modes[ha_idx]
 
         raise SmartHomeError(
             ERR_INVALID_VALUE,
@@ -539,8 +536,7 @@ class _ModeCapability(_Capability):
         ha_mode = self.state.state
         if self.state_value_attribute:
             ha_mode = self.state.attributes.get(self.state_value_attribute)
-
-        return self.get_yandex_mode_by_ha_mode(ha_mode)
+        return self.get_yandex_mode_by_ha_mode(ha_mode, False)
 
 
 @register_capability
