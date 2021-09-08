@@ -296,6 +296,7 @@ class PressureProperty(_FloatProperty):
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
+        # TODO: check pressure unit
         if domain == sensor.DOMAIN:
             return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
 
@@ -422,6 +423,7 @@ class TVOCProperty(_FloatProperty):
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
+        # TODO: add check for ATTR_UNIT_OF_MEASUREMENT
         if domain == air_quality.DOMAIN:
             return 'total_volatile_organic_compounds' in attributes
 
@@ -744,12 +746,6 @@ class CustomEntityProperty(_Property):
                 'unit': self.instance_unit
             }
         elif self.type == PROPERTY_EVENT:
-            if not self.values:
-                raise SmartHomeError(
-                    ERR_DEVICE_UNREACHABLE,
-                    f'No values for {self.instance} instance of {self.state.entity_id}'
-                )
-
             return {
                 'instance': self.instance,
                 'events': [
