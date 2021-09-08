@@ -82,6 +82,7 @@ class _Property:
     type = ''
     instance = ''
     values = []
+    retrievable = True
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a trait for a state."""
@@ -90,7 +91,6 @@ class _Property:
         self.state = state
 
         self.entity_config = config.get_entity_config(state.entity_id)
-        self.retrievable = True
         self.reportable = config.is_reporting_state
 
     @staticmethod
@@ -146,11 +146,6 @@ class _Property:
         elif self.instance in ['water_leak']:
             return 'leak' if self.bool_value(value) else 'dry'
         elif self.instance in ['button']:
-            if not value:
-                if 'last_action' in self.state.attributes:
-                    value = self.state.attributes.get('last_action')
-                elif 'action' in self.state.attributes:
-                    value = self.state.attributes.get('action')
             if value in ['single', 'click']:
                 return 'click'
             elif value in ['double', 'double_click']:
@@ -158,11 +153,6 @@ class _Property:
             elif value in ['long', 'long_click', 'long_click_press', 'hold']:
                 return 'long_press'
         elif self.instance in ['vibration']:
-            if not value:
-                if 'last_action' in self.state.attributes:
-                    value = self.state.attributes.get('last_action')
-                elif 'action' in self.state.attributes:
-                    value = self.state.attributes.get('action')
             if value in ['vibrate', 'vibration', 'actively', 'move',
                          'tap_twice', 'shake_air', 'swing'] or self.bool_value(value):
                 return 'vibration'
@@ -170,13 +160,6 @@ class _Property:
                 return 'tilt'
             elif value in ['free_fall', 'drop']:
                 return 'fall'
-
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_EMPTY) and \
-                self.retrievable:
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
-            )
 
     def float_value(self, value: Any) -> Optional[float]:
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
@@ -239,17 +222,13 @@ class _EventProperty(_Property):
         } if self.values else {}
 
     def get_value(self):
-        value = False
         if self.state.domain == binary_sensor.DOMAIN:
-            value = self.state.state
+            return self.event_value(self.state.state)
 
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_EMPTY) and self.retrievable:
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
-            )
-
-        return self.event_value(value)
+        raise SmartHomeError(
+            ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+            f'Failed to get value for instance {self.instance} of {self.state.entity_id}'
+        )
 
 
 # noinspection PyAbstractClass
@@ -668,6 +647,12 @@ class ButtonProperty(_EventProperty):
 
         return False
 
+    def get_value(self):
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.event_value(self.state.attributes.get('last_action'))
+        elif self.state.domain == sensor.DOMAIN:
+            return self.event_value(self.state.attributes.get('action'))
+
 
 @register_property
 class VibrationProperty(_EventProperty):
@@ -692,6 +677,15 @@ class VibrationProperty(_EventProperty):
                         'flip90', 'flip180', 'rotate', 'drop'])
 
         return False
+
+    def get_value(self):
+        if self.state.domain == binary_sensor.DOMAIN:
+            if self.state.attributes.get('last_action'):
+                return self.event_value(self.state.attributes.get('last_action'))
+            else:
+                return self.event_value(self.state.state)
+        elif self.state.domain == sensor.DOMAIN:
+            return self.event_value(self.state.attributes.get('action'))
 
 
 class CustomEntityProperty(_Property):
