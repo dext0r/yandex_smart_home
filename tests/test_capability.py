@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from homeassistant.components import climate, cover, fan, humidifier, light, lock, media_player, switch
 from homeassistant.const import ATTR_SUPPORTED_FEATURES, STATE_ON
 from homeassistant.core import HomeAssistant, State
+from homeassistant.setup import async_setup_component
 
-# noinspection PyProtectedMember
 from custom_components.yandex_smart_home.capability import CAPABILITIES, _Capability, _ModeCapability, _RangeCapability
+# noinspection PyProtectedMember
+from custom_components.yandex_smart_home.entity import YandexEntity
 from custom_components.yandex_smart_home.helpers import Config
 
 from . import BASIC_CONFIG
@@ -106,3 +109,191 @@ def test_capability(hass):
             'value': 'v',
         }
     }
+
+
+async def test_capability_demo_platform(hass):
+    for component in switch, light, cover, media_player, fan, climate, humidifier, lock:
+        await async_setup_component(
+            hass, component.DOMAIN, {component.DOMAIN: [{'platform': 'demo'}]}
+        )
+
+    # for x in hass.states.async_all():
+    #     e = YandexEntity(hass, BASIC_CONFIG, x)
+    #     l = list((c.type, c.instance) for c in e.capabilities())
+    #     print(f'state = hass.states.get(\'{x.entity_id}\')')
+    #     print(f'entity = YandexEntity(hass, BASIC_CONFIG, state)')
+    #     print(f'capabilities = list((c.type, c.instance) for c in entity.capabilities())')
+    #     print(f'assert capabilities == {l}')
+    #     print()
+
+    state = hass.states.get('cover.kitchen_window')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'pause')]
+
+    state = hass.states.get('cover.hall_window')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'pause'),
+                            ('devices.capabilities.range', 'open')]
+
+    state = hass.states.get('cover.living_room_window')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'pause'),
+                            ('devices.capabilities.range', 'open')]
+
+    state = hass.states.get('cover.garage_door')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on')]
+
+    state = hass.states.get('cover.pergola_roof')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on')]
+
+    state = hass.states.get('switch.decorative_lights')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on')]
+
+    state = hass.states.get('switch.ac')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on')]
+
+    state = hass.states.get('light.bed_light')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.range', 'brightness'),
+                            ('devices.capabilities.color_setting', 'rgb'),
+                            ('devices.capabilities.color_setting', 'temperature_k')]
+
+    state = hass.states.get('light.ceiling_lights')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.range', 'brightness'),
+                            ('devices.capabilities.color_setting', 'rgb'),
+                            ('devices.capabilities.color_setting', 'temperature_k')]
+
+    state = hass.states.get('light.kitchen_lights')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.range', 'brightness'),
+                            ('devices.capabilities.color_setting', 'rgb'),
+                            ('devices.capabilities.color_setting', 'temperature_k')]
+
+    state = hass.states.get('light.office_rgbw_lights')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.range', 'brightness'),
+                            ('devices.capabilities.color_setting', 'rgb'),
+                            ('devices.capabilities.color_setting', 'temperature_k')]
+
+    state = hass.states.get('light.living_room_rgbww_lights')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.range', 'brightness'),
+                            ('devices.capabilities.color_setting', 'rgb')]
+
+    state = hass.states.get('light.entrance_color_white_lights')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.range', 'brightness'),
+                            ('devices.capabilities.color_setting', 'rgb'),
+                            ('devices.capabilities.color_setting', 'temperature_k')]
+
+    state = hass.states.get('media_player.living_room')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'mute'),
+                            ('devices.capabilities.toggle', 'pause'), ('devices.capabilities.range', 'volume')]
+
+    state = hass.states.get('media_player.bedroom')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'mute'),
+                            ('devices.capabilities.toggle', 'pause'), ('devices.capabilities.range', 'volume')]
+
+    state = hass.states.get('media_player.walkman')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'mute'),
+                            ('devices.capabilities.toggle', 'pause'), ('devices.capabilities.range', 'volume'),
+                            ('devices.capabilities.range', 'channel')]
+
+    state = hass.states.get('media_player.kitchen')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'mute'),
+                            ('devices.capabilities.toggle', 'pause'), ('devices.capabilities.range', 'volume'),
+                            ('devices.capabilities.range', 'channel')]
+
+    state = hass.states.get('media_player.lounge_room')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'pause'),
+                            ('devices.capabilities.mode', 'input_source'), ('devices.capabilities.range', 'channel')]
+
+    state = hass.states.get('fan.living_room_fan')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'oscillation'),
+                            ('devices.capabilities.mode', 'fan_speed')]
+
+    state = hass.states.get('fan.ceiling_fan')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.mode', 'fan_speed')]
+
+    state = hass.states.get('fan.percentage_full_fan')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.toggle', 'oscillation'),
+                            ('devices.capabilities.mode', 'fan_speed')]
+
+    state = hass.states.get('fan.percentage_limited_fan')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.mode', 'fan_speed')]
+
+    state = hass.states.get('fan.preset_only_limited_fan')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.mode', 'fan_speed')]
+
+    state = hass.states.get('climate.heatpump')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.mode', 'thermostat'),
+                            ('devices.capabilities.range', 'temperature')]
+
+    state = hass.states.get('climate.hvac')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.mode', 'thermostat'),
+                            ('devices.capabilities.mode', 'swing'), ('devices.capabilities.mode', 'fan_speed'),
+                            ('devices.capabilities.range', 'temperature')]
+
+    state = hass.states.get('climate.ecobee')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.mode', 'thermostat'),
+                            ('devices.capabilities.mode', 'swing'), ('devices.capabilities.mode', 'fan_speed')]
+
+    state = hass.states.get('humidifier.humidifier')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.range', 'humidity')]
+
+    state = hass.states.get('humidifier.dehumidifier')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.range', 'humidity')]
+
+    state = hass.states.get('humidifier.hygrostat')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on'), ('devices.capabilities.mode', 'program'),
+                            ('devices.capabilities.range', 'humidity')]
