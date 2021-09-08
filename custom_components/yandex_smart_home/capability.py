@@ -1326,19 +1326,19 @@ class _ColorSettingCapability(_Capability):
 
     @staticmethod
     def get_supported_scenes(scenes_map: dict[str, list[str]],
-                             entity_effect_list: list[str]) -> set[str]:
+                             entity_effect_list: list[str]) -> list[str]:
         yandex_scenes = set()
         for effect in entity_effect_list:
             for yandex_scene, ha_effects in scenes_map.items():
                 if effect in ha_effects:
                     yandex_scenes.add(yandex_scene)
 
-        return yandex_scenes
+        return sorted(list(yandex_scenes))
 
     @staticmethod
     def get_scenes_map_from_config(entity_config: dict[str, Any]) -> dict[str, list[str]]:
         scenes_map = _ColorSettingCapability.scenes_map_default.copy()
-        instance = 'scene'
+        instance = const.COLOR_SETTING_SCENE
 
         if CONF_ENTITY_MODE_MAP in entity_config:
             modes = entity_config.get(CONF_ENTITY_MODE_MAP)
@@ -1371,14 +1371,12 @@ class _ColorSettingCapability(_Capability):
                 if str(am) == ha_effect:
                     return ha_effect
 
-        return None
-
 
 @register_capability
 class RgbCapability(_ColorSettingCapability):
     """RGB color functionality."""
 
-    instance = 'rgb'
+    instance = const.COLOR_SETTING_RGB
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -1420,7 +1418,7 @@ class RgbCapability(_ColorSettingCapability):
 class TemperatureKCapability(_ColorSettingCapability):
     """Color temperature functionality."""
 
-    instance = 'temperature_k'
+    instance = const.COLOR_SETTING_TEMPERATURE_K
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
@@ -1497,7 +1495,7 @@ class TemperatureKCapability(_ColorSettingCapability):
 class ColorSceneCapability(_ColorSettingCapability):
     """Color temperature functionality."""
 
-    instance = 'scene'
+    instance = const.COLOR_SETTING_SCENE
 
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
