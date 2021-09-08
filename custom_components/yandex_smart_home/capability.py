@@ -1618,7 +1618,7 @@ class CustomModeCapability(_CustomCapability, _ModeCapability):
     @property
     def modes_list_attribute(self) -> Optional[str]:
         """Return HA attribute contains modes list for this entity."""
-        raise None
+        return None
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
