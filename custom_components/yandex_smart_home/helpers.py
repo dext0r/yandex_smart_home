@@ -31,7 +31,7 @@ class Config:
 class RequestData:
     """Hold data associated with a particular request."""
 
-    def __init__(self, config: Config, user_id: str, request_id: str | None):
+    def __init__(self, config: Config, user_id: str | None, request_id: str | None):
         """Initialize the request data."""
         self.config = config
         self.context = Context(user_id=user_id)

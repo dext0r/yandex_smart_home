@@ -61,7 +61,8 @@ from custom_components.yandex_smart_home.const import (
 )
 from custom_components.yandex_smart_home.entity import YandexEntity
 from custom_components.yandex_smart_home.error import SmartHomeError
-from custom_components.yandex_smart_home.prop import CustomEntityProperty, TemperatureProperty, VoltageProperty
+from custom_components.yandex_smart_home.prop_custom import CustomEntityProperty
+from custom_components.yandex_smart_home.prop_float import TemperatureProperty, VoltageProperty
 
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 

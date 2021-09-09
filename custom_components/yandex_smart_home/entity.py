@@ -28,7 +28,8 @@ from .const import (
 )
 from .error import SmartHomeError
 from .helpers import Config, RequestData
-from .prop import CustomEntityProperty, _Property
+from .prop import _Property
+from .prop_custom import CustomEntityProperty
 
 
 class YandexEntity:
@@ -92,7 +93,7 @@ class YandexEntity:
 
         for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
             self._properties.append(
-                prop.CustomEntityProperty(self.hass, self.config, state, property_config)
+                CustomEntityProperty(self.hass, self.config, state, property_config)
             )
 
         for Property in prop.PROPERTIES:
