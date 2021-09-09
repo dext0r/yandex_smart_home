@@ -28,6 +28,9 @@ jobs:
         with:
           path: tests
 
+      - name: Verify import sorting
+        run: isort --diff --check-only tests custom_components
+
   tests:
     name: Run tests
     runs-on: ubuntu-latest
