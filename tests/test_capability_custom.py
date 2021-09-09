@@ -20,7 +20,7 @@ from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 class MockCapability(CustomCapability):
     type = 'test_type'
 
-    def supported(self, *args, **kwargs):
+    def supported(self) -> bool:
         return True
 
     def parameters(self):
@@ -81,7 +81,7 @@ async def test_capability_custom_mode(hass):
     cap = CustomModeCapability(hass, BASIC_CONFIG, state, const.MODE_INSTANCE_CLEANUP_MODE, {
         const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: None
     })
-    assert not cap.supported(state.domain, 0, {}, {})
+    assert not cap.supported()
 
     state = State('switch.test', 'mode_1', {})
     config = MockConfig(
@@ -105,7 +105,7 @@ async def test_capability_custom_mode(hass):
             }
         },
     })
-    assert cap.supported(state.domain, 0, {}, {})
+    assert cap.supported()
     assert cap.modes_list_attribute is None
     assert cap.get_value() == 'one'
 
@@ -121,7 +121,7 @@ async def test_capability_custom_toggle(hass):
         const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: None,
         const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: None
     })
-    assert cap.supported(state.domain, 0, {}, {})
+    assert cap.supported()
 
     state = State('switch.test', STATE_ON, {})
     cap = CustomToggleCapability(hass, BASIC_CONFIG, state, 'test_toggle', {
@@ -134,7 +134,7 @@ async def test_capability_custom_toggle(hass):
             ATTR_ENTITY_ID: 'switch.test2',
         },
     })
-    assert cap.supported(state.domain, 0, {}, {})
+    assert cap.supported()
     assert cap.get_value()
 
     cap.state = State('switch.test', STATE_OFF)
@@ -167,7 +167,7 @@ async def test_capability_custom_range_random_access(hass):
             }
         },
     })
-    assert cap.supported(state.domain, 0, {}, {})
+    assert cap.supported()
     assert cap.support_random_access
     assert cap.get_value() == 30
 
@@ -204,7 +204,7 @@ async def test_capability_custom_range_relative_only(hass):
             }
         },
     })
-    assert cap.supported(state.domain, 0, {}, {})
+    assert cap.supported()
     assert not cap.support_random_access
     assert cap.get_value() is None
 

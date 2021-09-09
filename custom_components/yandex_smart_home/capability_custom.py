@@ -106,7 +106,7 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
         self.turn_on_config = self.capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON]
         self.turn_off_config = self.capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF]
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
         return True
 
@@ -138,7 +138,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
             self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, self.default_range[2])
         )
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
         return True
 

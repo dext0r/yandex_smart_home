@@ -2,13 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.const import (
-    ATTR_DEVICE_CLASS,
-    ATTR_SUPPORTED_FEATURES,
-    CLOUD_NEVER_EXPOSED_ENTITIES,
-    CONF_NAME,
-    STATE_UNAVAILABLE,
-)
+from homeassistant.const import ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES, CONF_NAME, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant, State, callback
 from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
@@ -57,7 +51,6 @@ class YandexEntity:
 
         self._capabilities = []
         state = self.state
-        features = state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         entity_config = self.config.get_entity_config(state.entity_id)
 
         for capability_class, config_key in (
@@ -70,13 +63,12 @@ class YandexEntity:
                         self.hass, self.config, state, instance, entity_config[config_key][instance]
                     )
 
-                    if capability.supported(state.domain, features, entity_config, state.attributes):
+                    if capability.supported():
                         self._capabilities.append(capability)
 
         for Capability in caps.CAPABILITIES:
             capability = Capability(self.hass, self.config, state)
-            if capability.supported(state.domain, features, entity_config, state.attributes) and \
-                    capability.instance not in [c.instance for c in self._capabilities]:
+            if capability.supported() and capability.instance not in [c.instance for c in self._capabilities]:
                 self._capabilities.append(capability)
 
         return self._capabilities

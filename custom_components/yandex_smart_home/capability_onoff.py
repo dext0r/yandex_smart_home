@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from homeassistant.components import (
     climate,
@@ -75,28 +74,30 @@ class OnOffCapability(AbstractCapability):
 
         return None
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if const.CONF_TURN_ON in entity_config:
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if const.CONF_TURN_ON in self.entity_config:
             return True
 
-        if domain == media_player.DOMAIN:
+        if self.state.domain == media_player.DOMAIN:
             return features & media_player.SUPPORT_TURN_ON and features & media_player.SUPPORT_TURN_OFF
 
-        if domain == vacuum.DOMAIN:
+        if self.state.domain == vacuum.DOMAIN:
             return (features & vacuum.SUPPORT_START and (
                         features & vacuum.SUPPORT_RETURN_HOME or features & vacuum.SUPPORT_STOP)) or (
                                features & vacuum.SUPPORT_TURN_ON and features & vacuum.SUPPORT_TURN_OFF)
 
-        if domain == water_heater.DOMAIN and features & water_heater.SUPPORT_OPERATION_MODE:
-            operation_list = attributes.get(water_heater.ATTR_OPERATION_LIST)
+        if self.state.domain == water_heater.DOMAIN and features & water_heater.SUPPORT_OPERATION_MODE:
+            operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST)
             if self.get_water_heater_operation(STATE_ON, operation_list) is None:
                 return False
             if self.get_water_heater_operation(STATE_OFF, operation_list) is None:
                 return False
             return True
 
-        return domain in (
+        return self.state.domain in (
             cover.DOMAIN,
             group.DOMAIN,
             input_boolean.DOMAIN,
