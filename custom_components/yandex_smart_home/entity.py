@@ -93,7 +93,7 @@ class YandexEntity:
 
         for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
             self._properties.append(
-                CustomEntityProperty(self.hass, self.config, state, property_config)
+                CustomEntityProperty.get(self.hass, self.config, state, property_config)
             )
 
         for Property in prop.PROPERTIES:

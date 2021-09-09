@@ -11,8 +11,6 @@ from homeassistant.const import (
     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
     CONCENTRATION_PARTS_PER_BILLION,
     CONCENTRATION_PARTS_PER_MILLION,
-    STATE_ON,
-    STATE_OPEN,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
@@ -99,38 +97,6 @@ class AbstractProperty(ABC):
     def get_value(self):
         """Return the state value of this capability for this entity."""
         pass
-
-    @staticmethod
-    def bool_value(value):
-        """Return the bool value according to any type of value."""
-        return value in [1, STATE_ON, STATE_OPEN, 'high', True]
-
-    def event_value(self, value):
-        if self.instance in ['open']:
-            return 'opened' if self.bool_value(value) else 'closed'
-        elif self.instance in ['motion']:
-            return 'detected' if self.bool_value(value) else 'not_detected'
-        elif self.instance in ['smoke', 'gas']:
-            return value if value == 'high' else 'detected' if self.bool_value(value) else 'not_detected'
-        elif self.instance in ['battery_level', 'water_level']:
-            return 'low' if self.bool_value(value) else 'normal'
-        elif self.instance in ['water_leak']:
-            return 'leak' if self.bool_value(value) else 'dry'
-        elif self.instance in ['button']:
-            if value in ['single', 'click']:
-                return 'click'
-            elif value in ['double', 'double_click']:
-                return 'double_click'
-            elif value in ['long', 'long_click', 'long_click_press', 'hold']:
-                return 'long_press'
-        elif self.instance in ['vibration']:
-            if value in ['vibrate', 'vibration', 'actively', 'move',
-                         'tap_twice', 'shake_air', 'swing'] or self.bool_value(value):
-                return 'vibration'
-            elif value in ['tilt', 'flip90', 'flip180', 'rotate']:
-                return 'tilt'
-            elif value in ['free_fall', 'drop']:
-                return 'fall'
 
     def float_value(self, value: Any) -> Optional[float]:
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
