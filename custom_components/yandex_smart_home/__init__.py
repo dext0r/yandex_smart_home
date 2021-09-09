@@ -12,7 +12,18 @@ from homeassistant.helpers import config_validation as cv, entityfilter
 from homeassistant.helpers.reload import async_integration_yaml_config
 import voluptuous as vol
 
-from . import const
+from . import (
+    capability_color,
+    capability_custom,
+    capability_mode,
+    capability_onoff,
+    capability_range,
+    capability_toggle,
+    const,
+    prop_custom,
+    prop_event,
+    prop_float,
+)
 from .const import CONF_DISABLED, CONFIG, DOMAIN, NOTIFIERS
 from .helpers import Config
 from .http import async_register_http

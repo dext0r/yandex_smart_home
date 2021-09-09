@@ -153,9 +153,13 @@ async def test_user_devices(hass_platform, hass_client, hass_admin_user):
                 'name': 'Kitchen Light',
                 'type': 'devices.types.light',
                 'capabilities': [{
-                    'type': 'devices.capabilities.on_off',
+                    'type': 'devices.capabilities.color_setting',
                     'retrievable': True,
-                    'reportable': False
+                    'reportable': False,
+                    'parameters': {
+                        'color_model': 'rgb',
+                        'temperature_k': {'min': 2000, 'max': 6535}
+                    }
                 }, {
                     'type': 'devices.capabilities.range',
                     'retrievable': True,
@@ -171,13 +175,9 @@ async def test_user_devices(hass_platform, hass_client, hass_admin_user):
                         'unit': 'unit.percent'
                     }
                 }, {
-                    'type': 'devices.capabilities.color_setting',
+                    'type': 'devices.capabilities.on_off',
                     'retrievable': True,
-                    'reportable': False,
-                    'parameters': {
-                        'color_model': 'rgb',
-                        'temperature_k': {'min': 2000, 'max': 6535}
-                    }
+                    'reportable': False
                 }],
                 'properties': [],
                 'device_info': {

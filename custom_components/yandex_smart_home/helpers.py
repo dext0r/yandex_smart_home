@@ -1,8 +1,9 @@
 """Helper classes for Yandex Smart Home integration."""
 from __future__ import annotations
+
 from typing import Any, Callable
 
-from homeassistant.core import HomeAssistant, Context
+from homeassistant.core import Context, HomeAssistant
 
 from .const import DOMAIN, NOTIFIERS
 

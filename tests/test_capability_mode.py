@@ -7,7 +7,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability import CAPABILITIES_MODE, FanSpeedCapability, ModeCapability
+from custom_components.yandex_smart_home.capability_mode import CAPABILITIES_MODE, FanSpeedCapability, ModeCapability
 from custom_components.yandex_smart_home.const import (
     MODE_INSTANCE_CLEANUP_MODE,
     MODE_INSTANCE_FAN_SPEED,

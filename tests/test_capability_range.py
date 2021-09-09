@@ -15,7 +15,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability import CAPABILITIES_RANGE, RangeCapability
+from custom_components.yandex_smart_home.capability_range import CAPABILITIES_RANGE, RangeCapability
 from custom_components.yandex_smart_home.const import (
     RANGE_INSTANCE_BRIGHTNESS,
     RANGE_INSTANCE_CHANNEL,

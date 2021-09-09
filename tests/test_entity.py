@@ -31,18 +31,15 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability import (
-    CAPABILITIES_ONOFF,
-    CAPABILITIES_TOGGLE,
-    BrightnessCapability,
+from custom_components.yandex_smart_home.capability_color import RgbCapability, TemperatureKCapability
+from custom_components.yandex_smart_home.capability_custom import (
     CustomModeCapability,
     CustomRangeCapability,
     CustomToggleCapability,
-    OnOffCapability,
-    RgbCapability,
-    TemperatureKCapability,
-    ToggleCapability,
 )
+from custom_components.yandex_smart_home.capability_onoff import CAPABILITIES_ONOFF, OnOffCapability
+from custom_components.yandex_smart_home.capability_range import BrightnessCapability
+from custom_components.yandex_smart_home.capability_toggle import CAPABILITIES_TOGGLE, ToggleCapability
 from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_TYPE,
@@ -142,7 +139,7 @@ async def test_yandex_entity_capabilities(hass):
     entity = YandexEntity(hass, config, state)
     assert [type(c) for c in entity.capabilities()] == [
         CustomModeCapability, CustomToggleCapability, CustomRangeCapability,
-        OnOffCapability, BrightnessCapability, RgbCapability, TemperatureKCapability
+        RgbCapability, TemperatureKCapability, BrightnessCapability, OnOffCapability
     ]
 
 
