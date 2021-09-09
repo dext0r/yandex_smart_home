@@ -7,7 +7,9 @@ from homeassistant.setup import async_setup_component
 
 from custom_components.yandex_smart_home.entity import YandexEntity
 from custom_components.yandex_smart_home.helpers import Config
-from custom_components.yandex_smart_home.prop import PROPERTIES, _EventProperty, _FloatProperty, _Property
+from custom_components.yandex_smart_home.prop import PROPERTIES, _Property
+from custom_components.yandex_smart_home.prop_event import _EventProperty
+from custom_components.yandex_smart_home.prop_float import _FloatProperty
 
 from . import BASIC_CONFIG
 

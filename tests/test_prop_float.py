@@ -23,7 +23,8 @@ import pytest
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.error import SmartHomeError
-from custom_components.yandex_smart_home.prop import PROPERTY_EVENT, PROPERTY_FLOAT, _FloatProperty
+from custom_components.yandex_smart_home.prop_event import PROPERTY_EVENT
+from custom_components.yandex_smart_home.prop_float import PROPERTY_FLOAT, _FloatProperty
 
 from . import BASIC_CONFIG, MockConfig
 from .test_prop import assert_no_properties, get_exact_one_property
