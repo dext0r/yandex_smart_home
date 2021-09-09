@@ -134,10 +134,7 @@ class CoverLevelCapability(RangeCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if self.state.domain == cover.DOMAIN:
-            return features & cover.SUPPORT_SET_POSITION
-
-        return False
+        return self.state.domain == cover.DOMAIN and features & cover.SUPPORT_SET_POSITION
 
     @property
     def support_random_access(self) -> bool:
@@ -146,15 +143,14 @@ class CoverLevelCapability(RangeCapability):
 
     def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
-        if self.state.domain == cover.DOMAIN:
-            return self.float_value(self.state.attributes.get(cover.ATTR_CURRENT_POSITION))
+        return self.float_value(self.state.attributes.get(cover.ATTR_CURRENT_POSITION))
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
 
         await self.hass.services.async_call(
-            self.state.domain,
+            cover.DOMAIN,
             cover.SERVICE_SET_COVER_POSITION, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 cover.ATTR_POSITION: value
@@ -362,15 +358,15 @@ class BrightnessCapability(RangeCapability):
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         if state.get('relative'):
-            attr_name = light.ATTR_BRIGHTNESS_STEP_PCT
+            attribute = light.ATTR_BRIGHTNESS_STEP_PCT
         else:
-            attr_name = light.ATTR_BRIGHTNESS_PCT
+            attribute = light.ATTR_BRIGHTNESS_PCT
 
         await self.hass.services.async_call(
             light.DOMAIN,
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                attr_name: state['value']
+                attribute: state['value']
             },
             blocking=True,
             context=data.context
@@ -440,7 +436,7 @@ class VolumeCapability(RangeCapability):
             media_player.DOMAIN,
             media_player.SERVICE_VOLUME_SET, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                media_player.const.ATTR_MEDIA_VOLUME_LEVEL: value
+                media_player.ATTR_MEDIA_VOLUME_LEVEL: value
             },
             blocking=True,
             context=data.context
@@ -475,6 +471,7 @@ class ChannelCapability(RangeCapability):
     def support_random_access(self) -> bool:
         """Test if capability supports random access."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
         if features & media_player.SUPPORT_PLAY_MEDIA and self.entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID):
             return True
 
@@ -509,8 +506,8 @@ class ChannelCapability(RangeCapability):
                 media_player.DOMAIN,
                 media_player.SERVICE_PLAY_MEDIA, {
                     ATTR_ENTITY_ID: self.state.entity_id,
-                    media_player.const.ATTR_MEDIA_CONTENT_ID: state['value'],
-                    media_player.const.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+                    media_player.ATTR_MEDIA_CONTENT_ID: state['value'],
+                    media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
                 },
                 blocking=True,
                 context=data.context
