@@ -12,7 +12,7 @@ from homeassistant.helpers import config_validation as cv, entityfilter
 from homeassistant.helpers.reload import async_integration_yaml_config
 import voluptuous as vol
 
-from . import (
+from . import (  # noqa: F401
     capability_color,
     capability_custom,
     capability_mode,
