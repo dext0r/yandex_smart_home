@@ -4,7 +4,8 @@ from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import State
 from homeassistant.util.decorator import Registry
 
-from custom_components.yandex_smart_home.capability import MuteCapability, OnOffCapability, PauseCapability
+from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
+from custom_components.yandex_smart_home.capability_toggle import MuteCapability, PauseCapability
 from custom_components.yandex_smart_home.const import ERR_INTERNAL_ERROR, ERR_INVALID_ACTION
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.helpers import RequestData

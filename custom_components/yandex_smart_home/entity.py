@@ -15,7 +15,8 @@ from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 
 from . import capability as caps, const, prop
-from .capability import CustomModeCapability, CustomRangeCapability, CustomToggleCapability, AbstractCapability
+from .capability import AbstractCapability
+from .capability_custom import CustomModeCapability, CustomRangeCapability, CustomToggleCapability
 from .const import (
     CONF_ENTITY_PROPERTIES,
     CONF_ROOM,

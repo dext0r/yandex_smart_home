@@ -6,7 +6,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability import (
+from custom_components.yandex_smart_home.capability_custom import (
     CustomCapability,
     CustomModeCapability,
     CustomRangeCapability,

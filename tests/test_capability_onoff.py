@@ -28,7 +28,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability import CAPABILITIES_ONOFF
+from custom_components.yandex_smart_home.capability_onoff import CAPABILITIES_ONOFF
 from custom_components.yandex_smart_home.const import ON_OFF_INSTANCE_ON
 
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig

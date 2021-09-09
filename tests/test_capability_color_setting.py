@@ -5,7 +5,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability import CAPABILITIES_COLOR_SETTING
+from custom_components.yandex_smart_home.capability_color import CAPABILITIES_COLOR_SETTING
 from custom_components.yandex_smart_home.const import (
     COLOR_SETTING_RGB,
     COLOR_SETTING_SCENE,

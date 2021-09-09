@@ -17,9 +17,8 @@ from homeassistant.components import (
     sensor,
     switch,
     vacuum,
-    water_heater
+    water_heater,
 )
-
 
 DOMAIN = 'yandex_smart_home'
 CONFIG = 'config'
