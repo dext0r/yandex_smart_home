@@ -66,21 +66,21 @@ async def test_async_handle_message(hass):
 
 async def test_async_devices_execute(hass):
     class MockOnOffCapability(OnOffCapability):
-        def supported(self, *args, **kwargs):
+        def supported(self) -> bool:
             return True
 
         async def set_state(self, data, state):
             pass
 
     class MockMuteCapability(MuteCapability):
-        def supported(self, *args, **kwargs):
+        def supported(self) -> bool:
             return True
 
         async def set_state(self, data, state):
             pass
 
     class MockPauseCapability(PauseCapability):
-        def supported(self, *args, **kwargs):
+        def supported(self) -> bool:
             return True
 
         async def set_state(self, *args, **kwargs):

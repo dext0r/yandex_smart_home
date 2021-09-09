@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from homeassistant.components import climate, cover, fan, humidifier, light, lock, media_player, switch
-from homeassistant.const import ATTR_SUPPORTED_FEATURES, STATE_ON
+from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
@@ -26,10 +26,7 @@ def get_capabilities(hass: HomeAssistant, config: Config, state: State,
         if capability.type != capability_type or capability.instance != instance:
             continue
 
-        if capability.supported(state.domain,
-                                state.attributes.get(ATTR_SUPPORTED_FEATURES, 0),
-                                config.get_entity_config(state.entity_id),
-                                state.attributes):
+        if capability.supported():
             caps.append(capability)
 
     return caps
@@ -59,7 +56,7 @@ def test_capability(hass):
         type = 'test_type'
         instance = 'test_instance'
 
-        def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        def supported(self) -> bool:
             return True
 
         def parameters(self) -> Optional[dict[str, Any]]:
@@ -86,7 +83,7 @@ def test_capability(hass):
         type = 'test_type'
         instance = 'test_instance'
 
-        def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        def supported(self) -> bool:
             return True
 
         def parameters(self) -> Optional[dict[str, Any]]:

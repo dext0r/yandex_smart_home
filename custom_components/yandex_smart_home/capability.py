@@ -38,7 +38,7 @@ class AbstractCapability(ABC):
         self.reportable = config.is_reporting_state
 
     @abstractmethod
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
         pass
 

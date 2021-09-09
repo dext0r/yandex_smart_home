@@ -60,13 +60,13 @@ class MockFallbackModeCapability(MockModeCapability):
 async def test_capability_mode_unsupported(hass):
     state = State('switch.test', STATE_OFF)
     cap = MockModeCapability(hass, BASIC_CONFIG, state)
-    assert not cap.supported(state.domain, 0, {}, state.attributes)
+    assert not cap.supported()
 
     state = State('switch.test', STATE_OFF, {
         'modes_list': ['foo', 'bar']
     })
     cap = MockModeCapability(hass, BASIC_CONFIG, state)
-    assert not cap.supported(state.domain, 0, {}, state.attributes)
+    assert not cap.supported()
 
 
 async def test_capability_mode_auto_mapping(hass, caplog):
@@ -75,7 +75,7 @@ async def test_capability_mode_auto_mapping(hass, caplog):
     })
     cap = MockModeCapability(hass, BASIC_CONFIG, state)
 
-    assert cap.supported(state.domain, 0, {}, state.attributes)
+    assert cap.supported()
     assert cap.parameters() == {
         'instance': 'test_instance',
         'modes': [{'value': 'fowl'}, {'value': 'puerh_tea'}],
@@ -120,7 +120,7 @@ async def test_capability_mode_custom_mapping(hass):
         }
     })
     cap = MockModeCapability(hass, config, state)
-    assert cap.supported(state.domain, 0, {}, state.attributes)
+    assert cap.supported()
     assert cap.supported_ha_modes == ['mode_1', 'mode_foo', 'mode_bar']  # yeap, strange too
     assert cap.supported_yandex_modes == [const.MODE_INSTANCE_MODE_ECO,
                                           const.MODE_INSTANCE_MODE_LATTE]
@@ -131,7 +131,7 @@ async def test_capability_mode_fallback_index(hass):
         'modes_list': ['some', 'mode_1', 'foo']
     })
     cap = MockFallbackModeCapability(hass, BASIC_CONFIG, state)
-    assert cap.supported(state.domain, 0, {}, state.attributes)
+    assert cap.supported()
     assert cap.supported_ha_modes == ['some', 'mode_1', 'foo']
     assert cap.supported_yandex_modes == [const.MODE_INSTANCE_MODE_ONE, const.MODE_INSTANCE_MODE_FOWL,
                                           const.MODE_INSTANCE_MODE_THREE]
@@ -144,7 +144,7 @@ async def test_capability_mode_fallback_index(hass):
         'modes_list': [f'mode_{v}' for v in range(0, 11)]
     })
     cap = MockFallbackModeCapability(hass, BASIC_CONFIG, state)
-    assert cap.supported(state.domain, 0, {}, state.attributes)
+    assert cap.supported()
     assert cap.get_yandex_mode_by_ha_mode('mode_9') == 'ten'
     assert cap.get_yandex_mode_by_ha_mode('mode_11') is None
 

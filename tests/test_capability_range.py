@@ -40,7 +40,7 @@ async def test_capability_range(hass):
             return False
 
         @property
-        def supported(self, *args, **kwargs):
+        def supported(self) -> bool:
             return True
 
         async def set_state(self, *args, **kwargs):

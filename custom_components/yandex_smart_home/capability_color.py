@@ -163,7 +163,7 @@ class RgbCapability(ColorSettingCapability):
 
     instance = const.COLOR_SETTING_RGB
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self):
         """Test if capability is supported."""
         return self.support_color
 
@@ -205,10 +205,11 @@ class TemperatureKCapability(ColorSettingCapability):
 
     instance = const.COLOR_SETTING_TEMPERATURE_K
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == light.DOMAIN:
-            supported_color_modes = attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+        if self.state.domain == light.DOMAIN:
+            features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+            supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
 
             if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
                 return True
@@ -282,13 +283,15 @@ class ColorSceneCapability(ColorSettingCapability):
 
     instance = const.COLOR_SETTING_SCENE
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == light.DOMAIN and features & light.SUPPORT_EFFECT:
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == light.DOMAIN and features & light.SUPPORT_EFFECT:
             return bool(
                 ColorSceneCapability.get_supported_scenes(
-                    ColorSceneCapability.get_scenes_map_from_config(entity_config),
-                    attributes.get(light.ATTR_EFFECT_LIST, [])
+                    ColorSceneCapability.get_scenes_map_from_config(self.entity_config),
+                    self.state.attributes.get(light.ATTR_EFFECT_LIST, [])
                 )
             )
 

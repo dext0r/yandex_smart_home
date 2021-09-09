@@ -6,7 +6,7 @@ import logging
 from typing import Any, Optional
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
-from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
 
 from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
@@ -29,7 +29,7 @@ class ModeCapability(AbstractCapability, ABC):
     modes_map_default: dict[str, list[str]] = {}
     modes_map_index_fallback: dict[int, str] = {}
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
         return bool(self.supported_yandex_modes)
 
@@ -148,10 +148,10 @@ class ThermostatCapability(ModeCapability):
         const.MODE_INSTANCE_MODE_FAN_ONLY: [climate.const.HVAC_MODE_FAN_ONLY],
     }
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == climate.DOMAIN:
-            return super().supported(domain, features, entity_config, attributes)
+        if self.state.domain == climate.DOMAIN:
+            return super().supported()
 
         return False
 
@@ -183,10 +183,12 @@ class SwingCapability(ModeCapability):
         const.MODE_INSTANCE_MODE_AUTO: [climate.const.SWING_BOTH, 'all']
     }
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == climate.DOMAIN and features & climate.SUPPORT_SWING_MODE:
-            return super().supported(domain, features, entity_config, attributes)
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == climate.DOMAIN and features & climate.SUPPORT_SWING_MODE:
+            return super().supported()
 
         return False
 
@@ -244,10 +246,12 @@ class ProgramCapability(ModeCapability):
         9: const.MODE_INSTANCE_MODE_TEN,
     }
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == humidifier.DOMAIN and features & humidifier.SUPPORT_MODES:
-            return super().supported(domain, features, entity_config, attributes)
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == humidifier.DOMAIN and features & humidifier.SUPPORT_MODES:
+            return super().supported()
 
         return False
 
@@ -293,14 +297,16 @@ class InputSourceCapability(ModeCapability):
         9: const.MODE_INSTANCE_MODE_TEN,
     }
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == media_player.DOMAIN and features & media_player.SUPPORT_SELECT_SOURCE:
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == media_player.DOMAIN and features & media_player.SUPPORT_SELECT_SOURCE:
             if len(self.supported_yandex_modes) == len(self.modes_map_index_fallback) and \
                     len(self.supported_ha_modes) > len(self.modes_map_index_fallback):
                 return False
 
-            return super().supported(domain, features, entity_config, attributes)
+            return super().supported()
 
         return False
 
@@ -348,13 +354,16 @@ class FanSpeedCapability(ModeCapability):
         const.MODE_INSTANCE_MODE_MAX: ['6'],
     }
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == climate.DOMAIN and features & climate.SUPPORT_FAN_MODE:
-            return super().supported(domain, features, entity_config, attributes)
-        elif domain == fan.DOMAIN:
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == climate.DOMAIN and features & climate.SUPPORT_FAN_MODE:
+            return super().supported()
+
+        elif self.state.domain == fan.DOMAIN:
             if features & fan.SUPPORT_PRESET_MODE or features & fan.SUPPORT_SET_SPEED:
-                return super().supported(domain, features, entity_config, attributes)
+                return super().supported()
 
         return False
 
@@ -428,10 +437,12 @@ class CleanupModeCapability(ModeCapability):
         const.MODE_INSTANCE_MODE_QUIET: ['quiet', 'low', 'min', 'silent', 'eco', '101'],
     }
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self):
         """Test if capability is supported."""
-        if domain == vacuum.DOMAIN and features & vacuum.SUPPORT_FAN_SPEED:
-            return super().supported(domain, features, entity_config, attributes)
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == vacuum.DOMAIN and features & vacuum.SUPPORT_FAN_SPEED:
+            return super().supported()
 
         return False
 

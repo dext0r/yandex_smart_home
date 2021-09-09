@@ -3,10 +3,9 @@ from __future__ import annotations
 
 from abc import ABC
 import logging
-from typing import Any
 
 from homeassistant.components import cover, fan, media_player, vacuum
-from homeassistant.const import ATTR_ENTITY_ID, SERVICE_VOLUME_MUTE
+from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, SERVICE_VOLUME_MUTE
 
 from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
@@ -39,9 +38,15 @@ class MuteCapability(ToggleCapability):
 
     instance = const.TOGGLE_INSTANCE_MUTE
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        return domain == media_player.DOMAIN and features & media_player.SUPPORT_VOLUME_MUTE
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == media_player.DOMAIN:
+            if features & media_player.SUPPORT_VOLUME_MUTE:
+                return True
+
+        return False
 
     def get_value(self):
         """Return the state value of this capability for this entity."""
@@ -72,14 +77,21 @@ class PauseCapability(ToggleCapability):
 
     instance = const.TOGGLE_INSTANCE_PAUSE
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == media_player.DOMAIN:
-            return features & media_player.SUPPORT_PAUSE and features & media_player.SUPPORT_PLAY
-        elif domain == vacuum.DOMAIN:
-            return features & vacuum.SUPPORT_PAUSE
-        elif domain == cover.DOMAIN:
-            return features & cover.SUPPORT_STOP
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == media_player.DOMAIN:
+            if features & media_player.SUPPORT_PAUSE and features & media_player.SUPPORT_PLAY:
+                return True
+
+        elif self.state.domain == vacuum.DOMAIN:
+            if features & vacuum.SUPPORT_PAUSE:
+                return True
+
+        elif self.state.domain == cover.DOMAIN:
+            if features & cover.SUPPORT_STOP:
+                return True
 
         return False
 
@@ -127,9 +139,15 @@ class OscillationCapability(ToggleCapability):
 
     instance = const.TOGGLE_INSTANCE_OSCILLATION
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        return domain == fan.DOMAIN and features & fan.SUPPORT_OSCILLATE
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == fan.DOMAIN:
+            if features & fan.SUPPORT_OSCILLATE:
+                return True
+
+        return False
 
     def get_value(self):
         """Return the state value of this capability for this entity."""

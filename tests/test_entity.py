@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import patch
 
 from homeassistant.components.binary_sensor import DEVICE_CLASS_DOOR
@@ -82,7 +81,7 @@ def registries(hass):
 
 async def test_yandex_entity_duplicate_capabilities(hass):
     class MockCapability(OnOffCapability):
-        def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        def supported(self) -> bool:
             return True
 
     state = State('switch.test', STATE_ON)
@@ -328,7 +327,7 @@ async def test_yandex_entity_serialize(hass):
     class PauseCapability(ToggleCapability):
         instance = TOGGLE_INSTANCE_PAUSE
 
-        def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+        def supported(self) -> bool:
             return True
 
         def get_value(self):
@@ -505,7 +504,7 @@ async def test_yandex_entity_execute_exception(hass):
             raise Exception('fail set_state')
 
     class MockBrightnessCapability(BrightnessCapability):
-        def supported(self, *args, **kwargs):
+        def supported(self) -> bool:
             return True
 
         async def set_state(self, *args, **kwargs):

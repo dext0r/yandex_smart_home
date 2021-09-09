@@ -130,9 +130,11 @@ class CoverLevelCapability(RangeCapability):
 
     instance = const.RANGE_INSTANCE_OPEN
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == cover.DOMAIN:
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == cover.DOMAIN:
             return features & cover.SUPPORT_SET_POSITION
 
         return False
@@ -183,11 +185,14 @@ class TemperatureCapability(RangeCapability):
                 self.state.attributes.get(climate.ATTR_TARGET_TEMP_STEP, 0.5),
             )
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == water_heater.DOMAIN:
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == water_heater.DOMAIN:
             return features & water_heater.SUPPORT_TARGET_TEMPERATURE
-        elif domain == climate.DOMAIN:
+
+        elif self.state.domain == climate.DOMAIN:
             return features & climate.const.SUPPORT_TARGET_TEMPERATURE
 
         return False
@@ -245,14 +250,15 @@ class HumidityCapability(RangeCapability):
                 1
             )
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == humidifier.DOMAIN:
+        if self.state.domain == humidifier.DOMAIN:
             return True
-        elif domain == fan.DOMAIN and \
-                attributes.get(ATTR_TARGET_HUMIDITY) and \
-                attributes.get(ATTR_MODEL, '').startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
-            return True
+
+        elif self.state.domain == fan.DOMAIN:
+            if self.state.attributes.get(ATTR_MODEL, '').startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
+                if ATTR_TARGET_HUMIDITY in self.state.attributes:
+                    return True
 
         return False
 
@@ -303,12 +309,18 @@ class BrightnessCapability(RangeCapability):
     instance = const.RANGE_INSTANCE_BRIGHTNESS
     default_range = (1, 100, 1)
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        return domain == light.DOMAIN and (
-            features & light.SUPPORT_BRIGHTNESS or
-            light.brightness_supported(attributes.get(light.ATTR_SUPPORTED_COLOR_MODES))
-        )
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == light.DOMAIN:
+            if features & light.SUPPORT_BRIGHTNESS:
+                return True
+
+            if light.brightness_supported(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES)):
+                return True
+
+        return False
 
     @property
     def support_random_access(self) -> bool:
@@ -342,10 +354,18 @@ class VolumeCapability(RangeCapability):
 
     instance = const.RANGE_INSTANCE_VOLUME
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self) -> bool:
         """Test if capability is supported."""
-        if domain == media_player.DOMAIN:
-            return features & media_player.SUPPORT_VOLUME_STEP or features & media_player.SUPPORT_VOLUME_SET
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == media_player.DOMAIN:
+            if features & media_player.SUPPORT_VOLUME_STEP:
+                return True
+
+            if features & media_player.SUPPORT_VOLUME_SET:
+                return True
+
+        return False
 
     @property
     def support_random_access(self) -> bool:
@@ -404,10 +424,13 @@ class ChannelCapability(RangeCapability):
     instance = const.RANGE_INSTANCE_CHANNEL
     default_range = (0, 999, 1)
 
-    def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
+    def supported(self):
         """Test if capability is supported."""
-        if domain == media_player.DOMAIN:
-            if features & media_player.SUPPORT_PLAY_MEDIA and entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID):
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == media_player.DOMAIN:
+            if features & media_player.SUPPORT_PLAY_MEDIA and \
+                    self.entity_config.get(CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID):
                 return True
 
             if features & media_player.SUPPORT_PREVIOUS_TRACK and features & media_player.SUPPORT_NEXT_TRACK:
