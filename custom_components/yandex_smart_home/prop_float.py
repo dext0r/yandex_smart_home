@@ -212,8 +212,8 @@ class IlluminanceProperty(FloatProperty):
     def get_value(self) -> float | None:
         if self.state.domain == sensor.DOMAIN:
             return self.float_value(self.state.state)
-        elif self.state.domain in (light.DOMAIN, fan.DOMAIN):
-            return self.float_value(self.state.attributes.get('illuminance'))
+
+        return self.float_value(self.state.attributes.get('illuminance'))
 
 
 @register_property
@@ -227,8 +227,7 @@ class WaterLevelProperty(FloatProperty):
         return False
 
     def get_value(self) -> float | None:
-        if self.state.domain in (fan.DOMAIN, humidifier.DOMAIN):
-            return self.float_value(self.state.attributes.get('water_level'))
+        return self.float_value(self.state.attributes.get('water_level'))
 
 
 @register_property
@@ -246,8 +245,8 @@ class CO2Property(FloatProperty):
     def get_value(self) -> float | None:
         if self.state.domain == sensor.DOMAIN:
             return self.float_value(self.state.state)
-        elif self.state.domain in (air_quality.DOMAIN, fan.DOMAIN):
-            return self.float_value(self.state.attributes.get(air_quality.ATTR_CO2))
+
+        return self.float_value(self.state.attributes.get(air_quality.ATTR_CO2))
 
 
 @register_property
@@ -261,8 +260,7 @@ class PM1Property(FloatProperty):
         return False
 
     def get_value(self) -> float | None:
-        if self.state.domain == air_quality.DOMAIN:
-            return self.float_value(self.state.attributes.get(air_quality.ATTR_PM_0_1))
+        return self.float_value(self.state.attributes.get(air_quality.ATTR_PM_0_1))
 
 
 @register_property
@@ -276,11 +274,7 @@ class PM25Property(FloatProperty):
         return False
 
     def get_value(self) -> float | None:
-        value = 0
-        if self.state.domain == air_quality.DOMAIN:
-            value = self.state.attributes.get(air_quality.ATTR_PM_2_5)
-
-        return self.float_value(value)
+        return self.float_value(self.state.attributes.get(air_quality.ATTR_PM_2_5))
 
 
 @register_property
@@ -294,8 +288,7 @@ class PM10Property(FloatProperty):
         return False
 
     def get_value(self) -> float | None:
-        if self.state.domain == air_quality.DOMAIN:
-            return self.float_value(self.state.attributes.get(air_quality.ATTR_PM_10))
+        return self.float_value(self.state.attributes.get(air_quality.ATTR_PM_10))
 
 
 @register_property
@@ -310,11 +303,10 @@ class TVOCProperty(FloatProperty):
         return False
 
     def get_value(self) -> float | None:
-        if self.state.domain == air_quality.DOMAIN:
-            return self.convert_value(
-                self.state.attributes.get('total_volatile_organic_compounds'),
-                self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
-            )
+        return self.convert_value(
+            self.state.attributes.get('total_volatile_organic_compounds'),
+            self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+        )
 
 
 @register_property
@@ -332,8 +324,8 @@ class VoltageProperty(FloatProperty):
     def get_value(self) -> float | None:
         if self.state.domain == sensor.DOMAIN:
             return self.float_value(self.state.state)
-        elif self.state.domain in (switch.DOMAIN, light.DOMAIN):
-            return self.float_value(self.state.attributes.get(ATTR_VOLTAGE))
+
+        return self.float_value(self.state.attributes.get(ATTR_VOLTAGE))
 
 
 @register_property
@@ -351,8 +343,8 @@ class CurrentProperty(FloatProperty):
     def get_value(self) -> float | None:
         if self.state.domain == sensor.DOMAIN:
             return self.float_value(self.state.state)
-        elif self.state.domain in (switch.DOMAIN, light.DOMAIN):
-            return self.float_value(self.state.attributes.get('current'))
+
+        return self.float_value(self.state.attributes.get('current'))
 
 
 @register_property
