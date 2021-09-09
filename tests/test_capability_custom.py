@@ -7,17 +7,17 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability import (
+    CustomCapability,
     CustomModeCapability,
     CustomRangeCapability,
     CustomToggleCapability,
-    _CustomCapability,
 )
 from custom_components.yandex_smart_home.error import SmartHomeError
 
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 
 
-class MockCapability(_CustomCapability):
+class MockCapability(CustomCapability):
     type = 'test_type'
 
     def supported(self, *args, **kwargs):

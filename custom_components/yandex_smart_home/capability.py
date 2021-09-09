@@ -1,5 +1,6 @@
 """Implement the Yandex Smart Home capabilities."""
 from __future__ import annotations
+from abc import ABC, abstractmethod
 
 import logging
 import itertools
@@ -70,7 +71,7 @@ CAPABILITIES_RANGE = PREFIX_CAPABILITIES + 'range'
 CAPABILITIES_MODE = PREFIX_CAPABILITIES + 'mode'
 CAPABILITIES_COLOR_SETTING = PREFIX_CAPABILITIES + 'color_setting'
 
-CAPABILITIES: list[Type[_Capability]] = []
+CAPABILITIES: list[Type[AbstractCapability]] = []
 
 
 def register_capability(capability):
@@ -79,7 +80,7 @@ def register_capability(capability):
     return capability
 
 
-class _Capability:
+class AbstractCapability(ABC):
     """Represents a Capability."""
 
     type = ''
@@ -94,9 +95,10 @@ class _Capability:
         self.retrievable = True
         self.reportable = config.is_reporting_state
 
+    @abstractmethod
     def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
         """Test if capability is supported."""
-        raise NotImplementedError
+        pass
 
     def description(self):
         """Return description for a devices request."""
@@ -122,21 +124,24 @@ class _Capability:
             }
         } if value is not None else None
 
+    @abstractmethod
     def parameters(self) -> Optional[dict[str, Any]]:
         """Return parameters for a devices request."""
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     async def set_state(self, data, state):
         """Set device state."""
-        raise NotImplementedError
+        pass
 
 
 @register_capability
-class OnOffCapability(_Capability):
+class OnOffCapability(AbstractCapability):
     """On_off to offer basic on and off functionality.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/on_off-docpage/
@@ -294,8 +299,7 @@ class OnOffCapability(_Capability):
                                             blocking=self.state.domain != script.DOMAIN, context=data.context)
 
 
-# noinspection PyAbstractClass
-class _ToggleCapability(_Capability):
+class ToggleCapability(AbstractCapability, ABC):
     """Base toggle functionality.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
@@ -311,7 +315,7 @@ class _ToggleCapability(_Capability):
 
 
 @register_capability
-class MuteCapability(_ToggleCapability):
+class MuteCapability(ToggleCapability):
     """Mute and unmute functionality."""
 
     instance = const.TOGGLE_INSTANCE_MUTE
@@ -344,7 +348,7 @@ class MuteCapability(_ToggleCapability):
 
 
 @register_capability
-class PauseCapability(_ToggleCapability):
+class PauseCapability(ToggleCapability):
     """Pause and unpause functionality."""
 
     instance = const.TOGGLE_INSTANCE_PAUSE
@@ -399,7 +403,7 @@ class PauseCapability(_ToggleCapability):
 
 
 @register_capability
-class OscillationCapability(_ToggleCapability):
+class OscillationCapability(ToggleCapability):
     """Oscillation functionality."""
 
     instance = const.TOGGLE_INSTANCE_OSCILLATION
@@ -422,8 +426,7 @@ class OscillationCapability(_ToggleCapability):
             }, blocking=True, context=data.context)
 
 
-# noinspection PyAbstractClass
-class _ModeCapability(_Capability):
+class ModeCapability(AbstractCapability, ABC):
     """Base class of capabilities with mode functionality like thermostat mode
     or fan speed.
 
@@ -474,9 +477,10 @@ class _ModeCapability(_Capability):
         return self.modes_map_default
 
     @property
+    @abstractmethod
     def modes_list_attribute(self) -> Optional[str]:
         """Return HA attribute contains modes list for this entity."""
-        raise NotImplementedError
+        pass
 
     @property
     def state_value_attribute(self) -> Optional[str]:
@@ -540,7 +544,7 @@ class _ModeCapability(_Capability):
 
 
 @register_capability
-class ThermostatCapability(_ModeCapability):
+class ThermostatCapability(ModeCapability):
     """Thermostat functionality"""
 
     instance = const.MODE_INSTANCE_THERMOSTAT
@@ -576,7 +580,7 @@ class ThermostatCapability(_ModeCapability):
 
 
 @register_capability
-class SwingCapability(_ModeCapability):
+class SwingCapability(ModeCapability):
     """Swing functionality"""
 
     instance = const.MODE_INSTANCE_SWING
@@ -617,7 +621,7 @@ class SwingCapability(_ModeCapability):
 
 
 @register_capability
-class ProgramCapability(_ModeCapability):
+class ProgramCapability(ModeCapability):
     """Program functionality"""
 
     instance = const.MODE_INSTANCE_PROGRAM
@@ -680,7 +684,7 @@ class ProgramCapability(_ModeCapability):
 
 
 @register_capability
-class InputSourceCapability(_ModeCapability):
+class InputSourceCapability(ModeCapability):
     """Input Source functionality"""
 
     instance = const.MODE_INSTANCE_INPUT_SOURCE
@@ -731,7 +735,7 @@ class InputSourceCapability(_ModeCapability):
 
 
 @register_capability
-class FanSpeedCapability(_ModeCapability):
+class FanSpeedCapability(ModeCapability):
     """Fan speed functionality."""
 
     instance = const.MODE_INSTANCE_FAN_SPEED
@@ -816,8 +820,7 @@ class FanSpeedCapability(_ModeCapability):
             }, blocking=True, context=data.context)
 
 
-# noinspection PyAbstractClass
-class _RangeCapability(_Capability):
+class RangeCapability(AbstractCapability, ABC):
     """Base class of capabilities with range functionality like volume or
     brightness.
 
@@ -832,9 +835,10 @@ class _RangeCapability(_Capability):
         self.retrievable = self.support_random_access
 
     @property
+    @abstractmethod
     def support_random_access(self) -> bool:
         """Test if capability supports random access."""
-        raise NotImplementedError
+        pass
 
     @property
     def range(self) -> (float, float, float):
@@ -900,7 +904,7 @@ class _RangeCapability(_Capability):
 
 
 @register_capability
-class CoverLevelCapability(_RangeCapability):
+class CoverLevelCapability(RangeCapability):
     """Set cover level"""
 
     instance = const.RANGE_INSTANCE_OPEN
@@ -935,7 +939,7 @@ class CoverLevelCapability(_RangeCapability):
 
 
 @register_capability
-class TemperatureCapability(_RangeCapability):
+class TemperatureCapability(RangeCapability):
     """Set temperature functionality."""
 
     instance = const.RANGE_INSTANCE_TEMPERATURE
@@ -1004,7 +1008,7 @@ class TemperatureCapability(_RangeCapability):
 
 
 @register_capability
-class HumidityCapability(_RangeCapability):
+class HumidityCapability(RangeCapability):
     """Set humidity functionality."""
 
     instance = const.RANGE_INSTANCE_HUMIDITY
@@ -1072,7 +1076,7 @@ class HumidityCapability(_RangeCapability):
 
 
 @register_capability
-class BrightnessCapability(_RangeCapability):
+class BrightnessCapability(RangeCapability):
     """Set brightness functionality."""
 
     instance = const.RANGE_INSTANCE_BRIGHTNESS
@@ -1112,7 +1116,7 @@ class BrightnessCapability(_RangeCapability):
 
 
 @register_capability
-class VolumeCapability(_RangeCapability):
+class VolumeCapability(RangeCapability):
     """Set volume functionality."""
 
     instance = const.RANGE_INSTANCE_VOLUME
@@ -1173,7 +1177,7 @@ class VolumeCapability(_RangeCapability):
 
 
 @register_capability
-class ChannelCapability(_RangeCapability):
+class ChannelCapability(RangeCapability):
     """Set channel functionality."""
 
     instance = const.RANGE_INSTANCE_CHANNEL
@@ -1233,8 +1237,7 @@ class ChannelCapability(_RangeCapability):
                 }, blocking=True, context=data.context)
 
 
-# noinspection PyAbstractClass
-class _ColorSettingCapability(_Capability):
+class ColorSettingCapability(AbstractCapability, ABC):
     """Base color setting functionality.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/color_setting-docpage/
@@ -1337,7 +1340,7 @@ class _ColorSettingCapability(_Capability):
 
     @staticmethod
     def get_scenes_map_from_config(entity_config: dict[str, Any]) -> dict[str, list[str]]:
-        scenes_map = _ColorSettingCapability.scenes_map_default.copy()
+        scenes_map = ColorSettingCapability.scenes_map_default.copy()
         instance = const.COLOR_SETTING_SCENE
 
         if CONF_ENTITY_MODE_MAP in entity_config:
@@ -1373,7 +1376,7 @@ class _ColorSettingCapability(_Capability):
 
 
 @register_capability
-class RgbCapability(_ColorSettingCapability):
+class RgbCapability(ColorSettingCapability):
     """RGB color functionality."""
 
     instance = const.COLOR_SETTING_RGB
@@ -1415,7 +1418,7 @@ class RgbCapability(_ColorSettingCapability):
 
 
 @register_capability
-class TemperatureKCapability(_ColorSettingCapability):
+class TemperatureKCapability(ColorSettingCapability):
     """Color temperature functionality."""
 
     instance = const.COLOR_SETTING_TEMPERATURE_K
@@ -1492,7 +1495,7 @@ class TemperatureKCapability(_ColorSettingCapability):
 
 
 @register_capability
-class ColorSceneCapability(_ColorSettingCapability):
+class ColorSceneCapability(ColorSettingCapability):
     """Color temperature functionality."""
 
     instance = const.COLOR_SETTING_SCENE
@@ -1522,7 +1525,7 @@ class ColorSceneCapability(_ColorSettingCapability):
 
 
 @register_capability
-class CleanupModeCapability(_ModeCapability):
+class CleanupModeCapability(ModeCapability):
     """Vacuum cleanup mode functionality."""
 
     instance = const.MODE_INSTANCE_CLEANUP_MODE
@@ -1566,8 +1569,7 @@ class CleanupModeCapability(_ModeCapability):
             }, blocking=True, context=data.context)
 
 
-# noinspection PyAbstractClass
-class _CustomCapability(_Capability):
+class CustomCapability(AbstractCapability, ABC):
     def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
         super().__init__(hass, config, state)
@@ -1601,7 +1603,7 @@ class _CustomCapability(_Capability):
         return value
 
 
-class CustomModeCapability(_CustomCapability, _ModeCapability):
+class CustomModeCapability(CustomCapability, ModeCapability):
     def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
         super().__init__(hass, config, state, instance, capability_config)
@@ -1636,7 +1638,7 @@ class CustomModeCapability(_CustomCapability, _ModeCapability):
         )
 
 
-class CustomToggleCapability(_CustomCapability, _ToggleCapability):
+class CustomToggleCapability(CustomCapability, ToggleCapability):
     def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
         super().__init__(hass, config, state, instance, capability_config)
@@ -1663,7 +1665,7 @@ class CustomToggleCapability(_CustomCapability, _ToggleCapability):
         )
 
 
-class CustomRangeCapability(_CustomCapability, _RangeCapability):
+class CustomRangeCapability(CustomCapability, RangeCapability):
     def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
         self.capability_config = capability_config

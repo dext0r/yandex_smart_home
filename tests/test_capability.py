@@ -7,8 +7,12 @@ from homeassistant.const import ATTR_SUPPORTED_FEATURES, STATE_ON
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
-from custom_components.yandex_smart_home.capability import CAPABILITIES, _Capability, _ModeCapability, _RangeCapability
-# noinspection PyProtectedMember
+from custom_components.yandex_smart_home.capability import (
+    CAPABILITIES,
+    AbstractCapability,
+    ModeCapability,
+    RangeCapability,
+)
 from custom_components.yandex_smart_home.entity import YandexEntity
 from custom_components.yandex_smart_home.helpers import Config
 
@@ -16,7 +20,7 @@ from . import BASIC_CONFIG
 
 
 def get_capabilities(hass: HomeAssistant, config: Config, state: State,
-                     capability_type: str, instance: str) -> list[_Capability]:
+                     capability_type: str, instance: str) -> list[AbstractCapability]:
     caps = []
 
     for Capability in CAPABILITIES:
@@ -35,7 +39,7 @@ def get_capabilities(hass: HomeAssistant, config: Config, state: State,
 
 
 def get_exact_one_capability(hass: HomeAssistant, config: Config, state: State,
-                             capability_type: str, instance: str) -> _Capability | _RangeCapability | _ModeCapability:
+                             capability_type: str, instance: str) -> AbstractCapability | RangeCapability | ModeCapability:
 
     caps = get_capabilities(hass, config, state, capability_type, instance)
     assert len(caps) == 1
@@ -53,7 +57,7 @@ def assert_no_capabilities(hass: HomeAssistant, config: Config, state: State,
 
 
 def test_capability(hass):
-    class TestCapabilityWithParametersNoValue(_Capability):
+    class TestCapabilityWithParametersNoValue(AbstractCapability):
         type = 'test_type'
         instance = 'test_instance'
 
@@ -80,7 +84,7 @@ def test_capability(hass):
     }
     assert cap.get_state() is None
 
-    class TestCapability(_Capability):
+    class TestCapability(AbstractCapability):
         type = 'test_type'
         instance = 'test_instance'
 

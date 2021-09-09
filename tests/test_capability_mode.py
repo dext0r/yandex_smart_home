@@ -7,7 +7,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability import CAPABILITIES_MODE, FanSpeedCapability, _ModeCapability
+from custom_components.yandex_smart_home.capability import CAPABILITIES_MODE, FanSpeedCapability, ModeCapability
 from custom_components.yandex_smart_home.const import (
     MODE_INSTANCE_CLEANUP_MODE,
     MODE_INSTANCE_FAN_SPEED,
@@ -22,7 +22,7 @@ from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 
-class MockModeCapability(_ModeCapability):
+class MockModeCapability(ModeCapability):
     instance = 'test_instance'
     modes_map_default = {
         const.MODE_INSTANCE_MODE_FOWL: ['mode_1'],
