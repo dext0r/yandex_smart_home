@@ -164,8 +164,8 @@ ENTITY_SCHEMA = vol.Schema({
 })
 
 NOTIFIER_SCHEMA = vol.Schema({
-    vol.Required(const.CONF_SKILL_OAUTH_TOKEN): cv.string,
-    vol.Required(const.CONF_SKILL_ID): cv.string,
+    vol.Required(const.CONF_NOTIFIER_OAUTH_TOKEN): cv.string,
+    vol.Required(const.CONF_NOTIFIER_SKILL_ID): cv.string,
     vol.Required(const.CONF_NOTIFIER_USER_ID): cv.string,
 }, extra=vol.PREVENT_EXTRA)
 

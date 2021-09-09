@@ -22,9 +22,9 @@ import pytest
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.const import (
+    CONF_NOTIFIER_OAUTH_TOKEN,
+    CONF_NOTIFIER_SKILL_ID,
     CONF_NOTIFIER_USER_ID,
-    CONF_SKILL_ID,
-    CONF_SKILL_OAUTH_TOKEN,
     CONFIG,
     DOMAIN,
     NOTIFIERS,
@@ -44,12 +44,12 @@ async def test_notifier_async_setup(hass, hass_admin_user):
     config = MockConfig(
         notifier=[{
             CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-            CONF_SKILL_OAUTH_TOKEN: 'token',
-            CONF_SKILL_ID: 'skill_id',
+            CONF_NOTIFIER_OAUTH_TOKEN: 'token',
+            CONF_NOTIFIER_SKILL_ID: 'skill_id',
         }, {
             CONF_NOTIFIER_USER_ID: 'invalid',
-            CONF_SKILL_OAUTH_TOKEN: 'token',
-            CONF_SKILL_ID: 'skill_id',
+            CONF_NOTIFIER_OAUTH_TOKEN: 'token',
+            CONF_NOTIFIER_SKILL_ID: 'skill_id',
         }]
     )
     hass.data[DOMAIN] = {
@@ -62,8 +62,8 @@ async def test_notifier_async_setup(hass, hass_admin_user):
     config = MockConfig(
         notifier=[{
             CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-            CONF_SKILL_OAUTH_TOKEN: 'token',
-            CONF_SKILL_ID: 'skill_id',
+            CONF_NOTIFIER_OAUTH_TOKEN: 'token',
+            CONF_NOTIFIER_SKILL_ID: 'skill_id',
         }]
     )
     hass.data[DOMAIN] = {
@@ -166,8 +166,8 @@ async def test_notifier_event_handler(hass, hass_admin_user):
         should_expose=lambda e: e != 'sensor.not_expose',
         notifier=[{
             CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-            CONF_SKILL_OAUTH_TOKEN: '',
-            CONF_SKILL_ID: '',
+            CONF_NOTIFIER_OAUTH_TOKEN: '',
+            CONF_NOTIFIER_SKILL_ID: '',
         }],
         entity_config={
             'switch.test': {
