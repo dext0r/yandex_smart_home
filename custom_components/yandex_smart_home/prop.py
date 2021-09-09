@@ -115,7 +115,7 @@ class AbstractProperty(ABC):
         if float_value is None:
             return None
 
-        if self.instance == const.PROPERTY_TYPE_PRESSURE:
+        if self.instance == const.FLOAT_INSTANCE_PRESSURE:
             if from_unit not in PRESSURE_TO_PASCAL:
                 raise SmartHomeError(
                     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
@@ -127,7 +127,7 @@ class AbstractProperty(ABC):
                 float_value * PRESSURE_TO_PASCAL[from_unit] *
                 PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2
             )
-        elif self.instance == const.PROPERTY_TYPE_TVOC:
+        elif self.instance == const.FLOAT_INSTANCE_TVOC:
             # average molecular weight of tVOC = 110 g/mol
             CONCENTRATION_TO_MCG_M3 = {
                 CONCENTRATION_PARTS_PER_BILLION: 4.49629381184,

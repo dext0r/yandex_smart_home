@@ -9,7 +9,7 @@ from homeassistant.const import ATTR_DEVICE_CLASS, STATE_ON, STATE_OPEN, STATE_U
 from homeassistant.core import HomeAssistant, State
 
 from . import const
-from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, PROPERTY_TYPE_EVENT_VALUES, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
 from .error import SmartHomeError
 from .helpers import Config
 from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
@@ -17,7 +17,48 @@ from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 _LOGGER = logging.getLogger(__name__)
 
 PROPERTY_EVENT = PREFIX_PROPERTIES + 'event'
-EVENTS_VALUES = PROPERTY_TYPE_EVENT_VALUES
+PROPERTY_EVENT_VALUES = {
+    const.EVENT_INSTANCE_VIBRATION: [
+        const.EVENT_VIBRATION_VIBRATION,
+        const.EVENT_VIBRATION_TILT,
+        const.EVENT_VIBRATION_FALL,
+    ],
+    const.EVENT_INSTANCE_OPEN: [
+        const.EVENT_OPEN_OPENED,
+        const.EVENT_OPEN_CLOSED,
+    ],
+    const.EVENT_INSTANCE_BUTTON: [
+        const.EVENT_BUTTON_CLICK,
+        const.EVENT_BUTTON_DOUBLE_CLICK,
+        const.EVENT_BUTTON_LONG_PRESS,
+    ],
+    const.EVENT_INSTANCE_MOTION: [
+        const.EVENT_MOTION_DETECTED,
+        const.EVENT_MOTION_NOT_DETECTED,
+    ],
+    const.EVENT_INSTANCE_SMOKE: [
+        const.EVENT_SMOKE_DETECTED,
+        const.EVENT_SMOKE_NOT_DETECTED,
+        const.EVENT_SMOKE_HIGH,
+    ],
+    const.EVENT_INSTANCE_GAS: [
+        const.EVENT_GAS_DETECTED,
+        const.EVENT_GAS_NOT_DETECTED,
+        const.EVENT_GAS_HIGH,
+    ],
+    const.EVENT_INSTANCE_BATTERY_LEVEL: [
+        const.EVENT_BATTERY_LEVEL_LOW,
+        const.EVENT_BATTERY_LEVEL_NORMAL,
+    ],
+    const.EVENT_INSTANCE_WATER_LEVEL: [
+        const.EVENT_WATER_LEVEL_LOW,
+        const.EVENT_WATER_LEVEL_NORMAL,
+    ],
+    const.EVENT_INSTANCE_WATER_LEAK: [
+        const.EVENT_WATER_LEAK_LEAK,
+        const.EVENT_WATER_LEAK_DRY,
+    ],
+}
 
 
 class EventProperty(AbstractProperty, ABC):
@@ -25,7 +66,7 @@ class EventProperty(AbstractProperty, ABC):
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
         super().__init__(hass, config, state)
-        self.values = EVENTS_VALUES.get(self.instance)
+        self.values = PROPERTY_EVENT_VALUES.get(self.instance)
 
     def parameters(self):
         return {
@@ -45,31 +86,50 @@ class EventProperty(AbstractProperty, ABC):
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
             return None
 
-        if self.instance in ['open']:
-            return 'opened' if self.bool_value(value) else 'closed'
-        elif self.instance in ['motion']:
-            return 'detected' if self.bool_value(value) else 'not_detected'
-        elif self.instance in ['smoke', 'gas']:
-            return value if value == 'high' else 'detected' if self.bool_value(value) else 'not_detected'
-        elif self.instance in ['battery_level', 'water_level']:
-            return 'low' if self.bool_value(value) else 'normal'
-        elif self.instance in ['water_leak']:
-            return 'leak' if self.bool_value(value) else 'dry'
-        elif self.instance in ['button']:
+        if self.instance == const.EVENT_INSTANCE_OPEN:
+            return const.EVENT_OPEN_OPENED if self.bool_value(value) else const.EVENT_OPEN_CLOSED
+
+        elif self.instance == const.EVENT_INSTANCE_MOTION:
+            return const.EVENT_MOTION_DETECTED if self.bool_value(value) else const.EVENT_MOTION_NOT_DETECTED
+
+        elif self.instance == const.EVENT_INSTANCE_SMOKE:
+            if value == 'high':
+                return const.EVENT_SMOKE_HIGH
+
+            return const.EVENT_SMOKE_DETECTED if self.bool_value(value) else const.EVENT_SMOKE_NOT_DETECTED
+
+        elif self.instance == const.EVENT_INSTANCE_GAS:
+            if value == 'high':
+                return const.EVENT_GAS_HIGH
+
+            return const.EVENT_GAS_DETECTED if self.bool_value(value) else const.EVENT_GAS_NOT_DETECTED
+
+        elif self.instance in const.EVENT_INSTANCE_BATTERY_LEVEL:
+            return const.EVENT_BATTERY_LEVEL_LOW if self.bool_value(value) else const.EVENT_BATTERY_LEVEL_NORMAL
+
+        elif self.instance in const.EVENT_INSTANCE_WATER_LEVEL:
+            return const.EVENT_WATER_LEVEL_LOW if self.bool_value(value) else const.EVENT_WATER_LEVEL_NORMAL
+
+        elif self.instance == const.EVENT_INSTANCE_WATER_LEAK:
+            return const.EVENT_WATER_LEAK_LEAK if self.bool_value(value) else const.EVENT_WATER_LEAK_DRY
+
+        elif self.instance in const.EVENT_INSTANCE_BUTTON:
             if value in ['single', 'click']:
-                return 'click'
+                return const.EVENT_BUTTON_CLICK
             elif value in ['double', 'double_click']:
-                return 'double_click'
+                return const.EVENT_BUTTON_DOUBLE_CLICK
             elif value in ['long', 'long_click', 'long_click_press', 'hold']:
-                return 'long_press'
-        elif self.instance in ['vibration']:
-            if value in ['vibrate', 'vibration', 'actively', 'move',
-                         'tap_twice', 'shake_air', 'swing'] or self.bool_value(value):
-                return 'vibration'
+                return const.EVENT_BUTTON_LONG_PRESS
+
+        elif self.instance in const.EVENT_INSTANCE_VIBRATION:
+            if value in ['vibrate', 'vibration', 'actively', 'move', 'tap_twice', 'shake_air', 'swing']:
+                return const.EVENT_VIBRATION_VIBRATION
+            elif self.bool_value(value):
+                return const.EVENT_VIBRATION_VIBRATION
             elif value in ['tilt', 'flip90', 'flip180', 'rotate']:
-                return 'tilt'
+                return const.EVENT_VIBRATION_TILT
             elif value in ['free_fall', 'drop']:
-                return 'fall'
+                return const.EVENT_VIBRATION_FALL
 
     def get_value(self):
         if self.state.domain == binary_sensor.DOMAIN:
@@ -83,7 +143,7 @@ class EventProperty(AbstractProperty, ABC):
 
 @register_property
 class ContactProperty(EventProperty):
-    instance = const.PROPERTY_TYPE_OPEN
+    instance = const.EVENT_INSTANCE_OPEN
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -100,7 +160,7 @@ class ContactProperty(EventProperty):
 
 @register_property
 class MotionProperty(EventProperty):
-    instance = const.PROPERTY_TYPE_MOTION
+    instance = const.EVENT_INSTANCE_MOTION
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -116,7 +176,7 @@ class MotionProperty(EventProperty):
 
 @register_property
 class GasProperty(EventProperty):
-    instance = const.PROPERTY_TYPE_GAS
+    instance = const.EVENT_INSTANCE_GAS
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -128,7 +188,7 @@ class GasProperty(EventProperty):
 
 @register_property
 class SmokeProperty(EventProperty):
-    instance = const.PROPERTY_TYPE_SMOKE
+    instance = const.EVENT_INSTANCE_SMOKE
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -140,7 +200,7 @@ class SmokeProperty(EventProperty):
 
 @register_property
 class BatteryLevelLowProperty(EventProperty):
-    instance = const.PROPERTY_TYPE_BATTERY_LEVEL
+    instance = const.EVENT_INSTANCE_BATTERY_LEVEL
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -152,7 +212,7 @@ class BatteryLevelLowProperty(EventProperty):
 
 @register_property
 class WaterLevelLowProperty(EventProperty):
-    instance = const.PROPERTY_TYPE_WATER_LEVEL
+    instance = const.EVENT_INSTANCE_WATER_LEVEL
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -164,7 +224,7 @@ class WaterLevelLowProperty(EventProperty):
 
 @register_property
 class WaterLeakProperty(EventProperty):
-    instance = const.PROPERTY_TYPE_WATER_LEAK
+    instance = const.EVENT_INSTANCE_WATER_LEAK
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -176,7 +236,7 @@ class WaterLeakProperty(EventProperty):
 
 @register_property
 class ButtonProperty(EventProperty):
-    instance = const.PROPERTY_TYPE_BUTTON
+    instance = const.EVENT_INSTANCE_BUTTON
     retrievable = False
 
     @staticmethod
@@ -207,7 +267,7 @@ class ButtonProperty(EventProperty):
 
 @register_property
 class VibrationProperty(EventProperty):
-    instance = const.PROPERTY_TYPE_VIBRATION
+    instance = const.EVENT_INSTANCE_VIBRATION
     retrievable = False
 
     @staticmethod
