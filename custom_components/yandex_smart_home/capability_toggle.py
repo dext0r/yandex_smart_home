@@ -70,7 +70,10 @@ class MuteCapability(ToggleCapability):
             SERVICE_VOLUME_MUTE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 media_player.ATTR_MEDIA_VOLUME_MUTED: state['value']
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -132,7 +135,10 @@ class PauseCapability(ToggleCapability):
             self.state.domain,
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -162,4 +168,7 @@ class OscillationCapability(ToggleCapability):
             fan.SERVICE_OSCILLATE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 fan.ATTR_OSCILLATING: state['value']
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )

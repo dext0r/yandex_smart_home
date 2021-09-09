@@ -197,7 +197,10 @@ class RgbCapability(ColorSettingCapability):
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_RGB_COLOR: (red, green, blue)
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -269,7 +272,11 @@ class TemperatureKCapability(ColorSettingCapability):
         if service_data:
             service_data[ATTR_ENTITY_ID] = self.state.entity_id
             await self.hass.services.async_call(
-                light.DOMAIN, light.SERVICE_TURN_ON, service_data, blocking=True, context=data.context
+                light.DOMAIN,
+                light.SERVICE_TURN_ON,
+                service_data,
+                blocking=True,
+                context=data.context
             )
         else:
             raise SmartHomeError(
@@ -307,4 +314,7 @@ class ColorSceneCapability(ColorSettingCapability):
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_EFFECT: self.get_ha_effect_by_yandex_scene(state['value']),
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )

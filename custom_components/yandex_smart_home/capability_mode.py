@@ -169,7 +169,10 @@ class ThermostatCapability(ModeCapability):
             climate.SERVICE_SET_HVAC_MODE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_HVAC_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -212,7 +215,10 @@ class SwingCapability(ModeCapability):
             climate.SERVICE_SET_SWING_MODE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_SWING_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -276,7 +282,8 @@ class ProgramCapability(ModeCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 humidifier.ATTR_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
             },
-            blocking=True, context=data.context,
+            blocking=True,
+            context=data.context
         )
 
 
@@ -330,7 +337,10 @@ class InputSourceCapability(ModeCapability):
             media_player.SERVICE_SELECT_SOURCE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 media_player.const.ATTR_INPUT_SOURCE: self.get_ha_mode_by_yandex_mode(state['value']),
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -392,18 +402,16 @@ class FanSpeedCapability(ModeCapability):
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        value = self.get_ha_mode_by_yandex_mode(state['value'])
-
         if self.state.domain == climate.DOMAIN:
             service = climate.SERVICE_SET_FAN_MODE
-            attr = climate.ATTR_FAN_MODE
+            attribute = climate.ATTR_FAN_MODE
         elif self.state.domain == fan.DOMAIN:
             if self.modes_list_attribute == fan.ATTR_PRESET_MODES:
                 service = fan.SERVICE_SET_PRESET_MODE
-                attr = fan.ATTR_PRESET_MODE
+                attribute = fan.ATTR_PRESET_MODE
             else:
                 service = fan.SERVICE_SET_SPEED
-                attr = fan.ATTR_SPEED
+                attribute = fan.ATTR_SPEED
                 _LOGGER.warning(
                     f'Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" '
                     f'instead for {self.instance} instance of {self.state.entity_id}'
@@ -418,8 +426,9 @@ class FanSpeedCapability(ModeCapability):
             self.state.domain,
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                attr: value
-            }, blocking=True, context=data.context)
+                attribute: self.get_ha_mode_by_yandex_mode(state['value'])
+            },
+            blocking=True, context=data.context)
 
 
 @register_capability
@@ -466,4 +475,7 @@ class CleanupModeCapability(ModeCapability):
             vacuum.SERVICE_SET_FAN_SPEED, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 vacuum.ATTR_FAN_SPEED: self.get_ha_mode_by_yandex_mode(state['value'])
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )

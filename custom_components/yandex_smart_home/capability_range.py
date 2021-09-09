@@ -151,14 +151,17 @@ class CoverLevelCapability(RangeCapability):
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        new_value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
+        value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
 
         await self.hass.services.async_call(
             self.state.domain,
             cover.SERVICE_SET_COVER_POSITION, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                cover.ATTR_POSITION: new_value
-            }, blocking=True, context=data.context)
+                cover.ATTR_POSITION: value
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -213,24 +216,27 @@ class TemperatureCapability(RangeCapability):
         """Set device state."""
         if self.state.domain == water_heater.DOMAIN:
             service = water_heater.SERVICE_SET_TEMPERATURE
-            attr = water_heater.ATTR_TEMPERATURE
+            attribute = water_heater.ATTR_TEMPERATURE
         elif self.state.domain == climate.DOMAIN:
             service = climate.SERVICE_SET_TEMPERATURE
-            attr = climate.ATTR_TEMPERATURE
+            attribute = climate.ATTR_TEMPERATURE
         else:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
                 f'Unsupported domain for {self.instance} instance of {self.state.entity_id}'
             )
 
-        new_value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
+        value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
 
         await self.hass.services.async_call(
             self.state.domain,
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                attr: new_value
-            }, blocking=True, context=data.context)
+                attribute: value
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -277,16 +283,16 @@ class HumidityCapability(RangeCapability):
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         domain = self.state.domain
-        new_value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
+        value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
 
         if self.state.domain == humidifier.DOMAIN:
             service = humidifier.SERVICE_SET_HUMIDITY
-            attr = humidifier.ATTR_HUMIDITY
+            attribute = humidifier.ATTR_HUMIDITY
         elif self.state.domain == fan.DOMAIN and \
                 self.state.attributes.get(ATTR_MODEL, '').startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
             domain = DOMAIN_XIAOMI_AIRPURIFIER
             service = SERVICE_FAN_SET_TARGET_HUMIDITY
-            attr = humidifier.ATTR_HUMIDITY
+            attribute = humidifier.ATTR_HUMIDITY
         else:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
@@ -295,10 +301,12 @@ class HumidityCapability(RangeCapability):
 
         await self.hass.services.async_call(
             domain,
-            service,
-            {ATTR_ENTITY_ID: self.state.entity_id, attr: new_value},
+            service, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                attribute: value
+            },
             blocking=True,
-            context=data.context,
+            context=data.context
         )
 
 
@@ -345,7 +353,10 @@ class BrightnessCapability(RangeCapability):
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 attr_name: state['value']
-            }, blocking=True, context=data.context)
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -405,15 +416,16 @@ class VolumeCapability(RangeCapability):
 
             return
 
-        target_volume_level = (state['value']
-                               if not state.get('relative') else self.get_absolute_value(state['value'])) / 100
+        value = (state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])) / 100
 
         await self.hass.services.async_call(
             media_player.DOMAIN,
             media_player.SERVICE_VOLUME_SET, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                media_player.const.ATTR_MEDIA_VOLUME_LEVEL: target_volume_level,
-            }, blocking=True, context=data.context
+                media_player.const.ATTR_MEDIA_VOLUME_LEVEL: value
+            },
+            blocking=True,
+            context=data.context
         )
 
 
@@ -470,13 +482,18 @@ class ChannelCapability(RangeCapability):
                 media_player.DOMAIN,
                 service, {
                     ATTR_ENTITY_ID: self.state.entity_id
-                }, blocking=True, context=data.context)
+                },
+                blocking=True,
+                context=data.context
+            )
         else:
             await self.hass.services.async_call(
                 media_player.DOMAIN,
                 media_player.SERVICE_PLAY_MEDIA, {
                     ATTR_ENTITY_ID: self.state.entity_id,
                     media_player.const.ATTR_MEDIA_CONTENT_ID: state['value'],
-                    media_player.const.ATTR_MEDIA_CONTENT_TYPE:
-                        media_player.const.MEDIA_TYPE_CHANNEL,
-                }, blocking=True, context=data.context)
+                    media_player.const.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+                },
+                blocking=True,
+                context=data.context
+            )
