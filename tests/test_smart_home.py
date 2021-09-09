@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import patch
 
 from homeassistant.const import STATE_OFF, STATE_ON
@@ -82,6 +84,9 @@ async def test_async_devices_execute(hass):
     class MockPauseCapability(PauseCapability):
         def supported(self) -> bool:
             return True
+
+        def get_value(self) -> float | str | None:
+            return None
 
         async def set_state(self, *args, **kwargs):
             raise Exception('fail set_state')

@@ -53,16 +53,6 @@ async def test_capability_mute(hass):
     assert calls[1].data[media_player.ATTR_MEDIA_VOLUME_MUTED] is False
 
 
-async def test_capability_pause(hass):
-    state = State('cover.test', cover.STATE_OPEN, {ATTR_SUPPORTED_FEATURES: cover.SUPPORT_STOP})
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
-    cap.state = State('sensor.test', STATE_ON)
-    assert cap.get_value() is False
-
-    with pytest.raises(SmartHomeError):
-        await cap.set_state(BASIC_DATA, {})
-
-
 async def test_capability_pause_media_player(hass):
     state = State('media_player.test', STATE_ON)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
