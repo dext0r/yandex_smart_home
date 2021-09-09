@@ -17,6 +17,7 @@ from .const import CONF_DISABLED, CONFIG, DOMAIN, NOTIFIERS
 from .helpers import Config
 from .http import async_register_http
 from .notifier import async_setup_notifier, async_unload_notifier
+from .prop_float import PRESSURE_UNITS_TO_YANDEX_UNITS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ NOTIFIER_SCHEMA = vol.Schema({
 
 
 def pressure_unit_validate(unit):
-    if unit not in const.PRESSURE_UNITS_TO_YANDEX_UNITS:
+    if unit not in PRESSURE_UNITS_TO_YANDEX_UNITS:
         raise vol.Invalid(f'Pressure unit "{unit}" is not supported')
 
     return unit

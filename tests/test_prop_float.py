@@ -24,7 +24,7 @@ import pytest
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.prop_event import PROPERTY_EVENT
-from custom_components.yandex_smart_home.prop_float import PROPERTY_FLOAT, FloatProperty
+from custom_components.yandex_smart_home.prop_float import PRESSURE_UNITS_TO_YANDEX_UNITS, PROPERTY_FLOAT, FloatProperty
 
 from . import BASIC_CONFIG, MockConfig
 from .test_prop import assert_no_properties, get_exact_one_property
@@ -157,7 +157,7 @@ def test_property_float_pressure(hass, yandex_pressure_unit, v):
     assert prop.retrievable
     assert prop.parameters() == {
         'instance': 'pressure',
-        'unit': const.PRESSURE_UNITS_TO_YANDEX_UNITS[yandex_pressure_unit]
+        'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[yandex_pressure_unit]
     }
     assert prop.get_value() == v
 

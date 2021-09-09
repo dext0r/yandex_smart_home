@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from abc import ABC
 import logging
+from typing import Any
 
 from homeassistant.components import air_quality, climate, fan, humidifier, light, sensor, switch
 from homeassistant.const import (
@@ -10,6 +11,11 @@ from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_UNIT_OF_MEASUREMENT,
     ATTR_VOLTAGE,
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_FOOT,
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
+    CONCENTRATION_PARTS_PER_BILLION,
+    CONCENTRATION_PARTS_PER_MILLION,
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CO2,
     DEVICE_CLASS_CURRENT,
@@ -19,19 +25,52 @@ from homeassistant.const import (
     DEVICE_CLASS_PRESSURE,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
 )
 
 from . import const
-from .const import CONF_PRESSURE_UNIT, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS
+from .const import CONF_PRESSURE_UNIT, ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .error import SmartHomeError
 from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 
 _LOGGER = logging.getLogger(__name__)
 
 PROPERTY_FLOAT = PREFIX_PROPERTIES + 'float'
+PRESSURE_UNITS_TO_YANDEX_UNITS = {
+    const.PRESSURE_UNIT_PASCAL: 'unit.pressure.pascal',
+    const.PRESSURE_UNIT_MMHG: 'unit.pressure.mmhg',
+    const.PRESSURE_UNIT_ATM: 'unit.pressure.atm',
+    const.PRESSURE_UNIT_BAR: 'unit.pressure.bar'
+}
+PRESSURE_TO_PASCAL = {
+    const.PRESSURE_UNIT_PASCAL: 1,
+    const.PRESSURE_UNIT_HECTOPASCAL: 100,
+    const.PRESSURE_UNIT_KILOPASCAL: 1000,
+    const.PRESSURE_UNIT_MEGAPASCAL: 1000000,
+    const.PRESSURE_UNIT_MMHG: 133.322,
+    const.PRESSURE_UNIT_ATM: 101325,
+    const.PRESSURE_UNIT_BAR: 100000,
+    const.PRESSURE_UNIT_MBAR: 0.01
+}
+PRESSURE_FROM_PASCAL = {
+    const.PRESSURE_UNIT_PASCAL: 1,
+    const.PRESSURE_UNIT_MMHG: 0.00750061575846,
+    const.PRESSURE_UNIT_ATM: 0.00000986923266716,
+    const.PRESSURE_UNIT_BAR: 0.00001,
+}
+# average molecular weight of tVOC = 110 g/mol
+TVOC_CONCENTRATION_TO_MCG_M3 = {
+    CONCENTRATION_PARTS_PER_BILLION: 4.49629381184,
+    CONCENTRATION_PARTS_PER_MILLION: 4496.29381184,
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_FOOT: 35.3146667215,
+    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER: 1000,
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER: 1
+}
 PROPERTY_FLOAT_INSTANCE_TO_UNITS = {
     const.FLOAT_INSTANCE_HUMIDITY: 'unit.percent',
     const.FLOAT_INSTANCE_TEMPERATURE: 'unit.temperature.celsius',
-    const.FLOAT_INSTANCE_PRESSURE: PRESSURE_UNITS_TO_YANDEX_UNITS[PRESSURE_UNIT_MMHG],
+    const.FLOAT_INSTANCE_PRESSURE: PRESSURE_UNITS_TO_YANDEX_UNITS[const.PRESSURE_UNIT_MMHG],
     const.FLOAT_INSTANCE_WATER_LEVEL: 'unit.percent',
     const.FLOAT_INSTANCE_CO2_LEVEL: 'unit.ppm',
     const.FLOAT_INSTANCE_POWER: 'unit.watt',
@@ -54,6 +93,40 @@ class FloatProperty(AbstractProperty, ABC):
             'instance': self.instance,
             'unit': PROPERTY_FLOAT_INSTANCE_TO_UNITS[self.instance]
         }
+
+    def float_value(self, value: Any) -> float | None:
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
+            return None
+
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
+            )
+
+    def convert_value(self, value: Any, from_unit: str | None) -> float | None:
+        float_value = self.float_value(value)
+        if float_value is None:
+            return None
+
+        if self.instance == const.FLOAT_INSTANCE_PRESSURE:
+            if from_unit not in PRESSURE_TO_PASCAL:
+                raise SmartHomeError(
+                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                    f'Unsupported pressure unit "{from_unit}" '
+                    f'for {self.instance} instance of {self.state.entity_id}'
+                )
+
+            return round(
+                float_value * PRESSURE_TO_PASCAL[from_unit] *
+                PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2
+            )
+        elif self.instance == const.FLOAT_INSTANCE_TVOC:
+            return round(float_value * TVOC_CONCENTRATION_TO_MCG_M3.get(from_unit, 1), 2)
+
+        return value
 
 
 @register_property
