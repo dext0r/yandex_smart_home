@@ -26,14 +26,14 @@ from .const import (
 )
 from .error import SmartHomeError
 from .helpers import Config
-from .prop import _Property
+from .prop import AbstractProperty
 from .prop_event import PROPERTY_EVENT
 from .prop_float import PROPERTY_FLOAT
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class CustomEntityProperty(_Property):
+class CustomEntityProperty(AbstractProperty):
     """Represents a Property."""
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State, property_config: dict[str, str]):

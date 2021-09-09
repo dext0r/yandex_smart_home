@@ -1,6 +1,7 @@
 """Implement the Yandex Smart Home float properties."""
 from __future__ import annotations
 
+from abc import ABC
 import logging
 
 from homeassistant.components import air_quality, climate, fan, humidifier, light, sensor, switch
@@ -22,15 +23,14 @@ from homeassistant.const import (
 
 from . import const
 from .const import CONF_PRESSURE_UNIT, PRESSURE_UNITS_TO_YANDEX_UNITS
-from .prop import PREFIX_PROPERTIES, _Property, register_property
+from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 
 _LOGGER = logging.getLogger(__name__)
 
 PROPERTY_FLOAT = PREFIX_PROPERTIES + 'float'
 
 
-# noinspection PyAbstractClass
-class _FloatProperty(_Property):
+class FloatProperty(AbstractProperty, ABC):
     type = PROPERTY_FLOAT
 
     def parameters(self):
@@ -41,7 +41,7 @@ class _FloatProperty(_Property):
 
 
 @register_property
-class TemperatureProperty(_FloatProperty):
+class TemperatureProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_TEMPERATURE
 
     @staticmethod
@@ -65,7 +65,7 @@ class TemperatureProperty(_FloatProperty):
 
 
 @register_property
-class HumidityProperty(_FloatProperty):
+class HumidityProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_HUMIDITY
 
     @staticmethod
@@ -89,7 +89,7 @@ class HumidityProperty(_FloatProperty):
 
 
 @register_property
-class PressureProperty(_FloatProperty):
+class PressureProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_PRESSURE
 
     @staticmethod
@@ -111,7 +111,7 @@ class PressureProperty(_FloatProperty):
 
 
 @register_property
-class IlluminanceProperty(_FloatProperty):
+class IlluminanceProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_ILLUMINATION
 
     @staticmethod
@@ -129,7 +129,7 @@ class IlluminanceProperty(_FloatProperty):
 
 
 @register_property
-class WaterLevelProperty(_FloatProperty):
+class WaterLevelProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_WATER_LEVEL
 
     @staticmethod
@@ -145,7 +145,7 @@ class WaterLevelProperty(_FloatProperty):
 
 
 @register_property
-class CO2Property(_FloatProperty):
+class CO2Property(FloatProperty):
     instance = const.PROPERTY_TYPE_CO2_LEVEL
 
     @staticmethod
@@ -165,7 +165,7 @@ class CO2Property(_FloatProperty):
 
 
 @register_property
-class PM1Property(_FloatProperty):
+class PM1Property(FloatProperty):
     instance = const.PROPERTY_TYPE_PM1_DENSITY
 
     @staticmethod
@@ -181,7 +181,7 @@ class PM1Property(_FloatProperty):
 
 
 @register_property
-class PM25Property(_FloatProperty):
+class PM25Property(FloatProperty):
     instance = const.PROPERTY_TYPE_PM2_5_DENSITY
 
     @staticmethod
@@ -200,7 +200,7 @@ class PM25Property(_FloatProperty):
 
 
 @register_property
-class PM10Property(_FloatProperty):
+class PM10Property(FloatProperty):
     instance = const.PROPERTY_TYPE_PM10_DENSITY
 
     @staticmethod
@@ -216,7 +216,7 @@ class PM10Property(_FloatProperty):
 
 
 @register_property
-class TVOCProperty(_FloatProperty):
+class TVOCProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_TVOC
 
     @staticmethod
@@ -236,7 +236,7 @@ class TVOCProperty(_FloatProperty):
 
 
 @register_property
-class VoltageProperty(_FloatProperty):
+class VoltageProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_VOLTAGE
 
     @staticmethod
@@ -256,7 +256,7 @@ class VoltageProperty(_FloatProperty):
 
 
 @register_property
-class CurrentProperty(_FloatProperty):
+class CurrentProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_AMPERAGE
 
     @staticmethod
@@ -276,7 +276,7 @@ class CurrentProperty(_FloatProperty):
 
 
 @register_property
-class PowerProperty(_FloatProperty):
+class PowerProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_POWER
 
     @staticmethod
@@ -302,7 +302,7 @@ class PowerProperty(_FloatProperty):
 
 
 @register_property
-class BatteryLevelProperty(_FloatProperty):
+class BatteryLevelProperty(FloatProperty):
     instance = const.PROPERTY_TYPE_BATTERY_LEVEL
 
     @staticmethod

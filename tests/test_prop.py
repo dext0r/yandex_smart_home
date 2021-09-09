@@ -7,15 +7,15 @@ from homeassistant.setup import async_setup_component
 
 from custom_components.yandex_smart_home.entity import YandexEntity
 from custom_components.yandex_smart_home.helpers import Config
-from custom_components.yandex_smart_home.prop import PROPERTIES, _Property
-from custom_components.yandex_smart_home.prop_event import _EventProperty
-from custom_components.yandex_smart_home.prop_float import _FloatProperty
+from custom_components.yandex_smart_home.prop import PROPERTIES, AbstractProperty
+from custom_components.yandex_smart_home.prop_event import EventProperty
+from custom_components.yandex_smart_home.prop_float import FloatProperty
 
 from . import BASIC_CONFIG
 
 
 def get_properties(hass: HomeAssistant, config: Config, state: State,
-                   property_type: str, instance: str) -> list[_Property]:
+                   property_type: str, instance: str) -> list[AbstractProperty]:
     props = []
 
     for Property in PROPERTIES:
@@ -34,7 +34,7 @@ def get_properties(hass: HomeAssistant, config: Config, state: State,
 
 
 def get_exact_one_property(hass: HomeAssistant, config: Config, state: State,
-                           property_type: str, instance: str) -> _Property | _EventProperty | _FloatProperty:
+                           property_type: str, instance: str) -> AbstractProperty | EventProperty | FloatProperty:
     props = get_properties(hass, config, state, property_type, instance)
     assert len(props) == 1
     return props[0]

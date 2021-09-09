@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import logging
 
+from abc import ABC
 from homeassistant.components import binary_sensor, sensor
 from homeassistant.const import ATTR_DEVICE_CLASS
 
 from . import const
 from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, PROPERTY_TYPE_EVENT_VALUES
 from .error import SmartHomeError
-from .prop import PREFIX_PROPERTIES, _Property, register_property
+from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,12 +18,8 @@ PROPERTY_EVENT = PREFIX_PROPERTIES + 'event'
 EVENTS_VALUES = PROPERTY_TYPE_EVENT_VALUES
 
 
-class _EventProperty(_Property):
+class EventProperty(AbstractProperty, ABC):
     type = PROPERTY_EVENT
-
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        raise NotImplementedError
 
     def parameters(self):
         return {
@@ -44,7 +41,7 @@ class _EventProperty(_Property):
 
 
 @register_property
-class ContactProperty(_EventProperty):
+class ContactProperty(EventProperty):
     instance = const.PROPERTY_TYPE_OPEN
     values = EVENTS_VALUES.get(instance)
 
@@ -62,7 +59,7 @@ class ContactProperty(_EventProperty):
 
 
 @register_property
-class MotionProperty(_EventProperty):
+class MotionProperty(EventProperty):
     instance = const.PROPERTY_TYPE_MOTION
     values = EVENTS_VALUES.get(instance)
 
@@ -79,7 +76,7 @@ class MotionProperty(_EventProperty):
 
 
 @register_property
-class GasProperty(_EventProperty):
+class GasProperty(EventProperty):
     instance = const.PROPERTY_TYPE_GAS
     values = EVENTS_VALUES.get(instance)
 
@@ -92,7 +89,7 @@ class GasProperty(_EventProperty):
 
 
 @register_property
-class SmokeProperty(_EventProperty):
+class SmokeProperty(EventProperty):
     instance = const.PROPERTY_TYPE_SMOKE
     values = EVENTS_VALUES.get(instance)
 
@@ -105,7 +102,7 @@ class SmokeProperty(_EventProperty):
 
 
 @register_property
-class BatteryLevelLowProperty(_EventProperty):
+class BatteryLevelLowProperty(EventProperty):
     instance = const.PROPERTY_TYPE_BATTERY_LEVEL
     values = EVENTS_VALUES.get(instance)
 
@@ -118,7 +115,7 @@ class BatteryLevelLowProperty(_EventProperty):
 
 
 @register_property
-class WaterLevelLowProperty(_EventProperty):
+class WaterLevelLowProperty(EventProperty):
     instance = const.PROPERTY_TYPE_WATER_LEVEL
     values = EVENTS_VALUES.get(instance)
 
@@ -131,7 +128,7 @@ class WaterLevelLowProperty(_EventProperty):
 
 
 @register_property
-class WaterLeakProperty(_EventProperty):
+class WaterLeakProperty(EventProperty):
     instance = const.PROPERTY_TYPE_WATER_LEAK
     values = EVENTS_VALUES.get(instance)
 
@@ -144,7 +141,7 @@ class WaterLeakProperty(_EventProperty):
 
 
 @register_property
-class ButtonProperty(_EventProperty):
+class ButtonProperty(EventProperty):
     instance = const.PROPERTY_TYPE_BUTTON
     retrievable = False
     values = EVENTS_VALUES.get(instance)
@@ -176,7 +173,7 @@ class ButtonProperty(_EventProperty):
 
 
 @register_property
-class VibrationProperty(_EventProperty):
+class VibrationProperty(EventProperty):
     instance = const.PROPERTY_TYPE_VIBRATION
     retrievable = False
     values = EVENTS_VALUES.get(instance)

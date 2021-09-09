@@ -7,14 +7,14 @@ import pytest
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.error import SmartHomeError
-from custom_components.yandex_smart_home.prop_event import PROPERTY_EVENT, _EventProperty
+from custom_components.yandex_smart_home.prop_event import PROPERTY_EVENT, EventProperty
 from custom_components.yandex_smart_home.prop_float import PROPERTY_FLOAT
 
 from . import BASIC_CONFIG
 from .test_prop import assert_no_properties, get_exact_one_property
 
 
-class MockEventProperty(_EventProperty):
+class MockEventProperty(EventProperty):
     @staticmethod
     def supported(*args, **kwargs):
         return True

@@ -28,7 +28,7 @@ from .const import (
 )
 from .error import SmartHomeError
 from .helpers import Config, RequestData
-from .prop import _Property
+from .prop import AbstractProperty
 from .prop_custom import CustomEntityProperty
 
 
@@ -41,7 +41,7 @@ class YandexEntity:
         self.config = config
         self.state = state
         self._capabilities: list[_Capability] | None = None
-        self._properties: list[_Property] | None = None
+        self._properties: list[AbstractProperty] | None = None
 
     @property
     def entity_id(self) -> str:
@@ -81,7 +81,7 @@ class YandexEntity:
         return self._capabilities
 
     @callback
-    def properties(self) -> list[_Property]:
+    def properties(self) -> list[AbstractProperty]:
         """Return properties for entity."""
         if self._properties is not None:
             return self._properties
