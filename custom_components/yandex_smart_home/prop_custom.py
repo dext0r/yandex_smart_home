@@ -70,8 +70,7 @@ class CustomEntityProperty(AbstractProperty, ABC):
 
         return CustomFloatEntityProperty(hass, config, state, property_state, property_config)
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
+    def supported(self) -> bool:
         return True
 
     def get_value(self):

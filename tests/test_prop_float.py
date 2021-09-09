@@ -31,8 +31,7 @@ from .test_prop import assert_no_properties, get_exact_one_property
 
 
 class MockFloatProperty(FloatProperty):
-    @staticmethod
-    def supported(*args, **kwargs):
+    def supported(self) -> bool:
         return True
 
     def get_value(self):

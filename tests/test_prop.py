@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from homeassistant.components import binary_sensor, climate, sensor
-from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
@@ -24,10 +23,7 @@ def get_properties(hass: HomeAssistant, config: Config, state: State,
         if prop.type != property_type or prop.instance != instance:
             continue
 
-        if prop.supported(state.domain,
-                          state.attributes.get(ATTR_SUPPORTED_FEATURES, 0),
-                          config.get_entity_config(state.entity_id),
-                          state.attributes):
+        if prop.supported():
             props.append(prop)
 
     return props

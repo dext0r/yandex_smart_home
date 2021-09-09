@@ -59,9 +59,8 @@ class AbstractProperty(ABC):
         self.entity_config = config.get_entity_config(state.entity_id)
         self.reportable = config.is_reporting_state
 
-    @staticmethod
     @abstractmethod
-    def supported(domain, features, entity_config, attributes):
+    def supported(self) -> bool:
         pass
 
     def description(self):
