@@ -164,75 +164,48 @@ class CoverLevelCapability(RangeCapability):
         )
 
 
-@register_capability
-class TemperatureCapability(RangeCapability):
+class TemperatureCapability(RangeCapability, ABC):
     """Set temperature functionality."""
 
     instance = const.RANGE_INSTANCE_TEMPERATURE
     default_range = (0, 100, 0.5)
-
-    def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        """Initialize a trait for a state."""
-        super().__init__(hass, config, state)
-
-        if self.state.domain == water_heater.DOMAIN:
-            self.default_range = (
-                self.state.attributes.get(water_heater.ATTR_MIN_TEMP),
-                self.state.attributes.get(water_heater.ATTR_MAX_TEMP),
-                0.5
-            )
-        elif self.state.domain == climate.DOMAIN:
-            self.default_range = (
-                self.state.attributes.get(climate.ATTR_MIN_TEMP),
-                self.state.attributes.get(climate.ATTR_MAX_TEMP),
-                self.state.attributes.get(climate.ATTR_TARGET_TEMP_STEP, 0.5),
-            )
-
-    def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-        if self.state.domain == water_heater.DOMAIN:
-            return features & water_heater.SUPPORT_TARGET_TEMPERATURE
-
-        elif self.state.domain == climate.DOMAIN:
-            return features & climate.const.SUPPORT_TARGET_TEMPERATURE
-
-        return False
 
     @property
     def support_random_access(self) -> bool:
         """Test if capability supports random access."""
         return True
 
+
+@register_capability
+class TemperatureCapabilityWaterHeater(TemperatureCapability):
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        super().__init__(hass, config, state)
+
+        self.default_range = (
+            self.state.attributes.get(water_heater.ATTR_MIN_TEMP),
+            self.state.attributes.get(water_heater.ATTR_MAX_TEMP),
+            0.5
+        )
+
+    def supported(self) -> bool:
+        """Test if capability is supported."""
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        return self.state.domain == water_heater.DOMAIN and features & water_heater.SUPPORT_TARGET_TEMPERATURE
+
     def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
-        if self.state.domain == water_heater.DOMAIN:
-            return self.float_value(self.state.attributes.get(water_heater.ATTR_TEMPERATURE))
-        elif self.state.domain == climate.DOMAIN:
-            return self.float_value(self.state.attributes.get(climate.ATTR_TEMPERATURE))
+        return self.float_value(self.state.attributes.get(water_heater.ATTR_TEMPERATURE))
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        if self.state.domain == water_heater.DOMAIN:
-            service = water_heater.SERVICE_SET_TEMPERATURE
-            attribute = water_heater.ATTR_TEMPERATURE
-        elif self.state.domain == climate.DOMAIN:
-            service = climate.SERVICE_SET_TEMPERATURE
-            attribute = climate.ATTR_TEMPERATURE
-        else:
-            raise SmartHomeError(
-                ERR_INVALID_VALUE,
-                f'Unsupported domain for {self.instance} instance of {self.state.entity_id}'
-            )
-
         value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
 
         await self.hass.services.async_call(
-            self.state.domain,
-            service, {
+            water_heater.DOMAIN,
+            water_heater.SERVICE_SET_TEMPERATURE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                attribute: value
+                water_heater.ATTR_TEMPERATURE: value
             },
             blocking=True,
             context=data.context
@@ -240,70 +213,115 @@ class TemperatureCapability(RangeCapability):
 
 
 @register_capability
-class HumidityCapability(RangeCapability):
-    """Set humidity functionality."""
-
-    instance = const.RANGE_INSTANCE_HUMIDITY
-
+class TemperatureCapabilityClimate(TemperatureCapability):
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        """Initialize a trait for a state."""
         super().__init__(hass, config, state)
 
-        if self.state.domain == humidifier.DOMAIN:
-            self.default_range = (
-                self.state.attributes.get(humidifier.ATTR_MIN_HUMIDITY),
-                self.state.attributes.get(humidifier.ATTR_MAX_HUMIDITY),
-                1
-            )
+        self.default_range = (
+            self.state.attributes.get(climate.ATTR_MIN_TEMP),
+            self.state.attributes.get(climate.ATTR_MAX_TEMP),
+            self.state.attributes.get(climate.ATTR_TARGET_TEMP_STEP, 0.5),
+        )
 
     def supported(self) -> bool:
         """Test if capability is supported."""
-        if self.state.domain == humidifier.DOMAIN:
-            return True
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        elif self.state.domain == fan.DOMAIN:
-            if self.state.attributes.get(ATTR_MODEL, '').startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
-                if ATTR_TARGET_HUMIDITY in self.state.attributes:
-                    return True
+        return self.state.domain == climate.DOMAIN and features & climate.SUPPORT_TARGET_TEMPERATURE
 
-        return False
+    def get_value(self) -> float | None:
+        """Return the state value of this capability for this entity."""
+        return self.float_value(self.state.attributes.get(climate.ATTR_TEMPERATURE))
+
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
+        """Set device state."""
+        value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
+
+        await self.hass.services.async_call(
+            climate.DOMAIN,
+            climate.SERVICE_SET_TEMPERATURE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                climate.ATTR_TEMPERATURE: value
+            },
+            blocking=True,
+            context=data.context
+        )
+
+
+class HumidityCapability(RangeCapability, ABC):
+    """Set humidity functionality."""
+
+    instance = const.RANGE_INSTANCE_HUMIDITY
 
     @property
     def support_random_access(self) -> bool:
         """Test if capability supports random access."""
         return True
 
+
+@register_capability
+class HumidityCapabilityHumidifier(HumidityCapability):
+    instance = const.RANGE_INSTANCE_HUMIDITY
+
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        """Initialize a trait for a state."""
+        super().__init__(hass, config, state)
+
+        self.default_range = (
+            self.state.attributes.get(humidifier.ATTR_MIN_HUMIDITY),
+            self.state.attributes.get(humidifier.ATTR_MAX_HUMIDITY),
+            1
+        )
+
+    def supported(self) -> bool:
+        """Test if capability is supported."""
+        return self.state.domain == humidifier.DOMAIN
+
     def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
-        if self.state.domain == humidifier.DOMAIN:
-            return self.float_value(self.state.attributes.get(humidifier.ATTR_HUMIDITY))
-        elif self.state.domain == fan.DOMAIN:
-            return self.float_value(self.state.attributes.get(ATTR_TARGET_HUMIDITY))
+        return self.float_value(self.state.attributes.get(humidifier.ATTR_HUMIDITY))
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        domain = self.state.domain
         value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
 
-        if self.state.domain == humidifier.DOMAIN:
-            service = humidifier.SERVICE_SET_HUMIDITY
-            attribute = humidifier.ATTR_HUMIDITY
-        elif self.state.domain == fan.DOMAIN and \
-                self.state.attributes.get(ATTR_MODEL, '').startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
-            domain = DOMAIN_XIAOMI_AIRPURIFIER
-            service = SERVICE_FAN_SET_TARGET_HUMIDITY
-            attribute = humidifier.ATTR_HUMIDITY
-        else:
-            raise SmartHomeError(
-                ERR_INVALID_VALUE,
-                f'Unsupported domain for {self.instance} instance of {self.state.entity_id}'
-            )
+        await self.hass.services.async_call(
+            humidifier.DOMAIN,
+            humidifier.SERVICE_SET_HUMIDITY, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                humidifier.ATTR_HUMIDITY: value
+            },
+            blocking=True,
+            context=data.context
+        )
+
+
+@register_capability
+class HumidityCapabilityHumidiferXiaomi(HumidityCapability):
+    """Set humidity functionality."""
+
+    def supported(self) -> bool:
+        """Test if capability is supported."""
+        if self.state.domain == fan.DOMAIN:
+            if self.state.attributes.get(ATTR_MODEL, '').startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
+                if ATTR_TARGET_HUMIDITY in self.state.attributes:
+                    return True
+
+        return False
+
+    def get_value(self) -> float | None:
+        """Return the state value of this capability for this entity."""
+        return self.float_value(self.state.attributes.get(ATTR_TARGET_HUMIDITY))
+
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
+        """Set device state."""
+        value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
 
         await self.hass.services.async_call(
-            domain,
-            service, {
+            DOMAIN_XIAOMI_AIRPURIFIER,
+            SERVICE_FAN_SET_TARGET_HUMIDITY, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                attribute: value
+                humidifier.ATTR_HUMIDITY: value
             },
             blocking=True,
             context=data.context

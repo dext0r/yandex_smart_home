@@ -170,16 +170,6 @@ async def test_capability_range_cover(hass):
     assert calls[3].data[cover.ATTR_POSITION] == 0
 
 
-async def test_capability_range_temperature(hass):
-    state = State('climate.test', STATE_OFF, {ATTR_SUPPORTED_FEATURES: climate.SUPPORT_TARGET_TEMPERATURE})
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_TEMPERATURE)
-    cap.state = State('sensor.test', STATE_ON)
-    assert cap.get_value() is None
-
-    with pytest.raises(SmartHomeError):
-        await cap.set_state(BASIC_DATA, {})
-
-
 async def test_capability_range_temperature_climate(hass):
     state = State('climate.test', climate.STATE_OFF)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_TEMPERATURE)
@@ -297,16 +287,6 @@ async def test_capability_range_temperature_water_heater(hass):
     assert calls[2].data[water_heater.ATTR_TEMPERATURE] == 50
     assert calls[3].data[water_heater.ATTR_TEMPERATURE] == 65
     assert calls[4].data[water_heater.ATTR_TEMPERATURE] == 30
-
-
-async def test_capability_range_humidity(hass):
-    state = State('humidifier.test', STATE_OFF)
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_HUMIDITY)
-    cap.state = State('sensor.test', STATE_ON)
-    assert cap.get_value() is None
-
-    with pytest.raises(SmartHomeError):
-        await cap.set_state(BASIC_DATA, {'value': 5})
 
 
 async def test_capability_range_humidity_humidifier(hass):
