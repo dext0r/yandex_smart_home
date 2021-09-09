@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from abc import ABC
 import logging
+from typing import Any
 
 from homeassistant.components import binary_sensor, sensor
 from homeassistant.const import ATTR_DEVICE_CLASS, STATE_ON, STATE_OPEN, STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -68,7 +69,7 @@ class EventProperty(AbstractProperty, ABC):
         super().__init__(hass, config, state)
         self.values = PROPERTY_EVENT_VALUES.get(self.instance)
 
-    def parameters(self):
+    def parameters(self) -> dict[str, Any]:
         return {
             'instance': self.instance,
             'events': [
@@ -78,11 +79,11 @@ class EventProperty(AbstractProperty, ABC):
         } if self.values else {}
 
     @staticmethod
-    def bool_value(value):
+    def bool_value(value) -> bool:
         """Return the bool value according to any type of value."""
         return value in [1, STATE_ON, STATE_OPEN, 'high', True]
 
-    def event_value(self, value):
+    def event_value(self, value) -> str | None:
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
             return None
 
@@ -131,7 +132,7 @@ class EventProperty(AbstractProperty, ABC):
             elif value in ['free_fall', 'drop']:
                 return const.EVENT_VIBRATION_FALL
 
-    def get_value(self):
+    def get_value(self) -> str | None:
         if self.state.domain == binary_sensor.DOMAIN:
             return self.event_value(self.state.state)
 
