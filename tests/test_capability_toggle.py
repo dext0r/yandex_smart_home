@@ -28,7 +28,7 @@ async def test_capability_mute(hass):
 
     assert cap.retrievable
     assert cap.parameters() == {'instance': TOGGLE_INSTANCE_MUTE}
-    assert not cap.get_value()
+    assert cap.get_value() is False
 
     for v in [True, False]:
         with pytest.raises(SmartHomeError) as e:
@@ -41,7 +41,7 @@ async def test_capability_mute(hass):
         media_player.ATTR_MEDIA_VOLUME_MUTED: True
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_MUTE)
-    assert cap.get_value()
+    assert cap.get_value() is True
 
     calls = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_MUTE)
     await cap.set_state(BASIC_DATA, {'value': True})
@@ -57,7 +57,7 @@ async def test_capability_pause(hass):
     state = State('cover.test', cover.STATE_OPEN, {ATTR_SUPPORTED_FEATURES: cover.SUPPORT_STOP})
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
     cap.state = State('sensor.test', STATE_ON)
-    assert cap.get_value() is None
+    assert cap.get_value() is False
 
     with pytest.raises(SmartHomeError):
         await cap.set_state(BASIC_DATA, {})
@@ -74,13 +74,13 @@ async def test_capability_pause_media_player(hass):
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
         assert cap.retrievable
         assert cap.parameters() == {'instance': TOGGLE_INSTANCE_PAUSE}
-        assert cap.get_value()
+        assert cap.get_value() is True
 
     state = State('media_player.test', media_player.STATE_PLAYING, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PAUSE | media_player.SUPPORT_PLAY
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
-    assert not cap.get_value()
+    assert cap.get_value() is False
 
     on_calls = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_PAUSE)
     await cap.set_state(BASIC_DATA, {'value': True})
@@ -104,7 +104,7 @@ async def test_capability_pause_cover(hass):
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
         assert cap.retrievable
         assert cap.parameters() == {'instance': TOGGLE_INSTANCE_PAUSE}
-        assert not cap.get_value()
+        assert cap.get_value() is False
 
     calls = async_mock_service(hass, cover.DOMAIN, cover.SERVICE_STOP_COVER)
     await cap.set_state(BASIC_DATA, {'value': True})
@@ -125,13 +125,13 @@ async def test_capability_pause_vacuum(hass):
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
         assert cap.retrievable
         assert cap.parameters() == {'instance': TOGGLE_INSTANCE_PAUSE}
-        assert not cap.get_value()
+        assert cap.get_value() is False
 
     state = State('vacuum.test', vacuum.STATE_PAUSED, {
         ATTR_SUPPORTED_FEATURES: vacuum.SUPPORT_PAUSE
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
-    assert cap.get_value()
+    assert cap.get_value() is True
 
     on_calls = async_mock_service(hass, vacuum.DOMAIN, vacuum.SERVICE_PAUSE)
     await cap.set_state(BASIC_DATA, {'value': True})
@@ -154,21 +154,21 @@ async def test_capability_oscillation(hass):
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_OSCILLATION)
     assert cap.retrievable
     assert cap.parameters() == {'instance': TOGGLE_INSTANCE_OSCILLATION}
-    assert not cap.get_value()
+    assert cap.get_value() is False
 
     state = State('fan.test', STATE_ON, {
         ATTR_SUPPORTED_FEATURES: fan.SUPPORT_OSCILLATE,
         fan.ATTR_OSCILLATING: True
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_OSCILLATION)
-    assert cap.get_value()
+    assert cap.get_value() is True
 
     state = State('fan.test', STATE_ON, {
         ATTR_SUPPORTED_FEATURES: fan.SUPPORT_OSCILLATE,
         fan.ATTR_OSCILLATING: False
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_OSCILLATION)
-    assert not cap.get_value()
+    assert cap.get_value() is False
 
     calls = async_mock_service(hass, fan.DOMAIN, fan.SERVICE_OSCILLATE)
     await cap.set_state(BASIC_DATA, {'value': True})

@@ -4,7 +4,7 @@ from __future__ import annotations
 from abc import ABC
 import itertools
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant, State
@@ -24,7 +24,7 @@ from .const import (
     ERR_DEVICE_UNREACHABLE,
 )
 from .error import SmartHomeError
-from .helpers import Config
+from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,11 +39,11 @@ class CustomCapability(AbstractCapability, ABC):
         self.retrievable = bool(self.state_entity_id or self.state_value_attribute)
 
     @property
-    def state_value_attribute(self) -> Optional[str]:
+    def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
         return self.capability_config.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
 
-    def get_value(self):
+    def get_value(self) -> float | str | None:
         """Return the state value of this capability for this entity."""
         entity_state = self.state
 
@@ -78,15 +78,15 @@ class CustomModeCapability(CustomCapability, ModeCapability):
         return rv
 
     @property
-    def modes_list_attribute(self) -> Optional[str]:
+    def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
         return None
 
-    def get_value(self):
+    def get_value(self) -> str | None:
         """Return the state value of this capability for this entity."""
         return self.get_yandex_mode_by_ha_mode(super().get_value())
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await async_call_from_config(
             self.hass,
@@ -110,11 +110,11 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
         """Test if capability is supported."""
         return True
 
-    def get_value(self):
+    def get_value(self) -> bool | None:
         """Return the state value of this capability for this entity."""
         return super().get_value() in [STATE_ON, True]
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await async_call_from_config(
             self.hass,
@@ -151,14 +151,14 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
 
         return True
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
         if not self.support_random_access:
             return None
 
         return self.float_value(super().get_value())
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = state['value']
         if state.get('relative') and self.support_random_access:

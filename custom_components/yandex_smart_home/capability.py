@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
-from typing import Any, Optional, Type
+from typing import Any, Type
 
 from homeassistant.core import HomeAssistant, State
 
-from .helpers import Config
+from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ class AbstractCapability(ABC):
 
     type = ''
     instance = ''
+    retrievable = True
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a trait for a state."""
@@ -34,7 +35,6 @@ class AbstractCapability(ABC):
         self.state = state
 
         self.entity_config = config.get_entity_config(state.entity_id)
-        self.retrievable = True
         self.reportable = config.is_reporting_state
 
     @abstractmethod
@@ -42,7 +42,7 @@ class AbstractCapability(ABC):
         """Test if capability is supported."""
         pass
 
-    def description(self):
+    def description(self) -> dict[str, Any]:
         """Return description for a devices request."""
         response = {
             'type': self.type,
@@ -55,7 +55,7 @@ class AbstractCapability(ABC):
 
         return response
 
-    def get_state(self):
+    def get_state(self) -> dict[str, Any]:
         """Return the state of this capability for this entity."""
         value = self.get_value()
         return {
@@ -67,16 +67,16 @@ class AbstractCapability(ABC):
         } if value is not None else None
 
     @abstractmethod
-    def parameters(self) -> Optional[dict[str, Any]]:
+    def parameters(self) -> dict[str, Any] | None:
         """Return parameters for a devices request."""
         pass
 
     @abstractmethod
-    def get_value(self):
+    def get_value(self) -> float | str | None:
         """Return the state value of this capability for this entity."""
         pass
 
     @abstractmethod
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         pass

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from homeassistant.components import climate, cover, fan, humidifier, light, media_player, water_heater
 from homeassistant.const import (
@@ -34,7 +34,7 @@ from .const import (
     STATE_NONE,
 )
 from .error import SmartHomeError
-from .helpers import Config
+from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class RangeCapability(AbstractCapability, ABC):
             self.entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, self.default_range[2])
         )
 
-    def parameters(self):
+    def parameters(self) -> dict[str, Any]:
         """Return parameters for a devices request."""
         if self.support_random_access:
             range_min, range_max, range_precision = self.range
@@ -94,7 +94,7 @@ class RangeCapability(AbstractCapability, ABC):
             'random_access': False,
         }
 
-    def float_value(self, value: Any) -> Optional[float]:
+    def float_value(self, value: Any) -> float | None:
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
             return None
 
@@ -144,12 +144,12 @@ class CoverLevelCapability(RangeCapability):
         """Test if capability supports random access."""
         return True
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
         if self.state.domain == cover.DOMAIN:
             return self.float_value(self.state.attributes.get(cover.ATTR_CURRENT_POSITION))
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         new_value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
 
@@ -202,14 +202,14 @@ class TemperatureCapability(RangeCapability):
         """Test if capability supports random access."""
         return True
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
         if self.state.domain == water_heater.DOMAIN:
             return self.float_value(self.state.attributes.get(water_heater.ATTR_TEMPERATURE))
         elif self.state.domain == climate.DOMAIN:
             return self.float_value(self.state.attributes.get(climate.ATTR_TEMPERATURE))
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         if self.state.domain == water_heater.DOMAIN:
             service = water_heater.SERVICE_SET_TEMPERATURE
@@ -267,14 +267,14 @@ class HumidityCapability(RangeCapability):
         """Test if capability supports random access."""
         return True
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
         if self.state.domain == humidifier.DOMAIN:
             return self.float_value(self.state.attributes.get(humidifier.ATTR_HUMIDITY))
         elif self.state.domain == fan.DOMAIN:
             return self.float_value(self.state.attributes.get(ATTR_TARGET_HUMIDITY))
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         domain = self.state.domain
         new_value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
@@ -327,13 +327,13 @@ class BrightnessCapability(RangeCapability):
         """Test if capability supports random access."""
         return True
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
         brightness = self.state.attributes.get(light.ATTR_BRIGHTNESS)
         if brightness is not None:
             return int(100 * (self.float_value(brightness) / 255))
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         if state.get('relative'):
             attr_name = light.ATTR_BRIGHTNESS_STEP_PCT
@@ -373,14 +373,14 @@ class VolumeCapability(RangeCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         return not (features & media_player.SUPPORT_VOLUME_STEP and not features & media_player.SUPPORT_VOLUME_SET)
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
         level = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_LEVEL)
 
         if level is not None:
             return int(self.float_value(level) * 100)
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         if not self.support_random_access:
             if not state.get('relative'):
@@ -424,7 +424,7 @@ class ChannelCapability(RangeCapability):
     instance = const.RANGE_INSTANCE_CHANNEL
     default_range = (0, 999, 1)
 
-    def supported(self):
+    def supported(self) -> bool:
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
@@ -453,18 +453,19 @@ class ChannelCapability(RangeCapability):
 
         return False
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
         if self.support_random_access and self.state.entity_id != const.YANDEX_STATION_INTENTS_MEDIA_PLAYER:
             return self.float_value(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID))
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         if state.get('relative'):
             if state['value'] >= 0:
                 service = media_player.SERVICE_MEDIA_NEXT_TRACK
             else:
                 service = media_player.SERVICE_MEDIA_PREVIOUS_TRACK
+
             await self.hass.services.async_call(
                 media_player.DOMAIN,
                 service, {

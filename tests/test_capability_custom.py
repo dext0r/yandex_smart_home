@@ -135,10 +135,10 @@ async def test_capability_custom_toggle(hass):
         },
     })
     assert cap.supported()
-    assert cap.get_value()
+    assert cap.get_value() is True
 
     cap.state = State('switch.test', STATE_OFF)
-    assert not cap.get_value()
+    assert cap.get_value() is False
 
     calls_on = async_mock_service(hass, 'test', 'turn_on')
     await cap.set_state(BASIC_DATA, {'value': True})
