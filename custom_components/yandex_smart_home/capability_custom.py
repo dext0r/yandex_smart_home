@@ -94,7 +94,7 @@ class CustomModeCapability(CustomCapability, ModeCapability):
             validate_config=False,
             variables={'mode': self.get_ha_mode_by_yandex_mode(state['value'])},
             blocking=True,
-            context=data.context,
+            context=data.context
         )
 
 
@@ -121,7 +121,7 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
             self.turn_on_config if state['value'] else self.turn_off_config,
             validate_config=False,
             blocking=True,
-            context=data.context,
+            context=data.context
         )
 
 
@@ -170,5 +170,5 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
             validate_config=False,
             variables={'value': value},
             blocking=True,
-            context=data.context,
+            context=data.context
         )

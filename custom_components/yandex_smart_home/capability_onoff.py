@@ -147,7 +147,7 @@ class OnOffCapability(AbstractCapability):
                     self.hass,
                     self.entity_config[key],
                     blocking=True,
-                    context=data.context,
+                    context=data.context
                 )
 
         domain = service_domain = self.state.domain
