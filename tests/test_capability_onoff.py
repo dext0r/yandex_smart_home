@@ -32,7 +32,12 @@ from custom_components.yandex_smart_home.capability_onoff import CAPABILITIES_ON
 from custom_components.yandex_smart_home.const import ON_OFF_INSTANCE_ON
 
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig
-from .test_capability import assert_no_capabilities, get_capabilities, get_exact_one_capability
+from .test_capability import (
+    assert_exact_one_capability,
+    assert_no_capabilities,
+    get_capabilities,
+    get_exact_one_capability,
+)
 
 
 @pytest.mark.parametrize(
@@ -74,6 +79,7 @@ async def test_capability_onoff_only_on(hass, domain, initial_state):
 
     assert not cap.retrievable
     assert cap.parameters() is None
+    assert cap.get_value() is None
 
     on_calls = async_mock_service(hass, domain, SERVICE_TURN_ON)
     await cap.set_state(BASIC_DATA, {'value': True})
@@ -300,16 +306,32 @@ async def test_capability_onoff_climate_turn_on(hass, hvac_modes, service, servi
 
 
 async def test_capability_onoff_custom_service(hass):
-    state = State('media_player.test', STATE_ON)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    state_media = State('media_player.test', STATE_ON)
+    assert_no_capabilities(hass, BASIC_CONFIG, state_media, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+
+    state_switch = State('switch.test', STATE_ON)
+    cap_switch = get_exact_one_capability(hass, BASIC_CONFIG, state_switch, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+
+    on_calls = async_mock_service(hass, switch.DOMAIN, switch.SERVICE_TURN_ON)
+    await cap_switch.set_state(BASIC_DATA, {'value': True})
+    assert len(on_calls) == 1
+    assert on_calls[0].data == {ATTR_ENTITY_ID: state_switch.entity_id}
+
+    off_calls = async_mock_service(hass, switch.DOMAIN, switch.SERVICE_TURN_OFF)
+    await cap_switch.set_state(BASIC_DATA, {'value': False})
+    assert len(off_calls) == 1
+    assert off_calls[0].data == {ATTR_ENTITY_ID: state_switch.entity_id}
 
     turn_on_service = 'test.turn_on'
     turn_off_service = 'test.turn_off'
     turn_on_off_entity_id = 'switch.test'
 
+    state_switch = State('switch.test', STATE_ON)
+    state_media = State('media_player.test', STATE_ON)
+    state_vacuum = State('vacuum.test', STATE_ON)
     config = MockConfig(
         entity_config={
-            state.entity_id: {
+            state_media.entity_id: {
                 const.CONF_TURN_ON: {
                     CONF_SERVICE: turn_on_service,
                     CONF_ENTITY_ID: turn_on_off_entity_id
@@ -318,21 +340,47 @@ async def test_capability_onoff_custom_service(hass):
                     CONF_SERVICE: turn_off_service,
                     CONF_ENTITY_ID: turn_on_off_entity_id
                 }
+            },
+            state_switch.entity_id: {
+                const.CONF_TURN_ON: {
+                    CONF_SERVICE: turn_on_service,
+                    CONF_ENTITY_ID: turn_on_off_entity_id
+                },
+                const.CONF_TURN_OFF: {
+                    CONF_SERVICE: turn_off_service,
+                    CONF_ENTITY_ID: turn_on_off_entity_id
+                }
+            },
+            state_vacuum.entity_id: {
+                const.CONF_TURN_ON: {
+                    CONF_SERVICE: turn_on_service,
+                    CONF_ENTITY_ID: turn_on_off_entity_id
+                }
             }
         }
     )
-    state = State('media_player.test', STATE_ON)
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap_media = get_exact_one_capability(hass, config, state_media, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap_switch = get_exact_one_capability(hass, config, state_switch, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert_exact_one_capability(hass, config, state_vacuum, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
     on_calls = async_mock_service(hass, *turn_on_service.split('.'))
-    await cap.set_state(BASIC_DATA, {'value': True})
-    assert len(on_calls) == 1
+    await cap_media.set_state(BASIC_DATA, {'value': True})
+    await cap_switch.set_state(BASIC_DATA, {'value': True})
+    assert len(on_calls) == 2
     assert on_calls[0].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
+    assert on_calls[1].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
 
     off_calls = async_mock_service(hass, *turn_off_service.split('.'))
-    await cap.set_state(BASIC_DATA, {'value': False})
-    assert len(off_calls) == 1
+    await cap_media.set_state(BASIC_DATA, {'value': False})
+    await cap_switch.set_state(BASIC_DATA, {'value': False})
+    assert len(off_calls) == 2
     assert off_calls[0].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
+    assert off_calls[1].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
+
+
+async def test_capability_onoff_water_heater_bare(hass):
+    state = State('water_heater.test', STATE_ON)
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
 
 @pytest.mark.parametrize('op_on', ['On', 'ON', 'electric', 'gas', 'performance', None])
