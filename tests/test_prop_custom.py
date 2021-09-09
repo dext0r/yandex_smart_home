@@ -91,7 +91,7 @@ async def test_property_custom_get_value_event(hass):
     prop = CustomEntityProperty.get(hass, config, state, {
         const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON,
     })
-    assert prop.supported(state.domain, 0, {}, {})
+    assert prop.supported()
     assert prop.get_value() is None
 
     state = State('binary_sensor.test', STATE_UNAVAILABLE)
@@ -112,7 +112,7 @@ async def test_property_custom_get_value_float(hass):
     prop = CustomEntityProperty.get(hass, config, state, {
         const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
     })
-    assert prop.supported(state.domain, 0, {}, {})
+    assert prop.supported()
     assert prop.get_value() == 3.36
     for s in ['', '-', 'none', 'unknown']:
         prop.state.state = s.upper()

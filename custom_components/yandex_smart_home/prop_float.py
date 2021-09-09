@@ -60,14 +60,13 @@ class FloatProperty(AbstractProperty, ABC):
 class TemperatureProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_TEMPERATURE
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_TEMPERATURE
-        elif domain == air_quality.DOMAIN:
-            return attributes.get(climate.ATTR_TEMPERATURE) is not None
-        elif domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
-            return attributes.get(climate.ATTR_CURRENT_TEMPERATURE) is not None
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_TEMPERATURE
+        elif self.state.domain == air_quality.DOMAIN:
+            return self.state.attributes.get(climate.ATTR_TEMPERATURE) is not None
+        elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
+            return self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE) is not None
 
         return False
 
@@ -84,14 +83,13 @@ class TemperatureProperty(FloatProperty):
 class HumidityProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_HUMIDITY
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_HUMIDITY
-        elif domain == air_quality.DOMAIN:
-            return attributes.get(climate.ATTR_HUMIDITY) is not None
-        elif domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
-            return attributes.get(climate.ATTR_CURRENT_HUMIDITY) is not None
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_HUMIDITY
+        elif self.state.domain == air_quality.DOMAIN:
+            return self.state.attributes.get(climate.ATTR_HUMIDITY) is not None
+        elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
+            return self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY) is not None
 
         return False
 
@@ -108,11 +106,10 @@ class HumidityProperty(FloatProperty):
 class PressureProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_PRESSURE
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
+    def supported(self) -> bool:
         # TODO: check pressure unit
-        if domain == sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
 
         return False
 
@@ -130,10 +127,12 @@ class PressureProperty(FloatProperty):
 class IlluminanceProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_ILLUMINATION
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain in (sensor.DOMAIN, light.DOMAIN, fan.DOMAIN):
-            return 'illuminance' in attributes or attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ILLUMINANCE
+    def supported(self) -> bool:
+        if self.state.domain in (sensor.DOMAIN, light.DOMAIN, fan.DOMAIN):
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ILLUMINANCE:
+                return True
+
+            return 'illuminance' in self.state.attributes
 
         return False
 
@@ -148,10 +147,9 @@ class IlluminanceProperty(FloatProperty):
 class WaterLevelProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_WATER_LEVEL
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain in (fan.DOMAIN, humidifier.DOMAIN):
-            return 'water_level' in attributes
+    def supported(self) -> bool:
+        if self.state.domain in (fan.DOMAIN, humidifier.DOMAIN):
+            return 'water_level' in self.state.attributes
 
         return False
 
@@ -164,12 +162,11 @@ class WaterLevelProperty(FloatProperty):
 class CO2Property(FloatProperty):
     instance = const.FLOAT_INSTANCE_CO2_LEVEL
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CO2
-        elif domain in (air_quality.DOMAIN, fan.DOMAIN):
-            return air_quality.ATTR_CO2 in attributes
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CO2
+        elif self.state.domain in (air_quality.DOMAIN, fan.DOMAIN):
+            return air_quality.ATTR_CO2 in self.state.attributes
 
         return False
 
@@ -184,10 +181,9 @@ class CO2Property(FloatProperty):
 class PM1Property(FloatProperty):
     instance = const.FLOAT_INSTANCE_PM1_DENSITY
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == air_quality.DOMAIN:
-            return air_quality.ATTR_PM_0_1 in attributes
+    def supported(self) -> bool:
+        if self.state.domain == air_quality.DOMAIN:
+            return air_quality.ATTR_PM_0_1 in self.state.attributes
 
         return False
 
@@ -200,10 +196,9 @@ class PM1Property(FloatProperty):
 class PM25Property(FloatProperty):
     instance = const.FLOAT_INSTANCE_PM2_5_DENSITY
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == air_quality.DOMAIN:
-            return air_quality.ATTR_PM_2_5 in attributes
+    def supported(self) -> bool:
+        if self.state.domain == air_quality.DOMAIN:
+            return air_quality.ATTR_PM_2_5 in self.state.attributes
 
         return False
 
@@ -219,10 +214,9 @@ class PM25Property(FloatProperty):
 class PM10Property(FloatProperty):
     instance = const.FLOAT_INSTANCE_PM10_DENSITY
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == air_quality.DOMAIN:
-            return air_quality.ATTR_PM_10 in attributes
+    def supported(self) -> bool:
+        if self.state.domain == air_quality.DOMAIN:
+            return air_quality.ATTR_PM_10 in self.state.attributes
 
         return False
 
@@ -235,11 +229,10 @@ class PM10Property(FloatProperty):
 class TVOCProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_TVOC
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
+    def supported(self) -> bool:
         # TODO: add check for ATTR_UNIT_OF_MEASUREMENT
-        if domain == air_quality.DOMAIN:
-            return 'total_volatile_organic_compounds' in attributes
+        if self.state.domain == air_quality.DOMAIN:
+            return 'total_volatile_organic_compounds' in self.state.attributes
 
         return False
 
@@ -255,12 +248,11 @@ class TVOCProperty(FloatProperty):
 class VoltageProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_VOLTAGE
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_VOLTAGE
-        elif domain in (switch.DOMAIN, light.DOMAIN):
-            return ATTR_VOLTAGE in attributes
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_VOLTAGE
+        elif self.state.domain in (switch.DOMAIN, light.DOMAIN):
+            return ATTR_VOLTAGE in self.state.attributes
 
         return False
 
@@ -275,12 +267,11 @@ class VoltageProperty(FloatProperty):
 class CurrentProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_AMPERAGE
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CURRENT
-        elif domain in (switch.DOMAIN, light.DOMAIN):
-            return 'current' in attributes
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CURRENT
+        elif self.state.domain in (switch.DOMAIN, light.DOMAIN):
+            return 'current' in self.state.attributes
 
         return False
 
@@ -295,12 +286,11 @@ class CurrentProperty(FloatProperty):
 class PowerProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_POWER
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_POWER
-        elif domain == switch.DOMAIN:
-            return 'power' in attributes or 'load_power' in attributes
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_POWER
+        elif self.state.domain == switch.DOMAIN:
+            return 'power' in self.state.attributes or 'load_power' in self.state.attributes
 
         return False
 
@@ -321,9 +311,11 @@ class PowerProperty(FloatProperty):
 class BatteryLevelProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_BATTERY_LEVEL
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        return ATTR_BATTERY_LEVEL in attributes or attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY
+    def supported(self) -> bool:
+        if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
+            return True
+
+        return ATTR_BATTERY_LEVEL in self.state.attributes
 
     def get_value(self):
         value = None

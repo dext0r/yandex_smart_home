@@ -145,10 +145,9 @@ class EventProperty(AbstractProperty, ABC):
 class ContactProperty(EventProperty):
     instance = const.EVENT_INSTANCE_OPEN
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) in (
+    def supported(self) -> bool:
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) in (
                 binary_sensor.DEVICE_CLASS_DOOR,
                 binary_sensor.DEVICE_CLASS_GARAGE_DOOR,
                 binary_sensor.DEVICE_CLASS_WINDOW,
@@ -162,10 +161,9 @@ class ContactProperty(EventProperty):
 class MotionProperty(EventProperty):
     instance = const.EVENT_INSTANCE_MOTION
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) in (
+    def supported(self) -> bool:
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) in (
                 binary_sensor.DEVICE_CLASS_MOTION,
                 binary_sensor.DEVICE_CLASS_OCCUPANCY,
                 binary_sensor.DEVICE_CLASS_PRESENCE
@@ -178,10 +176,9 @@ class MotionProperty(EventProperty):
 class GasProperty(EventProperty):
     instance = const.EVENT_INSTANCE_GAS
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_GAS
+    def supported(self) -> bool:
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_GAS
 
         return False
 
@@ -190,10 +187,9 @@ class GasProperty(EventProperty):
 class SmokeProperty(EventProperty):
     instance = const.EVENT_INSTANCE_SMOKE
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_SMOKE
+    def supported(self) -> bool:
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_SMOKE
 
         return False
 
@@ -202,10 +198,9 @@ class SmokeProperty(EventProperty):
 class BatteryLevelLowProperty(EventProperty):
     instance = const.EVENT_INSTANCE_BATTERY_LEVEL
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_BATTERY
+    def supported(self) -> bool:
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_BATTERY
 
         return False
 
@@ -214,10 +209,9 @@ class BatteryLevelLowProperty(EventProperty):
 class WaterLevelLowProperty(EventProperty):
     instance = const.EVENT_INSTANCE_WATER_LEVEL
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == 'water_level'
+    def supported(self) -> bool:
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == 'water_level'
 
         return False
 
@@ -226,73 +220,92 @@ class WaterLevelLowProperty(EventProperty):
 class WaterLeakProperty(EventProperty):
     instance = const.EVENT_INSTANCE_WATER_LEAK
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN:
-            return attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_MOISTURE
+    def supported(self) -> bool:
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_MOISTURE
 
         return False
 
 
 @register_property
-class ButtonProperty(EventProperty):
+class ButtonBinarySensorProperty(EventProperty):
     instance = const.EVENT_INSTANCE_BUTTON
     retrievable = False
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN:  # XiaomiAqara
-            return ('last_action' in attributes and
-                    attributes.get('last_action') in [
-                        'single', 'click', 'double', 'double_click',
-                        'long', 'long_click', 'long_click_press',
-                        'long_click_release', 'hold', 'release',
-                        'triple', 'quadruple', 'many'])
-        elif domain == sensor.DOMAIN:  # XiaomiGateway3 and others
-            return ('action' in attributes and
-                    attributes.get('action') in [
-                        'single', 'click', 'double', 'double_click',
-                        'long', 'long_click', 'long_click_press',
-                        'long_click_release', 'hold', 'release',
-                        'triple', 'quadruple', 'many'])
+    def supported(self) -> bool:
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.state.attributes.get('last_action') in [
+                'single', 'click', 'double', 'double_click',
+                'long', 'long_click', 'long_click_press',
+                'long_click_release', 'hold', 'release',
+                'triple', 'quadruple', 'many'
+            ]
 
         return False
 
-    def get_value(self):
-        if self.state.domain == binary_sensor.DOMAIN:
-            return self.event_value(self.state.attributes.get('last_action'))
-        elif self.state.domain == sensor.DOMAIN:
-            return self.event_value(self.state.attributes.get('action'))
+    def get_value(self) -> str | None:
+        return self.event_value(self.state.attributes.get('last_action'))
 
 
 @register_property
-class VibrationProperty(EventProperty):
-    instance = const.EVENT_INSTANCE_VIBRATION
+class ButtonSensorProperty(EventProperty):
+    instance = const.EVENT_INSTANCE_BUTTON
     retrievable = False
 
-    @staticmethod
-    def supported(domain, features, entity_config, attributes):
-        if domain == binary_sensor.DOMAIN:  # XiaomiAqara
-            return (('last_action' in attributes and
-                    attributes.get('last_action') in [
-                        'vibrate', 'tilt', 'free_fall', 'actively',
-                        'move', 'tap_twice', 'shake_air', 'swing',
-                        'flip90', 'flip180', 'rotate', 'drop']) or
-                    attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_VIBRATION)
-        elif domain == sensor.DOMAIN:  # XiaomiGateway3 and others
-            return ('action' in attributes and
-                    attributes.get('action') in [
-                        'vibrate', 'tilt', 'free_fall', 'actively',
-                        'move', 'tap_twice', 'shake_air', 'swing',
-                        'flip90', 'flip180', 'rotate', 'drop'])
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get('action') in [
+                'single', 'click', 'double', 'double_click',
+                'long', 'long_click', 'long_click_press',
+                'long_click_release', 'hold', 'release',
+                'triple', 'quadruple', 'many'
+            ]
 
         return False
 
-    def get_value(self):
+    def get_value(self) -> str | None:
+        return self.event_value(self.state.attributes.get('action'))
+
+
+@register_property
+class VibrationBinarySensorProperty(EventProperty):
+    instance = const.EVENT_INSTANCE_VIBRATION
+    retrievable = False
+
+    def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
-            if self.state.attributes.get('last_action'):
-                return self.event_value(self.state.attributes.get('last_action'))
-            else:
-                return self.event_value(self.state.state)
-        elif self.state.domain == sensor.DOMAIN:
-            return self.event_value(self.state.attributes.get('action'))
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_VIBRATION:
+                return True
+
+            return self.state.attributes.get('last_action') in [
+                'vibrate', 'tilt', 'free_fall', 'actively',
+                'move', 'tap_twice', 'shake_air', 'swing',
+                'flip90', 'flip180', 'rotate', 'drop'
+            ]
+
+        return False
+
+    def get_value(self) -> str | None:
+        if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_VIBRATION:
+            return self.event_value(self.state.state)
+
+        return self.event_value(self.state.attributes.get('last_action'))
+
+
+@register_property
+class VibrationSensorProperty(EventProperty):
+    instance = const.EVENT_INSTANCE_VIBRATION
+    retrievable = False
+
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get('action') in [
+                'vibrate', 'tilt', 'free_fall', 'actively',
+                'move', 'tap_twice', 'shake_air', 'swing',
+                'flip90', 'flip180', 'rotate', 'drop'
+            ]
+
+        return False
+
+    def get_value(self) -> str | None:
+        return self.event_value(self.state.attributes.get('action'))

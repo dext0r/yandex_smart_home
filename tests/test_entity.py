@@ -148,8 +148,7 @@ async def test_yandex_entity_capabilities(hass):
 
 async def test_yandex_entity_duplicate_properties(hass):
     class MockProperty(TemperatureProperty):
-        @staticmethod
-        def supported(domain, features, entity_config, attributes):
+        def supported(self) -> bool:
             return True
 
     state = State('sensor.test', '33')

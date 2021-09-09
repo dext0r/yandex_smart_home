@@ -88,7 +88,6 @@ class YandexEntity:
 
         self._properties = []
         state = self.state
-        features = state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         entity_config = self.config.get_entity_config(state.entity_id)
 
         for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
@@ -98,9 +97,9 @@ class YandexEntity:
 
         for Property in prop.PROPERTIES:
             entity_property = Property(self.hass, self.config, state)
-            if entity_property.supported(state.domain, features, entity_config, state.attributes) and \
-                    entity_property.instance not in [p.instance for p in self._properties]:
-                self._properties.append(entity_property)
+            if entity_property.supported():
+                if entity_property.instance not in [p.instance for p in self._properties]:
+                    self._properties.append(entity_property)
 
         return self._properties
 
