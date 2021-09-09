@@ -13,7 +13,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from . import const
-from .const import CONF_NOTIFIER_USER_ID, CONF_SKILL_ID, CONF_SKILL_OAUTH_TOKEN, CONFIG, DOMAIN, NOTIFIERS
+from .const import CONF_NOTIFIER_OAUTH_TOKEN, CONF_NOTIFIER_SKILL_ID, CONF_NOTIFIER_USER_ID, CONFIG, DOMAIN, NOTIFIERS
 from .entity import YandexEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -158,8 +158,8 @@ async def async_setup_notifier(hass: HomeAssistant, reload=False):
         try:
             notifier = YandexNotifier(
                 hass,
-                conf[CONF_SKILL_OAUTH_TOKEN],
-                conf[CONF_SKILL_ID],
+                conf[CONF_NOTIFIER_OAUTH_TOKEN],
+                conf[CONF_NOTIFIER_SKILL_ID],
                 conf[CONF_NOTIFIER_USER_ID]
             )
             await notifier.async_validate_config()

@@ -22,10 +22,15 @@ from homeassistant.components import (
 
 DOMAIN = 'yandex_smart_home'
 CONFIG = 'config'
+NOTIFIERS = 'notifiers'
 
 CONF_DISABLED = 'disabled'
 CONF_SETTINGS = 'settings'
 CONF_PRESSURE_UNIT = 'pressure_unit'
+CONF_NOTIFIER = 'notifier'
+CONF_NOTIFIER_OAUTH_TOKEN = 'oauth_token'
+CONF_NOTIFIER_SKILL_ID = 'skill_id'
+CONF_NOTIFIER_USER_ID = 'user_id'
 CONF_ENTITY_CONFIG = 'entity_config'
 CONF_FILTER = 'filter'
 CONF_NAME = 'name'
@@ -33,13 +38,12 @@ CONF_ROOM = 'room'
 CONF_TYPE = 'type'
 CONF_TURN_ON = 'turn_on'
 CONF_TURN_OFF = 'turn_off'
+CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID = 'channel_set_via_media_content_id'
 CONF_ENTITY_PROPERTY_ENTITY = 'entity'
 CONF_ENTITY_PROPERTY_TYPE = 'type'
 CONF_ENTITY_PROPERTY_ATTRIBUTE = 'attribute'
 CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT = 'unit_of_measurement'
 CONF_ENTITY_PROPERTIES = 'properties'
-CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID = 'channel_set_via_media_content_id'
-CONF_RELATIVE_VOLUME_ONLY = 'relative_volume_only'
 CONF_ENTITY_RANGE = 'range'
 CONF_ENTITY_RANGE_MIN = 'min'
 CONF_ENTITY_RANGE_MAX = 'max'
@@ -55,14 +59,7 @@ CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF = 'turn_off'
 CONF_ENTITY_CUSTOM_RANGES = 'custom_ranges'
 CONF_ENTITY_CUSTOM_RANGE_SET_VALUE = 'set_value'
 
-# Notifier
-CONF_NOTIFIER = 'notifier'
-CONF_SKILL_OAUTH_TOKEN = 'oauth_token'
-CONF_SKILL_ID = 'skill_id'
-CONF_NOTIFIER_USER_ID = 'user_id'
-NOTIFIERS = 'notifiers'
-
-# https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/device-types.html/
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html
 PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'
 TYPE_SOCKET = PREFIX_TYPES + 'socket'
@@ -87,6 +84,31 @@ TYPE_DISHWASHER = PREFIX_TYPES + 'dishwasher'
 TYPE_IRON = PREFIX_TYPES + 'iron'
 TYPE_SENSOR = PREFIX_TYPES + 'sensor'
 TYPE_OTHER = PREFIX_TYPES + 'other'
+
+DOMAIN_TO_YANDEX_TYPES = {
+    binary_sensor.DOMAIN: TYPE_SENSOR,
+    camera.DOMAIN: TYPE_OTHER,
+    climate.DOMAIN: TYPE_THERMOSTAT,
+    cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
+    fan.DOMAIN: TYPE_HUMIDIFIER,
+    group.DOMAIN: TYPE_SWITCH,
+    humidifier.DOMAIN: TYPE_HUMIDIFIER,
+    input_boolean.DOMAIN: TYPE_SWITCH,
+    light.DOMAIN: TYPE_LIGHT,
+    lock.DOMAIN: TYPE_OPENABLE,
+    media_player.DOMAIN: TYPE_MEDIA_DEVICE,
+    scene.DOMAIN: TYPE_OTHER,
+    script.DOMAIN: TYPE_OTHER,
+    switch.DOMAIN: TYPE_SWITCH,
+    vacuum.DOMAIN: TYPE_VACUUM_CLEANER,
+    water_heater.DOMAIN: TYPE_KETTLE,
+    sensor.DOMAIN: TYPE_SENSOR,
+    air_quality.DOMAIN: TYPE_SENSOR,
+}
+
+DEVICE_CLASS_TO_YANDEX_TYPES = {
+    (media_player.DOMAIN, media_player.DEVICE_CLASS_TV): TYPE_MEDIA_DEVICE_TV,
+}
 
 ON_OFF_INSTANCE_ON = 'on'
 
@@ -427,6 +449,30 @@ EVENT_WATER_LEVEL_NORMAL = 'normal'
 EVENT_WATER_LEAK_DRY = 'dry'
 EVENT_WATER_LEAK_LEAK = 'leak'
 
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/response-codes.html
+ERR_DEVICE_UNREACHABLE = 'DEVICE_UNREACHABLE'
+ERR_INTERNAL_ERROR = 'INTERNAL_ERROR'
+ERR_INVALID_ACTION = 'INVALID_ACTION'
+ERR_DEVICE_OFF = 'INVALID_ACTION'
+ERR_INVALID_VALUE = 'INVALID_VALUE'
+ERR_NOT_SUPPORTED_IN_CURRENT_MODE = 'NOT_SUPPORTED_IN_CURRENT_MODE'
+
+PRESSURE_UNIT_PASCAL = 'pa'
+PRESSURE_UNIT_HECTOPASCAL = 'hPa'
+PRESSURE_UNIT_KILOPASCAL = 'kPa'
+PRESSURE_UNIT_MEGAPASCAL = 'MPa'
+PRESSURE_UNIT_MMHG = 'mmHg'
+PRESSURE_UNIT_ATM = 'atm'
+PRESSURE_UNIT_BAR = 'bar'
+PRESSURE_UNIT_MBAR = 'mbar'
+
+# Additional states
+STATE_NONE = 'none'
+STATE_NONE_UI = '-'
+STATE_EMPTY = ''
+STATE_CHARGING = 'charging'
+STATE_LOW = 'low'
+
 # Integration xiaomi_airpurifier
 ATTR_TARGET_HUMIDITY = 'target_humidity'
 DOMAIN_XIAOMI_AIRPURIFIER = 'xiaomi_miio_airpurifier'
@@ -454,59 +500,3 @@ XIAOMI_AIRPURIFIER_PRESET_MIDDLE = 'Middle'
 
 # https://github.com/AlexxIT/YandexStation
 YANDEX_STATION_INTENTS_MEDIA_PLAYER = media_player.DOMAIN + '.yandex_intents'
-
-# Error codes
-# https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/response-codes-docpage/
-ERR_DEVICE_UNREACHABLE = 'DEVICE_UNREACHABLE'
-ERR_INTERNAL_ERROR = 'INTERNAL_ERROR'
-ERR_INVALID_ACTION = 'INVALID_ACTION'
-ERR_DEVICE_OFF = 'INVALID_ACTION'
-ERR_INVALID_VALUE = 'INVALID_VALUE'
-ERR_NOT_SUPPORTED_IN_CURRENT_MODE = 'NOT_SUPPORTED_IN_CURRENT_MODE'
-
-# Event types
-EVENT_ACTION_RECEIVED = f'{DOMAIN}_action'
-EVENT_QUERY_RECEIVED = f'{DOMAIN}_query'
-EVENT_DEVICES_RECEIVED = f'{DOMAIN}_devices'
-
-# Pressure units
-PRESSURE_UNIT_PASCAL = 'pa'
-PRESSURE_UNIT_HECTOPASCAL = 'hPa'
-PRESSURE_UNIT_KILOPASCAL = 'kPa'
-PRESSURE_UNIT_MEGAPASCAL = 'MPa'
-PRESSURE_UNIT_MMHG = 'mmHg'
-PRESSURE_UNIT_ATM = 'atm'
-PRESSURE_UNIT_BAR = 'bar'
-PRESSURE_UNIT_MBAR = 'mbar'
-
-# Additional states
-STATE_NONE = 'none'
-STATE_NONE_UI = '-'
-STATE_EMPTY = ''
-STATE_CHARGING = 'charging'
-STATE_LOW = 'low'
-
-DOMAIN_TO_YANDEX_TYPES = {
-    binary_sensor.DOMAIN: TYPE_SENSOR,
-    camera.DOMAIN: TYPE_OTHER,
-    climate.DOMAIN: TYPE_THERMOSTAT,
-    cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
-    fan.DOMAIN: TYPE_HUMIDIFIER,
-    group.DOMAIN: TYPE_SWITCH,
-    humidifier.DOMAIN: TYPE_HUMIDIFIER,
-    input_boolean.DOMAIN: TYPE_SWITCH,
-    light.DOMAIN: TYPE_LIGHT,
-    lock.DOMAIN: TYPE_OPENABLE,
-    media_player.DOMAIN: TYPE_MEDIA_DEVICE,
-    scene.DOMAIN: TYPE_OTHER,
-    script.DOMAIN: TYPE_OTHER,
-    switch.DOMAIN: TYPE_SWITCH,
-    vacuum.DOMAIN: TYPE_VACUUM_CLEANER,
-    water_heater.DOMAIN: TYPE_KETTLE,
-    sensor.DOMAIN: TYPE_SENSOR,
-    air_quality.DOMAIN: TYPE_SENSOR,
-}
-
-DEVICE_CLASS_TO_YANDEX_TYPES = {
-    (media_player.DOMAIN, media_player.DEVICE_CLASS_TV): TYPE_MEDIA_DEVICE_TV,
-}
