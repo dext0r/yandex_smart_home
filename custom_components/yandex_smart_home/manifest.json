@@ -8,5 +8,5 @@
   "iot_class": "cloud_polling",
   "dependencies": ["http"],
   "codeowners": ["@dmitry-k"],
-  "version": "0.2"
+  "version": "0.2.0"
 }
