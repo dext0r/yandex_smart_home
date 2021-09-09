@@ -1,6 +1,7 @@
 """Implement the Yandex Smart Home properties."""
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 import logging
 from typing import Any, Optional, Type
 
@@ -34,7 +35,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PREFIX_PROPERTIES = 'devices.properties.'
 
-PROPERTIES: list[Type[_Property]] = []
+PROPERTIES: list[Type[AbstractProperty]] = []
 
 
 def register_property(prop):
@@ -43,7 +44,7 @@ def register_property(prop):
     return prop
 
 
-class _Property:
+class AbstractProperty(ABC):
     """Represents a Property."""
 
     type = ''
@@ -61,8 +62,9 @@ class _Property:
         self.reportable = config.is_reporting_state
 
     @staticmethod
+    @abstractmethod
     def supported(domain, features, entity_config, attributes):
-        raise NotImplementedError
+        pass
 
     def description(self):
         """Return description for a devices request."""
@@ -88,13 +90,15 @@ class _Property:
             }
         } if value is not None else None
 
+    @abstractmethod
     def parameters(self):
         """Return parameters for a devices request."""
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def get_value(self):
         """Return the state value of this capability for this entity."""
-        raise NotImplementedError
+        pass
 
     @staticmethod
     def bool_value(value):

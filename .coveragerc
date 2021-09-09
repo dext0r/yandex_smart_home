@@ -1,3 +1,4 @@
 [report]
 exclude_lines =
     raise NotImplementedError
+    @abstract
