@@ -6,7 +6,7 @@ from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.core import State
 from homeassistant.util.decorator import Registry
 
-from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
+from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic
 from custom_components.yandex_smart_home.capability_toggle import MuteCapability, PauseCapability
 from custom_components.yandex_smart_home.const import ERR_INTERNAL_ERROR, ERR_INVALID_ACTION
 from custom_components.yandex_smart_home.error import SmartHomeError
@@ -67,7 +67,7 @@ async def test_async_handle_message(hass):
 
 
 async def test_async_devices_execute(hass):
-    class MockOnOffCapability(OnOffCapability):
+    class MockOnOffCapability(OnOffCapabilityBasic):
         def supported(self) -> bool:
             return True
 

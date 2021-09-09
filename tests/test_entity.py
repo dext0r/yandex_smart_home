@@ -36,7 +36,7 @@ from custom_components.yandex_smart_home.capability_custom import (
     CustomRangeCapability,
     CustomToggleCapability,
 )
-from custom_components.yandex_smart_home.capability_onoff import CAPABILITIES_ONOFF, OnOffCapability
+from custom_components.yandex_smart_home.capability_onoff import CAPABILITIES_ONOFF, OnOffCapabilityBasic
 from custom_components.yandex_smart_home.capability_range import BrightnessCapability
 from custom_components.yandex_smart_home.capability_toggle import CAPABILITIES_TOGGLE, ToggleCapability
 from custom_components.yandex_smart_home.const import (
@@ -80,7 +80,7 @@ def registries(hass):
 
 
 async def test_yandex_entity_duplicate_capabilities(hass):
-    class MockCapability(OnOffCapability):
+    class MockCapability(OnOffCapabilityBasic):
         def supported(self) -> bool:
             return True
 
@@ -138,7 +138,7 @@ async def test_yandex_entity_capabilities(hass):
     entity = YandexEntity(hass, config, state)
     assert [type(c) for c in entity.capabilities()] == [
         CustomModeCapability, CustomToggleCapability, CustomRangeCapability,
-        RgbCapability, TemperatureKCapability, BrightnessCapability, OnOffCapability
+        RgbCapability, TemperatureKCapability, BrightnessCapability, OnOffCapabilityBasic
     ]
 
 
@@ -346,7 +346,7 @@ async def test_yandex_entity_serialize(hass):
 
     state = State('switch.test', STATE_ON)
     state_pause = State('input_boolean.pause', STATE_OFF)
-    cap_onoff = OnOffCapability(hass, BASIC_CONFIG, state)
+    cap_onoff = OnOffCapabilityBasic(hass, BASIC_CONFIG, state)
     cap_pause = PauseCapability(hass, BASIC_CONFIG, state_pause)
 
     state_temp = State('sensor.temp', '5', attributes={
@@ -499,7 +499,7 @@ async def test_yandex_entity_execute(hass):
 
 
 async def test_yandex_entity_execute_exception(hass):
-    class MockOnOffCapability(OnOffCapability):
+    class MockOnOffCapability(OnOffCapabilityBasic):
         async def set_state(self, *args, **kwargs):
             raise Exception('fail set_state')
 

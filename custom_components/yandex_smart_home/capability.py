@@ -72,7 +72,7 @@ class AbstractCapability(ABC):
         pass
 
     @abstractmethod
-    def get_value(self) -> float | str | None:
+    def get_value(self) -> float | str | bool | None:
         """Return the state value of this capability for this entity."""
         pass
 
