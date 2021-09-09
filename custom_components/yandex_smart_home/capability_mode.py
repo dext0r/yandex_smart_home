@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -12,6 +12,7 @@ from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
 from .const import CONF_ENTITY_MODE_MAP, ERR_INVALID_VALUE, STATE_NONE
 from .error import SmartHomeError
+from .helpers import RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class ModeCapability(AbstractCapability, ABC):
         }
 
     @property
-    def supported_yandex_modes(self):
+    def supported_yandex_modes(self) -> list[str]:
         """Returns list of supported Yandex modes for this entity."""
         modes = []
 
@@ -70,16 +71,16 @@ class ModeCapability(AbstractCapability, ABC):
 
     @property
     @abstractmethod
-    def modes_list_attribute(self) -> Optional[str]:
+    def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
         pass
 
     @property
-    def state_value_attribute(self) -> Optional[str]:
+    def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
         return None
 
-    def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings=False) -> Optional[str]:
+    def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings=False) -> str | None:
         rv = None
         for yandex_mode, names in self.modes_map.items():
             lower_names = [str(n).lower() for n in names]
@@ -127,7 +128,7 @@ class ModeCapability(AbstractCapability, ABC):
             f'Check \"modes\" setting for this entity'
         )
 
-    def get_value(self):
+    def get_value(self) -> str | None:
         """Return the state value of this capability for this entity."""
         ha_mode = self.state.state
         if self.state_value_attribute:
@@ -156,12 +157,12 @@ class ThermostatCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> Optional[str]:
+    def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
         if self.state.domain == climate.DOMAIN:
             return climate.ATTR_HVAC_MODES
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await self.hass.services.async_call(
             climate.DOMAIN,
@@ -193,18 +194,18 @@ class SwingCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> Optional[str]:
+    def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
         if self.state.domain == climate.DOMAIN:
             return climate.ATTR_SWING_MODES
 
     @property
-    def state_value_attribute(self) -> Optional[str]:
+    def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
         if self.state.domain == climate.DOMAIN:
             return climate.ATTR_SWING_MODE
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await self.hass.services.async_call(
             climate.DOMAIN,
@@ -256,18 +257,18 @@ class ProgramCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> Optional[str]:
+    def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
         if self.state.domain == humidifier.DOMAIN:
             return humidifier.ATTR_AVAILABLE_MODES
 
     @property
-    def state_value_attribute(self) -> Optional[str]:
+    def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
         if self.state.domain == humidifier.DOMAIN:
             return humidifier.ATTR_MODE
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await self.hass.services.async_call(
             humidifier.DOMAIN,
@@ -311,18 +312,18 @@ class InputSourceCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> Optional[str]:
+    def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
         if self.state.domain == media_player.DOMAIN:
             return media_player.ATTR_INPUT_SOURCE_LIST
 
     @property
-    def state_value_attribute(self) -> Optional[str]:
+    def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
         if self.state.domain == media_player.DOMAIN:
             return media_player.ATTR_INPUT_SOURCE
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await self.hass.services.async_call(
             media_player.DOMAIN,
@@ -368,7 +369,7 @@ class FanSpeedCapability(ModeCapability):
         return False
 
     @property
-    def state_value_attribute(self) -> Optional[str]:
+    def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
         if self.state.domain == climate.DOMAIN:
             return climate.ATTR_FAN_MODE
@@ -379,7 +380,7 @@ class FanSpeedCapability(ModeCapability):
                 return fan.ATTR_SPEED
 
     @property
-    def modes_list_attribute(self) -> Optional[str]:
+    def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
         if self.state.domain == climate.DOMAIN:
             return climate.ATTR_FAN_MODES
@@ -389,7 +390,7 @@ class FanSpeedCapability(ModeCapability):
             else:
                 return fan.ATTR_SPEED_LIST
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = self.get_ha_mode_by_yandex_mode(state['value'])
 
@@ -437,7 +438,7 @@ class CleanupModeCapability(ModeCapability):
         const.MODE_INSTANCE_MODE_QUIET: ['quiet', 'low', 'min', 'silent', 'eco', '101'],
     }
 
-    def supported(self):
+    def supported(self) -> bool:
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
@@ -447,18 +448,18 @@ class CleanupModeCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> Optional[str]:
+    def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
         if self.state.domain == vacuum.DOMAIN:
             return vacuum.ATTR_FAN_SPEED_LIST
 
     @property
-    def state_value_attribute(self) -> Optional[str]:
+    def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
         if self.state.domain == vacuum.DOMAIN:
             return vacuum.ATTR_FAN_SPEED
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await self.hass.services.async_call(
             self.state.domain,

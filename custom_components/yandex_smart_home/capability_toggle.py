@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from abc import ABC
 import logging
+from typing import Any
 
 from homeassistant.components import cover, fan, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, SERVICE_VOLUME_MUTE
@@ -11,6 +12,7 @@ from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
 from .const import ERR_INVALID_VALUE, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
+from .helpers import RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +27,7 @@ class ToggleCapability(AbstractCapability, ABC):
 
     type = CAPABILITIES_TOGGLE
 
-    def parameters(self):
+    def parameters(self) -> dict[str, Any]:
         """Return parameters for a devices request."""
         return {
             'instance': self.instance
@@ -48,13 +50,13 @@ class MuteCapability(ToggleCapability):
 
         return False
 
-    def get_value(self):
+    def get_value(self) -> bool:
         """Return the state value of this capability for this entity."""
         muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
 
         return bool(muted)
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
         if muted is None:
@@ -95,7 +97,7 @@ class PauseCapability(ToggleCapability):
 
         return False
 
-    def get_value(self):
+    def get_value(self) -> bool:
         """Return the state value of this capability for this entity."""
         if self.state.domain == media_player.DOMAIN:
             return bool(self.state.state != media_player.STATE_PLAYING)
@@ -104,9 +106,9 @@ class PauseCapability(ToggleCapability):
         elif self.state.domain == cover.DOMAIN:
             return False
 
-        return None
+        return False
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         if self.state.domain == media_player.DOMAIN:
             if state['value']:
@@ -149,11 +151,11 @@ class OscillationCapability(ToggleCapability):
 
         return False
 
-    def get_value(self):
+    def get_value(self) -> bool:
         """Return the state value of this capability for this entity."""
         return bool(self.state.attributes.get(fan.ATTR_OSCILLATING))
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await self.hass.services.async_call(
             self.state.domain,

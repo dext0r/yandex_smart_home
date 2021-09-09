@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES
@@ -13,6 +13,7 @@ from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
 from .const import CONF_ENTITY_MODE_MAP, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
+from .helpers import RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ class ColorSettingCapability(AbstractCapability, ABC):
     default_white_temperature_k = 4500
     cold_white_temperature_k = 6500
 
-    def parameters(self):
+    def parameters(self) -> dict[str, Any]:
         """Return parameters for a devices request."""
         result = {}
 
@@ -135,7 +136,7 @@ class ColorSettingCapability(AbstractCapability, ABC):
 
         return scenes_map
 
-    def get_yandex_scene_by_ha_effect(self, ha_effect: str) -> Optional[str]:
+    def get_yandex_scene_by_ha_effect(self, ha_effect: str) -> str | None:
         scenes_map = self.get_scenes_map_from_config(self.entity_config)
 
         for yandex_scene, ha_effects in scenes_map.items():
@@ -144,7 +145,7 @@ class ColorSettingCapability(AbstractCapability, ABC):
 
         return None
 
-    def get_ha_effect_by_yandex_scene(self, yandex_scene: str) -> Optional[str]:
+    def get_ha_effect_by_yandex_scene(self, yandex_scene: str) -> str | None:
         scenes_map = self.get_scenes_map_from_config(self.entity_config)
 
         ha_effects = scenes_map.get(yandex_scene)
@@ -163,11 +164,11 @@ class RgbCapability(ColorSettingCapability):
 
     instance = const.COLOR_SETTING_RGB
 
-    def supported(self):
+    def supported(self) -> bool:
         """Test if capability is supported."""
         return self.support_color
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
         rgb_color = self.state.attributes.get(light.ATTR_RGB_COLOR)
         if rgb_color is None:
@@ -185,7 +186,7 @@ class RgbCapability(ColorSettingCapability):
 
             return value
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         red = (state['value'] >> 16) & 0xFF
         green = (state['value'] >> 8) & 0xFF
@@ -220,7 +221,7 @@ class TemperatureKCapability(ColorSettingCapability):
 
         return False
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
         temperature_mired = self.state.attributes.get(light.ATTR_COLOR_TEMP)
         supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
@@ -245,7 +246,7 @@ class TemperatureKCapability(ColorSettingCapability):
 
             return None
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
@@ -295,11 +296,11 @@ class ColorSceneCapability(ColorSettingCapability):
                 )
             )
 
-    def get_value(self):
+    def get_value(self) -> str | None:
         """Return the state value of this capability for this entity."""
         return self.get_yandex_scene_by_ha_effect(self.state.attributes.get(light.ATTR_EFFECT))
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await self.hass.services.async_call(
             light.DOMAIN,

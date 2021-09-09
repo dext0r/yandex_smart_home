@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from homeassistant.components import (
     climate,
@@ -37,7 +38,7 @@ from homeassistant.helpers.service import async_call_from_config
 
 from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
-from .helpers import Config
+from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -111,7 +112,7 @@ class OnOffCapability(AbstractCapability):
             humidifier.DOMAIN,
         )
 
-    def parameters(self):
+    def parameters(self) -> dict[str, Any] | None:
         """Return parameters for a devices request."""
         if self.state.domain == cover.DOMAIN:
             features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
@@ -120,7 +121,7 @@ class OnOffCapability(AbstractCapability):
 
         return None
 
-    def get_value(self):
+    def get_value(self) -> str | None:
         """Return the state value of this capability for this entity."""
         if self.state.domain == cover.DOMAIN:
             return self.state.state == cover.STATE_OPEN
@@ -138,7 +139,7 @@ class OnOffCapability(AbstractCapability):
         else:
             return self.state.state != STATE_OFF
 
-    async def set_state(self, data, state):
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         for key, call in ((const.CONF_TURN_ON, state['value']), (const.CONF_TURN_OFF, not state['value'])):
             if key in self.entity_config and call:
