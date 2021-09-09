@@ -343,8 +343,7 @@ class InputSourceCapability(ModeCapability):
         )
 
 
-@register_capability
-class FanSpeedCapability(ModeCapability):
+class FanSpeedCapability(ModeCapability, ABC):
     """Fan speed functionality."""
 
     instance = const.MODE_INSTANCE_FAN_SPEED
@@ -365,6 +364,9 @@ class FanSpeedCapability(ModeCapability):
         const.MODE_INSTANCE_MODE_MAX: ['6'],
     }
 
+
+@register_capability
+class FanSpeedCapabilityClimate(FanSpeedCapability):
     def supported(self) -> bool:
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
@@ -372,7 +374,38 @@ class FanSpeedCapability(ModeCapability):
         if self.state.domain == climate.DOMAIN and features & climate.SUPPORT_FAN_MODE:
             return super().supported()
 
-        elif self.state.domain == fan.DOMAIN:
+        return False
+
+    @property
+    def state_value_attribute(self) -> str | None:
+        """Return HA attribute for state of this entity."""
+        return climate.ATTR_FAN_MODE
+
+    @property
+    def modes_list_attribute(self) -> str | None:
+        """Return HA attribute contains modes list for this entity."""
+        return climate.ATTR_FAN_MODES
+
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
+        """Set device state."""
+        await self.hass.services.async_call(
+            climate.DOMAIN,
+            climate.SERVICE_SET_FAN_MODE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                climate.ATTR_FAN_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
+            },
+            blocking=True,
+            context=data.context
+        )
+
+
+@register_capability
+class FanSpeedCapabilityFan(FanSpeedCapability):
+    def supported(self) -> bool:
+        """Test if capability is supported."""
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == fan.DOMAIN:
             if features & fan.SUPPORT_PRESET_MODE or features & fan.SUPPORT_SET_SPEED:
                 return super().supported()
 
@@ -381,54 +414,41 @@ class FanSpeedCapability(ModeCapability):
     @property
     def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
-        if self.state.domain == climate.DOMAIN:
-            return climate.ATTR_FAN_MODE
-        elif self.state.domain == fan.DOMAIN:
-            if self.state.attributes.get(fan.ATTR_PRESET_MODES):
-                return fan.ATTR_PRESET_MODE
-            else:
-                return fan.ATTR_SPEED
+        if self.state.attributes.get(fan.ATTR_PRESET_MODES):
+            return fan.ATTR_PRESET_MODE
+        else:
+            return fan.ATTR_SPEED
 
     @property
     def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
-        if self.state.domain == climate.DOMAIN:
-            return climate.ATTR_FAN_MODES
-        elif self.state.domain == fan.DOMAIN:
-            if self.state.attributes.get(fan.ATTR_PRESET_MODES):
-                return fan.ATTR_PRESET_MODES
-            else:
-                return fan.ATTR_SPEED_LIST
+        if self.state.attributes.get(fan.ATTR_PRESET_MODES):
+            return fan.ATTR_PRESET_MODES
+        else:
+            return fan.ATTR_SPEED_LIST
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        if self.state.domain == climate.DOMAIN:
-            service = climate.SERVICE_SET_FAN_MODE
-            attribute = climate.ATTR_FAN_MODE
-        elif self.state.domain == fan.DOMAIN:
-            if self.modes_list_attribute == fan.ATTR_PRESET_MODES:
-                service = fan.SERVICE_SET_PRESET_MODE
-                attribute = fan.ATTR_PRESET_MODE
-            else:
-                service = fan.SERVICE_SET_SPEED
-                attribute = fan.ATTR_SPEED
-                _LOGGER.warning(
-                    f'Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" '
-                    f'instead for {self.instance} instance of {self.state.entity_id}'
-                )
+        if self.modes_list_attribute == fan.ATTR_PRESET_MODES:
+            service = fan.SERVICE_SET_PRESET_MODE
+            attribute = fan.ATTR_PRESET_MODE
         else:
-            raise SmartHomeError(
-                ERR_INVALID_VALUE,
-                f'Unsupported domain for {self.instance} instance of {self.state.entity_id}'
+            service = fan.SERVICE_SET_SPEED
+            attribute = fan.ATTR_SPEED
+            _LOGGER.warning(
+                f'Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" '
+                f'instead for {self.instance} instance of {self.state.entity_id}'
             )
 
         await self.hass.services.async_call(
-            self.state.domain,
+            fan.DOMAIN,
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 attribute: self.get_ha_mode_by_yandex_mode(state['value'])
             },
-            blocking=True, context=data.context)
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability

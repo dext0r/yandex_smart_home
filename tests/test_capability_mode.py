@@ -275,21 +275,6 @@ async def test_capability_mode_input_source(hass):
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, media_player.ATTR_INPUT_SOURCE: 's3'}
 
 
-async def test_capability_mode_fan_speed(hass):
-    state = State('fan.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_PRESET_MODE,
-        fan.ATTR_PRESET_MODES: ['low']
-    })
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
-    cap.state = State('sensor.test', STATE_ON)
-    print(cap.supported_yandex_modes)
-
-    with patch.object(FanSpeedCapability, 'supported_yandex_modes', new_callable=PropertyMock(return_value=['low'])), \
-            patch.object(FanSpeedCapability, 'supported_ha_modes', new_callable=PropertyMock(return_value=['low'])):
-        with pytest.raises(SmartHomeError):
-            await cap.set_state(BASIC_DATA, {'value': 'low'})
-
-
 async def test_capability_mode_fan_speed_fan_legacy(hass):
     state = State('fan.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: fan.SUPPORT_SET_SPEED
