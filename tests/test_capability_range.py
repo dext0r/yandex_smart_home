@@ -15,8 +15,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-# noinspection PyProtectedMember
-from custom_components.yandex_smart_home.capability import CAPABILITIES_RANGE, _RangeCapability
+from custom_components.yandex_smart_home.capability import CAPABILITIES_RANGE, RangeCapability
 from custom_components.yandex_smart_home.const import (
     RANGE_INSTANCE_BRIGHTNESS,
     RANGE_INSTANCE_CHANNEL,
@@ -32,7 +31,7 @@ from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 
 async def test_capability_range(hass):
-    class MockCapability(_RangeCapability):
+    class MockCapability(RangeCapability):
         type = 'test_type'
         instance = 'test_instance'
 

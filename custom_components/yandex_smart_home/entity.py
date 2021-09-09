@@ -15,7 +15,7 @@ from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 
 from . import capability as caps, const, prop
-from .capability import CustomModeCapability, CustomRangeCapability, CustomToggleCapability, _Capability
+from .capability import CustomModeCapability, CustomRangeCapability, CustomToggleCapability, AbstractCapability
 from .const import (
     CONF_ENTITY_PROPERTIES,
     CONF_ROOM,
@@ -40,7 +40,7 @@ class YandexEntity:
         self.hass = hass
         self.config = config
         self.state = state
-        self._capabilities: list[_Capability] | None = None
+        self._capabilities: list[AbstractCapability] | None = None
         self._properties: list[AbstractProperty] | None = None
 
     @property
@@ -49,7 +49,7 @@ class YandexEntity:
         return self.state.entity_id
 
     @callback
-    def capabilities(self) -> list[_Capability]:
+    def capabilities(self) -> list[AbstractCapability]:
         """Return capabilities for entity."""
         if self._capabilities is not None:
             return self._capabilities

@@ -41,7 +41,7 @@ from custom_components.yandex_smart_home.capability import (
     OnOffCapability,
     RgbCapability,
     TemperatureKCapability,
-    _ToggleCapability,
+    ToggleCapability,
 )
 from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_PROPERTY_ENTITY,
@@ -328,7 +328,7 @@ async def test_yandex_entity_device_type(hass):
 
 
 async def test_yandex_entity_serialize(hass):
-    class PauseCapability(_ToggleCapability):
+    class PauseCapability(ToggleCapability):
         instance = TOGGLE_INSTANCE_PAUSE
 
         def supported(self, domain: str, features: int, entity_config: dict[str, Any], attributes: dict[str, Any]):
