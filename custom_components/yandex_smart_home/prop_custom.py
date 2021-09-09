@@ -72,7 +72,7 @@ class CustomEntityProperty(AbstractProperty, ABC):
     def supported(self) -> bool:
         return True
 
-    def get_value(self):
+    def get_value(self) -> str | float | None:
         if not self.retrievable:
             return None
 
@@ -107,13 +107,13 @@ class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):
         if self.instance == const.FLOAT_INSTANCE_PRESSURE:
             self.instance_unit = PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]]
 
-    def parameters(self):
+    def parameters(self) -> dict[str, Any]:
         return {
             'instance': self.instance,
             'unit': self.instance_unit
         }
 
-    def get_value(self):
+    def get_value(self) -> float | None:
         value = super().get_value()
 
         if self.instance in [const.FLOAT_INSTANCE_PRESSURE, const.FLOAT_INSTANCE_TVOC]:
@@ -132,5 +132,5 @@ class CustomEventEntityProperty(CustomEntityProperty, EventProperty):
         if self.instance in [const.EVENT_INSTANCE_BUTTON, const.EVENT_INSTANCE_VIBRATION]:
             self.retrievable = False
 
-    def get_value(self):
+    def get_value(self) -> str | None:
         return self.event_value(super().get_value())
