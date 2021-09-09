@@ -1,15 +1,17 @@
 """Implement the Yandex Smart Home event properties."""
 from __future__ import annotations
 
+from abc import ABC
 import logging
 
-from abc import ABC
 from homeassistant.components import binary_sensor, sensor
-from homeassistant.const import ATTR_DEVICE_CLASS
+from homeassistant.const import ATTR_DEVICE_CLASS, STATE_ON, STATE_OPEN, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.core import HomeAssistant, State
 
 from . import const
-from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, PROPERTY_TYPE_EVENT_VALUES
+from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, PROPERTY_TYPE_EVENT_VALUES, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
 from .error import SmartHomeError
+from .helpers import Config
 from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,6 +23,10 @@ EVENTS_VALUES = PROPERTY_TYPE_EVENT_VALUES
 class EventProperty(AbstractProperty, ABC):
     type = PROPERTY_EVENT
 
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        super().__init__(hass, config, state)
+        self.values = EVENTS_VALUES.get(self.instance)
+
     def parameters(self):
         return {
             'instance': self.instance,
@@ -29,6 +35,41 @@ class EventProperty(AbstractProperty, ABC):
                 for v in self.values
             ]
         } if self.values else {}
+
+    @staticmethod
+    def bool_value(value):
+        """Return the bool value according to any type of value."""
+        return value in [1, STATE_ON, STATE_OPEN, 'high', True]
+
+    def event_value(self, value):
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
+            return None
+
+        if self.instance in ['open']:
+            return 'opened' if self.bool_value(value) else 'closed'
+        elif self.instance in ['motion']:
+            return 'detected' if self.bool_value(value) else 'not_detected'
+        elif self.instance in ['smoke', 'gas']:
+            return value if value == 'high' else 'detected' if self.bool_value(value) else 'not_detected'
+        elif self.instance in ['battery_level', 'water_level']:
+            return 'low' if self.bool_value(value) else 'normal'
+        elif self.instance in ['water_leak']:
+            return 'leak' if self.bool_value(value) else 'dry'
+        elif self.instance in ['button']:
+            if value in ['single', 'click']:
+                return 'click'
+            elif value in ['double', 'double_click']:
+                return 'double_click'
+            elif value in ['long', 'long_click', 'long_click_press', 'hold']:
+                return 'long_press'
+        elif self.instance in ['vibration']:
+            if value in ['vibrate', 'vibration', 'actively', 'move',
+                         'tap_twice', 'shake_air', 'swing'] or self.bool_value(value):
+                return 'vibration'
+            elif value in ['tilt', 'flip90', 'flip180', 'rotate']:
+                return 'tilt'
+            elif value in ['free_fall', 'drop']:
+                return 'fall'
 
     def get_value(self):
         if self.state.domain == binary_sensor.DOMAIN:
@@ -43,7 +84,6 @@ class EventProperty(AbstractProperty, ABC):
 @register_property
 class ContactProperty(EventProperty):
     instance = const.PROPERTY_TYPE_OPEN
-    values = EVENTS_VALUES.get(instance)
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -61,7 +101,6 @@ class ContactProperty(EventProperty):
 @register_property
 class MotionProperty(EventProperty):
     instance = const.PROPERTY_TYPE_MOTION
-    values = EVENTS_VALUES.get(instance)
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -78,7 +117,6 @@ class MotionProperty(EventProperty):
 @register_property
 class GasProperty(EventProperty):
     instance = const.PROPERTY_TYPE_GAS
-    values = EVENTS_VALUES.get(instance)
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -91,7 +129,6 @@ class GasProperty(EventProperty):
 @register_property
 class SmokeProperty(EventProperty):
     instance = const.PROPERTY_TYPE_SMOKE
-    values = EVENTS_VALUES.get(instance)
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -104,7 +141,6 @@ class SmokeProperty(EventProperty):
 @register_property
 class BatteryLevelLowProperty(EventProperty):
     instance = const.PROPERTY_TYPE_BATTERY_LEVEL
-    values = EVENTS_VALUES.get(instance)
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -117,7 +153,6 @@ class BatteryLevelLowProperty(EventProperty):
 @register_property
 class WaterLevelLowProperty(EventProperty):
     instance = const.PROPERTY_TYPE_WATER_LEVEL
-    values = EVENTS_VALUES.get(instance)
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -130,7 +165,6 @@ class WaterLevelLowProperty(EventProperty):
 @register_property
 class WaterLeakProperty(EventProperty):
     instance = const.PROPERTY_TYPE_WATER_LEAK
-    values = EVENTS_VALUES.get(instance)
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -144,7 +178,6 @@ class WaterLeakProperty(EventProperty):
 class ButtonProperty(EventProperty):
     instance = const.PROPERTY_TYPE_BUTTON
     retrievable = False
-    values = EVENTS_VALUES.get(instance)
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -176,7 +209,6 @@ class ButtonProperty(EventProperty):
 class VibrationProperty(EventProperty):
     instance = const.PROPERTY_TYPE_VIBRATION
     retrievable = False
-    values = EVENTS_VALUES.get(instance)
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):

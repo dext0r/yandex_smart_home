@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import patch
 
+from homeassistant.components.binary_sensor import DEVICE_CLASS_DOOR
 from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.media_player import DEVICE_CLASS_TV
 from homeassistant.const import (
@@ -61,7 +62,12 @@ from custom_components.yandex_smart_home.const import (
 )
 from custom_components.yandex_smart_home.entity import YandexEntity
 from custom_components.yandex_smart_home.error import SmartHomeError
-from custom_components.yandex_smart_home.prop_custom import CustomEntityProperty
+from custom_components.yandex_smart_home.prop_custom import (
+    CustomEntityProperty,
+    CustomEventEntityProperty,
+    CustomFloatEntityProperty,
+)
+from custom_components.yandex_smart_home.prop_event import ContactProperty
 from custom_components.yandex_smart_home.prop_float import TemperatureProperty, VoltageProperty
 
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig
@@ -165,13 +171,23 @@ async def test_yandex_entity_properties(hass):
             state.entity_id: {
                 const.CONF_ENTITY_PROPERTIES: [{
                     const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_VOLTAGE
+                }, {
+                    const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_BUTTON
                 }]
             }
         }
     )
     entity = YandexEntity(hass, config, state)
     assert [type(c) for c in entity.properties()] == [
-        CustomEntityProperty, TemperatureProperty
+        CustomFloatEntityProperty, CustomEventEntityProperty, TemperatureProperty
+    ]
+
+    state = State('binary_sensor.door', STATE_ON, attributes={
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+    })
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert [type(c) for c in entity.properties()] == [
+        ContactProperty
     ]
 
 
@@ -355,7 +371,7 @@ async def test_yandex_entity_serialize(hass):
     })
 
     prop_temp = TemperatureProperty(hass, BASIC_CONFIG, state_temp)
-    prop_humidity_custom = CustomEntityProperty(hass, BASIC_CONFIG, state, {
+    prop_humidity_custom = CustomEntityProperty.get(hass, BASIC_CONFIG, state, {
         CONF_ENTITY_PROPERTY_ENTITY: state_humidity.entity_id,
         CONF_ENTITY_PROPERTY_TYPE: PROPERTY_TYPE_HUMIDITY,
 
