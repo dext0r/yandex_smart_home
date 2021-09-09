@@ -350,6 +350,84 @@ MODE_INSTANCE_MODES = (
     MODE_INSTANCE_MODE_YOGURT,
 )
 
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html
+FLOAT_INSTANCE_AMPERAGE = 'amperage'
+FLOAT_INSTANCE_BATTERY_LEVEL = 'battery_level'
+FLOAT_INSTANCE_CO2_LEVEL = 'co2_level'
+FLOAT_INSTANCE_HUMIDITY = 'humidity'
+FLOAT_INSTANCE_ILLUMINATION = 'illumination'
+FLOAT_INSTANCE_PM10_DENSITY = 'pm10_density'
+FLOAT_INSTANCE_PM1_DENSITY = 'pm1_density'
+FLOAT_INSTANCE_PM2_5_DENSITY = 'pm2.5_density'
+FLOAT_INSTANCE_POWER = 'power'
+FLOAT_INSTANCE_PRESSURE = 'pressure'
+FLOAT_INSTANCE_TEMPERATURE = 'temperature'
+FLOAT_INSTANCE_TVOC = 'tvoc'
+FLOAT_INSTANCE_VOLTAGE = 'voltage'
+FLOAT_INSTANCE_WATER_LEVEL = 'water_level'
+FLOAT_INSTANCES = (
+    FLOAT_INSTANCE_AMPERAGE,
+    FLOAT_INSTANCE_BATTERY_LEVEL,
+    FLOAT_INSTANCE_CO2_LEVEL,
+    FLOAT_INSTANCE_HUMIDITY,
+    FLOAT_INSTANCE_ILLUMINATION,
+    FLOAT_INSTANCE_PM10_DENSITY,
+    FLOAT_INSTANCE_PM1_DENSITY,
+    FLOAT_INSTANCE_PM2_5_DENSITY,
+    FLOAT_INSTANCE_POWER,
+    FLOAT_INSTANCE_PRESSURE,
+    FLOAT_INSTANCE_TEMPERATURE,
+    FLOAT_INSTANCE_TVOC,
+    FLOAT_INSTANCE_VOLTAGE,
+    FLOAT_INSTANCE_WATER_LEVEL,
+)
+
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html
+EVENT_INSTANCE_VIBRATION = 'vibration'
+EVENT_INSTANCE_OPEN = 'open'
+EVENT_INSTANCE_BUTTON = 'button'
+EVENT_INSTANCE_MOTION = 'motion'
+EVENT_INSTANCE_SMOKE = 'smoke'
+EVENT_INSTANCE_GAS = 'gas'
+EVENT_INSTANCE_BATTERY_LEVEL = 'battery_level'
+EVENT_INSTANCE_WATER_LEVEL = 'water_level'
+EVENT_INSTANCE_WATER_LEAK = 'water_leak'
+EVENT_INSTANCES = (
+    EVENT_INSTANCE_VIBRATION,
+    EVENT_INSTANCE_OPEN,
+    EVENT_INSTANCE_BUTTON,
+    EVENT_INSTANCE_MOTION,
+    EVENT_INSTANCE_SMOKE,
+    EVENT_INSTANCE_GAS,
+    EVENT_INSTANCE_BATTERY_LEVEL,
+    EVENT_INSTANCE_WATER_LEVEL,
+    EVENT_INSTANCE_WATER_LEAK,
+)
+
+# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html#event-instance__vibration
+EVENT_VIBRATION_TILT = 'tilt'
+EVENT_VIBRATION_FALL = 'fall'
+EVENT_VIBRATION_VIBRATION = 'vibration'
+EVENT_OPEN_OPENED = 'opened'
+EVENT_OPEN_CLOSED = 'closed'
+EVENT_BUTTON_CLICK = 'click'
+EVENT_BUTTON_DOUBLE_CLICK = 'double_click'
+EVENT_BUTTON_LONG_PRESS = 'long_press'
+EVENT_MOTION_DETECTED = 'detected'
+EVENT_MOTION_NOT_DETECTED = 'not_detected'
+EVENT_SMOKE_DETECTED = 'detected'
+EVENT_SMOKE_NOT_DETECTED = 'not_detected'
+EVENT_SMOKE_HIGH = 'high'
+EVENT_GAS_DETECTED = 'detected'
+EVENT_GAS_NOT_DETECTED = 'not_detected'
+EVENT_GAS_HIGH = 'high'
+EVENT_BATTERY_LEVEL_LOW = 'low'
+EVENT_BATTERY_LEVEL_NORMAL = 'normal'
+EVENT_WATER_LEVEL_LOW = 'low'
+EVENT_WATER_LEVEL_NORMAL = 'normal'
+EVENT_WATER_LEAK_DRY = 'dry'
+EVENT_WATER_LEAK_LEAK = 'leak'
+
 # Integration xiaomi_airpurifier
 ATTR_TARGET_HUMIDITY = 'target_humidity'
 DOMAIN_XIAOMI_AIRPURIFIER = 'xiaomi_miio_airpurifier'
@@ -455,59 +533,6 @@ DOMAIN_TO_YANDEX_TYPES = {
     water_heater.DOMAIN: TYPE_KETTLE,
     sensor.DOMAIN: TYPE_SENSOR,
     air_quality.DOMAIN: TYPE_SENSOR,
-}
-
-# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html
-PROPERTY_TYPE_HUMIDITY = 'humidity'
-PROPERTY_TYPE_TEMPERATURE = 'temperature'
-PROPERTY_TYPE_PRESSURE = 'pressure'
-PROPERTY_TYPE_WATER_LEVEL = 'water_level'
-PROPERTY_TYPE_CO2_LEVEL = 'co2_level'
-PROPERTY_TYPE_POWER = 'power'
-PROPERTY_TYPE_VOLTAGE = 'voltage'
-PROPERTY_TYPE_BATTERY_LEVEL = 'battery_level'
-PROPERTY_TYPE_AMPERAGE = 'amperage'
-PROPERTY_TYPE_ILLUMINATION = 'illumination'
-PROPERTY_TYPE_TVOC = 'tvoc'
-PROPERTY_TYPE_PM1_DENSITY = 'pm1_density'
-PROPERTY_TYPE_PM2_5_DENSITY = 'pm2.5_density'
-PROPERTY_TYPE_PM10_DENSITY = 'pm10_density'
-PROPERTY_TYPE_VIBRATION = 'vibration'
-PROPERTY_TYPE_OPEN = 'open'
-PROPERTY_TYPE_BUTTON = 'button'
-PROPERTY_TYPE_MOTION = 'motion'
-PROPERTY_TYPE_SMOKE = 'smoke'
-PROPERTY_TYPE_GAS = 'gas'
-PROPERTY_TYPE_WATER_LEAK = 'water_leak'
-
-PROPERTY_TYPE_TO_UNITS = {
-    PROPERTY_TYPE_HUMIDITY: 'unit.percent',
-    PROPERTY_TYPE_TEMPERATURE: 'unit.temperature.celsius',
-    PROPERTY_TYPE_PRESSURE: PRESSURE_UNITS_TO_YANDEX_UNITS[PRESSURE_UNIT_MMHG],
-    PROPERTY_TYPE_WATER_LEVEL: 'unit.percent',
-    PROPERTY_TYPE_CO2_LEVEL: 'unit.ppm',
-    PROPERTY_TYPE_POWER: 'unit.watt',
-    PROPERTY_TYPE_VOLTAGE: 'unit.volt',
-    PROPERTY_TYPE_BATTERY_LEVEL: 'unit.percent',
-    PROPERTY_TYPE_AMPERAGE: 'unit.ampere',
-    PROPERTY_TYPE_ILLUMINATION: 'unit.illumination.lux',
-    PROPERTY_TYPE_TVOC: 'unit.density.mcg_m3',
-    PROPERTY_TYPE_PM1_DENSITY: 'unit.density.mcg_m3',
-    PROPERTY_TYPE_PM2_5_DENSITY: 'unit.density.mcg_m3',
-    PROPERTY_TYPE_PM10_DENSITY: 'unit.density.mcg_m3'
-}
-
-# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html
-PROPERTY_TYPE_EVENT_VALUES = {
-    PROPERTY_TYPE_VIBRATION: ['vibration', 'tilt', 'fall'],
-    PROPERTY_TYPE_OPEN: ['opened', 'closed'],
-    PROPERTY_TYPE_BUTTON: ['click', 'double_click', 'long_press'],
-    PROPERTY_TYPE_MOTION: ['detected', 'not_detected'],
-    PROPERTY_TYPE_SMOKE: ['detected', 'not_detected', 'high'],
-    PROPERTY_TYPE_GAS: ['detected', 'not_detected', 'high'],
-    PROPERTY_TYPE_BATTERY_LEVEL: ['low', 'normal'],
-    PROPERTY_TYPE_WATER_LEVEL: ['low', 'normal'],
-    PROPERTY_TYPE_WATER_LEAK: ['leak', 'dry']
 }
 
 DEVICE_CLASS_TO_YANDEX_TYPES = {

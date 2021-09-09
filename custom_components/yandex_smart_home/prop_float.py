@@ -22,12 +22,28 @@ from homeassistant.const import (
 )
 
 from . import const
-from .const import CONF_PRESSURE_UNIT, PRESSURE_UNITS_TO_YANDEX_UNITS
+from .const import CONF_PRESSURE_UNIT, PRESSURE_UNIT_MMHG, PRESSURE_UNITS_TO_YANDEX_UNITS
 from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 
 _LOGGER = logging.getLogger(__name__)
 
 PROPERTY_FLOAT = PREFIX_PROPERTIES + 'float'
+PROPERTY_FLOAT_INSTANCE_TO_UNITS = {
+    const.FLOAT_INSTANCE_HUMIDITY: 'unit.percent',
+    const.FLOAT_INSTANCE_TEMPERATURE: 'unit.temperature.celsius',
+    const.FLOAT_INSTANCE_PRESSURE: PRESSURE_UNITS_TO_YANDEX_UNITS[PRESSURE_UNIT_MMHG],
+    const.FLOAT_INSTANCE_WATER_LEVEL: 'unit.percent',
+    const.FLOAT_INSTANCE_CO2_LEVEL: 'unit.ppm',
+    const.FLOAT_INSTANCE_POWER: 'unit.watt',
+    const.FLOAT_INSTANCE_VOLTAGE: 'unit.volt',
+    const.FLOAT_INSTANCE_BATTERY_LEVEL: 'unit.percent',
+    const.FLOAT_INSTANCE_AMPERAGE: 'unit.ampere',
+    const.FLOAT_INSTANCE_ILLUMINATION: 'unit.illumination.lux',
+    const.FLOAT_INSTANCE_TVOC: 'unit.density.mcg_m3',
+    const.FLOAT_INSTANCE_PM1_DENSITY: 'unit.density.mcg_m3',
+    const.FLOAT_INSTANCE_PM2_5_DENSITY: 'unit.density.mcg_m3',
+    const.FLOAT_INSTANCE_PM10_DENSITY: 'unit.density.mcg_m3'
+}
 
 
 class FloatProperty(AbstractProperty, ABC):
@@ -36,13 +52,13 @@ class FloatProperty(AbstractProperty, ABC):
     def parameters(self):
         return {
             'instance': self.instance,
-            'unit': const.PROPERTY_TYPE_TO_UNITS[self.instance]
+            'unit': PROPERTY_FLOAT_INSTANCE_TO_UNITS[self.instance]
         }
 
 
 @register_property
 class TemperatureProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_TEMPERATURE
+    instance = const.FLOAT_INSTANCE_TEMPERATURE
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -66,7 +82,7 @@ class TemperatureProperty(FloatProperty):
 
 @register_property
 class HumidityProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_HUMIDITY
+    instance = const.FLOAT_INSTANCE_HUMIDITY
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -90,7 +106,7 @@ class HumidityProperty(FloatProperty):
 
 @register_property
 class PressureProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_PRESSURE
+    instance = const.FLOAT_INSTANCE_PRESSURE
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -112,7 +128,7 @@ class PressureProperty(FloatProperty):
 
 @register_property
 class IlluminanceProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_ILLUMINATION
+    instance = const.FLOAT_INSTANCE_ILLUMINATION
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -130,7 +146,7 @@ class IlluminanceProperty(FloatProperty):
 
 @register_property
 class WaterLevelProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_WATER_LEVEL
+    instance = const.FLOAT_INSTANCE_WATER_LEVEL
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -146,7 +162,7 @@ class WaterLevelProperty(FloatProperty):
 
 @register_property
 class CO2Property(FloatProperty):
-    instance = const.PROPERTY_TYPE_CO2_LEVEL
+    instance = const.FLOAT_INSTANCE_CO2_LEVEL
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -166,7 +182,7 @@ class CO2Property(FloatProperty):
 
 @register_property
 class PM1Property(FloatProperty):
-    instance = const.PROPERTY_TYPE_PM1_DENSITY
+    instance = const.FLOAT_INSTANCE_PM1_DENSITY
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -182,7 +198,7 @@ class PM1Property(FloatProperty):
 
 @register_property
 class PM25Property(FloatProperty):
-    instance = const.PROPERTY_TYPE_PM2_5_DENSITY
+    instance = const.FLOAT_INSTANCE_PM2_5_DENSITY
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -201,7 +217,7 @@ class PM25Property(FloatProperty):
 
 @register_property
 class PM10Property(FloatProperty):
-    instance = const.PROPERTY_TYPE_PM10_DENSITY
+    instance = const.FLOAT_INSTANCE_PM10_DENSITY
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -217,7 +233,7 @@ class PM10Property(FloatProperty):
 
 @register_property
 class TVOCProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_TVOC
+    instance = const.FLOAT_INSTANCE_TVOC
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -237,7 +253,7 @@ class TVOCProperty(FloatProperty):
 
 @register_property
 class VoltageProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_VOLTAGE
+    instance = const.FLOAT_INSTANCE_VOLTAGE
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -257,7 +273,7 @@ class VoltageProperty(FloatProperty):
 
 @register_property
 class CurrentProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_AMPERAGE
+    instance = const.FLOAT_INSTANCE_AMPERAGE
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -277,7 +293,7 @@ class CurrentProperty(FloatProperty):
 
 @register_property
 class PowerProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_POWER
+    instance = const.FLOAT_INSTANCE_POWER
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):
@@ -303,7 +319,7 @@ class PowerProperty(FloatProperty):
 
 @register_property
 class BatteryLevelProperty(FloatProperty):
-    instance = const.PROPERTY_TYPE_BATTERY_LEVEL
+    instance = const.FLOAT_INSTANCE_BATTERY_LEVEL
 
     @staticmethod
     def supported(domain, features, entity_config, attributes):

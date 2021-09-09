@@ -53,7 +53,6 @@ from custom_components.yandex_smart_home.const import (
     ERR_INTERNAL_ERROR,
     ERR_INVALID_ACTION,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-    PROPERTY_TYPE_HUMIDITY,
     TOGGLE_INSTANCE_PAUSE,
     TYPE_MEDIA_DEVICE,
     TYPE_MEDIA_DEVICE_TV,
@@ -170,9 +169,9 @@ async def test_yandex_entity_properties(hass):
         entity_config={
             state.entity_id: {
                 const.CONF_ENTITY_PROPERTIES: [{
-                    const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_VOLTAGE
+                    const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_VOLTAGE
                 }, {
-                    const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_BUTTON
+                    const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON
                 }]
             }
         }
@@ -373,8 +372,7 @@ async def test_yandex_entity_serialize(hass):
     prop_temp = TemperatureProperty(hass, BASIC_CONFIG, state_temp)
     prop_humidity_custom = CustomEntityProperty.get(hass, BASIC_CONFIG, state, {
         CONF_ENTITY_PROPERTY_ENTITY: state_humidity.entity_id,
-        CONF_ENTITY_PROPERTY_TYPE: PROPERTY_TYPE_HUMIDITY,
-
+        CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
     })
     prop_voltage = VoltageProperty(hass, BASIC_CONFIG, state_voltage)
 

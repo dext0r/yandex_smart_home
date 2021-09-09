@@ -89,20 +89,20 @@ async def test_property_custom(hass, domain, instance):
 async def test_property_custom_get_value_event(hass):
     state = State('binary_sensor.test', STATE_ON)
     prop = CustomEntityProperty.get(hass, config, state, {
-        const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_BUTTON,
+        const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON,
     })
     assert prop.supported(state.domain, 0, {}, {})
     assert prop.get_value() is None
 
     state = State('binary_sensor.test', STATE_UNAVAILABLE)
     prop = CustomEntityProperty.get(hass, config, state, {
-        const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_GAS,
+        const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_GAS,
     })
     assert prop.get_value() is None
 
     state = State('binary_sensor.test', STATE_ON)
     prop = CustomEntityProperty.get(hass, config, state, {
-        const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_GAS,
+        const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_GAS,
     })
     assert prop.get_value() == 'detected'
 
@@ -110,7 +110,7 @@ async def test_property_custom_get_value_event(hass):
 async def test_property_custom_get_value_float(hass):
     state = State('sensor.test', '3.36')
     prop = CustomEntityProperty.get(hass, config, state, {
-        const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_TEMPERATURE,
+        const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
     })
     assert prop.supported(state.domain, 0, {}, {})
     assert prop.get_value() == 3.36
@@ -126,7 +126,7 @@ async def test_property_custom_get_value_float(hass):
 
     with pytest.raises(SmartHomeError) as e:
         prop = CustomEntityProperty.get(hass, config, state, {
-            const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_TEMPERATURE,
+            const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
             const.CONF_ENTITY_PROPERTY_ATTRIBUTE: 'value'
         })
         prop.get_value()
@@ -136,7 +136,7 @@ async def test_property_custom_get_value_float(hass):
     state = State('sensor.test', '3')
     with pytest.raises(SmartHomeError) as e:
         CustomEntityProperty.get(hass, config, state, {
-            const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_TEMPERATURE,
+            const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
             const.CONF_ENTITY_PROPERTY_ENTITY: 'sensor.test_2'
         })
     assert e.value.code == const.ERR_DEVICE_UNREACHABLE
@@ -144,7 +144,7 @@ async def test_property_custom_get_value_float(hass):
 
     hass.states.async_set('sensor.test_2', '4.52')
     prop = CustomEntityProperty.get(hass, config, state, {
-        const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_TEMPERATURE,
+        const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
         const.CONF_ENTITY_PROPERTY_ENTITY: 'sensor.test_2'
     })
     assert prop.get_value() == 4.52
@@ -153,7 +153,7 @@ async def test_property_custom_get_value_float(hass):
         'value': 9.99
     })
     prop = CustomEntityProperty.get(hass, config, state, {
-        const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_TEMPERATURE,
+        const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
         const.CONF_ENTITY_PROPERTY_ENTITY: 'sensor.test_2',
         const.CONF_ENTITY_PROPERTY_ATTRIBUTE: 'value'
     })
@@ -161,8 +161,8 @@ async def test_property_custom_get_value_float(hass):
 
 
 @pytest.mark.parametrize('instance,unit,value', [
-    (const.PROPERTY_TYPE_PRESSURE, 'mmHg', 100),
-    (const.PROPERTY_TYPE_TVOC, 'ppb', 449.63)
+    (const.FLOAT_INSTANCE_PRESSURE, 'mmHg', 100),
+    (const.FLOAT_INSTANCE_TVOC, 'ppb', 449.63)
 ])
 async def test_property_custom_get_value_float_conversion(hass, instance: str, unit, value):
     state = State('sensor.test', '100')

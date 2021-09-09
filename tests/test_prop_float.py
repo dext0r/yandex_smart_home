@@ -69,9 +69,9 @@ async def test_property_float_humidity(hass, domain, device_class, attribute, su
 
     state = State(f'{domain}.test', value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_HUMIDITY)
+        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_HUMIDITY)
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_HUMIDITY)
+        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_HUMIDITY)
         return
 
     assert prop.retrievable
@@ -112,9 +112,9 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
 
     state = State(f'{domain}.test', value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_TEMPERATURE)
+        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_TEMPERATURE)
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_TEMPERATURE)
+        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_TEMPERATURE)
         return
 
     assert prop.retrievable
@@ -146,7 +146,7 @@ def test_property_float_pressure(hass, yandex_pressure_unit, v):
         ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE
     })
 
-    prop = get_exact_one_property(hass, config, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_PRESSURE)
+    prop = get_exact_one_property(hass, config, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_PRESSURE)
     with pytest.raises(SmartHomeError):
         prop.get_value()
 
@@ -154,7 +154,7 @@ def test_property_float_pressure(hass, yandex_pressure_unit, v):
         ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
         ATTR_UNIT_OF_MEASUREMENT: const.PRESSURE_UNIT_MMHG
     })
-    prop = get_exact_one_property(hass, config, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_PRESSURE)
+    prop = get_exact_one_property(hass, config, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_PRESSURE)
     assert prop.retrievable
     assert prop.parameters() == {
         'instance': 'pressure',
@@ -185,9 +185,9 @@ async def test_property_float_illuminance(hass, domain, device_class, attribute,
 
     state = State(f'{domain}.test', value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_ILLUMINATION)
+        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_ILLUMINATION)
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_ILLUMINATION)
+        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_ILLUMINATION)
         return
 
     assert prop.retrievable
@@ -208,11 +208,11 @@ async def test_property_float_illuminance(hass, domain, device_class, attribute,
 ])
 async def test_property_float_water_level(hass, domain, attribute, supported):
     state = State(f'{domain}.test', STATE_ON, {attribute: '90'})
-    assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.PROPERTY_TYPE_WATER_LEVEL)
+    assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.FLOAT_INSTANCE_WATER_LEVEL)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_WATER_LEVEL)
+        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_WATER_LEVEL)
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_WATER_LEVEL)
+        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_WATER_LEVEL)
         return
 
     assert prop.retrievable
@@ -245,9 +245,9 @@ async def test_property_float_co2(hass, domain, device_class, attribute, support
 
     state = State(f'{domain}.test', value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_CO2_LEVEL)
+        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_CO2_LEVEL)
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_CO2_LEVEL)
+        assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_CO2_LEVEL)
         return
 
     assert prop.retrievable
@@ -263,9 +263,9 @@ async def test_property_float_co2(hass, domain, device_class, attribute, support
 
 
 @pytest.mark.parametrize('attribute,instance', [
-    (air_quality.ATTR_PM_0_1, const.PROPERTY_TYPE_PM1_DENSITY),
-    (air_quality.ATTR_PM_2_5, const.PROPERTY_TYPE_PM2_5_DENSITY),
-    (air_quality.ATTR_PM_10, const.PROPERTY_TYPE_PM10_DENSITY),
+    (air_quality.ATTR_PM_0_1, const.FLOAT_INSTANCE_PM1_DENSITY),
+    (air_quality.ATTR_PM_2_5, const.FLOAT_INSTANCE_PM2_5_DENSITY),
+    (air_quality.ATTR_PM_10, const.FLOAT_INSTANCE_PM10_DENSITY),
 ])
 async def test_property_float_pm(hass, attribute, instance):
     state = State('air_quality.test', STATE_ON, {attribute: 300})
@@ -289,16 +289,16 @@ async def test_property_float_pm(hass, attribute, instance):
 ])
 async def test_property_float_tvoc(hass, unit, v):
     state = State('air_quality.test', STATE_ON,)
-    assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_TVOC)
+    assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_TVOC)
 
     state = State('air_quality.test', STATE_ON, {
         'total_volatile_organic_compounds': 30,
         ATTR_UNIT_OF_MEASUREMENT: unit
     })
-    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_TVOC)
+    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_TVOC)
 
     assert prop.retrievable
-    assert prop.parameters() == {'instance': const.PROPERTY_TYPE_TVOC, 'unit': 'unit.density.mcg_m3'}
+    assert prop.parameters() == {'instance': const.FLOAT_INSTANCE_TVOC, 'unit': 'unit.density.mcg_m3'}
     assert prop.get_value() == v
 
     prop.state = State('air_quality.test', STATE_ON, {'total_volatile_organic_compounds': None})
@@ -306,27 +306,27 @@ async def test_property_float_tvoc(hass, unit, v):
 
 
 @pytest.mark.parametrize('domain,device_class,attribute,instance,unit,supported', [
-    (binary_sensor.DOMAIN, DEVICE_CLASS_VOLTAGE, None, const.PROPERTY_TYPE_VOLTAGE, 'unit.volt', False),
-    (sensor.DOMAIN, DEVICE_CLASS_VOLTAGE, None, const.PROPERTY_TYPE_VOLTAGE, 'unit.volt', True),
-    (sensor.DOMAIN, None, None, const.PROPERTY_TYPE_VOLTAGE, 'unit.volt', False),
-    (switch.DOMAIN, None, ATTR_VOLTAGE, const.PROPERTY_TYPE_VOLTAGE, 'unit.volt', True),
-    (switch.DOMAIN, None, None, const.PROPERTY_TYPE_VOLTAGE, 'unit.volt', False),
-    (light.DOMAIN, None, ATTR_VOLTAGE, const.PROPERTY_TYPE_VOLTAGE, 'unit.volt', True),
-    (light.DOMAIN, None, None, const.PROPERTY_TYPE_VOLTAGE, 'unit.volt', False),
+    (binary_sensor.DOMAIN, DEVICE_CLASS_VOLTAGE, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
+    (sensor.DOMAIN, DEVICE_CLASS_VOLTAGE, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', True),
+    (sensor.DOMAIN, None, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
+    (switch.DOMAIN, None, ATTR_VOLTAGE, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', True),
+    (switch.DOMAIN, None, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
+    (light.DOMAIN, None, ATTR_VOLTAGE, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', True),
+    (light.DOMAIN, None, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
 
-    (binary_sensor.DOMAIN, DEVICE_CLASS_CURRENT, None, const.PROPERTY_TYPE_AMPERAGE, 'unit.ampere', False),
-    (sensor.DOMAIN, DEVICE_CLASS_CURRENT, None, const.PROPERTY_TYPE_AMPERAGE, 'unit.ampere', True),
-    (sensor.DOMAIN, None, None, const.PROPERTY_TYPE_AMPERAGE, 'unit.ampere', False),
-    (switch.DOMAIN, None, 'current', const.PROPERTY_TYPE_AMPERAGE, 'unit.ampere', True),
-    (switch.DOMAIN, None, None, const.PROPERTY_TYPE_AMPERAGE, 'unit.ampere', False),
-    (light.DOMAIN, None, 'current', const.PROPERTY_TYPE_AMPERAGE, 'unit.ampere', True),
-    (light.DOMAIN, None, None, const.PROPERTY_TYPE_AMPERAGE, 'unit.ampere', False),
+    (binary_sensor.DOMAIN, DEVICE_CLASS_CURRENT, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', False),
+    (sensor.DOMAIN, DEVICE_CLASS_CURRENT, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', True),
+    (sensor.DOMAIN, None, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', False),
+    (switch.DOMAIN, None, 'current', const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', True),
+    (switch.DOMAIN, None, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', False),
+    (light.DOMAIN, None, 'current', const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', True),
+    (light.DOMAIN, None, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', False),
 
-    (sensor.DOMAIN, DEVICE_CLASS_POWER, None, const.PROPERTY_TYPE_POWER, 'unit.watt', True),
-    (sensor.DOMAIN, None, None, const.PROPERTY_TYPE_POWER, 'unit.watt', False),
-    (switch.DOMAIN, None, 'power', const.PROPERTY_TYPE_POWER, 'unit.watt', True),
-    (switch.DOMAIN, None, 'load_power', const.PROPERTY_TYPE_POWER, 'unit.watt', True),
-    (switch.DOMAIN, None, None, const.PROPERTY_TYPE_POWER, 'unit.watt', False),
+    (sensor.DOMAIN, DEVICE_CLASS_POWER, None, const.FLOAT_INSTANCE_POWER, 'unit.watt', True),
+    (sensor.DOMAIN, None, None, const.FLOAT_INSTANCE_POWER, 'unit.watt', False),
+    (switch.DOMAIN, None, 'power', const.FLOAT_INSTANCE_POWER, 'unit.watt', True),
+    (switch.DOMAIN, None, 'load_power', const.FLOAT_INSTANCE_POWER, 'unit.watt', True),
+    (switch.DOMAIN, None, None, const.FLOAT_INSTANCE_POWER, 'unit.watt', False),
 ])
 async def test_property_float_simple(hass, domain, device_class, attribute, instance: str, unit, supported):
     attributes = {}
@@ -364,8 +364,8 @@ async def test_property_float_battery_class(hass, domain):
     state = State(f'{domain}.test', '50', {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY
     })
-    assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.PROPERTY_TYPE_BATTERY_LEVEL)
-    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_BATTERY_LEVEL)
+    assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
+    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
     assert prop.retrievable
     assert prop.parameters() == {'instance': 'battery_level', 'unit': 'unit.percent'}
     assert prop.get_value() == 50
@@ -387,8 +387,8 @@ async def test_property_float_battery_attr(hass, domain):
     state = State(f'{domain}.test', STATE_ON, {
         ATTR_BATTERY_LEVEL: 50
     })
-    assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.PROPERTY_TYPE_BATTERY_LEVEL)
-    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.PROPERTY_TYPE_BATTERY_LEVEL)
+    assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
+    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
     assert prop.retrievable
     assert prop.parameters() == {'instance': 'battery_level', 'unit': 'unit.percent'}
     assert prop.get_value() == 50

@@ -128,10 +128,10 @@ async def test_notifier_property_entities(hass, hass_admin_user):
                     }
                 },
                 const.CONF_ENTITY_PROPERTIES: [{
-                    const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_TEMPERATURE,
+                    const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
                     const.CONF_ENTITY_PROPERTY_ENTITY: 'sensor.temperature'
                 }, {
-                    const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_HUMIDITY,
+                    const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
                     const.CONF_ENTITY_PROPERTY_ENTITY: 'sensor.humidity'
                 }]
             },
@@ -140,7 +140,7 @@ async def test_notifier_property_entities(hass, hass_admin_user):
                 const.CONF_ENTITY_CUSTOM_TOGGLES: {},
                 const.CONF_ENTITY_CUSTOM_RANGES: {},
                 const.CONF_ENTITY_PROPERTIES: [{
-                    const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_HUMIDITY,
+                    const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
                     const.CONF_ENTITY_PROPERTY_ENTITY: 'sensor.humidity'
                 }]
             }
@@ -175,7 +175,7 @@ async def test_notifier_event_handler(hass, hass_admin_user):
                 const.CONF_ENTITY_CUSTOM_TOGGLES: {},
                 const.CONF_ENTITY_CUSTOM_RANGES: {},
                 const.CONF_ENTITY_PROPERTIES: [{
-                    const.CONF_ENTITY_PROPERTY_TYPE: const.PROPERTY_TYPE_HUMIDITY,
+                    const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
                     const.CONF_ENTITY_PROPERTY_ENTITY: 'sensor.humidity'
                 }]
             }

@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def property_type_validate(property_type: str) -> str:
-    if property_type not in const.PROPERTY_TYPE_TO_UNITS and property_type not in const.PROPERTY_TYPE_EVENT_VALUES:
+    if property_type not in const.FLOAT_INSTANCES and property_type not in const.EVENT_INSTANCES:
         raise vol.Invalid(
             f'Property type {property_type!r} is not supported. '
             f'See valid types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html and '

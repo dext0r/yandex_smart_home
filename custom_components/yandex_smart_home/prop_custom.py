@@ -17,15 +17,15 @@ from .const import (
     CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
     CONF_PRESSURE_UNIT,
     ERR_DEVICE_UNREACHABLE,
+    EVENT_INSTANCES,
+    FLOAT_INSTANCES,
     PRESSURE_UNITS_TO_YANDEX_UNITS,
-    PROPERTY_TYPE_EVENT_VALUES,
-    PROPERTY_TYPE_TO_UNITS,
 )
 from .error import SmartHomeError
 from .helpers import Config
 from .prop import AbstractProperty
 from .prop_event import EventProperty
-from .prop_float import FloatProperty
+from .prop_float import PROPERTY_FLOAT_INSTANCE_TO_UNITS, FloatProperty
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class CustomEntityProperty(AbstractProperty, ABC):
                 )
 
         if property_state.domain == binary_sensor.DOMAIN:
-            if instance not in PROPERTY_TYPE_EVENT_VALUES:
+            if instance not in EVENT_INSTANCES:
                 raise SmartHomeError(
                     ERR_DEVICE_UNREACHABLE,
                     f'Unsupported entity {property_state.entity_id} for {instance} instance '
@@ -64,7 +64,7 @@ class CustomEntityProperty(AbstractProperty, ABC):
 
             return CustomEventEntityProperty(hass, config, state, property_state, property_config)
         elif property_state.domain == sensor.DOMAIN:
-            if instance not in PROPERTY_TYPE_TO_UNITS and instance in PROPERTY_TYPE_EVENT_VALUES:
+            if instance not in FLOAT_INSTANCES and instance in EVENT_INSTANCES:
                 # TODO: battery_level and water_level cannot be events for sensor domain
                 return CustomEventEntityProperty(hass, config, state, property_state, property_config)
 
@@ -104,9 +104,9 @@ class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):
                  property_state: State, property_config: dict[str, str]):
         super().__init__(hass, config, state, property_state, property_config)
 
-        self.instance_unit = PROPERTY_TYPE_TO_UNITS[self.instance]
+        self.instance_unit = PROPERTY_FLOAT_INSTANCE_TO_UNITS[self.instance]
 
-        if self.instance == const.PROPERTY_TYPE_PRESSURE:
+        if self.instance == const.FLOAT_INSTANCE_PRESSURE:
             self.instance_unit = PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]]
 
     def parameters(self):
@@ -118,7 +118,7 @@ class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):
     def get_value(self):
         value = super().get_value()
 
-        if self.instance in [const.PROPERTY_TYPE_PRESSURE, const.PROPERTY_TYPE_TVOC]:
+        if self.instance in [const.FLOAT_INSTANCE_PRESSURE, const.FLOAT_INSTANCE_TVOC]:
             value_unit = self.property_config.get(CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
                                                   self.property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
             return self.convert_value(value, value_unit)
@@ -131,7 +131,7 @@ class CustomEventEntityProperty(CustomEntityProperty, EventProperty):
                  property_state: State, property_config: dict[str, str]):
         super().__init__(hass, config, state, property_state, property_config)
 
-        if self.instance in [const.PROPERTY_TYPE_BUTTON, const.PROPERTY_TYPE_VIBRATION]:
+        if self.instance in [const.EVENT_INSTANCE_BUTTON, const.EVENT_INSTANCE_VIBRATION]:
             self.retrievable = False
 
     def get_value(self):
