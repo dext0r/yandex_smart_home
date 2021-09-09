@@ -19,13 +19,12 @@ from .const import (
     ERR_DEVICE_UNREACHABLE,
     EVENT_INSTANCES,
     FLOAT_INSTANCES,
-    PRESSURE_UNITS_TO_YANDEX_UNITS,
 )
 from .error import SmartHomeError
 from .helpers import Config
 from .prop import AbstractProperty
 from .prop_event import EventProperty
-from .prop_float import PROPERTY_FLOAT_INSTANCE_TO_UNITS, FloatProperty
+from .prop_float import PRESSURE_UNITS_TO_YANDEX_UNITS, PROPERTY_FLOAT_INSTANCE_TO_UNITS, FloatProperty
 
 _LOGGER = logging.getLogger(__name__)
 
