@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from homeassistant.components import binary_sensor, climate, sensor
+from homeassistant.const import MINOR_VERSION
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
@@ -97,15 +98,16 @@ async def test_property_demo_platform(hass):
     props = list((p.type, p.instance) for p in entity.properties())
     assert props == [('devices.properties.float', 'co2_level'), ('devices.properties.float', 'battery_level')]
 
-    state = hass.states.get('sensor.power_consumption')
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.float', 'power')]
+    if MINOR_VERSION > 7:
+        state = hass.states.get('sensor.power_consumption')
+        entity = YandexEntity(hass, BASIC_CONFIG, state)
+        props = list((p.type, p.instance) for p in entity.properties())
+        assert props == [('devices.properties.float', 'power')]
 
-    state = hass.states.get('sensor.today_energy')
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    props = list((p.type, p.instance) for p in entity.properties())
-    assert props == []
+        state = hass.states.get('sensor.today_energy')
+        entity = YandexEntity(hass, BASIC_CONFIG, state)
+        props = list((p.type, p.instance) for p in entity.properties())
+        assert props == []
 
     state = hass.states.get('binary_sensor.basement_floor_wet')
     entity = YandexEntity(hass, BASIC_CONFIG, state)

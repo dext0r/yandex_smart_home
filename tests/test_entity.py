@@ -12,7 +12,6 @@ from homeassistant.const import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
-    ELECTRIC_POTENTIAL_VOLT,
     PERCENTAGE,
     SERVICE_TURN_OFF,
     STATE_OFF,
@@ -360,7 +359,7 @@ async def test_yandex_entity_serialize(hass):
     hass.states.async_set(state_humidity.entity_id, state_humidity.state, state_humidity.attributes)
 
     state_voltage = State('sensor.voltage', '220', attributes={
-        ATTR_UNIT_OF_MEASUREMENT: ELECTRIC_POTENTIAL_VOLT,
+        ATTR_UNIT_OF_MEASUREMENT: 'V',
         ATTR_DEVICE_CLASS: DEVICE_CLASS_VOLTAGE,
     })
 

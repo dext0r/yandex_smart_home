@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from homeassistant.components import climate, cover, fan, humidifier, light, lock, media_player, switch
-from homeassistant.const import STATE_ON
+from homeassistant.const import MINOR_VERSION, STATE_ON
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
@@ -297,11 +297,12 @@ async def test_capability_demo_platform(hass):
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [('devices.capabilities.on_off', 'on')]
 
-    state = hass.states.get('lock.poorly_installed_door')
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == 'devices.types.openable'
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
-    assert capabilities == [('devices.capabilities.on_off', 'on')]
+    if MINOR_VERSION > 7:
+        state = hass.states.get('lock.poorly_installed_door')
+        entity = YandexEntity(hass, BASIC_CONFIG, state)
+        assert entity.yandex_device_type == 'devices.types.openable'
+        capabilities = list((c.type, c.instance) for c in entity.capabilities())
+        assert capabilities == [('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('media_player.bedroom')
     entity = YandexEntity(hass, BASIC_CONFIG, state)

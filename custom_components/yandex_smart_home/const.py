@@ -2,7 +2,6 @@
 from homeassistant.components import (
     air_quality,
     binary_sensor,
-    camera,
     climate,
     cover,
     fan,
@@ -89,7 +88,6 @@ TYPE_OTHER = PREFIX_TYPES + 'other'
 
 DOMAIN_TO_YANDEX_TYPES = {
     binary_sensor.DOMAIN: TYPE_SENSOR,
-    camera.DOMAIN: TYPE_OTHER,
     climate.DOMAIN: TYPE_THERMOSTAT,
     cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
     fan.DOMAIN: TYPE_HUMIDIFIER,

@@ -7,7 +7,6 @@ from homeassistant.const import (
     ATTR_VOLTAGE,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
-    ELECTRIC_POTENTIAL_VOLT,
     EVENT_HOMEASSISTANT_STARTED,
     EVENT_STATE_CHANGED,
     PERCENTAGE,
@@ -233,7 +232,7 @@ async def test_notifier_event_handler(hass, hass_admin_user):
 
         state_switch.attributes = {
             ATTR_VOLTAGE: '3.5',
-            ATTR_UNIT_OF_MEASUREMENT: ELECTRIC_POTENTIAL_VOLT,
+            ATTR_UNIT_OF_MEASUREMENT: 'V',
         }
         hass.states.async_set(state_switch.entity_id, state_switch.state, state_switch.attributes)
         await hass.async_block_till_done()
@@ -241,7 +240,7 @@ async def test_notifier_event_handler(hass, hass_admin_user):
 
         state_switch.attributes = {
             ATTR_VOLTAGE: '3',
-            ATTR_UNIT_OF_MEASUREMENT: ELECTRIC_POTENTIAL_VOLT,
+            ATTR_UNIT_OF_MEASUREMENT: 'V',
         }
         hass.states.async_set(state_switch.entity_id, state_switch.state, state_switch.attributes)
         await hass.async_block_till_done()

@@ -18,6 +18,7 @@ from homeassistant.const import (
     ATTR_SUPPORTED_FEATURES,
     CONF_ENTITY_ID,
     CONF_SERVICE,
+    MINOR_VERSION,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     STATE_OFF,
@@ -170,11 +171,12 @@ async def test_capability_onoff_lock(hass):
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
-    for s in [lock.STATE_UNLOCKING, lock.STATE_LOCKING]:
-        state_other = State('lock.test', s)
-        cap = get_exact_one_capability(hass, BASIC_CONFIG, state_other, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    if MINOR_VERSION > 7:
+        for s in [lock.STATE_UNLOCKING, lock.STATE_LOCKING]:
+            state_other = State('lock.test', s)
+            cap = get_exact_one_capability(hass, BASIC_CONFIG, state_other, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
-        assert not cap.get_value()
+            assert not cap.get_value()
 
     state.state = lock.STATE_LOCKED
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
