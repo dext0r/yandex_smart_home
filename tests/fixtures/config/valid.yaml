@@ -5,6 +5,7 @@ yandex_smart_home:
       user_id: e8701ad48ba05a91604e480dd60899a3
   settings:
     pressure_unit: mmHg
+    beta: true
   filter:
     include_domains:
       - switch

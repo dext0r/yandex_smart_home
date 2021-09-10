@@ -181,6 +181,7 @@ SETTINGS_SCHEMA = vol.Schema({
     vol.Optional(const.CONF_PRESSURE_UNIT, default=const.PRESSURE_UNIT_MMHG): vol.Schema(
         vol.All(str, pressure_unit_validate)
     ),
+    vol.Optional(const.CONF_BETA, default=False): cv.boolean
 })
 
 YANDEX_SMART_HOME_SCHEMA = vol.All(

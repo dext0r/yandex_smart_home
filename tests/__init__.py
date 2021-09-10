@@ -5,6 +5,7 @@ from typing import Any, Callable, Optional
 
 from homeassistant.core import HomeAssistant
 
+from custom_components.yandex_smart_home.const import CONF_BETA
 from custom_components.yandex_smart_home.helpers import Config, RequestData
 
 
@@ -16,7 +17,9 @@ class MockConfig(Config):
                  entity_config: Optional[dict[str, Any]] = None):
         """Initialize the configuration."""
         self._hass = hass
-        self.settings = settings or {}
+        self.settings = settings or {
+            CONF_BETA: True
+        }
         self.notifier = notifier or []
         self._should_expose = should_expose
         self.entity_config = entity_config or {}

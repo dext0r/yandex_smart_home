@@ -15,7 +15,8 @@ from . import MockConfig
 
 config = MockConfig(
     settings={
-        const.CONF_PRESSURE_UNIT: const.PRESSURE_UNIT_MMHG
+        const.CONF_PRESSURE_UNIT: const.PRESSURE_UNIT_MMHG,
+        const.CONF_BETA: True
     }
 )
 
@@ -84,6 +85,15 @@ async def test_property_custom(hass, domain, instance):
         assert not prop.retrievable
     else:
         assert prop.retrievable
+
+
+async def test_property_custom_no_beta(hass):
+    state = State('binary_sensor.test', STATE_ON)
+    config_no_beta = MockConfig(settings={const.CONF_BETA: False})
+    prop = CustomEntityProperty.get(hass, config_no_beta, state, {
+        const.CONF_ENTITY_PROPERTY_TYPE: 'button'
+    })
+    assert prop.supported() is False
 
 
 async def test_property_custom_get_value_event(hass):
