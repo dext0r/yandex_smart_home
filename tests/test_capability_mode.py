@@ -7,7 +7,13 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability_mode import CAPABILITIES_MODE, ModeCapability
+from custom_components.yandex_smart_home.capability_mode import (
+    CAPABILITIES_MODE,
+    FanSpeedCapabilityFanLegacy,
+    FanSpeedCapabilityFanViaPercentage,
+    FanSpeedCapabilityFanViaPreset,
+    ModeCapability,
+)
 from custom_components.yandex_smart_home.const import (
     MODE_INSTANCE_CLEANUP_MODE,
     MODE_INSTANCE_FAN_SPEED,
@@ -283,9 +289,17 @@ async def test_capability_mode_fan_speed_fan_legacy(hass):
 
     state = State('fan.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: fan.SUPPORT_SET_SPEED,
+        fan.ATTR_PERCENTAGE_STEP: 1
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+    assert isinstance(cap, FanSpeedCapabilityFanViaPercentage)
+
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_SET_SPEED,
         fan.ATTR_SPEED_LIST: ['low', 'high']
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+    assert isinstance(cap, FanSpeedCapabilityFanLegacy)
     assert cap.retrievable
     assert cap.parameters() == {
         'instance': 'fan_speed',
@@ -309,6 +323,140 @@ async def test_capability_mode_fan_speed_fan_legacy(hass):
 
 @pytest.mark.parametrize('features', [
     fan.SUPPORT_SET_SPEED | fan.SUPPORT_PRESET_MODE,
+    fan.SUPPORT_SET_SPEED
+])
+async def test_capability_mode_fan_speed_fan_via_percentage(hass, features):
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: features,
+        fan.ATTR_PERCENTAGE_STEP: 100
+    })
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: features,
+        fan.ATTR_PERCENTAGE_STEP: 100
+    })
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: features,
+        fan.ATTR_PERCENTAGE_STEP: 25
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+
+    assert isinstance(cap, FanSpeedCapabilityFanViaPercentage)
+    assert cap.retrievable
+    assert cap.modes_list_attribute is None
+    assert cap.parameters() == {
+        'instance': 'fan_speed',
+        'modes': [{'value': 'low'}, {'value': 'normal'}, {'value': 'medium'}, {'value': 'high'}]
+    }
+    assert not cap.get_value()
+
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: features,
+        fan.ATTR_PERCENTAGE_STEP: 25,
+        fan.ATTR_PERCENTAGE: 50
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+    assert cap.get_value() == 'normal'
+
+    calls = async_mock_service(hass, fan.DOMAIN, fan.SERVICE_SET_PERCENTAGE)
+    await cap.set_state(BASIC_DATA, {'value': 'medium'})
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, fan.ATTR_PERCENTAGE: 75}
+
+    for speed_count, mode_count in (
+        (1, 0),
+        (2, 2),
+        (3, 3),
+        (4, 4),
+        (5, 5),
+        (6, 6),
+        (7, 7),
+        (8, 7),
+        (10, 7),
+    ):
+        state = State('fan.test', STATE_OFF, {
+            ATTR_SUPPORTED_FEATURES: features,
+            fan.ATTR_PERCENTAGE_STEP: 100/float(speed_count),
+        })
+        if not mode_count:
+            assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+        else:
+            cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+            assert len(cap.supported_ha_modes) == mode_count
+            assert len(cap.supported_yandex_modes) == mode_count
+
+
+@pytest.mark.parametrize('features', [
+    fan.SUPPORT_SET_SPEED | fan.SUPPORT_PRESET_MODE,
+    fan.SUPPORT_SET_SPEED
+])
+async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, features):
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: features,
+        fan.ATTR_PERCENTAGE_STEP: 25,
+        fan.ATTR_PERCENTAGE: 50
+    })
+    config = MockConfig(entity_config={
+        state.entity_id: {
+            const.CONF_ENTITY_MODE_MAP: {
+                const.MODE_INSTANCE_FAN_SPEED: {
+                    const.MODE_INSTANCE_MODE_FOWL: ['50%'],
+                    const.MODE_INSTANCE_MODE_HORIZONTAL: ['100%'],
+                }
+            }
+        }
+    })
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+
+    assert isinstance(cap, FanSpeedCapabilityFanViaPercentage)
+    assert cap.retrievable
+    assert cap.parameters() == {
+        'instance': 'fan_speed',
+        'modes': [{'value': 'fowl'}, {'value': 'horizontal'}]
+    }
+    assert cap.get_value() == 'fowl'
+
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: features,
+        fan.ATTR_PERCENTAGE_STEP: 25,
+        fan.ATTR_PERCENTAGE: 25
+    })
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+    assert cap.get_value() is None
+
+    calls = async_mock_service(hass, fan.DOMAIN, fan.SERVICE_SET_PERCENTAGE)
+    await cap.set_state(BASIC_DATA, {'value': 'fowl'})
+    await cap.set_state(BASIC_DATA, {'value': 'horizontal'})
+    assert len(calls) == 2
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, fan.ATTR_PERCENTAGE: 50}
+    assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, fan.ATTR_PERCENTAGE: 100}
+
+    with pytest.raises(SmartHomeError) as e:
+        await cap.set_state(BASIC_DATA, {'value': 'low'})
+    assert e.value.code == const.ERR_INVALID_VALUE
+    assert 'Unsupported' in e.value.message
+
+    config = MockConfig(entity_config={
+        state.entity_id: {
+            const.CONF_ENTITY_MODE_MAP: {
+                const.MODE_INSTANCE_FAN_SPEED: {
+                    const.MODE_INSTANCE_MODE_FOWL: ['not-int'],
+                }
+            }
+        }
+    })
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+    with pytest.raises(SmartHomeError) as e:
+        cap.get_value()
+    assert e.value.code == const.ERR_INVALID_VALUE
+    assert 'Unsupported' in e.value.message
+
+
+@pytest.mark.parametrize('features', [
+    fan.SUPPORT_SET_SPEED | fan.SUPPORT_PRESET_MODE,
     fan.SUPPORT_PRESET_MODE
 ])
 async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
@@ -323,6 +471,7 @@ async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
         fan.ATTR_SPEED_LIST: ['1', '2']
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
+    assert isinstance(cap, FanSpeedCapabilityFanViaPreset)
     assert cap.retrievable
     assert cap.parameters() == {
         'instance': 'fan_speed',

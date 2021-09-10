@@ -3,10 +3,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
+import math
 from typing import Any
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item
 
 from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
@@ -456,6 +458,9 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
 
         if self.state.domain == fan.DOMAIN:
             if features & fan.SUPPORT_PRESET_MODE:
+                if features & fan.SUPPORT_SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
+                    return False
+
                 return super().supported()
 
         return False
@@ -484,6 +489,103 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
 
 
 @register_capability
+class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
+    def supported(self) -> bool:
+        """Test if capability is supported."""
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == fan.DOMAIN:
+            if features & fan.SUPPORT_SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
+                return super().supported()
+
+        return False
+
+    @property
+    def supported_ha_modes(self) -> list[str]:
+        if self.modes_map:
+            return list(self.modes_map.keys())
+
+        percentage_step = self.state.attributes.get(fan.ATTR_PERCENTAGE_STEP, 100)
+        speed_count = math.ceil(100 / percentage_step)
+        if speed_count == 1:
+            return []
+
+        modes = [const.MODE_INSTANCE_MODE_LOW, const.MODE_INSTANCE_MODE_HIGH]
+        if speed_count >= 3:
+            modes.insert(modes.index(const.MODE_INSTANCE_MODE_HIGH), const.MODE_INSTANCE_MODE_MEDIUM)
+        if speed_count >= 4:
+            modes.insert(modes.index(const.MODE_INSTANCE_MODE_MEDIUM), const.MODE_INSTANCE_MODE_NORMAL)
+        if speed_count >= 5:
+            modes.insert(0, const.MODE_INSTANCE_MODE_ECO)
+        if speed_count >= 6:
+            modes.insert(modes.index(const.MODE_INSTANCE_MODE_LOW), const.MODE_INSTANCE_MODE_QUIET)
+        if speed_count >= 7:
+            modes.append(const.MODE_INSTANCE_MODE_TURBO)
+
+        return modes
+
+    @property
+    def supported_yandex_modes(self) -> list[str]:
+        return self.supported_ha_modes
+
+    def get_value(self) -> str | None:
+        value = self.state.attributes.get(fan.ATTR_PERCENTAGE)
+        if not value:
+            return None
+
+        if self.modes_map:
+            for yandex_mode, values in self.modes_map.items():
+                for str_value in values:
+                    if int(value) == self._convert_mapping_speed_value(str_value):
+                        return yandex_mode
+
+            return None
+
+        return percentage_to_ordered_list_item(self.supported_ha_modes, value)
+
+    @property
+    def modes_list_attribute(self) -> str | None:
+        return None
+
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
+        """Set device state."""
+        yandex_mode = state['value']
+
+        if self.modes_map:
+            ha_modes = self.modes_map.get(yandex_mode)
+            if not ha_modes:
+                raise SmartHomeError(
+                    ERR_INVALID_VALUE,
+                    f'Unsupported mode "{yandex_mode}" for {self.instance} instance of {self.state.entity_id}. '
+                    f'Check \"modes\" setting for this entity'
+                )
+
+            ha_mode = self._convert_mapping_speed_value(ha_modes[0])
+        else:
+            ha_mode = ordered_list_item_to_percentage(self.supported_ha_modes, yandex_mode)
+
+        await self.hass.services.async_call(
+            fan.DOMAIN,
+            fan.SERVICE_SET_PERCENTAGE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                fan.ATTR_PERCENTAGE: ha_mode
+            },
+            blocking=True,
+            context=data.context
+        )
+
+    def _convert_mapping_speed_value(self, value: str) -> int:
+        try:
+            return int(value.replace('%', ''))
+        except ValueError:
+            raise SmartHomeError(
+                ERR_INVALID_VALUE,
+                f'Unsupported speed value {value!r} for {self.instance} '
+                f'instance of {self.state.entity_id}.'
+            )
+
+
+@register_capability
 class FanSpeedCapabilityFanLegacy(FanSpeedCapability):
     modes_map_default = {
         const.MODE_INSTANCE_MODE_AUTO: [fan._NOT_SPEED_AUTO, fan._NOT_SPEED_ON],
@@ -501,7 +603,7 @@ class FanSpeedCapabilityFanLegacy(FanSpeedCapability):
             if features & fan.SUPPORT_PRESET_MODE:
                 return False
 
-            if features & fan.SUPPORT_SET_SPEED:
+            if features & fan.SUPPORT_SET_SPEED and fan.ATTR_PERCENTAGE_STEP not in self.state.attributes:
                 return super().supported()
 
         return False

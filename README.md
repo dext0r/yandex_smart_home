@@ -16,6 +16,7 @@
     - [swing](#swing)
     - [program](#program)
     - [fan_speed](#fan_speed)
+    - [fan_speed (скорость в процентах)](#fan_speed-скорость-в-процентах)
     - [cleanup_mode](#cleanup_mode)
     - [input_source](#input_source)
     - [scene](#scene)
@@ -247,8 +248,25 @@ yandex_smart_home:
 * Поддерживаемые домены: `fan`, `climate`
 * Рекомендуемые значения режимов: `auto`, `quiet`, `low`, `medium`, `high`, `turbo`
 * Атрибут в Home Assistant:
-  * `fan`: `preset_modes`, `speed_list` (устарело)
+  * `fan`: `preset_modes` (если не поддерживается установка скорости в процентах, сервис `fan.set_speed_percentage`)
+  * `fan`: `speed_list` (сли не поддерживается установка скорости в процентах и режимы, устарело)
   * `climate`: `fan_modes`
+
+#### fan_speed (скорость в процентах)
+Некоторые вентиляторы позволяют устанавливать скорость вентиляции в процентах, используя сервис `fan.set_speed_percentage`. Для таких вентиляторов компонент автоматически соотнесёт режим в УДЯ и скорость в процентах для режима "Скорость вентиляции".
+
+Автоматическое соотношение можно переопределить путём указания числа с процентами в качестве режима со стороны HA в конфигурации устройства. Пример:
+```yaml
+yandex_smart_home:
+  entity_config:
+    fan.xiaomi:
+      modes:
+        fan_speed:
+          low: ['10%']  # округляйте до целого
+          normal: ['50%']
+```
+
+Рекомендуемые значения режимов: `eco`, `quiet`, `low`, `medium`, `normal`, `high`, `turbo`
 
 #### cleanup_mode
 Установка режима уборки.
