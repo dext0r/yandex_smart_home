@@ -140,6 +140,7 @@ yandex_smart_home:
 | `type`        | Автоматически   | [Список](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html#device-types__types) | Переопредление стандартного типа устройства. Например домен `switch` по умолчанию отдается как "выключатель" (`devices.types.switch`) и реагирует на команду "Алиса, включи ХХХ". А если задать `devices.types.openable`, то у такого устройства изменится иконка и фраза на "Алиса, **открой** XXX"
 | `turn_on`     | Автоматически   |                                   | Вызываемый сервис при включении устройства               |
 | `turn_off`    | Автоматически   |                                   | Вызываемый сервис при выключении устройства              |
+| `features`    |                 | `volume_mute`, `volume_set`, `next_previous_track` | Только для домена `media_player`. Явное указание поддерживаемых устройством функций. Использутся для устройств, которые меняют набор функций в зависимости от своего состояния (например Chrome Cast).
 | `channel_set_via`<br>`_media_content_id` | `false` | `true` / `false`  | Только для домена `media_player`. Выбор конкретного канала через `media_content_id`, [подробнее...](https://github.com/dmitry-k/yandex_smart_home/issues/36). Если у вас телевизор подключен через **SmartIR**, скорее всего вам нужно включить этот параметр.
 
 Пример конфигурации:
@@ -746,6 +747,11 @@ yandex_smart_home:
         max: 95
         min: 20
         precision: 2
+    media_player.cast:
+      features:
+        - volume_mute
+        - volume_set
+        - next_previous_track
     humidifier.bedroom:
       modes:
         program:

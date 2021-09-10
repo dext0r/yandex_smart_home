@@ -390,12 +390,19 @@ class VolumeCapability(RangeCapability):
             if features & media_player.SUPPORT_VOLUME_SET:
                 return True
 
+            if const.MEDIA_PLAYER_FEATURE_VOLUME_SET in self.entity_config.get(const.CONF_FEATURES, []):
+                return True
+
         return False
 
     @property
     def support_random_access(self) -> bool:
         """Test if capability supports random access."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if const.MEDIA_PLAYER_FEATURE_VOLUME_SET in self.entity_config.get(const.CONF_FEATURES, []):
+            return True
+
         return not (features & media_player.SUPPORT_VOLUME_STEP and not features & media_player.SUPPORT_VOLUME_SET)
 
     def get_value(self) -> float | None:
@@ -460,6 +467,9 @@ class ChannelCapability(RangeCapability):
                 return True
 
             if features & media_player.SUPPORT_PREVIOUS_TRACK and features & media_player.SUPPORT_NEXT_TRACK:
+                return True
+
+            if const.MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK in self.entity_config.get(const.CONF_FEATURES, []):
                 return True
 
             if self.state.entity_id == const.YANDEX_STATION_INTENTS_MEDIA_PLAYER:

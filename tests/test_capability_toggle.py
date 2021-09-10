@@ -13,13 +13,23 @@ from custom_components.yandex_smart_home.const import (
 )
 from custom_components.yandex_smart_home.error import SmartHomeError
 
-from . import BASIC_CONFIG, BASIC_DATA
-from .test_capability import assert_no_capabilities, get_exact_one_capability
+from . import BASIC_CONFIG, BASIC_DATA, MockConfig
+from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
 
 
 async def test_capability_mute(hass):
     state = State('media_player.test', STATE_ON)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_MUTE)
+
+    state = State('media_player.test', STATE_ON)
+    config = MockConfig(entity_config={
+        state.entity_id: {
+            'features': [
+                'volume_mute'
+            ]
+        }
+    })
+    assert_exact_one_capability(hass, config, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_MUTE)
 
     state = State('media_player.test', STATE_ON, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_VOLUME_MUTE

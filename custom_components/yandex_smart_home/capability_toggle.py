@@ -44,7 +44,14 @@ class MuteCapability(ToggleCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        return self.state.domain == media_player.DOMAIN and features & media_player.SUPPORT_VOLUME_MUTE
+        if self.state.domain == media_player.DOMAIN:
+            if features & media_player.SUPPORT_VOLUME_MUTE:
+                return True
+
+            if const.MEDIA_PLAYER_FEATURE_VOLUME_MUTE in self.entity_config.get(const.CONF_FEATURES, []):
+                return True
+
+        return False
 
     def get_value(self) -> bool:
         """Return the state value of this capability for this entity."""

@@ -148,12 +148,22 @@ ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema({
     })
 })
 
+
+def features_validate(features):
+    for feature in features:
+        if feature not in const.MEDIA_PLAYER_FEATURES:
+            raise vol.Invalid(f'Feature {feature!r} is not supported')
+
+    return features
+
+
 ENTITY_SCHEMA = vol.Schema({
     vol.Optional(const.CONF_NAME): cv.string,
     vol.Optional(const.CONF_ROOM): cv.string,
     vol.Optional(const.CONF_TYPE): cv.string,
     vol.Optional(const.CONF_TURN_ON): cv.SERVICE_SCHEMA,
     vol.Optional(const.CONF_TURN_OFF): cv.SERVICE_SCHEMA,
+    vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, features_validate),
     vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
     vol.Optional(const.CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID): cv.boolean,
     vol.Optional(const.CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,

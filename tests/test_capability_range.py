@@ -452,6 +452,19 @@ async def test_capability_range_brightness(hass, color_mode):
     assert calls[4].data[light.ATTR_BRIGHTNESS_STEP_PCT] == -60
 
 
+async def test_capability_range_volume(hass):
+    state = State('media_player.test', STATE_ON)
+    config = MockConfig(entity_config={
+        state.entity_id: {
+            'features': [
+                'volume_set'
+            ]
+        }
+    })
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_RANGE, RANGE_INSTANCE_VOLUME)
+    assert cap.support_random_access
+
+
 @pytest.mark.parametrize('features', [
     media_player.SUPPORT_VOLUME_SET,
     media_player.SUPPORT_VOLUME_SET | media_player.SUPPORT_VOLUME_STEP,
@@ -558,6 +571,17 @@ async def test_capability_range_volume_only_relative(hass, precision):
 async def test_capability_range_channel(hass):
     state = State('media_player.test', STATE_OFF)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
+
+    state = State('media_player.test', STATE_ON)
+    config = MockConfig(entity_config={
+        state.entity_id: {
+            'features': [
+                'next_previous_track'
+            ]
+        }
+    })
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
+    assert cap.support_random_access is False
 
 
 async def test_capability_range_channel_media_content_id(hass):
