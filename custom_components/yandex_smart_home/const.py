@@ -500,6 +500,9 @@ XIAOMI_AIRPURIFIER_PRESET_STRONG = 'Strong'
 XIAOMI_AIRPURIFIER_PRESET_FAN = 'Fan'
 XIAOMI_AIRPURIFIER_PRESET_MIDDLE = 'Middle'
 
+# https://github.com/home-assistant/core/blob/d5a8f1af1d2dc74a12fb6870a4f1cb5318f88bf9/homeassistant/components/xiaomi_miio/humidifier.py#L316
+XIAOMI_HUMIDIFIER_PRESET_MID = 'Mid'
+
 MEDIA_PLAYER_FEATURE_VOLUME_MUTE = 'volume_mute'
 MEDIA_PLAYER_FEATURE_VOLUME_SET = 'volume_set'
 MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK = 'next_previous_track'
