@@ -486,6 +486,10 @@ XIAOMI_FAN_PRESET_LEVEL_3 = 'Level 3'
 XIAOMI_FAN_PRESET_LEVEL_4 = 'Level 4'
 XIAOMI_FAN_PRESET_LEVEL_5 = 'Level 5'
 
+# https://github.com/home-assistant/core/blob/d5a8f1af1d2dc74a12fb6870a4f1cb5318f88bf9/homeassistant/components/xiaomi_miio/fan.py#L744
+XIAOMI_FAN_PRESET_NATURE = 'Nature'
+XIAOMI_FAN_PRESET_NORMAL = 'Normal'
+
 # https://github.com/home-assistant/core/blob/6830eec549c372946b19035000c10afecd2f2da3/homeassistant/components/xiaomi_miio/fan.py#L275
 XIAOMI_AIRPURIFIER_PRESET_AUTO = 'Auto'
 XIAOMI_AIRPURIFIER_PRESET_SILENT = 'Silent'

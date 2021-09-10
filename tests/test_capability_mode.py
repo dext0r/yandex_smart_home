@@ -218,7 +218,7 @@ async def test_capability_mode_swing(hass):
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_MODE: 'lr'}
 
 
-async def test_capability_mode_program(hass):
+async def test_capability_mode_program_humidifier(hass):
     state = State('humidifier.test', STATE_OFF)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_PROGRAM)
 
@@ -243,6 +243,41 @@ async def test_capability_mode_program(hass):
     await cap.set_state(BASIC_DATA, {'value': 'medium'})
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, humidifier.ATTR_MODE: 'Middle'}
+
+
+async def test_capability_mode_program_fan(hass):
+    state = State('fan.test', STATE_OFF)
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_PROGRAM)
+
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_PRESET_MODE | fan.SUPPORT_SET_SPEED,
+        fan.ATTR_PRESET_MODES: ['Nature', 'Normal']
+    })
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_PROGRAM)
+
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_PRESET_MODE | fan.SUPPORT_SET_SPEED,
+        fan.ATTR_PERCENTAGE_STEP: 50,
+        fan.ATTR_PRESET_MODES: ['Nature', 'Normal']
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_PROGRAM)
+    assert cap.retrievable
+    assert cap.parameters() == {'instance': 'program', 'modes': [{'value': 'quiet'}, {'value': 'normal'}]}
+    assert not cap.get_value()
+
+    state = State('fan.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_PRESET_MODE | fan.SUPPORT_SET_SPEED,
+        fan.ATTR_PERCENTAGE_STEP: 50,
+        fan.ATTR_PRESET_MODES: ['Nature', 'Normal'],
+        fan.ATTR_PRESET_MODE: 'Nature'
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_PROGRAM)
+    assert cap.get_value() == 'quiet'
+
+    calls = async_mock_service(hass, fan.DOMAIN, fan.SERVICE_SET_PRESET_MODE)
+    await cap.set_state(BASIC_DATA, {'value': 'normal'})
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, fan.ATTR_PRESET_MODE: 'Normal'}
 
 
 async def test_capability_mode_input_source(hass):

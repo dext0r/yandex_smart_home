@@ -219,26 +219,10 @@ class SwingCapability(ModeCapability):
         )
 
 
-@register_capability
-class ProgramCapability(ModeCapability):
+class ProgramCapability(ModeCapability, ABC):
     """Program functionality"""
 
     instance = const.MODE_INSTANCE_PROGRAM
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_FAN_ONLY: [const.XIAOMI_AIRPURIFIER_PRESET_FAN],
-        const.MODE_INSTANCE_MODE_AUTO: [humidifier.const.MODE_AUTO],
-        const.MODE_INSTANCE_MODE_QUIET: [humidifier.const.MODE_SLEEP, const.XIAOMI_AIRPURIFIER_PRESET_SILENT],
-        const.MODE_INSTANCE_MODE_LOW: [const.XIAOMI_AIRPURIFIER_PRESET_LOW],
-        const.MODE_INSTANCE_MODE_MIN: [humidifier.const.MODE_AWAY],
-        const.MODE_INSTANCE_MODE_ECO: [humidifier.const.MODE_ECO, const.XIAOMI_AIRPURIFIER_PRESET_IDLE],
-        const.MODE_INSTANCE_MODE_MEDIUM: [humidifier.const.MODE_COMFORT,
-                                          const.MODE_INSTANCE_MODE_MEDIUM, const.XIAOMI_AIRPURIFIER_PRESET_MIDDLE,
-                                          const.XIAOMI_HUMIDIFIER_PRESET_MID],
-        const.MODE_INSTANCE_MODE_NORMAL: [humidifier.const.MODE_NORMAL, const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE],
-        const.MODE_INSTANCE_MODE_MAX: [humidifier.const.MODE_HOME],
-        const.MODE_INSTANCE_MODE_HIGH: [humidifier.const.MODE_BABY, const.XIAOMI_AIRPURIFIER_PRESET_HIGH],
-        const.MODE_INSTANCE_MODE_TURBO: [humidifier.const.MODE_BOOST, const.XIAOMI_AIRPURIFIER_PRESET_STRONG],
-    }
     modes_map_index_fallback = {
         0: const.MODE_INSTANCE_MODE_ONE,
         1: const.MODE_INSTANCE_MODE_TWO,
@@ -250,6 +234,54 @@ class ProgramCapability(ModeCapability):
         7: const.MODE_INSTANCE_MODE_EIGHT,
         8: const.MODE_INSTANCE_MODE_NINE,
         9: const.MODE_INSTANCE_MODE_TEN,
+    }
+
+
+@register_capability
+class ProgramCapabilityHumidifier(ProgramCapability):
+    """Program functionality"""
+    modes_map_default = {
+        const.MODE_INSTANCE_MODE_FAN_ONLY: [
+            const.XIAOMI_AIRPURIFIER_PRESET_FAN,
+        ],
+        const.MODE_INSTANCE_MODE_AUTO: [
+            humidifier.const.MODE_AUTO,
+        ],
+        const.MODE_INSTANCE_MODE_ECO: [
+            humidifier.const.MODE_ECO,
+            const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
+        ],
+        const.MODE_INSTANCE_MODE_QUIET: [
+            humidifier.const.MODE_SLEEP,
+            const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
+        ],
+        const.MODE_INSTANCE_MODE_LOW: [
+            const.XIAOMI_AIRPURIFIER_PRESET_LOW,
+        ],
+        const.MODE_INSTANCE_MODE_MIN: [
+            humidifier.const.MODE_AWAY
+        ],
+        const.MODE_INSTANCE_MODE_MEDIUM: [
+            humidifier.const.MODE_COMFORT,
+            const.XIAOMI_AIRPURIFIER_PRESET_MEDIUM,
+            const.XIAOMI_AIRPURIFIER_PRESET_MIDDLE,
+            const.XIAOMI_HUMIDIFIER_PRESET_MID,
+        ],
+        const.MODE_INSTANCE_MODE_NORMAL: [
+            humidifier.const.MODE_NORMAL,
+            const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
+        ],
+        const.MODE_INSTANCE_MODE_MAX: [
+            humidifier.const.MODE_HOME,
+        ],
+        const.MODE_INSTANCE_MODE_HIGH: [
+            humidifier.const.MODE_BABY,
+            const.XIAOMI_AIRPURIFIER_PRESET_HIGH,
+        ],
+        const.MODE_INSTANCE_MODE_TURBO: [
+            humidifier.const.MODE_BOOST,
+            const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
+        ],
     }
 
     def supported(self) -> bool:
@@ -278,6 +310,75 @@ class ProgramCapability(ModeCapability):
             humidifier.SERVICE_SET_MODE, {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 humidifier.ATTR_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
+            },
+            blocking=True,
+            context=data.context
+        )
+
+
+@register_capability
+class ProgramCapabilityFan(ProgramCapability):
+    modes_map_default = {
+        const.MODE_INSTANCE_MODE_AUTO: [
+            fan._NOT_SPEED_AUTO,
+        ],
+        const.MODE_INSTANCE_MODE_ECO: [
+            const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
+        ],
+        const.MODE_INSTANCE_MODE_QUIET: [
+            const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
+            const.XIAOMI_FAN_PRESET_LEVEL_1,
+            const.XIAOMI_FAN_PRESET_NATURE,
+        ],
+        const.MODE_INSTANCE_MODE_LOW: [
+            const.XIAOMI_AIRPURIFIER_PRESET_LOW,
+            const.XIAOMI_FAN_PRESET_LEVEL_2,
+        ],
+        const.MODE_INSTANCE_MODE_MEDIUM: [
+            const.XIAOMI_HUMIDIFIER_PRESET_MID,
+            const.XIAOMI_FAN_PRESET_LEVEL_3,
+        ],
+        const.MODE_INSTANCE_MODE_NORMAL: [
+            const.XIAOMI_FAN_PRESET_NORMAL,
+            const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
+        ],
+        const.MODE_INSTANCE_MODE_HIGH: [
+            const.XIAOMI_FAN_PRESET_LEVEL_4,
+        ],
+        const.MODE_INSTANCE_MODE_TURBO: [
+            const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
+            const.XIAOMI_FAN_PRESET_LEVEL_5,
+        ],
+    }
+
+    def supported(self) -> bool:
+        """Test if capability is supported."""
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == fan.DOMAIN:
+            if features & fan.SUPPORT_PRESET_MODE:
+                if features & fan.SUPPORT_SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
+                    return super().supported()
+
+        return False
+
+    @property
+    def state_value_attribute(self) -> str | None:
+        """Return HA attribute for state of this entity."""
+        return fan.ATTR_PRESET_MODE
+
+    @property
+    def modes_list_attribute(self) -> str | None:
+        """Return HA attribute contains modes list for this entity."""
+        return fan.ATTR_PRESET_MODES
+
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
+        """Set device state."""
+        await self.hass.services.async_call(
+            fan.DOMAIN,
+            fan.SERVICE_SET_PRESET_MODE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
             },
             blocking=True,
             context=data.context

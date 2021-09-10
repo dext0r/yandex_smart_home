@@ -238,9 +238,11 @@ yandex_smart_home:
 #### program
 Установка какой-либо программы работы.
 
-* Поддерживаемые домены: `humidifier`
+* Поддерживаемые домены: `humidifier`, `fan`
 * Рекомендуемые значения режимов: `normal`, `eco`, `min`, `turbo`, `medium`, `max`, `quiet`, `auto`, `high`
-* Атрибут в Home Assistant: `available_modes`
+* Атрибут в Home Assistant: 
+  * `humidifier`: `available_modes`
+  * `fan`: `preset_modes` (если поддерживается установка скорости в процентах)
 
 #### fan_speed
 Установка режима работы скорости вентиляции, например, в кондиционере, вентиляторе или обогревателе.
