@@ -501,6 +501,18 @@ XIAOMI_AIRPURIFIER_PRESET_MIDDLE = 'Middle'
 # https://github.com/home-assistant/core/blob/d5a8f1af1d2dc74a12fb6870a4f1cb5318f88bf9/homeassistant/components/xiaomi_miio/humidifier.py#L316
 XIAOMI_HUMIDIFIER_PRESET_MID = 'Mid'
 
+# https://github.com/airens/tion_home_assistant#climateset_fan_mode
+TION_FAN_SPEED_1 = '1'
+TION_FAN_SPEED_2 = '2'
+TION_FAN_SPEED_3 = '3'
+TION_FAN_SPEED_4 = '4'
+TION_FAN_SPEED_5 = '5'
+TION_FAN_SPEED_6 = '6'
+
+# https://github.com/dmitry-k/yandex_smart_home/issues/173
+FAN_SPEED_MIN = 'min'
+FAN_SPEED_MAX = 'max'
+
 MEDIA_PLAYER_FEATURE_VOLUME_MUTE = 'volume_mute'
 MEDIA_PLAYER_FEATURE_VOLUME_SET = 'volume_set'
 MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK = 'next_previous_track'

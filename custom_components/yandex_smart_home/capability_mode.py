@@ -340,26 +340,45 @@ class FanSpeedCapability(ModeCapability, ABC):
     """Fan speed functionality."""
 
     instance = const.MODE_INSTANCE_FAN_SPEED
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_AUTO: [climate.const.FAN_AUTO, climate.const.FAN_ON],
-        const.MODE_INSTANCE_MODE_ECO: [const.XIAOMI_AIRPURIFIER_PRESET_IDLE],
-        const.MODE_INSTANCE_MODE_QUIET: [fan.SPEED_OFF, climate.const.FAN_OFF, 'diffuse',
-                                         const.XIAOMI_AIRPURIFIER_PRESET_SILENT, const.XIAOMI_FAN_PRESET_LEVEL_1],
-        const.MODE_INSTANCE_MODE_MIN: ['1'],
-        const.MODE_INSTANCE_MODE_LOW: [fan.SPEED_LOW, climate.const.FAN_LOW, 'min', '2',
-                                       const.XIAOMI_FAN_PRESET_LEVEL_2],
-        const.MODE_INSTANCE_MODE_MEDIUM: [fan.SPEED_MEDIUM, climate.const.FAN_MEDIUM, climate.const.FAN_MIDDLE,
-                                          'mid', '3', const.XIAOMI_FAN_PRESET_LEVEL_3],
-        const.MODE_INSTANCE_MODE_NORMAL: [const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE],
-        const.MODE_INSTANCE_MODE_HIGH: [fan.SPEED_HIGH, climate.const.FAN_HIGH, '4', const.XIAOMI_FAN_PRESET_LEVEL_4],
-        const.MODE_INSTANCE_MODE_TURBO: [climate.const.FAN_FOCUS, 'max', '5',
-                                         const.XIAOMI_AIRPURIFIER_PRESET_STRONG, const.XIAOMI_FAN_PRESET_LEVEL_5],
-        const.MODE_INSTANCE_MODE_MAX: ['6'],
-    }
 
 
 @register_capability
 class FanSpeedCapabilityClimate(FanSpeedCapability):
+    modes_map_default = {
+        const.MODE_INSTANCE_MODE_AUTO: [
+            climate.const.FAN_AUTO,
+            climate.const.FAN_ON,
+        ],
+        const.MODE_INSTANCE_MODE_QUIET: [
+            climate.const.FAN_OFF,
+            climate.const.FAN_DIFFUSE,
+        ],
+        const.MODE_INSTANCE_MODE_MIN: [
+            const.TION_FAN_SPEED_1,
+        ],
+        const.MODE_INSTANCE_MODE_LOW: [
+            climate.const.FAN_LOW,
+            const.FAN_SPEED_MIN,
+            const.TION_FAN_SPEED_2,
+        ],
+        const.MODE_INSTANCE_MODE_MEDIUM: [
+            climate.const.FAN_MEDIUM,
+            climate.const.FAN_MIDDLE,
+            const.TION_FAN_SPEED_3,
+        ],
+        const.MODE_INSTANCE_MODE_HIGH: [
+            climate.const.FAN_HIGH,
+            const.TION_FAN_SPEED_4,
+        ],
+        const.MODE_INSTANCE_MODE_TURBO: [
+            climate.const.FAN_FOCUS,
+            const.TION_FAN_SPEED_5,
+        ],
+        const.MODE_INSTANCE_MODE_MAX: [
+            const.TION_FAN_SPEED_6,
+        ],
+    }
+
     def supported(self) -> bool:
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
@@ -393,13 +412,50 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
 
 
 @register_capability
-class FanSpeedCapabilityFan(FanSpeedCapability):
+class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
+    modes_map_default = {
+        const.MODE_INSTANCE_MODE_AUTO: [
+            fan._NOT_SPEED_AUTO,
+            fan._NOT_SPEED_ON,
+        ],
+        const.MODE_INSTANCE_MODE_ECO: [
+            const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
+        ],
+        const.MODE_INSTANCE_MODE_QUIET: [
+            fan._NOT_SPEED_OFF,
+            const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
+            const.XIAOMI_FAN_PRESET_LEVEL_1,
+        ],
+        const.MODE_INSTANCE_MODE_LOW: [
+            fan.SPEED_LOW,
+            const.FAN_SPEED_MIN,
+            const.XIAOMI_FAN_PRESET_LEVEL_2,
+        ],
+        const.MODE_INSTANCE_MODE_MEDIUM: [
+            fan.SPEED_MEDIUM,
+            const.XIAOMI_HUMIDIFIER_PRESET_MID,
+            const.XIAOMI_FAN_PRESET_LEVEL_3,
+        ],
+        const.MODE_INSTANCE_MODE_NORMAL: [
+            const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
+        ],
+        const.MODE_INSTANCE_MODE_HIGH: [
+            fan.SPEED_HIGH,
+            const.XIAOMI_FAN_PRESET_LEVEL_4,
+        ],
+        const.MODE_INSTANCE_MODE_TURBO: [
+            const.FAN_SPEED_MAX,
+            const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
+            const.XIAOMI_FAN_PRESET_LEVEL_5,
+        ],
+    }
+
     def supported(self) -> bool:
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
         if self.state.domain == fan.DOMAIN:
-            if features & fan.SUPPORT_PRESET_MODE or features & fan.SUPPORT_SET_SPEED:
+            if features & fan.SUPPORT_PRESET_MODE:
                 return super().supported()
 
         return False
@@ -407,37 +463,71 @@ class FanSpeedCapabilityFan(FanSpeedCapability):
     @property
     def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
-        if self.state.attributes.get(fan.ATTR_PRESET_MODES):
-            return fan.ATTR_PRESET_MODE
-        else:
-            return fan.ATTR_SPEED
+        return fan.ATTR_PRESET_MODE
 
     @property
     def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
-        if self.state.attributes.get(fan.ATTR_PRESET_MODES):
-            return fan.ATTR_PRESET_MODES
-        else:
-            return fan.ATTR_SPEED_LIST
+        return fan.ATTR_PRESET_MODES
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        if self.modes_list_attribute == fan.ATTR_PRESET_MODES:
-            service = fan.SERVICE_SET_PRESET_MODE
-            attribute = fan.ATTR_PRESET_MODE
-        else:
-            service = fan.SERVICE_SET_SPEED
-            attribute = fan.ATTR_SPEED
-            _LOGGER.warning(
-                f'Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" '
-                f'instead for {self.instance} instance of {self.state.entity_id}'
-            )
+        await self.hass.services.async_call(
+            fan.DOMAIN,
+            fan.SERVICE_SET_PRESET_MODE, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
+            },
+            blocking=True,
+            context=data.context
+        )
+
+
+@register_capability
+class FanSpeedCapabilityFanLegacy(FanSpeedCapability):
+    modes_map_default = {
+        const.MODE_INSTANCE_MODE_AUTO: [fan._NOT_SPEED_AUTO, fan._NOT_SPEED_ON],
+        const.MODE_INSTANCE_MODE_QUIET: [fan.SPEED_OFF],
+        const.MODE_INSTANCE_MODE_LOW: [fan.SPEED_LOW],
+        const.MODE_INSTANCE_MODE_MEDIUM: [fan.SPEED_MEDIUM],
+        const.MODE_INSTANCE_MODE_HIGH: [fan.SPEED_HIGH],
+    }
+
+    def supported(self) -> bool:
+        """Test if capability is supported."""
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+        if self.state.domain == fan.DOMAIN:
+            if features & fan.SUPPORT_PRESET_MODE:
+                return False
+
+            if features & fan.SUPPORT_SET_SPEED:
+                return super().supported()
+
+        return False
+
+    @property
+    def state_value_attribute(self) -> str | None:
+        """Return HA attribute for state of this entity."""
+        return fan.ATTR_SPEED
+
+    @property
+    def modes_list_attribute(self) -> str | None:
+        """Return HA attribute contains modes list for this entity."""
+        return fan.ATTR_SPEED_LIST
+
+    async def set_state(self, data: RequestData, state: dict[str, Any]):
+        """Set device state."""
+        _LOGGER.warning(
+            f'Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" '
+            f'instead for {self.instance} instance of {self.state.entity_id}'
+        )
 
         await self.hass.services.async_call(
             fan.DOMAIN,
-            service, {
+            fan.SERVICE_SET_SPEED, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                attribute: self.get_ha_mode_by_yandex_mode(state['value'])
+                fan.ATTR_SPEED: self.get_ha_mode_by_yandex_mode(state['value'])
             },
             blocking=True,
             context=data.context

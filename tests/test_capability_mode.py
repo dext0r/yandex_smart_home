@@ -283,35 +283,35 @@ async def test_capability_mode_fan_speed_fan_legacy(hass):
 
     state = State('fan.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: fan.SUPPORT_SET_SPEED,
-        fan.ATTR_SPEED_LIST: ['1', '2']
+        fan.ATTR_SPEED_LIST: ['low', 'high']
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
     assert cap.retrievable
     assert cap.parameters() == {
         'instance': 'fan_speed',
-        'modes': [{'value': 'min'}, {'value': 'low'}]
+        'modes': [{'value': 'low'}, {'value': 'high'}]
     }
     assert not cap.get_value()
 
     state = State('fan.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: fan.SUPPORT_SET_SPEED,
-        fan.ATTR_SPEED_LIST: ['1', '2'],
-        fan.ATTR_SPEED: '2'
+        fan.ATTR_SPEED_LIST: ['low', 'medium'],
+        fan.ATTR_SPEED: 'medium'
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
-    assert cap.get_value() == 'low'
+    assert cap.get_value() == 'medium'
 
     calls = async_mock_service(hass, fan.DOMAIN, fan.SERVICE_SET_SPEED)
-    await cap.set_state(BASIC_DATA, {'value': 'min'})
+    await cap.set_state(BASIC_DATA, {'value': 'low'})
     assert len(calls) == 1
-    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, fan.ATTR_SPEED: '1'}
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, fan.ATTR_SPEED: 'low'}
 
 
 @pytest.mark.parametrize('features', [
     fan.SUPPORT_SET_SPEED | fan.SUPPORT_PRESET_MODE,
     fan.SUPPORT_PRESET_MODE
 ])
-async def test_capability_mode_fan_speed_fan(hass, features):
+async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
     state = State('fan.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: features
     })
@@ -352,7 +352,7 @@ async def test_capability_mode_fan_speed_climate(hass):
 
     state = State('climate.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: climate.SUPPORT_FAN_MODE,
-        climate.ATTR_FAN_MODES: ['Level 3', 'Level 2'],
+        climate.ATTR_FAN_MODES: ['3', '2'],
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
     assert cap.retrievable
@@ -364,8 +364,8 @@ async def test_capability_mode_fan_speed_climate(hass):
 
     state = State('climate.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: climate.SUPPORT_FAN_MODE,
-        climate.ATTR_FAN_MODES: ['Level 3', 'Level 2'],
-        climate.ATTR_FAN_MODE: 'Level 3',
+        climate.ATTR_FAN_MODES: ['3', '2'],
+        climate.ATTR_FAN_MODE:  '3',
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
     assert cap.get_value() == 'medium'
@@ -373,7 +373,7 @@ async def test_capability_mode_fan_speed_climate(hass):
     calls = async_mock_service(hass, climate.DOMAIN, climate.SERVICE_SET_FAN_MODE)
     await cap.set_state(BASIC_DATA, {'value': 'low'})
     assert len(calls) == 1
-    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_FAN_MODE: 'Level 2'}
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_FAN_MODE: '2'}
 
 
 async def test_capability_mode_cleanup_mode(hass):
