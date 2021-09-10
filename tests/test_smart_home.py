@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from homeassistant.const import STATE_OFF, STATE_ON
+from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import State
 from homeassistant.util.decorator import Registry
 
@@ -93,8 +93,10 @@ async def test_async_devices_execute(hass):
 
     switch_1 = State('switch.test_1', STATE_OFF)
     switch_2 = State('switch.test_2', STATE_OFF)
+    switch_3 = State('switch.test_3', STATE_UNAVAILABLE)
     hass.states.async_set(switch_1.entity_id, switch_1.state, switch_1.attributes)
     hass.states.async_set(switch_2.entity_id, switch_2.state, switch_2.attributes)
+    hass.states.async_set(switch_3.entity_id, switch_3.state, switch_3.attributes)
 
     with patch('custom_components.yandex_smart_home.capability.CAPABILITIES',
                [MockOnOffCapability, MockMuteCapability, MockPauseCapability]):
@@ -131,6 +133,15 @@ async def test_async_devices_execute(hass):
                         }
                     }]
                 }, {
+                    'id': switch_3.entity_id,
+                    'capabilities': [{
+                        'type': MockOnOffCapability.type,
+                        'state': {
+                            'instance': 'on',
+                            'value': True
+                        }
+                    }]
+                }, {
                     'id': 'not_exist',
                     'capabilities': [{
                         'type': MockOnOffCapability.type,
@@ -140,7 +151,6 @@ async def test_async_devices_execute(hass):
                         }
                     }]
                 }]
-
             }
         }
 
@@ -181,6 +191,9 @@ async def test_async_devices_execute(hass):
                         }
                     }
                 }]
+            }, {
+                'id': 'switch.test_3',
+                'error_code': 'DEVICE_UNREACHABLE'
             }, {
                 'id': 'not_exist',
                 'error_code': 'DEVICE_UNREACHABLE'

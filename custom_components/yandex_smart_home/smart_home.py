@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
@@ -128,7 +129,7 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
         entity_id = device['id']
         state = hass.states.get(entity_id)
 
-        if state is None:
+        if state is None or state.state == STATE_UNAVAILABLE:
             devices.append({
                 'id': entity_id,
                 'error_code': ERR_DEVICE_UNREACHABLE,
