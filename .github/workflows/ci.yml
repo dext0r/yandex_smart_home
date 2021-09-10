@@ -32,8 +32,18 @@ jobs:
         run: isort --diff --check-only tests custom_components
 
   tests:
-    name: Run tests
+    name: Run tests (${{ matrix.ha-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - ha-version: 2021.7
+            pytest-component-version: 0.4.2
+          - ha-version: 2021.8
+            pytest-component-version: 0.4.3
+          - ha-version: 2021.9
+            pytest-component-version: 0.4.4
+            latest: true
     steps:
       - uses: actions/checkout@v2
 
@@ -42,7 +52,9 @@ jobs:
           python-version: "3.9"
 
       - name: Install dependencies
-        run: pip install -r requirements_test.txt
+        run: |
+          pip install pytest-homeassistant-custom-component==${{ matrix.pytest-component-version }} \
+                      aiohttp-cors==0.7.0
 
       - name: Test with pytest
         run: |
@@ -59,6 +71,7 @@ jobs:
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v2
+        if: ${{ matrix.latest == true }}
 
   validate:
     name: Validate for HACS
