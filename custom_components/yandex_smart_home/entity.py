@@ -155,7 +155,7 @@ class YandexEntity:
             if device_entry.model:
                 device['device_info']['model'] = f'{device_entry.model} | {self.entity_id}'
             if device_entry.sw_version:
-                device['device_info']['sw_version'] = device_entry.sw_version
+                device['device_info']['sw_version'] = str(device_entry.sw_version)
 
         for item in [c.description() for c in self.capabilities()]:
             if item not in device['capabilities']:

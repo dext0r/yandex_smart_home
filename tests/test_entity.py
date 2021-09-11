@@ -242,7 +242,7 @@ async def test_yandex_entity_devices_serialize_device(hass, registries):
     device = dev_reg.async_get_or_create(
         manufacturer='Acme Inc.',
         model='Ultra Switch',
-        sw_version='0.1',
+        sw_version=57,
         identifiers={'test_2'},
         config_entry_id='test_2',
     )
@@ -260,7 +260,7 @@ async def test_yandex_entity_devices_serialize_device(hass, registries):
     assert s['device_info'] == {
         'manufacturer': 'Acme Inc.',
         'model': 'Ultra Switch | switch.test_2',
-        'sw_version': '0.1'
+        'sw_version': '57'
     }
 
     config = MockConfig(entity_config={
