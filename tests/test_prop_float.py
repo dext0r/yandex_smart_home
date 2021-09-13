@@ -15,6 +15,7 @@ from homeassistant.const import (
     DEVICE_CLASS_PRESSURE,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
+    PERCENTAGE,
     STATE_ON,
     STATE_UNKNOWN,
 )
@@ -364,19 +365,27 @@ async def test_property_float_battery_class(hass, domain):
         ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY
     })
     assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
+    assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
+
+    state = State(f'{domain}.test', '50', {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY,
+        ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE
+    })
     prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
     assert prop.retrievable
     assert prop.parameters() == {'instance': 'battery_level', 'unit': 'unit.percent'}
     assert prop.get_value() == 50
 
     prop.state = State(f'{domain}.test', STATE_UNKNOWN, {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY,
+        ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE
     })
     assert prop.get_value() is None
 
     for s in ['low', 'charging']:
         prop.state = State(f'{domain}.test', s, {
-            ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY
+            ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY,
+            ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE
         })
         assert prop.get_value() == 0
 

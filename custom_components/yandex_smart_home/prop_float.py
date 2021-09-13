@@ -25,6 +25,7 @@ from homeassistant.const import (
     DEVICE_CLASS_PRESSURE,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
+    PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
@@ -377,7 +378,8 @@ class BatteryLevelProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_BATTERY_LEVEL
 
     def supported(self) -> bool:
-        if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
+        if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY and \
+                self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == PERCENTAGE:
             return True
 
         return ATTR_BATTERY_LEVEL in self.state.attributes
