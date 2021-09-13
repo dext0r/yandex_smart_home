@@ -145,8 +145,16 @@ def test_property_float_pressure(hass, yandex_pressure_unit, v):
     state = State('sensor.test', '740', {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE
     })
+    assert_no_properties(hass, config, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_PRESSURE)
 
+    state = State('sensor.test', '740', {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
+        ATTR_UNIT_OF_MEASUREMENT: const.PRESSURE_UNIT_MMHG
+    })
     prop = get_exact_one_property(hass, config, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_PRESSURE)
+    prop.state = State('sensor.test', '740', {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE
+    })
     with pytest.raises(SmartHomeError):
         prop.get_value()
 

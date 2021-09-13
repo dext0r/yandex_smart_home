@@ -181,9 +181,10 @@ class PressureProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_PRESSURE
 
     def supported(self) -> bool:
-        # TODO: check pressure unit
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE:
+                if self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) in PRESSURE_TO_PASCAL:
+                    return True
 
         return False
 
