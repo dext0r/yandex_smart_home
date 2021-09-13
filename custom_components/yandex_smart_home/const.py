@@ -473,6 +473,14 @@ STATE_EMPTY = ''
 STATE_CHARGING = 'charging'
 STATE_LOW = 'low'
 
+# Additional attributes
+ATTR_CURRENT = 'current'
+ATTR_ILLUMINANCE = 'illuminance'
+ATTR_LOAD_POWER = 'load_power'
+ATTR_POWER = 'power'
+ATTR_TVOC = 'total_volatile_organic_compounds'
+ATTR_WATER_LEVEL = 'water_level'
+
 # Integration xiaomi_airpurifier
 ATTR_TARGET_HUMIDITY = 'target_humidity'
 DOMAIN_XIAOMI_AIRPURIFIER = 'xiaomi_miio_airpurifier'

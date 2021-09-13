@@ -206,7 +206,7 @@ class IlluminanceProperty(FloatProperty):
             if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ILLUMINANCE:
                 return True
 
-            return 'illuminance' in self.state.attributes
+            return const.ATTR_ILLUMINANCE in self.state.attributes
 
         return False
 
@@ -214,7 +214,7 @@ class IlluminanceProperty(FloatProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.float_value(self.state.state)
 
-        return self.float_value(self.state.attributes.get('illuminance'))
+        return self.float_value(self.state.attributes.get(const.ATTR_ILLUMINANCE))
 
 
 @register_property
@@ -223,12 +223,12 @@ class WaterLevelProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain in (fan.DOMAIN, humidifier.DOMAIN):
-            return 'water_level' in self.state.attributes
+            return const.ATTR_WATER_LEVEL in self.state.attributes
 
         return False
 
     def get_value(self) -> float | None:
-        return self.float_value(self.state.attributes.get('water_level'))
+        return self.float_value(self.state.attributes.get(const.ATTR_WATER_LEVEL))
 
 
 @register_property
@@ -297,16 +297,15 @@ class TVOCProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_TVOC
 
     def supported(self) -> bool:
-        # TODO: add check for ATTR_UNIT_OF_MEASUREMENT
         if self.state.domain == air_quality.DOMAIN:
-            return 'total_volatile_organic_compounds' in self.state.attributes
+            return const.ATTR_TVOC in self.state.attributes
 
         return False
 
     def get_value(self) -> float | None:
         return self.convert_value(
-            self.state.attributes.get('total_volatile_organic_compounds'),
-            self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            self.state.attributes.get(const.ATTR_TVOC),
+            self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)  # may be missing
         )
 
 
@@ -337,7 +336,7 @@ class CurrentProperty(FloatProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CURRENT
         elif self.state.domain in (switch.DOMAIN, light.DOMAIN):
-            return 'current' in self.state.attributes
+            return const.ATTR_CURRENT in self.state.attributes
 
         return False
 
@@ -345,7 +344,7 @@ class CurrentProperty(FloatProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.float_value(self.state.state)
 
-        return self.float_value(self.state.attributes.get('current'))
+        return self.float_value(self.state.attributes.get(const.ATTR_CURRENT))
 
 
 @register_property
@@ -356,7 +355,7 @@ class PowerProperty(FloatProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_POWER
         elif self.state.domain == switch.DOMAIN:
-            return 'power' in self.state.attributes or 'load_power' in self.state.attributes
+            return const.ATTR_POWER in self.state.attributes or const.ATTR_LOAD_POWER in self.state.attributes
 
         return False
 
@@ -365,10 +364,10 @@ class PowerProperty(FloatProperty):
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
         elif self.state.domain == switch.DOMAIN:
-            if 'power' in self.state.attributes:
-                value = self.state.attributes.get('power')
-            elif 'load_power' in self.state.attributes:
-                value = self.state.attributes.get('load_power')
+            if const.ATTR_POWER in self.state.attributes:
+                value = self.state.attributes.get(const.ATTR_POWER)
+            elif const.ATTR_LOAD_POWER in self.state.attributes:
+                value = self.state.attributes.get(const.ATTR_LOAD_POWER)
 
         return self.float_value(value)
 
