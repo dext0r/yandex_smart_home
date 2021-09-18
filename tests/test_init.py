@@ -116,6 +116,20 @@ async def test_valid_config(hass):
     assert config[DOMAIN].keys() == {'notifier', 'settings', 'filter', 'entity_config'}
 
 
+async def test_empty_dict_config(hass):
+    files = {YAML_CONFIG_FILE: """
+yandex_smart_home:
+  settings:
+  entity_config:
+"""}
+    with patch_yaml_files(files):
+        config = await async_integration_yaml_config(hass, DOMAIN)
+
+    assert DOMAIN in config
+    assert isinstance(config[DOMAIN]['settings'], dict)
+    assert config[DOMAIN]['entity_config'] == {}
+
+
 async def test_setup_component(hass):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 

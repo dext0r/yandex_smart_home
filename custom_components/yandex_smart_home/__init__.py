@@ -197,9 +197,12 @@ SETTINGS_SCHEMA = vol.Schema({
 YANDEX_SMART_HOME_SCHEMA = vol.All(
     vol.Schema({
         vol.Optional(const.CONF_NOTIFIER, default=[]): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
-        vol.Optional(const.CONF_SETTINGS, default={}): SETTINGS_SCHEMA,
+        vol.Optional(const.CONF_SETTINGS, default={}): vol.All(lambda value: value or {}, SETTINGS_SCHEMA),
         vol.Optional(const.CONF_FILTER, default={}): entityfilter.FILTER_SCHEMA,
-        vol.Optional(const.CONF_ENTITY_CONFIG, default={}): {cv.entity_id: ENTITY_SCHEMA},
+        vol.Optional(const.CONF_ENTITY_CONFIG, default={}): vol.All(
+            lambda value: value or {},
+            {cv.entity_id: ENTITY_SCHEMA}
+        ),
     }, extra=vol.PREVENT_EXTRA))
 
 CONFIG_SCHEMA = vol.Schema({
