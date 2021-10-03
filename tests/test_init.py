@@ -98,6 +98,17 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
 
+async def test_invalid_device_type(hass):
+    files = {YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    media_player.test:
+      type: unsupported
+"""}
+    with patch_yaml_files(files):
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+
+
 async def test_invalid_pressure_unit(hass):
     files = {YAML_CONFIG_FILE: """
 yandex_smart_home:
