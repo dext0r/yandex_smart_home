@@ -154,6 +154,22 @@ async def test_capability_mode_fallback_index(hass):
     assert cap.get_yandex_mode_by_ha_mode('mode_9') == 'ten'
     assert cap.get_yandex_mode_by_ha_mode('mode_11') is None
 
+    config = MockConfig(
+        entity_config={
+            state.entity_id: {
+                const.CONF_ENTITY_MODE_MAP: {
+                    MockModeCapability.instance: {
+                        const.MODE_INSTANCE_MODE_BABY_FOOD: ['mode_1'],
+                        const.MODE_INSTANCE_MODE_AMERICANO: ['mode_3']
+                    }
+                }
+            }
+        }
+    )
+    cap = MockFallbackModeCapability(hass, config, state)
+    assert cap.supported()
+    assert cap.supported_yandex_modes == ['baby_food', 'americano']
+
 
 async def test_capability_mode_get_value(hass, caplog):
     state = State('switch.test', STATE_OFF, {
