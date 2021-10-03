@@ -412,10 +412,6 @@ class InputSourceCapability(ModeCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
         if self.state.domain == media_player.DOMAIN and features & media_player.SUPPORT_SELECT_SOURCE:
-            if len(self.supported_yandex_modes) == len(self.modes_map_index_fallback) and \
-                    len(self.supported_ha_modes) > len(self.modes_map_index_fallback):
-                return False
-
             return super().supported()
 
         return False
@@ -429,6 +425,9 @@ class InputSourceCapability(ModeCapability):
     def state_value_attribute(self) -> str | None:
         """Return HA attribute for state of this entity."""
         return media_player.ATTR_INPUT_SOURCE
+
+    def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings=False) -> str | None:
+        return super().get_yandex_mode_by_ha_mode(ha_mode, hide_warnings=True)
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""

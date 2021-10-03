@@ -301,7 +301,7 @@ async def test_capability_mode_program_fan(hass):
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, fan.ATTR_PRESET_MODE: 'Normal'}
 
 
-async def test_capability_mode_input_source(hass):
+async def test_capability_mode_input_source(hass, caplog):
     state = State('media_player.test', STATE_OFF)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
 
@@ -309,7 +309,8 @@ async def test_capability_mode_input_source(hass):
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
         media_player.ATTR_INPUT_SOURCE_LIST: [f's{i}' for i in range(1, 15)]
     })
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
+    assert len(cap.supported_yandex_modes) == 10
 
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
@@ -322,6 +323,15 @@ async def test_capability_mode_input_source(hass):
         'modes': [{'value': 'one'}, {'value': 'two'}, {'value': 'three'}]
     }
     assert not cap.get_value()
+
+    state = State('media_player.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        media_player.ATTR_INPUT_SOURCE_LIST: ['s1', 's2', 's3'],
+        media_player.ATTR_INPUT_SOURCE: 'test'
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
+    assert cap.get_value() is None
+    assert len(caplog.records) == 0
 
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
