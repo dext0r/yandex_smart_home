@@ -58,7 +58,7 @@ class ModeCapability(AbstractCapability, ABC):
     @property
     def supported_ha_modes(self) -> list[str]:
         """Returns list of supported HA modes for this entity."""
-        return self.state.attributes.get(self.modes_list_attribute, [])
+        return self.state.attributes.get(self.modes_list_attribute, []) or []
 
     @property
     def modes_map(self) -> dict[str, list[str]]:
