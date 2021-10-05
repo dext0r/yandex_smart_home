@@ -104,7 +104,7 @@
 Отфильтровать устройства можно через словарь `filter`.
 
 Поддерживаемые фильтры: `include_domains`, `include_entities`,
-`include_entity_globs`, `exclude_domains`, `exlude_entities`, `exclude_entity_globs`.
+`include_entity_globs`, `exclude_domains`, `exclude_entities`, `exclude_entity_globs`.
 
 Приоритизация по фильтрам работает аналогично фильтрам в интеграции [Recorder](https://www.home-assistant.io/integrations/recorder/#configure-filter).
 
