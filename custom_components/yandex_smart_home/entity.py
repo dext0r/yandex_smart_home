@@ -110,6 +110,10 @@ class YandexEntity:
     @property
     def yandex_device_type(self) -> str | None:
         """Yandex type based on domain and device class."""
+        entity_config = self.config.get_entity_config(self.entity_id)
+        if CONF_TYPE in entity_config:
+            return entity_config[CONF_TYPE]
+
         device_class = self.state.attributes.get(ATTR_DEVICE_CLASS)
         domain = self.state.domain
         return DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class), DOMAIN_TO_YANDEX_TYPES.get(domain))
@@ -133,7 +137,7 @@ class YandexEntity:
         device = {
             'id': self.entity_id,
             'name': name,
-            'type': entity_config.get(CONF_TYPE, self.yandex_device_type),
+            'type': self.yandex_device_type,
             'capabilities': [],
             'properties': [],
             'device_info': {

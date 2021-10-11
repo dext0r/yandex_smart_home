@@ -321,6 +321,20 @@ async def test_yandex_entity_device_type(hass):
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == TYPE_MEDIA_DEVICE_TV
 
+    state = State('input_number.test', '40')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type is None
+
+    config = MockConfig(
+        entity_config={
+            state.entity_id: {
+                CONF_TYPE: 'other'
+            }
+        }
+    )
+    entity = YandexEntity(hass, config, state)
+    assert entity.yandex_device_type == 'other'
+
 
 async def test_yandex_entity_serialize(hass):
     class PauseCapability(ToggleCapability):
