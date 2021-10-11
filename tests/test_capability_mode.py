@@ -77,7 +77,7 @@ async def test_capability_mode_unsupported(hass):
 
 async def test_capability_mode_auto_mapping(hass, caplog):
     state = State('switch.test', STATE_OFF, {
-        'modes_list': ['mode_1', 'mode_3']
+        'modes_list': ['mode_1', 'mode_3', 'mode_4']
     })
     cap = MockModeCapability(hass, BASIC_CONFIG, state)
 
@@ -86,10 +86,14 @@ async def test_capability_mode_auto_mapping(hass, caplog):
         'instance': 'test_instance',
         'modes': [{'value': 'fowl'}, {'value': 'puerh_tea'}],
     }
-    assert cap.supported_ha_modes == ['mode_1', 'mode_3']
+    assert cap.supported_ha_modes == ['mode_1', 'mode_3', 'mode_4']
     assert cap.supported_yandex_modes == [const.MODE_INSTANCE_MODE_FOWL, const.MODE_INSTANCE_MODE_PUERH_TEA]
 
     assert cap.get_yandex_mode_by_ha_mode('invalid') is None
+    assert len(caplog.records) == 0
+
+    assert cap.get_yandex_mode_by_ha_mode('mode_4') is None
+    assert len(caplog.records) == 1
     for record in caplog.records:
         assert 'Unable to get Yandex mode' in record.message
     caplog.clear()

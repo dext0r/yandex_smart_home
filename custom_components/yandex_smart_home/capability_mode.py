@@ -105,13 +105,14 @@ class ModeCapability(AbstractCapability, ABC):
 
             raise SmartHomeError(ERR_INVALID_VALUE, err)
 
-        if not hide_warnings and rv is None and \
-                str(ha_mode).lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
-            _LOGGER.warning(
-                f'Unable to get Yandex mode for "{ha_mode}" for {self.instance} instance '
-                f'of {self.state.entity_id}. It may cause inconsistencies between Yandex and HA. '
-                f'Check \"modes\" setting for this entity'
-            )
+        if rv is None and not hide_warnings:
+            if str(ha_mode).lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+                if str(ha_mode).lower() in [str(m).lower() for m in self.supported_ha_modes]:
+                    _LOGGER.warning(
+                        f'Unable to get Yandex mode for "{ha_mode}" for {self.instance} instance '
+                        f'of {self.state.entity_id}. It may cause inconsistencies between Yandex and HA. '
+                        f'Check \"modes\" setting for this entity'
+                    )
 
         return rv
 
