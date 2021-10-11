@@ -37,12 +37,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - ha-version: 2021.7
+          - ha-version: '2021.7'
             pytest-component-version: 0.4.2
-          - ha-version: 2021.8
+          - ha-version: '2021.8'
             pytest-component-version: 0.4.3
-          - ha-version: 2021.9
+          - ha-version: '2021.9'
             pytest-component-version: 0.4.4
+          - ha-version: '2021.10'
+            pytest-component-version: 0.4.5
             latest: true
     steps:
       - uses: actions/checkout@v2
