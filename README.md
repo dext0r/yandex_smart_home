@@ -154,7 +154,7 @@ yandex_smart_home:
     fan.xiaomi_miio_device:
       name: Увлажнитель
       room: Гостинная
-      type: devices.types.humidifier
+      type: devices.types.humidifier  # параметр необязательный, вычисляется автоматически!
     switch.gate:
       name: Ворота
       room: Улица
