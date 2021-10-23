@@ -9,6 +9,7 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant, callback
 
 from .const import CONFIG, DOMAIN
+from .helpers import Config
 from .smart_home import RequestData, async_devices, async_handle_message
 
 _LOGGER = logging.getLogger(__name__)
@@ -22,26 +23,39 @@ def async_register_http(hass: HomeAssistant):
     hass.http.register_view(YandexSmartHomeView())
 
 
-class YandexSmartHomeUnauthorizedView(HomeAssistantView):
+class YandexSmartHomeView:
+    @staticmethod
+    def _get_config(request: Request) -> Config | None:
+        return request.app['hass'].data[DOMAIN][CONFIG]
+
+    def _is_direct_connection(self, request: Request) -> bool:
+        """Check if integration configured to use direct connection."""
+        config = self._get_config(request)
+        if not config:
+            return False
+
+        return config.is_direct_connection
+
+
+class YandexSmartHomeUnauthorizedView(HomeAssistantView, YandexSmartHomeView):
     """Handle Yandex Smart Home unauthorized requests."""
 
     url = f'/api/{DOMAIN}/v1.0'
     name = f'api:{DOMAIN}:unauthorized'
     requires_auth = False
 
-    # noinspection PyMethodMayBeStatic
     async def head(self, request: Request) -> Response:
         """Handle Yandex Smart Home HEAD requests."""
         _LOGGER.debug('Request: %s (HEAD)' % request.url)
 
-        if not request.app['hass'].data[DOMAIN][CONFIG]:
-            _LOGGER.debug('Integation is not enabled')
+        if not self._is_direct_connection(request):
+            _LOGGER.debug('Integration is not enabled')
             return Response(status=404)
 
         return Response(status=200)
 
 
-class YandexSmartHomePingView(HomeAssistantView):
+class YandexSmartHomePingView(HomeAssistantView, YandexSmartHomeView):
     """Handle Yandex Smart Home ping requests."""
 
     url = f'/api/{DOMAIN}/v1.0/ping'
@@ -53,21 +67,17 @@ class YandexSmartHomePingView(HomeAssistantView):
         """Handle Yandex Smart Home Get requests."""
         _LOGGER.debug('Request: %s (GET)' % request.url)
 
-        if not request.app['hass'].data[DOMAIN][CONFIG]:
-            _LOGGER.debug('Integation is not enabled')
-            return Response(text='Error: Integation is not enabled', status=503)
+        if not self._is_direct_connection(request):
+            return Response(text='Error: Integration is not enabled', status=503)
 
-        devices_sync_response = await async_devices(
-            request.app['hass'],
-            RequestData(request.app['hass'].data[DOMAIN][CONFIG], None, 'ping'),
-            {}
-        )
+        data = RequestData(self._get_config(request), None, 'ping')
+        devices_sync_response = await async_devices(request.app['hass'], data, {})
         device_count = len(devices_sync_response['devices'])
 
         return Response(text=f'OK: {device_count}', status=200)
 
 
-class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
+class YandexSmartHomeView(YandexSmartHomeUnauthorizedView, YandexSmartHomeView):
     """Handle Yandex Smart Home requests."""
 
     url = f'/api/{DOMAIN}/v1.0'
@@ -80,17 +90,15 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
     name = f'api:{DOMAIN}'
     requires_auth = True
 
-    async def _async_handle_request(self, request: Request, message: dict[str, Any]) -> Response:
-        if not request.app['hass'].data[DOMAIN][CONFIG]:
-            _LOGGER.debug('Integation is not enabled')
+    async def _async_handle_request(self, request: Request, message: dict[str, Any] | None = None) -> Response:
+        if not self._is_direct_connection(request):
+            _LOGGER.debug('Integration is not enabled')
             return Response(status=404)
 
-        data = RequestData(request.app['hass'].data[DOMAIN][CONFIG],
-                           request['hass_user'].id,
-                           request.headers.get('X-Request-Id'))
+        data = RequestData(self._get_config(request), request['hass_user'].id, request.headers.get('X-Request-Id'))
         action = request.path.replace(self.url, '', 1)
 
-        result = await async_handle_message(request.app['hass'], data, action, message)
+        result = await async_handle_message(request.app['hass'], data, action, message or {})
         response = self.json(result)
         _LOGGER.debug(f'Response: {response.text}')
         return response
@@ -99,11 +107,11 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
         """Handle Yandex Smart Home POST requests."""
         _LOGGER.debug('Request: %s (POST data: %s)' % (request.url, await request.text()))
         if str(request.url).endswith('/user/unlink'):
-            return await self._async_handle_request(request, {})
+            return await self._async_handle_request(request)
 
         return await self._async_handle_request(request, await request.json())
 
     async def get(self, request: Request) -> Response:
         """Handle Yandex Smart Home GET requests."""
         _LOGGER.debug('Request: %s' % request.url)
-        return await self._async_handle_request(request, {})
+        return await self._async_handle_request(request)

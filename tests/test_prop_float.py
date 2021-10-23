@@ -21,6 +21,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import State
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.error import SmartHomeError
@@ -137,11 +138,10 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
     (const.PRESSURE_UNIT_BAR, 0.99),
 ])
 def test_property_float_pressure(hass, yandex_pressure_unit, v):
-    config = MockConfig(
-        settings={
-            const.CONF_PRESSURE_UNIT: yandex_pressure_unit
-        }
-    )
+    entry = MockConfigEntry(data={
+        const.CONF_PRESSURE_UNIT: yandex_pressure_unit
+    })
+    config = MockConfig(entry=entry)
     state = State('sensor.test', '740', {
         ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE
     })

@@ -23,7 +23,6 @@ DOMAIN = 'yandex_smart_home'
 CONFIG = 'config'
 NOTIFIERS = 'notifiers'
 
-CONF_DISABLED = 'disabled'
 CONF_SETTINGS = 'settings'
 CONF_PRESSURE_UNIT = 'pressure_unit'
 CONF_BETA = 'beta'

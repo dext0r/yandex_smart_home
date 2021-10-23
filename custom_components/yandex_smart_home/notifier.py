@@ -7,10 +7,11 @@ import time
 from typing import Any
 
 from aiohttp import ContentTypeError
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import Event, HomeAssistant
+from homeassistant.const import EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.helpers.event import async_call_later
 
 from . import const
 from .const import CONF_NOTIFIER_OAUTH_TOKEN, CONF_NOTIFIER_SKILL_ID, CONF_NOTIFIER_USER_ID, CONFIG, DOMAIN, NOTIFIERS
@@ -77,7 +78,8 @@ class YandexNotifier:
             {'devices': devices}
         )
 
-    async def async_send_discovery(self):
+    async def async_send_discovery(self, _):
+        _LOGGER.debug(self.format_log_message('Device list update initiated'))
         await self._async_send_callback(f'{SKILL_API_URL}/{self.skill_id}/{DISCOVERY_URL}', {})
 
     # noinspection PyBroadException
@@ -147,10 +149,16 @@ class YandexNotifier:
             await self.async_send_state(devices)
 
 
-async def async_setup_notifier(hass: HomeAssistant, reload=False):
+@callback
+def async_setup_notifier(hass: HomeAssistant):
     """Set up notifiers."""
-    hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []
+    async def state_change_listener(event: Event):
+        await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
 
+    hass.bus.async_listen(EVENT_STATE_CHANGED, state_change_listener)
+
+
+async def async_start_notifier(hass: HomeAssistant):
     if not hass.data[DOMAIN][CONFIG].notifier:
         _LOGGER.debug('Notifier disabled: no config')
 
@@ -163,30 +171,13 @@ async def async_setup_notifier(hass: HomeAssistant, reload=False):
                 conf[CONF_NOTIFIER_USER_ID]
             )
             await notifier.async_validate_config()
+            async_call_later(hass, DISCOVERY_REQUEST_DELAY, notifier.async_send_discovery)
 
             hass.data[DOMAIN][NOTIFIERS].append(notifier)
         except Exception as exc:
             raise ConfigEntryNotReady from exc
 
-    async def state_change_listener(event: Event):
-        await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
 
-    async def config_reload():
-        for n in hass.data[DOMAIN][NOTIFIERS]:  # type: YandexNotifier
-            _LOGGER.debug(n.format_log_message('Device list update initiated'))
-            await n.async_send_discovery()
-
-    # noinspection PyUnusedLocal
-    async def ha_start_listener(event: Event):
-        await asyncio.sleep(DISCOVERY_REQUEST_DELAY)
-        await config_reload()
-
-    if reload:
-        await config_reload()
-    else:
-        hass.bus.async_listen(EVENT_STATE_CHANGED, state_change_listener)
-        hass.bus.async_listen(EVENT_HOMEASSISTANT_STARTED, ha_start_listener)
-
-
-async def async_unload_notifier(hass: HomeAssistant):
+@callback
+def async_unload_notifier(hass: HomeAssistant):
     hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []

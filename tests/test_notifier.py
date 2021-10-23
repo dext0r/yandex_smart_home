@@ -7,7 +7,6 @@ from homeassistant.const import (
     ATTR_VOLTAGE,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
-    EVENT_HOMEASSISTANT_STARTED,
     EVENT_STATE_CHANGED,
     PERCENTAGE,
     STATE_ON,
@@ -18,6 +17,7 @@ from homeassistant.const import (
 from homeassistant.core import State
 from homeassistant.exceptions import ConfigEntryNotReady
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.const import (
@@ -34,37 +34,48 @@ from custom_components.yandex_smart_home.notifier import (
     STATE_URL,
     YandexNotifier,
     async_setup_notifier,
+    async_start_notifier,
 )
 
 from . import BASIC_CONFIG, REQ_ID, MockConfig
 
 
-async def test_notifier_async_setup(hass, hass_admin_user):
-    config = MockConfig(
-        notifier=[{
+@pytest.fixture(autouse=True, name='mock_call_later')
+def mock_call_later_fixture():
+    with patch('custom_components.yandex_smart_home.notifier.async_call_later') as mock_call_later:
+        yield mock_call_later
+
+
+async def test_notifier_async_start(hass, mock_call_later, hass_admin_user):
+    async_setup_notifier(hass)
+
+    entry = MockConfigEntry(data={
+        const.CONF_NOTIFIER: [{
             CONF_NOTIFIER_USER_ID: hass_admin_user.id,
             CONF_NOTIFIER_OAUTH_TOKEN: 'token',
             CONF_NOTIFIER_SKILL_ID: 'skill_id',
         }, {
             CONF_NOTIFIER_USER_ID: 'invalid',
             CONF_NOTIFIER_OAUTH_TOKEN: 'token',
-            CONF_NOTIFIER_SKILL_ID: 'skill_id',
+            CONF_NOTIFIER_SKILL_ID: 'skill_id'
         }]
-    )
+    })
+    config = MockConfig(entry=entry)
     hass.data[DOMAIN] = {
         CONFIG: config,
         NOTIFIERS: [],
     }
     with pytest.raises(ConfigEntryNotReady):
-        await async_setup_notifier(hass, reload=False)
+        await async_start_notifier(hass)
 
-    config = MockConfig(
-        notifier=[{
+    entry = MockConfigEntry(data={
+        const.CONF_NOTIFIER: [{
             CONF_NOTIFIER_USER_ID: hass_admin_user.id,
             CONF_NOTIFIER_OAUTH_TOKEN: 'token',
-            CONF_NOTIFIER_SKILL_ID: 'skill_id',
+            CONF_NOTIFIER_SKILL_ID: 'skill_id'
         }]
-    )
+    })
+    config = MockConfig(entry=entry)
     hass.data[DOMAIN] = {
         CONFIG: config,
         NOTIFIERS: [],
@@ -73,11 +84,15 @@ async def test_notifier_async_setup(hass, hass_admin_user):
     with patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_send_discovery') as mock_discovery, \
          patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_event_handler') as mock_evh, \
          patch('custom_components.yandex_smart_home.notifier.DISCOVERY_REQUEST_DELAY', 0):
-        await async_setup_notifier(hass, reload=False)
+        mock_call_later.reset_mock()
+
+        await async_start_notifier(hass)
         assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
 
-        hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
         await hass.async_block_till_done()
+        mock_call_later.assert_called_once()
+
+        await mock_call_later.call_args[0][2]()
         mock_discovery.assert_called_once()
 
         hass.bus.async_fire(EVENT_STATE_CHANGED, {'test': True})
@@ -161,13 +176,16 @@ async def test_notifier_property_entities(hass, hass_admin_user):
 
 
 async def test_notifier_event_handler(hass, hass_admin_user):
-    config = MockConfig(
-        should_expose=lambda e: e != 'sensor.not_expose',
-        notifier=[{
+    entry = MockConfigEntry(data={
+        const.CONF_NOTIFIER: [{
             CONF_NOTIFIER_USER_ID: hass_admin_user.id,
             CONF_NOTIFIER_OAUTH_TOKEN: '',
-            CONF_NOTIFIER_SKILL_ID: '',
-        }],
+            CONF_NOTIFIER_SKILL_ID: ''
+        }]
+    })
+    config = MockConfig(
+        entry=entry,
+        should_expose=lambda e: e != 'sensor.not_expose',
         entity_config={
             'switch.test': {
                 const.CONF_ENTITY_CUSTOM_MODES: {},
@@ -184,9 +202,10 @@ async def test_notifier_event_handler(hass, hass_admin_user):
         CONFIG: config,
         NOTIFIERS: [],
     }
+    async_setup_notifier(hass)
+    await async_start_notifier(hass)
 
     with patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_send_state') as mock_notify:
-        await async_setup_notifier(hass, reload=False)
         assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
 
         state_switch = State('switch.test', STATE_ON, attributes={
@@ -266,7 +285,7 @@ async def test_notifier_notify_skill(hass, hass_admin_user, aioclient_mock):
     )
 
     with patch('time.time', return_value=now):
-        await notifier.async_send_discovery()
+        await notifier.async_send_discovery(None)
 
     assert aioclient_mock.call_count == 1
     assert aioclient_mock.mock_calls[0][2] == {'ts': now, 'payload': {'user_id': hass_admin_user.id}}

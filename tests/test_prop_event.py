@@ -17,6 +17,12 @@ from . import BASIC_CONFIG, MockConfig
 from .test_prop import assert_no_properties, get_exact_one_property
 
 
+class ConfigNoBeta(MockConfig):
+    @property
+    def beta(self):
+        return False
+
+
 class MockEventProperty(EventProperty):
     def supported(self) -> bool:
         return True
@@ -35,8 +41,7 @@ async def test_property_event_no_beta(hass, prop: Type[EventProperty]):
     state = State('binary_sensor.test', binary_sensor.STATE_ON, {
         ATTR_DEVICE_CLASS: binary_sensor.DEVICE_CLASS_DOOR,
     })
-    config = MockConfig(settings={const.CONF_BETA: False})
-    assert prop(hass, config, state).supported() is False
+    assert prop(hass, ConfigNoBeta(), state).supported() is False
 
 
 @pytest.mark.parametrize('device_class,supported', [

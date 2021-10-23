@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
-from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.const import SERVICE_RELOAD
-from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import config_validation as cv, entityfilter
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA
 from homeassistant.helpers.reload import async_integration_yaml_config
+from homeassistant.helpers.typing import ConfigType
 import voluptuous as vol
 
 from . import (  # noqa: F401
@@ -24,10 +24,10 @@ from . import (  # noqa: F401
     prop_event,
     prop_float,
 )
-from .const import CONF_DISABLED, CONFIG, DOMAIN, NOTIFIERS
+from .const import CONFIG, DOMAIN, NOTIFIERS
 from .helpers import Config
 from .http import async_register_http
-from .notifier import async_setup_notifier, async_unload_notifier
+from .notifier import YandexNotifier, async_setup_notifier, async_start_notifier, async_unload_notifier
 from .prop_float import PRESSURE_UNITS_TO_YANDEX_UNITS
 
 _LOGGER = logging.getLogger(__name__)
@@ -210,7 +210,7 @@ YANDEX_SMART_HOME_SCHEMA = vol.All(
     vol.Schema({
         vol.Optional(const.CONF_NOTIFIER, default=[]): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
         vol.Optional(const.CONF_SETTINGS, default={}): vol.All(lambda value: value or {}, SETTINGS_SCHEMA),
-        vol.Optional(const.CONF_FILTER, default={}): entityfilter.FILTER_SCHEMA,
+        vol.Optional(const.CONF_FILTER, default={}): BASE_FILTER_SCHEMA,
         vol.Optional(const.CONF_ENTITY_CONFIG, default={}): vol.All(
             lambda value: value or {},
             {cv.entity_id: ENTITY_SCHEMA}
@@ -222,73 +222,57 @@ CONFIG_SCHEMA = vol.Schema({
 }, extra=vol.ALLOW_EXTRA)
 
 
-async def _async_update_config_from_yaml(hass: HomeAssistant, config: dict[str, Any]):
-    domain_config = config.get(DOMAIN, {})
-    hass.data[DOMAIN][CONFIG] = Config(
-        hass=hass,
-        settings=domain_config.get(const.CONF_SETTINGS, {}),
-        notifier=domain_config.get(const.CONF_NOTIFIER, []),
-        should_expose=domain_config.get(const.CONF_FILTER, {}),
-        entity_config=domain_config.get(const.CONF_ENTITY_CONFIG)
-    )
-
-
-async def async_setup(hass: HomeAssistant, config: dict[str, Any]):
+async def async_setup(hass: HomeAssistant, _: ConfigType):
     """Activate Yandex Smart Home component."""
-    hass.data[DOMAIN] = {
-        NOTIFIERS: [],
-        CONFIG: None,
-    }
+    hass.data[DOMAIN] = {}
+    hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []
+    hass.data[DOMAIN][CONFIG]: Config | None = None
 
     async_register_http(hass)
-
-    # noinspection PyUnusedLocal
-    async def _handle_reload(service):
-        """Handle reload service call."""
-        if not hass.data[DOMAIN][CONFIG]:
-            raise ValueError('Integration is not enabled')
-
-        new_config = await async_integration_yaml_config(hass, DOMAIN)
-        if not new_config or DOMAIN not in new_config:
-            raise ValueError('Configuration is invalid')
-
-        await _async_update_config_from_yaml(hass, new_config)
-        await async_setup_notifier(hass, reload=True)
-
-    hass.helpers.service.async_register_admin_service(
-        DOMAIN,
-        SERVICE_RELOAD,
-        _handle_reload,
-    )
-
-    if DOMAIN in config:
-        hass.async_create_task(hass.config_entries.flow.async_init(
-            DOMAIN, context={'source': SOURCE_IMPORT}
-        ))
+    async_setup_notifier(hass)
 
     return True
 
 
-# noinspection PyUnusedLocal
-async def async_setup_entry(hass, entry: ConfigEntry):
-    is_reload = hass.data[DOMAIN].get(CONF_DISABLED)
-    config = await async_integration_yaml_config(hass, DOMAIN)
-    if not config or DOMAIN not in config:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    yaml_config = await async_integration_yaml_config(hass, DOMAIN)
+    if yaml_config is None:
         raise ConfigEntryNotReady('Configuration is missing or invalid')
 
-    await _async_update_config_from_yaml(hass, config)
-    await async_setup_notifier(hass, reload=is_reload)
+    _async_update_config_entry_from_yaml(hass, entry, yaml_config)
+
+    yaml_domain_config = yaml_config.get(DOMAIN, {})
+    config = Config(
+        hass=hass,
+        entry=entry,
+        should_expose=FILTER_SCHEMA(yaml_domain_config.get(const.CONF_FILTER, {})),
+        entity_config=yaml_domain_config.get(const.CONF_ENTITY_CONFIG, {})
+    )
+    hass.data[DOMAIN][CONFIG] = config
+
+    await async_start_notifier(hass)
 
     return True
 
 
-# noinspection PyUnusedLocal
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    if not hass.data[DOMAIN][CONFIG]:
-        return True
+async def async_unload_entry(hass: HomeAssistant, _: ConfigEntry):
+    hass.data[DOMAIN][CONFIG]: Config | None = None
 
-    await async_unload_notifier(hass)
-    hass.data[DOMAIN][CONFIG] = None
-    hass.data[DOMAIN][CONF_DISABLED] = True
-
+    async_unload_notifier(hass)
     return True
+
+
+@callback
+def _async_update_config_entry_from_yaml(hass: HomeAssistant, entry: ConfigEntry, yaml_config: ConfigType):
+    """Update a config entry with the latest yaml."""
+    data = entry.data.copy()
+
+    if DOMAIN in yaml_config:
+        data.update(yaml_config[DOMAIN][const.CONF_SETTINGS])
+        data.update({
+            const.CONF_NOTIFIER: yaml_config[DOMAIN][const.CONF_NOTIFIER]
+        })
+    else:
+        data.update(SETTINGS_SCHEMA(data={}))
+
+    hass.config_entries.async_update_entry(entry, data=data)

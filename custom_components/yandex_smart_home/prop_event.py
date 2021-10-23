@@ -11,7 +11,7 @@ from homeassistant.const import ATTR_DEVICE_CLASS, STATE_ON, STATE_OPEN, STATE_U
 from homeassistant.core import HomeAssistant, State
 
 from . import const
-from .const import CONF_BETA, ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
 from .error import SmartHomeError
 from .helpers import Config
 from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
@@ -66,7 +66,7 @@ PROPERTY_EVENT_VALUES = {
 def require_beta(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
-        if self.config.settings.get(CONF_BETA):
+        if self.config.beta:
             return method(self, *args, **kwargs)
 
         return False

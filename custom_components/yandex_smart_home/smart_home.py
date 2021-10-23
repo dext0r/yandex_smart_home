@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_handle_message(hass: HomeAssistant,
                                data: RequestData,
                                action: str,
-                               message: dict[str, Any] | None) -> dict[str, Any]:
+                               message: dict[str, Any]) -> dict[str, Any]:
     """Handle incoming API messages."""
     handler = HANDLERS.get(action)
 

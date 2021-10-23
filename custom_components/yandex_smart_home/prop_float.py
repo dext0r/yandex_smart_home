@@ -31,7 +31,7 @@ from homeassistant.const import (
 )
 
 from . import const
-from .const import CONF_PRESSURE_UNIT, ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
 from .error import SmartHomeError
 from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 
@@ -122,7 +122,7 @@ class FloatProperty(AbstractProperty, ABC):
 
             return round(
                 float_value * PRESSURE_TO_PASCAL[from_unit] *
-                PRESSURE_FROM_PASCAL[self.config.settings[CONF_PRESSURE_UNIT]], 2
+                PRESSURE_FROM_PASCAL[self.config.pressure_unit], 2
             )
         elif self.instance == const.FLOAT_INSTANCE_TVOC:
             return round(float_value * TVOC_CONCENTRATION_TO_MCG_M3.get(from_unit, 1), 2)
@@ -191,7 +191,7 @@ class PressureProperty(FloatProperty):
     def parameters(self) -> dict[str, Any]:
         return {
             'instance': self.instance,
-            'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.settings[CONF_PRESSURE_UNIT]],
+            'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.pressure_unit],
         }
 
     def get_value(self) -> float | None:
