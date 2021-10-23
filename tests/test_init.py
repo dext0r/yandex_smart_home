@@ -173,6 +173,73 @@ async def test_async_setup_entry(hass, config_entry_with_notifier):
     assert const.CONF_PRESSURE_UNIT in config_entry_with_notifier.data
 
 
+async def test_async_setup_entry_filters(hass):
+    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
+
+    assert await async_setup(hass, {})
+
+    entry_with_filters = MockConfigEntry(
+        domain=DOMAIN,
+        options={
+            const.CONF_FILTER: {
+                'include_domains': [
+                    'media_player',
+                    'climate',
+                ],
+                'exclude_entities': ['climate.front_gate'],
+            },
+        },
+    )
+    entry_with_filters.add_to_hass(hass)
+
+    with patch_yaml_files({YAML_CONFIG_FILE: ''}):
+        assert await async_setup_entry(hass, entry_with_filters)
+
+        assert hass.data[DOMAIN][CONFIG].should_expose('media_player.test') is True
+        assert hass.data[DOMAIN][CONFIG].should_expose('climate.test') is True
+        assert hass.data[DOMAIN][CONFIG].should_expose('climate.front_gate') is False
+
+    with patch_yaml_files({YAML_CONFIG_FILE: 'yandex_smart_home:'}):
+        assert await async_setup_entry(hass, entry_with_filters)
+
+        assert hass.data[DOMAIN][CONFIG].should_expose('media_player.test') is True
+        assert hass.data[DOMAIN][CONFIG].should_expose('climate.test') is True
+        assert hass.data[DOMAIN][CONFIG].should_expose('climate.front_gate') is False
+
+    with patch_yaml_files({YAML_CONFIG_FILE: """
+yandex_smart_home:
+  filter:
+    include_domains:
+      - light"""}):
+        assert await async_setup_entry(hass, entry_with_filters)
+
+        assert hass.data[DOMAIN][CONFIG].should_expose('light.test') is True
+        assert hass.data[DOMAIN][CONFIG].should_expose('climate.test') is False
+
+
+async def test_async_setup_entry_import_options(hass):
+    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
+
+    assert await async_setup(hass, {})
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            const.CONF_FILTER: {
+                'include_domains': ['media_player'],
+            },
+        },
+    )
+    entry.add_to_hass(hass)
+
+    with patch_yaml_files({YAML_CONFIG_FILE: ''}):
+        assert await async_setup_entry(hass, entry)
+
+        assert const.CONF_FILTER not in entry.data
+        assert const.CONF_FILTER in entry.options
+        assert len(entry.options[const.CONF_FILTER]['include_domains']) == 1
+
+
 async def test_async_unload_entry(hass, config_entry_with_notifier):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 
@@ -198,6 +265,7 @@ async def test_async_setup_update_from_yaml(hass, hass_admin_user):
             const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
         }],
     })
+    entry.add_to_hass(hass)
 
     with patch_yaml_files({YAML_CONFIG_FILE: ''}):
         assert await async_setup_entry(hass, entry)

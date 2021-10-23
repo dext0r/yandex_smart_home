@@ -206,6 +206,15 @@ SETTINGS_SCHEMA = vol.Schema({
     vol.Optional(const.CONF_BETA, default=False): cv.boolean
 })
 
+
+def is_config_filter_empty(yaml_config: ConfigType) -> bool:
+    for entities in yaml_config.get(const.CONF_FILTER, {}).values():
+        if entities:
+            return False
+
+    return True
+
+
 YANDEX_SMART_HOME_SCHEMA = vol.All(
     vol.Schema({
         vol.Optional(const.CONF_NOTIFIER, default=[]): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
@@ -240,12 +249,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         raise ConfigEntryNotReady('Configuration is missing or invalid')
 
     _async_update_config_entry_from_yaml(hass, entry, yaml_config)
+    _async_import_options_from_data_if_missing(hass, entry)
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     yaml_domain_config = yaml_config.get(DOMAIN, {})
+    filters = yaml_domain_config.get(const.CONF_FILTER, {})
+    if is_config_filter_empty(yaml_domain_config) and const.CONF_FILTER in entry.options:
+        filters = entry.options[const.CONF_FILTER]
+
     config = Config(
         hass=hass,
         entry=entry,
-        should_expose=FILTER_SCHEMA(yaml_domain_config.get(const.CONF_FILTER, {})),
+        should_expose=FILTER_SCHEMA(filters),
         entity_config=yaml_domain_config.get(const.CONF_ENTITY_CONFIG, {})
     )
     hass.data[DOMAIN][CONFIG] = config
@@ -255,11 +270,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, _: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][CONFIG]: Config | None = None
 
     async_unload_notifier(hass)
     return True
+
+
+async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 @callback
@@ -276,3 +295,19 @@ def _async_update_config_entry_from_yaml(hass: HomeAssistant, entry: ConfigEntry
         data.update(SETTINGS_SCHEMA(data={}))
 
     hass.config_entries.async_update_entry(entry, data=data)
+
+
+@callback
+def _async_import_options_from_data_if_missing(hass: HomeAssistant, entry: ConfigEntry):
+    options = dict(entry.options)
+    data = dict(entry.data)
+    modified = False
+
+    for option in [const.CONF_FILTER]:
+        if option not in entry.options and option in entry.data:
+            options[option] = entry.data[option]
+            del data[option]
+            modified = True
+
+    if modified:
+        hass.config_entries.async_update_entry(entry, data=data, options=options)
