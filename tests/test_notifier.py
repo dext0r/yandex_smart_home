@@ -1,6 +1,7 @@
 import time
 from unittest.mock import patch
 
+from homeassistant.config import YAML_CONFIG_FILE
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_UNIT_OF_MEASUREMENT,
@@ -17,7 +18,7 @@ from homeassistant.const import (
 from homeassistant.core import State
 from homeassistant.exceptions import ConfigEntryNotReady
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, patch_yaml_files
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.const import (
@@ -35,6 +36,7 @@ from custom_components.yandex_smart_home.notifier import (
     async_start_notifier,
     async_unload_notifier,
 )
+from custom_components.yandex_smart_home.smart_home import RequestData, async_devices
 
 from . import BASIC_CONFIG, REQ_ID, MockConfig
 
@@ -281,6 +283,41 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry):
         mock_notify.reset_mock()
 
     async_unload_notifier(hass)
+
+
+async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connection, caplog):
+    hass = hass_platform_cloud_connection
+    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
+
+    notifier = hass.data[DOMAIN][NOTIFIERS][0]
+
+    await notifier.async_send_discovery(None)
+    assert len(caplog.records) == 2
+    assert 'devices is not discovered' in caplog.records[1].message
+    caplog.clear()
+
+    await notifier.async_send_state([])
+    assert len(caplog.records) == 1
+    assert 'devices is not discovered' in caplog.records[0].message
+    caplog.clear()
+
+    with patch_yaml_files({YAML_CONFIG_FILE: ''}):
+        await async_devices(hass, RequestData(hass.data[DOMAIN][CONFIG], None, None), {})
+        await hass.async_block_till_done()
+
+    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
+    notifier = hass.data[DOMAIN][NOTIFIERS][0]
+    with patch.object(notifier, '_log_request', side_effect=Exception()):
+        caplog.clear()
+        await notifier.async_send_discovery(None)
+        assert len(caplog.records) == 2
+        assert 'Failed to send state notification' in caplog.records[1].message
+        caplog.clear()
+
+        await notifier.async_send_state([])
+        assert len(caplog.records) == 1
+        assert 'Failed to send state notification' in caplog.records[0].message
+        caplog.clear()
 
 
 async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):

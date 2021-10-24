@@ -26,6 +26,7 @@ class MockConfig(Config):
         if not self._data:
             self._data.update(SETTINGS_SCHEMA(data={}))
             self._data[const.CONF_CONNECTION_TYPE] = const.CONNECTION_TYPE_DIRECT
+            self._data[const.CONF_DEVICES_DISCOVERED] = True
 
     @property
     def is_reporting_state(self) -> bool:

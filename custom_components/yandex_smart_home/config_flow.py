@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant import data_entry_flow
@@ -72,7 +73,9 @@ INCLUDE_EXCLUDE_MODES = {
 
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
-        self._data = {}
+        self._data: dict[str, Any] = {
+            const.CONF_DEVICES_DISCOVERED: False
+        }
 
     async def async_step_user(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         if self._async_current_entries():

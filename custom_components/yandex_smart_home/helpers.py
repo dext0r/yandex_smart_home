@@ -61,6 +61,10 @@ class Config:
     def notifier(self) -> list[ConfigType]:
         return self._data.get(const.CONF_NOTIFIER, {})
 
+    @property
+    def devices_discovered(self) -> bool:
+        return self._data[const.CONF_DEVICES_DISCOVERED]
+
     def get_entity_config(self, entity_id: str) -> dict[str, Any]:
         return self.entity_config.get(entity_id, {})
 

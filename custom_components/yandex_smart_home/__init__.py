@@ -5,7 +5,7 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -28,7 +28,7 @@ from . import (  # noqa: F401
     prop_float,
 )
 from .cloud import CloudManager, delete_cloud_instance
-from .const import CLOUD_MANAGER, CONFIG, DOMAIN, NOTIFIERS
+from .const import CLOUD_MANAGER, CONFIG, DOMAIN, EVENT_DEVICE_DISCOVERY, NOTIFIERS
 from .helpers import Config
 from .http import async_register_http
 from .notifier import YandexNotifier, async_setup_notifier, async_start_notifier, async_unload_notifier
@@ -245,6 +245,16 @@ async def async_setup(hass: HomeAssistant, _: ConfigType):
     async_register_http(hass)
     async_setup_notifier(hass)
 
+    def device_discovery_listener(_: Event):
+        for entry in hass.config_entries.async_entries(DOMAIN):
+            if not entry.data[const.CONF_DEVICES_DISCOVERED]:
+                data = dict(entry.data)
+                data[const.CONF_DEVICES_DISCOVERED] = True
+
+                hass.config_entries.async_update_entry(entry, data=data, options=entry.options)
+
+    hass.bus.async_listen(EVENT_DEVICE_DISCOVERY, device_discovery_listener)
+
     return True
 
 
@@ -311,6 +321,7 @@ def _async_update_config_entry_from_yaml(hass: HomeAssistant, entry: ConfigEntry
     """Update a config entry with the latest yaml."""
     data = entry.data.copy()
     data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
+    data.setdefault(const.CONF_DEVICES_DISCOVERED, False)
 
     if DOMAIN in yaml_config:
         data.update(yaml_config[DOMAIN][const.CONF_SETTINGS])

@@ -17,6 +17,7 @@ from homeassistant.helpers.event import async_call_later
 from . import const
 from .const import CONF_NOTIFIER_OAUTH_TOKEN, CONF_NOTIFIER_SKILL_ID, CONF_NOTIFIER_USER_ID, CONFIG, DOMAIN, NOTIFIERS
 from .entity import YandexEntity
+from .helpers import Config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,6 +43,10 @@ class YandexNotifier(ABC):
     def _request_headers(self) -> dict[str, str]:
         pass
 
+    @property
+    def _config(self) -> Config:
+        return self._hass.data[DOMAIN][CONFIG]
+
     def _format_log_message(self, message: str) -> str:
         return message
 
@@ -53,7 +58,7 @@ class YandexNotifier(ABC):
     def _get_property_entities(self) -> dict[str, list[str]]:
         rv = {}
 
-        for entity_id, entity_config in self._hass.data[DOMAIN][CONFIG].entity_config.items():
+        for entity_id, entity_config in self._config.entity_config.items():
             for property_config in entity_config.get(const.CONF_ENTITY_PROPERTIES):
                 property_entity_id = property_config.get(const.CONF_ENTITY_PROPERTY_ENTITY)
                 if property_entity_id:
@@ -81,6 +86,10 @@ class YandexNotifier(ABC):
 
     # noinspection PyBroadException
     async def _async_send_callback(self, url: str, payload: dict[str, Any]):
+        if not self._config.devices_discovered:
+            _LOGGER.debug('Home Assistant devices is not discovered by Yandex yet')
+            return
+
         try:
             payload['user_id'] = self._user_id
             request_data = {'ts': time.time(), 'payload': payload}
@@ -123,14 +132,14 @@ class YandexNotifier(ABC):
             if entity_id != event_entity_id:
                 state = self._hass.states.get(entity_id)
 
-            yandex_entity = YandexEntity(self._hass, self._hass.data[DOMAIN][CONFIG], state)
+            yandex_entity = YandexEntity(self._hass, self._config, state)
 
             if not yandex_entity.should_expose:
                 continue
 
             device = yandex_entity.notification_serialize(event_entity_id)
             if entity_id == event_entity_id:
-                old_yandex_entity = YandexEntity(self._hass, self._hass.data[DOMAIN][CONFIG], old_state)
+                old_yandex_entity = YandexEntity(self._hass, self._config, old_state)
                 if old_yandex_entity.notification_serialize(event_entity_id) == device:
                     continue
 

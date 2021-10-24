@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
 
-from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR, EVENT_EXECUTE_ACTION
+from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR, EVENT_DEVICE_DISCOVERY, EVENT_EXECUTE_ACTION
 from .entity import YandexEntity
 from .error import SmartHomeError
 from .helpers import RequestData
@@ -68,6 +68,8 @@ async def async_devices(hass: HomeAssistant, data: RequestData, message: dict[st
     ent_reg = await entity_registry.async_get_registry(hass)
     dev_reg = await device_registry.async_get_registry(hass)
     area_reg = await area_registry.async_get_registry(hass)
+
+    hass.bus.async_fire(EVENT_DEVICE_DISCOVERY, context=data.context)
 
     for state in hass.states.async_all():
         entity = YandexEntity(hass, data.config, state)

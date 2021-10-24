@@ -39,6 +39,7 @@ def config_entry_with_notifier(hass_admin_user):
 def config_entry_cloud_connection():
     return MockConfigEntry(domain=DOMAIN, data={
         const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
+        const.CONF_DEVICES_DISCOVERED: False,
         const.CONF_CLOUD_INSTANCE: {
             const.CONF_CLOUD_INSTANCE_ID: 'test',
             const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: 'foo',
@@ -133,6 +134,7 @@ def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
     with patch.object(hass.config_entries.flow, 'async_init', return_value=None), patch_yaml_files({
         YAML_CONFIG_FILE: 'yandex_smart_home:'
     }):
+        config_entry_cloud_connection.add_to_hass(hass)
         loop.run_until_complete(async_setup(hass, {DOMAIN: {}}))
         loop.run_until_complete(async_setup_entry(hass, config_entry_cloud_connection))
 
