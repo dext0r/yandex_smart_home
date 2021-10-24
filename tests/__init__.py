@@ -6,7 +6,7 @@ from typing import Any, Callable
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from custom_components.yandex_smart_home import SETTINGS_SCHEMA
+from custom_components.yandex_smart_home import SETTINGS_SCHEMA, const
 from custom_components.yandex_smart_home.helpers import Config, RequestData
 
 
@@ -25,6 +25,7 @@ class MockConfig(Config):
 
         if not self._data:
             self._data.update(SETTINGS_SCHEMA(data={}))
+            self._data[const.CONF_CONNECTION_TYPE] = const.CONNECTION_TYPE_DIRECT
 
     @property
     def is_reporting_state(self) -> bool:

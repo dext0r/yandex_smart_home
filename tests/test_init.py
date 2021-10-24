@@ -9,12 +9,15 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture, patch_yaml_files
 
 from custom_components.yandex_smart_home import (
+    CLOUD_MANAGER,
     CONFIG,
     DOMAIN,
     NOTIFIERS,
+    async_remove_entry,
     async_setup,
     async_setup_entry,
     async_unload_entry,
+    cloud,
     const,
 )
 
@@ -240,6 +243,27 @@ async def test_async_setup_entry_import_options(hass):
         assert len(entry.options[const.CONF_FILTER]['include_domains']) == 1
 
 
+async def test_async_setup_entry_cloud(hass, config_entry_cloud_connection):
+    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
+
+    assert await async_setup(hass, {})
+
+    with patch_yaml_files({YAML_CONFIG_FILE: ''}), patch(
+            'custom_components.yandex_smart_home.cloud.BASE_API_URL', return_value=None
+    ):
+        assert await async_setup_entry(hass, config_entry_cloud_connection)
+
+    await hass.async_block_till_done()
+
+    # assert len(hass.data[DOMAIN][CONFIG].notifier) == 1  # TODO: fix
+    assert hass.data[DOMAIN][CLOUD_MANAGER] is not None
+
+    await async_unload_entry(hass, config_entry_cloud_connection)
+    await hass.async_block_till_done()
+
+    assert hass.data[DOMAIN][CLOUD_MANAGER] is None
+
+
 async def test_async_unload_entry(hass, config_entry_with_notifier):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 
@@ -252,6 +276,25 @@ async def test_async_unload_entry(hass, config_entry_with_notifier):
 
     assert hass.data[DOMAIN][CONFIG] is None
     assert len(hass.data[DOMAIN][NOTIFIERS]) == 0
+
+
+async def test_async_remove_entry_cloud(hass, config_entry_cloud_connection, aioclient_mock, caplog):
+    aioclient_mock.delete(f'{cloud.BASE_API_URL}/instance/test', status=500)
+    await async_remove_entry(hass, config_entry_cloud_connection)
+    assert aioclient_mock.call_count == 1
+    assert len(caplog.records) == 1
+    assert 'Failed to delete' in caplog.records[0].message
+
+    aioclient_mock.clear_requests()
+    caplog.clear()
+
+    aioclient_mock.delete(f'{cloud.BASE_API_URL}/instance/test', status=200)
+    await async_remove_entry(hass, config_entry_cloud_connection)
+    (method, url, data, headers) = aioclient_mock.mock_calls[0]
+    assert headers == {'Authorization': 'Bearer foo'}
+
+    assert aioclient_mock.call_count == 1
+    assert len(caplog.records) == 0
 
 
 async def test_async_setup_update_from_yaml(hass, hass_admin_user):

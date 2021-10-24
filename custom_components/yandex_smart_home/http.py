@@ -49,7 +49,7 @@ class YandexSmartHomeUnauthorizedView(HomeAssistantView, YandexSmartHomeView):
         _LOGGER.debug('Request: %s (HEAD)' % request.url)
 
         if not self._is_direct_connection(request):
-            _LOGGER.debug('Integration is not enabled')
+            _LOGGER.debug('Integration is not enabled or use cloud connection')
             return Response(status=404)
 
         return Response(status=200)
@@ -68,7 +68,7 @@ class YandexSmartHomePingView(HomeAssistantView, YandexSmartHomeView):
         _LOGGER.debug('Request: %s (GET)' % request.url)
 
         if not self._is_direct_connection(request):
-            return Response(text='Error: Integration is not enabled', status=503)
+            return Response(text='Error: Integration is not enabled or use cloud connection', status=503)
 
         data = RequestData(self._get_config(request), None, 'ping')
         devices_sync_response = await async_devices(request.app['hass'], data, {})
@@ -92,10 +92,15 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView, YandexSmartHomeView):
 
     async def _async_handle_request(self, request: Request, message: dict[str, Any] | None = None) -> Response:
         if not self._is_direct_connection(request):
-            _LOGGER.debug('Integration is not enabled')
+            _LOGGER.debug('Integration is not enabled or use cloud connection')
             return Response(status=404)
 
-        data = RequestData(self._get_config(request), request['hass_user'].id, request.headers.get('X-Request-Id'))
+        data = RequestData(
+            config=self._get_config(request),
+            user_id=request['hass_user'].id,
+            request_id=request.headers.get('X-Request-Id'),
+            hass_user_id=request['hass_user'].id,
+        )
         action = request.path.replace(self.url, '', 1)
 
         result = await async_handle_message(request.app['hass'], data, action, message or {})

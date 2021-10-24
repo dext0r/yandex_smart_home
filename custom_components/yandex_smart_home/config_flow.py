@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 
+from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant import data_entry_flow
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import ATTR_FRIENDLY_NAME, CONF_DOMAINS, CONF_ENTITIES
@@ -13,6 +14,7 @@ from homeassistant.helpers.typing import ConfigType
 import voluptuous as vol
 
 from . import DOMAIN, const, is_config_filter_empty
+from .cloud import register_cloud_instance
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,6 +59,11 @@ _EMPTY_ENTITY_FILTER = {
     CONF_EXCLUDE_ENTITIES: [],
 }
 
+CONNECTION_TYPES = {
+    const.CONNECTION_TYPE_DIRECT: 'Напрямую',
+    const.CONNECTION_TYPE_CLOUD: 'Через облако (бета)'
+}
+
 INCLUDE_EXCLUDE_MODES = {
     MODE_INCLUDE: 'Включить',
     MODE_EXCLUDE: 'Исключить'
@@ -76,13 +83,13 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_include_domains(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         yaml_config = await async_integration_yaml_config(self.hass, DOMAIN)
         if DOMAIN in yaml_config and not is_config_filter_empty(yaml_config[DOMAIN]):
-            return await self.async_step_done()
+            return await self.async_step_connection_type()
 
         if user_input is not None:
             entity_filter = _EMPTY_ENTITY_FILTER.copy()
             entity_filter[CONF_INCLUDE_DOMAINS] = user_input[CONF_INCLUDE_DOMAINS]
             self._data[const.CONF_FILTER] = entity_filter
-            return await self.async_step_done()
+            return await self.async_step_connection_type()
 
         return self.async_show_form(
             step_id='include_domains',
@@ -92,6 +99,44 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 ): cv.multi_select({v: v for v in SUPPORTED_DOMAINS}),
             }),
         )
+
+    async def async_step_connection_type(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+        errors = {}
+        if user_input is not None:
+            self._data.update(user_input)
+            if user_input[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
+                try:
+                    return await self.async_step_cloud_info()
+                except (ClientConnectorError, ClientResponseError):
+                    errors['base'] = 'cannot_connect'
+                    _LOGGER.exception('Failed to register instance in Yandex Smart Home cloud')
+            else:
+                return await self.async_step_done()
+
+        return self.async_show_form(
+            step_id='connection_type',
+            data_schema=vol.Schema({
+                vol.Required(const.CONF_CONNECTION_TYPE,
+                             default=const.CONNECTION_TYPE_CLOUD): vol.In(CONNECTION_TYPES)
+            }),
+            errors=errors
+        )
+
+    async def async_step_cloud_info(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+        if user_input is not None:
+            return await self.async_step_done()
+
+        instance = await register_cloud_instance(self.hass)
+        self._data[const.CONF_CLOUD_INSTANCE] = {
+            const.CONF_CLOUD_INSTANCE_ID: instance.id,
+            const.CONF_CLOUD_INSTANCE_PASSWORD: instance.password,
+            const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: instance.connection_token
+        }
+
+        return self.async_show_form(step_id='cloud_info', description_placeholders={
+            const.CONF_CLOUD_INSTANCE_ID: instance.id,
+            const.CONF_CLOUD_INSTANCE_PASSWORD: instance.password
+        })
 
     async def async_step_done(self) -> data_entry_flow.FlowResult:
         return self.async_create_entry(title='Yandex Smart Home', data=self._data)
@@ -106,6 +151,7 @@ class OptionsFlowHandler(OptionsFlow):
     def __init__(self, entry: ConfigEntry):
         self._entry = entry
         self._options = dict(entry.options)
+        self._data = dict(entry.data)
 
     async def async_step_init(self, _: ConfigType | None = None) -> data_entry_flow.FlowResult:
         return await self.async_step_include_domains()
@@ -136,7 +182,7 @@ class OptionsFlowHandler(OptionsFlow):
 
     async def async_step_include_domains_yaml(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         if user_input is not None:
-            return await self.async_step_done()
+            return await self.async_step_cloud_info()
 
         return self.async_show_form(step_id='include_domains_yaml')
 
@@ -163,7 +209,7 @@ class OptionsFlowHandler(OptionsFlow):
 
             self._options[const.CONF_FILTER] = entity_filter
 
-            return await self.async_step_done()
+            return await self.async_step_cloud_info()
 
         entity_filter = self._options.get(const.CONF_FILTER, {})
         all_supported_entities = _async_get_matching_entities(self.hass, domains=self._options[CONF_DOMAINS])
@@ -182,6 +228,19 @@ class OptionsFlowHandler(OptionsFlow):
                 vol.Optional(CONF_ENTITIES, default=entities): cv.multi_select(all_supported_entities)
             })
         )
+
+    async def async_step_cloud_info(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+        if self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_DIRECT:
+            return await self.async_step_done()
+
+        if user_input is not None:
+            return await self.async_step_done()
+
+        instance = self._data[const.CONF_CLOUD_INSTANCE]
+        return self.async_show_form(step_id='cloud_info', description_placeholders={
+            const.CONF_CLOUD_INSTANCE_ID: instance[const.CONF_CLOUD_INSTANCE_ID],
+            const.CONF_CLOUD_INSTANCE_PASSWORD: instance[const.CONF_CLOUD_INSTANCE_PASSWORD]
+        })
 
     async def async_step_done(self) -> data_entry_flow.FlowResult:
         for key in (CONF_DOMAINS, CONF_ENTITIES):

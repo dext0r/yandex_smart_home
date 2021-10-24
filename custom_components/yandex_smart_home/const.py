@@ -22,6 +22,7 @@ from homeassistant.components import (
 DOMAIN = 'yandex_smart_home'
 CONFIG = 'config'
 NOTIFIERS = 'notifiers'
+CLOUD_MANAGER = 'cloud_manager'
 
 CONF_SETTINGS = 'settings'
 CONF_PRESSURE_UNIT = 'pressure_unit'
@@ -30,6 +31,11 @@ CONF_NOTIFIER = 'notifier'
 CONF_NOTIFIER_OAUTH_TOKEN = 'oauth_token'
 CONF_NOTIFIER_SKILL_ID = 'skill_id'
 CONF_NOTIFIER_USER_ID = 'user_id'
+CONF_CONNECTION_TYPE = 'connection_type'
+CONF_CLOUD_INSTANCE = 'cloud_instance'
+CONF_CLOUD_INSTANCE_ID = 'id'
+CONF_CLOUD_INSTANCE_PASSWORD = 'password'
+CONF_CLOUD_INSTANCE_CONNECTION_TOKEN = 'token'
 CONF_ENTITY_CONFIG = 'entity_config'
 CONF_FILTER = 'filter'
 CONF_NAME = 'name'
@@ -58,6 +64,11 @@ CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON = 'turn_on'
 CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF = 'turn_off'
 CONF_ENTITY_CUSTOM_RANGES = 'custom_ranges'
 CONF_ENTITY_CUSTOM_RANGE_SET_VALUE = 'set_value'
+
+CONNECTION_TYPE_DIRECT = 'direct'
+CONNECTION_TYPE_CLOUD = 'cloud'
+
+EVENT_EXECUTE_ACTION = 'yandex_smart_home_action'
 
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html
 PREFIX_TYPES = 'devices.types.'

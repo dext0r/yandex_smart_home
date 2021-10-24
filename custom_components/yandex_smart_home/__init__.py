@@ -4,9 +4,11 @@ from __future__ import annotations
 import logging
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA
 from homeassistant.helpers.reload import async_integration_yaml_config
 from homeassistant.helpers.typing import ConfigType
@@ -20,11 +22,13 @@ from . import (  # noqa: F401
     capability_range,
     capability_toggle,
     const,
+    logbook,
     prop_custom,
     prop_event,
     prop_float,
 )
-from .const import CONFIG, DOMAIN, NOTIFIERS
+from .cloud import CloudManager, delete_cloud_instance
+from .const import CLOUD_MANAGER, CONFIG, DOMAIN, NOTIFIERS
 from .helpers import Config
 from .http import async_register_http
 from .notifier import YandexNotifier, async_setup_notifier, async_start_notifier, async_unload_notifier
@@ -236,6 +240,7 @@ async def async_setup(hass: HomeAssistant, _: ConfigType):
     hass.data[DOMAIN] = {}
     hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []
     hass.data[DOMAIN][CONFIG]: Config | None = None
+    hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None
 
     async_register_http(hass)
     async_setup_notifier(hass)
@@ -265,16 +270,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
     hass.data[DOMAIN][CONFIG] = config
 
+    if config.is_cloud_connection:
+        cloud_manager = CloudManager(hass, config, async_get_clientsession(hass))
+        hass.data[DOMAIN][CLOUD_MANAGER] = cloud_manager
+
+        hass.loop.create_task(cloud_manager.connect())
+        entry.async_on_unload(
+            hass.bus.async_listen_once(
+                EVENT_HOMEASSISTANT_STOP, cloud_manager.disconnect
+            )
+        )
+
     await async_start_notifier(hass)
 
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, _: ConfigEntry):
+    if hass.data[DOMAIN][CLOUD_MANAGER]:
+        hass.async_create_task(hass.data[DOMAIN][CLOUD_MANAGER].disconnect())
+
     hass.data[DOMAIN][CONFIG]: Config | None = None
+    hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None
 
     async_unload_notifier(hass)
     return True
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
+    if entry.data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
+        await delete_cloud_instance(hass, entry)
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
@@ -285,6 +310,7 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
 def _async_update_config_entry_from_yaml(hass: HomeAssistant, entry: ConfigEntry, yaml_config: ConfigType):
     """Update a config entry with the latest yaml."""
     data = entry.data.copy()
+    data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
 
     if DOMAIN in yaml_config:
         data.update(yaml_config[DOMAIN][const.CONF_SETTINGS])

@@ -28,11 +28,26 @@ class Config:
     @property
     def is_reporting_state(self) -> bool:
         """Return if we're actively reporting states."""
+        if self.is_cloud_connection:
+            return True
+
         return bool(self._hass.data[DOMAIN][NOTIFIERS])
 
     @property
+    def is_cloud_connection(self) -> bool:
+        return self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD
+
+    @property
     def is_direct_connection(self) -> bool:
-        return True
+        return self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_DIRECT
+
+    @property
+    def cloud_instance_id(self) -> str | None:
+        return self._data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_ID]
+
+    @property
+    def cloud_connection_token(self) -> str | None:
+        return self._data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN]
 
     @property
     def pressure_unit(self) -> str:
@@ -53,8 +68,13 @@ class Config:
 class RequestData:
     """Hold data associated with a particular request."""
 
-    def __init__(self, config: Config, user_id: str | None, request_id: str | None):
+    def __init__(self,
+                 config: Config,
+                 user_id: str | None,
+                 request_id: str | None,
+                 hass_user_id: str | None = None):
         """Initialize the request data."""
         self.config = config
-        self.context = Context(user_id=user_id)
+        self.user_id = user_id
+        self.context = Context(user_id=hass_user_id)
         self.request_id = request_id
