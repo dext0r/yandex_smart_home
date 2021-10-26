@@ -1,0 +1,123 @@
+yandex_smart_home:
+  notifier:  # только для прямого подключения, в облачном не используется
+    - oauth_token: AgAAAAAEEo2aYYR7m-CEyS7SEiUJjnKez3v3GZe
+      skill_id: d38d4c39-5846-ba53-67acc27e08bc
+      user_id: e8701ad48ba05a91604e480dd60899a3
+  settings:
+    pressure_unit: mmHg
+  filter:
+    include_domains:
+      - switch
+      - light
+      - climate
+    include_entities:
+      - media_player.tv
+      - media_player.tv_lg
+      - media_player.receiver
+    include_entity_globs:
+      - sensor.temperature_*
+    exclude_entities:
+      - light.highlight
+    exclude_entity_globs:
+      - sensor.weather_*
+  entity_config:
+    switch.kitchen:
+      name: Выключатель
+    light.living_room:
+      name: Люстра
+      modes:
+        scene:
+          sunrise:
+            - Wake up
+          alarm:
+            - Blink
+    media_player.tv_lg:
+      channel_set_via_media_content_id: true
+    fan.xiaomi_miio_device:
+      name: Увлажнитель
+      room: Гостинная
+      type: devices.types.humidifier
+      properties:
+        - type: temperature
+          entity: sensor.temperature_158d000444c824
+        - type: humidity
+          attribute: humidity
+        - type: water_level
+          attribute: depth
+    climate.tion_breezer:
+      name: Проветриватель
+      modes:
+        fan_speed:
+          auto: [auto]
+          min: [1,'1.0']
+          low: [2,'2.0']
+          medium: [3,'3.0']
+          high: [4,'4.0']
+          turbo: [5,'5.0']
+          max: [6,'6.0']
+    media_player.receiver:
+      type: devices.types.media_device.receiver
+      range:
+        max: 95
+        min: 20
+        precision: 2
+    media_player.cast:
+      features:
+        - volume_mute
+        - volume_set
+        - next_previous_track
+    humidifier.bedroom:
+      modes:
+        program:
+          normal:
+            - normal
+          eco:
+            - away
+      properties:
+        - type: temperature
+          entity: sensor.bedroom_temperature
+        - type: humidity
+          entity: sensor.bedroom_humidity
+        - type: water_level
+          entity: sensor.humidifier_level
+    climate.ac_living_room:
+      name: Кондиционер
+      room: Гостиная
+      type: devices.types.thermostat.ac
+      custom_toggles:
+        ionization:
+          state_entity_id: switch.ac_ionizer
+          turn_on:
+            service: switch.turn_on
+            entity_id: switch.ac_ionizer
+          turn_off:
+            service: switch.turn_off
+            entity_id: switch.ac_ionizer
+        backlight:
+          state_entity_id: input_boolean.ac_lighting
+          turn_on:
+            service: input_boolean.turn_on
+            entity_id: input_boolean.ac_lighting
+          turn_off:
+            service: input_boolean.turn_off
+            entity_id: input_boolean.ac_lighting
+    switch.r4s1_kettle_boil:
+      name: Чайник
+      room: Кухня
+      custom_ranges:
+        temperature:
+          state_attribute: temperature
+          set_value:
+            service: climate.set_temperature
+            data:
+              temperature: '{{ value }}'
+            target:
+              entity_id: climate.r4s1_kettle_temp
+          range:
+            min: 40
+            max: 90
+            precision: 10
+      properties:
+        - type: temperature
+          entity: climate.r4s1_kettle_temp
+          attribute: current_temperature
