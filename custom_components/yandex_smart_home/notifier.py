@@ -86,8 +86,11 @@ class YandexNotifier(ABC):
 
     # noinspection PyBroadException
     async def _async_send_callback(self, url: str, payload: dict[str, Any]):
-        if not self._config.devices_discovered:
+        if self._config and not self._config.devices_discovered:
             _LOGGER.debug('Home Assistant devices is not discovered by Yandex yet')
+            return
+
+        if self._session.closed:
             return
 
         try:

@@ -454,3 +454,9 @@ async def test_notifier_send_cloud(hass, hass_admin_user, aioclient_mock):
         m.side_effect = Exception
         await notifier.async_send_state(['err'])
         assert aioclient_mock.call_count == 0
+
+    aioclient_mock.clear_requests()
+    await notifier._session.close()
+    await notifier.async_send_state([])
+
+    assert aioclient_mock.call_count == 0
