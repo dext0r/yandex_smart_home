@@ -22,7 +22,6 @@ from . import (  # noqa: F401
     capability_range,
     capability_toggle,
     const,
-    logbook,
     prop_custom,
     prop_event,
     prop_float,

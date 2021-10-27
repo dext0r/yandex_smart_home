@@ -36,6 +36,7 @@ CONF_CLOUD_INSTANCE = 'cloud_instance'
 CONF_CLOUD_INSTANCE_ID = 'id'
 CONF_CLOUD_INSTANCE_PASSWORD = 'password'
 CONF_CLOUD_INSTANCE_CONNECTION_TOKEN = 'token'
+CONF_USER_ID = 'user_id'
 CONF_DEVICES_DISCOVERED = 'devices_discovered'
 CONF_ENTITY_CONFIG = 'entity_config'
 CONF_FILTER = 'filter'
@@ -69,7 +70,6 @@ CONF_ENTITY_CUSTOM_RANGE_SET_VALUE = 'set_value'
 CONNECTION_TYPE_DIRECT = 'direct'
 CONNECTION_TYPE_CLOUD = 'cloud'
 
-EVENT_EXECUTE_ACTION = 'yandex_smart_home_action'
 EVENT_DEVICE_DISCOVERY = 'yandex_smart_home_device_discovery'
 
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html

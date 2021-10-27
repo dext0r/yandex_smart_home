@@ -20,6 +20,7 @@ class MockConfig(Config):
         """Initialize the configuration."""
         self._hass = hass
         self._data = entry.data if entry else {}
+        self._options = entry.options if entry else {}
         self._should_expose = should_expose
         self.entity_config = entity_config or {}
 

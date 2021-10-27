@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
 
-from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR, EVENT_DEVICE_DISCOVERY, EVENT_EXECUTE_ACTION
+from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR, EVENT_DEVICE_DISCOVERY
 from .entity import YandexEntity
 from .error import SmartHomeError
 from .helpers import RequestData
@@ -84,7 +84,7 @@ async def async_devices(hass: HomeAssistant, data: RequestData, message: dict[st
         devices.append(serialized)
 
     return {
-        'user_id': data.user_id,
+        'user_id': data.request_user_id,
         'devices': devices,
     }
 
@@ -139,11 +139,6 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
             continue
 
         entity = YandexEntity(hass, data.config, state)
-        if data.config.is_cloud_connection:
-            hass.bus.async_fire(EVENT_EXECUTE_ACTION, {
-                'entity_id': entity.entity_id,
-                'request_id': data.request_id
-            }, context=data.context)
 
         capabilities_result = []
         for capability in device['capabilities']:

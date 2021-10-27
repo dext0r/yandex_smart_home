@@ -62,6 +62,7 @@ class CloudManager:
         self._hass = hass
         self._instance_id = config.cloud_instance_id
         self._token = config.cloud_connection_token
+        self._user_id = config.user_id
         self._session = session
         self._ws: ClientWebSocketResponse | None = None
         self._ws_reconnect_delay = DEFAULT_RECONNECTION_DELAY
@@ -109,8 +110,9 @@ class CloudManager:
 
         data = RequestData(
             config=self._hass.data[DOMAIN][CONFIG],
-            user_id=self._instance_id,
-            request_id=request.request_id
+            request_user_id=self._instance_id,
+            request_id=request.request_id,
+            user_id=self._user_id
         )
 
         result = await async_handle_message(self._hass, data, request.action, request.message)

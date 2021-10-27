@@ -195,7 +195,7 @@ yandex_smart_home:
         assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
 
 
-async def test_options_flow_with_yaml_filters_cloud(hass):
+async def test_options_flow_with_yaml_filters_cloud(hass, hass_admin_user):
     config_entry = _mock_config_entry_with_options_populated(const.CONNECTION_TYPE_CLOUD)
     config_entry.add_to_hass(hass)
 
@@ -210,10 +210,17 @@ yandex_smart_home:
 
         result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={})
         assert result2['type'] == data_entry_flow.RESULT_TYPE_FORM
-        assert result2['step_id'] == 'cloud_info'
+        assert result2['step_id'] == 'cloud_settings'
 
-        result3 = await hass.config_entries.options.async_configure(result2['flow_id'], user_input={})
-        assert result3['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+        result3 = await hass.config_entries.options.async_configure(result2['flow_id'], user_input={
+            'user_id': hass_admin_user.id
+        })
+        assert result3['type'] == data_entry_flow.RESULT_TYPE_FORM
+        assert result3['step_id'] == 'cloud_info'
+
+        result4 = await hass.config_entries.options.async_configure(result3['flow_id'], user_input={})
+        assert result4['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+        assert config_entry.options['user_id'] == hass_admin_user.id
 
 
 async def test_options_flow_filter_exclude(hass):

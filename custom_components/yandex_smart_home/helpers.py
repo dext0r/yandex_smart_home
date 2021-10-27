@@ -22,6 +22,7 @@ class Config:
         """Initialize the configuration."""
         self._hass = hass
         self._data = entry.data
+        self._options = entry.options
         self.entity_config = entity_config or {}
         self.should_expose = should_expose
 
@@ -50,6 +51,11 @@ class Config:
         return self._data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN]
 
     @property
+    def user_id(self) -> str | None:
+        """User id for service calls, used only in cloud connection."""
+        return self._options.get(const.CONF_USER_ID)
+
+    @property
     def pressure_unit(self) -> str:
         return self._data[const.CONF_PRESSURE_UNIT]
 
@@ -74,11 +80,11 @@ class RequestData:
 
     def __init__(self,
                  config: Config,
-                 user_id: str | None,
-                 request_id: str | None,
-                 hass_user_id: str | None = None):
+                 request_user_id: str | None,
+                 request_id: str | None = None,
+                 user_id: str | None = None):
         """Initialize the request data."""
         self.config = config
-        self.user_id = user_id
-        self.context = Context(user_id=hass_user_id)
+        self.context = Context(user_id=user_id)
+        self.request_user_id = request_user_id
         self.request_id = request_id

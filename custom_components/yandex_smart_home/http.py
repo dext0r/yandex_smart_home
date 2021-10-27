@@ -97,9 +97,9 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView, YandexSmartHomeView):
 
         data = RequestData(
             config=self._get_config(request),
-            user_id=request['hass_user'].id,
+            request_user_id=request['hass_user'].id,
             request_id=request.headers.get('X-Request-Id'),
-            hass_user_id=request['hass_user'].id,
+            user_id=request['hass_user'].id,
         )
         action = request.path.replace(self.url, '', 1)
 
