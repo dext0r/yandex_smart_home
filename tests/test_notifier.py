@@ -301,7 +301,8 @@ async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connect
     assert 'devices is not discovered' in caplog.records[0].message
     caplog.clear()
 
-    with patch_yaml_files({YAML_CONFIG_FILE: ''}):
+    with patch_yaml_files({YAML_CONFIG_FILE: ''}), patch(
+            'custom_components.yandex_smart_home.cloud.CloudManager.connect', return_value=None):
         await async_devices(hass, RequestData(hass.data[DOMAIN][CONFIG], None, None), {})
         await hass.async_block_till_done()
 
