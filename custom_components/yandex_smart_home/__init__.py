@@ -1,10 +1,11 @@
 """Support for Actions on Yandex Smart Home."""
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EVENT_HOMEASSISTANT_STOP
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, SERVICE_RELOAD
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
@@ -244,7 +245,7 @@ async def async_setup(hass: HomeAssistant, _: ConfigType):
     async_register_http(hass)
     async_setup_notifier(hass)
 
-    def device_discovery_listener(_: Event):
+    def _device_discovery_listener(_: Event):
         for entry in hass.config_entries.async_entries(DOMAIN):
             if not entry.data[const.CONF_DEVICES_DISCOVERED]:
                 data = dict(entry.data)
@@ -252,7 +253,18 @@ async def async_setup(hass: HomeAssistant, _: ConfigType):
 
                 hass.config_entries.async_update_entry(entry, data=data, options=entry.options)
 
-    hass.bus.async_listen(EVENT_DEVICE_DISCOVERY, device_discovery_listener)
+    hass.bus.async_listen(EVENT_DEVICE_DISCOVERY, _device_discovery_listener)
+
+    async def _handle_reload(*_):
+        current_entries = hass.config_entries.async_entries(DOMAIN)
+        reload_tasks = [
+            hass.config_entries.async_reload(entry.entry_id)
+            for entry in current_entries
+        ]
+
+        await asyncio.gather(*reload_tasks)
+
+    hass.helpers.service.async_register_admin_service(DOMAIN, SERVICE_RELOAD, _handle_reload)
 
     return True
 

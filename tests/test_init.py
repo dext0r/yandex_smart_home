@@ -2,7 +2,9 @@ from unittest.mock import patch
 
 from homeassistant.components import http
 from homeassistant.config import YAML_CONFIG_FILE
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.const import SERVICE_RELOAD
+from homeassistant.core import Context
+from homeassistant.exceptions import ConfigEntryNotReady, Unauthorized
 from homeassistant.helpers.reload import async_integration_yaml_config
 from homeassistant.setup import async_setup_component
 import pytest
@@ -142,6 +144,44 @@ yandex_smart_home:
     assert DOMAIN in config
     assert isinstance(config[DOMAIN]['settings'], dict)
     assert config[DOMAIN]['entity_config'] == {}
+
+
+async def test_reload(hass, hass_admin_user, hass_read_only_user, config_entry):
+    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
+
+    with patch.object(hass.config_entries.flow, 'async_init', return_value=None), patch_yaml_files({
+        YAML_CONFIG_FILE: 'yandex_smart_home:'
+    }):
+        assert await async_setup(hass, {})
+        assert await async_setup_entry(hass, config_entry)
+        config_entry.add_to_hass(hass)
+
+    assert not hass.data[DOMAIN][CONFIG].get_entity_config('sensor.not_existed')
+
+    files = {YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    sensor.test:
+      name: Test
+"""}
+    with patch_yaml_files(files):
+        with pytest.raises(Unauthorized):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_RELOAD,
+                blocking=True,
+                context=Context(user_id=hass_read_only_user.id),
+            )
+
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_RELOAD,
+            blocking=True,
+            context=Context(user_id=hass_admin_user.id),
+        )
+        await hass.async_block_till_done()
+
+        assert hass.data[DOMAIN][CONFIG].get_entity_config('sensor.test').get('name') == 'Test'
 
 
 async def test_setup_component(hass):
