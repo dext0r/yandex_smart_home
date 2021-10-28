@@ -282,6 +282,10 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry):
         mock_notify.assert_called_once()
         mock_notify.reset_mock()
 
+        hass.states.async_remove(state_switch.entity_id)
+        hass.states.async_set(state_humidity.entity_id, '70', state_humidity.attributes)
+        await hass.async_block_till_done()
+
     async_unload_notifier(hass)
 
 

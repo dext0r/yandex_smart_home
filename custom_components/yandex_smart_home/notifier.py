@@ -8,7 +8,7 @@ import time
 from typing import Any
 
 from aiohttp import ContentTypeError
-from homeassistant.const import EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
@@ -117,7 +117,7 @@ class YandexNotifier(ABC):
 
     async def async_event_handler(self, event: Event):
         devices = []
-        event_entity_id = event.data.get('entity_id')
+        event_entity_id = event.data.get(ATTR_ENTITY_ID)
         old_state = event.data.get('old_state')
         new_state = event.data.get('new_state')
 
@@ -134,6 +134,8 @@ class YandexNotifier(ABC):
             state = new_state
             if entity_id != event_entity_id:
                 state = self._hass.states.get(entity_id)
+                if not state:
+                    continue
 
             yandex_entity = YandexEntity(self._hass, self._config, state)
 
