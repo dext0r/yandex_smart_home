@@ -173,21 +173,24 @@ def device_type_validate(device_type: str) -> str:
     return device_type
 
 
-ENTITY_SCHEMA = vol.Schema({
-    vol.Optional(const.CONF_NAME): cv.string,
-    vol.Optional(const.CONF_ROOM): cv.string,
-    vol.Optional(const.CONF_TYPE): vol.All(cv.string, device_type_validate),
-    vol.Optional(const.CONF_TURN_ON): cv.SERVICE_SCHEMA,
-    vol.Optional(const.CONF_TURN_OFF): cv.SERVICE_SCHEMA,
-    vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, features_validate),
-    vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
-    vol.Optional(const.CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID): cv.boolean,
-    vol.Optional(const.CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
-    vol.Optional(const.CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
-    vol.Optional(const.CONF_ENTITY_CUSTOM_MODES, default={}): ENTITY_CUSTOM_MODE_SCHEMA,
-    vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLES, default={}): ENTITY_CUSTOM_TOGGLE_SCHEMA,
-    vol.Optional(const.CONF_ENTITY_CUSTOM_RANGES, default={}): ENTITY_CUSTOM_RANGE_SCHEMA,
-})
+ENTITY_SCHEMA = vol.All(
+    cv.deprecated(const.CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID),
+    vol.Schema({
+        vol.Optional(const.CONF_NAME): cv.string,
+        vol.Optional(const.CONF_ROOM): cv.string,
+        vol.Optional(const.CONF_TYPE): vol.All(cv.string, device_type_validate),
+        vol.Optional(const.CONF_TURN_ON): cv.SERVICE_SCHEMA,
+        vol.Optional(const.CONF_TURN_OFF): cv.SERVICE_SCHEMA,
+        vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, features_validate),
+        vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
+        vol.Optional(const.CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID): cv.boolean,
+        vol.Optional(const.CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
+        vol.Optional(const.CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
+        vol.Optional(const.CONF_ENTITY_CUSTOM_MODES, default={}): ENTITY_CUSTOM_MODE_SCHEMA,
+        vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLES, default={}): ENTITY_CUSTOM_TOGGLE_SCHEMA,
+        vol.Optional(const.CONF_ENTITY_CUSTOM_RANGES, default={}): ENTITY_CUSTOM_RANGE_SCHEMA,
+    })
+)
 
 NOTIFIER_SCHEMA = vol.Schema({
     vol.Required(const.CONF_NOTIFIER_OAUTH_TOKEN): cv.string,

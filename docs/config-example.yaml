@@ -31,8 +31,6 @@ yandex_smart_home:
             - Wake up
           alarm:
             - Blink
-    media_player.tv_lg:
-      channel_set_via_media_content_id: true
     fan.xiaomi_miio_device:
       name: Увлажнитель
       room: Гостинная

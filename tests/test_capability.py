@@ -308,8 +308,9 @@ async def test_capability_demo_platform(hass):
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == 'devices.types.media_device'
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
-    assert capabilities == [('devices.capabilities.range', 'volume'), ('devices.capabilities.toggle', 'mute'),
-                            ('devices.capabilities.toggle', 'pause'), ('devices.capabilities.on_off', 'on')]
+    assert capabilities == [('devices.capabilities.range', 'volume'), ('devices.capabilities.range', 'channel'),
+                            ('devices.capabilities.toggle', 'mute'), ('devices.capabilities.toggle', 'pause'),
+                            ('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('media_player.kitchen')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
@@ -323,8 +324,9 @@ async def test_capability_demo_platform(hass):
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == 'devices.types.media_device'
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
-    assert capabilities == [('devices.capabilities.range', 'volume'), ('devices.capabilities.toggle', 'mute'),
-                            ('devices.capabilities.toggle', 'pause'), ('devices.capabilities.on_off', 'on')]
+    assert capabilities == [('devices.capabilities.range', 'volume'), ('devices.capabilities.range', 'channel'),
+                            ('devices.capabilities.toggle', 'mute'), ('devices.capabilities.toggle', 'pause'),
+                            ('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('media_player.lounge_room')
     entity = YandexEntity(hass, BASIC_CONFIG, state)

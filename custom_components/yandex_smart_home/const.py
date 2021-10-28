@@ -46,7 +46,7 @@ CONF_TYPE = 'type'
 CONF_TURN_ON = 'turn_on'
 CONF_TURN_OFF = 'turn_off'
 CONF_FEATURES = 'features'
-CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID = 'channel_set_via_media_content_id'
+CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID = 'channel_set_via_media_content_id'  # Deprecated
 CONF_ENTITY_PROPERTY_ENTITY = 'entity'
 CONF_ENTITY_PROPERTY_TYPE = 'type'
 CONF_ENTITY_PROPERTY_ATTRIBUTE = 'attribute'
@@ -570,6 +570,3 @@ MEDIA_PLAYER_FEATURES = (
     MEDIA_PLAYER_FEATURE_VOLUME_SET,
     MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK
 )
-
-# https://github.com/AlexxIT/YandexStation
-YANDEX_STATION_INTENTS_MEDIA_PLAYER = media_player.DOMAIN + '.yandex_intents'
