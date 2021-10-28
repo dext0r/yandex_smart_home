@@ -208,12 +208,27 @@ class OnOffCapabilityCover(OnOffCapability):
 class OnOffCapabilityMediaPlayer(OnOffCapability):
     def supported(self) -> bool:
         if self.state.domain == media_player.DOMAIN:
-            if const.CONF_TURN_ON in self.entity_config:
-                return True
-
             features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-            return features & media_player.SUPPORT_TURN_ON and features & media_player.SUPPORT_TURN_OFF
+            if const.CONF_TURN_ON in self.entity_config or const.CONF_TURN_OFF in self.entity_config:
+                return True
+
+            return features & media_player.SUPPORT_TURN_ON or features & media_player.SUPPORT_TURN_OFF
+
+        return False
+
+    def parameters(self) -> dict[str, Any] | None:
+        if not self.retrievable:
+            return {'split': True}
+
+    @property
+    def retrievable(self) -> bool:
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        support_turn_on = const.CONF_TURN_ON in self.entity_config or features & media_player.SUPPORT_TURN_ON
+        support_turn_off = const.CONF_TURN_OFF in self.entity_config or features & media_player.SUPPORT_TURN_OFF
+
+        if support_turn_on and support_turn_off:
+            return True
 
         return False
 
