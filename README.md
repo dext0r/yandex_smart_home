@@ -122,3 +122,4 @@
 * https://t.me/yandex_smart_home - Чат по компоненту в Телеграме
 * https://github.com/AlexxIT/YandexStation - Управление колонками с Алисой из Home Assistant и проброс устройств из УДЯ в Home Assistant
 * https://github.com/allmazz/yandex_smart_home_ip - Список IP адресов платформы умного дома Яндекса
+* https://stats.uptimerobot.com/QX83nsXBWW - Мониторинг доступности облачного подключения
