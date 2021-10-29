@@ -34,7 +34,7 @@ async def test_capability_custom(hass):
     state = State('switch.test', STATE_ON)
     cap = MockCapability(hass, BASIC_CONFIG, state, 'test_instance', {})
     assert not cap.retrievable
-    assert cap.get_value() == STATE_ON
+    assert cap.get_value() is None
 
 
 async def test_capability_custom_state_attr(hass):
@@ -84,6 +84,7 @@ async def test_capability_custom_mode(hass):
     assert not cap.supported()
 
     state = State('switch.test', 'mode_1', {})
+    hass.states.async_set(state.entity_id, state.state)
     config = MockConfig(
         entity_config={
             state.entity_id: {
@@ -106,6 +107,22 @@ async def test_capability_custom_mode(hass):
         },
     })
     assert cap.supported()
+    assert cap.retrievable is False
+    assert cap.modes_list_attribute is None
+    assert cap.get_value() is None
+
+    cap = CustomModeCapability(hass, config, state, const.MODE_INSTANCE_CLEANUP_MODE, {
+        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
+        const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {
+            CONF_SERVICE: 'test.set_mode',
+            ATTR_ENTITY_ID: 'switch.test',
+            CONF_SERVICE_DATA: {
+                'service_mode': dynamic_template('mode: {{ mode }}')
+            }
+        },
+    })
+    assert cap.supported()
+    assert cap.retrievable
     assert cap.modes_list_attribute is None
     assert cap.get_value() == 'one'
 
@@ -122,9 +139,13 @@ async def test_capability_custom_toggle(hass):
         const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: None
     })
     assert cap.supported()
+    assert cap.retrievable is False
+    assert cap.get_value() is None
 
     state = State('switch.test', STATE_ON, {})
+    hass.states.async_set(state.entity_id, state.state)
     cap = CustomToggleCapability(hass, BASIC_CONFIG, state, 'test_toggle', {
+        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
         const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: {
             CONF_SERVICE: 'test.turn_on',
             ATTR_ENTITY_ID: 'switch.test1',
@@ -135,9 +156,10 @@ async def test_capability_custom_toggle(hass):
         },
     })
     assert cap.supported()
+    assert cap.retrievable
     assert cap.get_value() is True
 
-    cap.state = State('switch.test', STATE_OFF)
+    hass.states.async_set(state.entity_id, STATE_OFF)
     assert cap.get_value() is False
 
     calls_on = async_mock_service(hass, 'test', 'turn_on')
@@ -153,7 +175,9 @@ async def test_capability_custom_toggle(hass):
 
 async def test_capability_custom_range_random_access(hass):
     state = State('switch.test', '30', {})
+    hass.states.async_set(state.entity_id, state.state)
     cap = CustomRangeCapability(hass, BASIC_CONFIG, state, 'test_range', {
+        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
         const.CONF_ENTITY_RANGE: {
             const.CONF_ENTITY_RANGE_MIN: 10,
             const.CONF_ENTITY_RANGE_MAX: 50,
@@ -168,6 +192,7 @@ async def test_capability_custom_range_random_access(hass):
         },
     })
     assert cap.supported()
+    assert cap.retrievable
     assert cap.support_random_access
     assert cap.get_value() == 30
 

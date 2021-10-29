@@ -45,6 +45,9 @@ class CustomCapability(AbstractCapability, ABC):
 
     def get_value(self) -> float | str | None:
         """Return the state value of this capability for this entity."""
+        if not self.retrievable:
+            return None
+
         entity_state = self.state
 
         if self.state_entity_id:
@@ -84,6 +87,9 @@ class CustomModeCapability(CustomCapability, ModeCapability):
 
     def get_value(self) -> str | None:
         """Return the state value of this capability for this entity."""
+        if not self.retrievable:
+            return None
+
         return self.get_yandex_mode_by_ha_mode(super().get_value())
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
@@ -112,6 +118,9 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
 
     def get_value(self) -> bool | None:
         """Return the state value of this capability for this entity."""
+        if not self.retrievable:
+            return None
+
         return super().get_value() in [STATE_ON, True]
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
