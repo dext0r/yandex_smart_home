@@ -485,34 +485,39 @@ class ChannelCapability(RangeCapability):
         media_content_type = self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_TYPE)
 
         if media_content_type == media_player.const.MEDIA_TYPE_CHANNEL:
-            return self.float_value(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID), strict=False) or 0
-
-        return 0
+            return self.float_value(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID), strict=False)
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        if state.get('relative'):
-            if state['value'] >= 0:
-                service = media_player.SERVICE_MEDIA_NEXT_TRACK
-            else:
-                service = media_player.SERVICE_MEDIA_PREVIOUS_TRACK
+        value = state['value']
 
-            await self.hass.services.async_call(
-                media_player.DOMAIN,
-                service, {
-                    ATTR_ENTITY_ID: self.state.entity_id
-                },
-                blocking=True,
-                context=data.context
-            )
-        else:
-            await self.hass.services.async_call(
-                media_player.DOMAIN,
-                media_player.SERVICE_PLAY_MEDIA, {
-                    ATTR_ENTITY_ID: self.state.entity_id,
-                    media_player.ATTR_MEDIA_CONTENT_ID: state['value'],
-                    media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
-                },
-                blocking=True,
-                context=data.context
-            )
+        if state.get('relative'):
+            print(self.get_value())
+            if self.get_value() is not None:
+                value = self.get_absolute_value(state['value'])
+            else:
+                if state['value'] >= 0:
+                    service = media_player.SERVICE_MEDIA_NEXT_TRACK
+                else:
+                    service = media_player.SERVICE_MEDIA_PREVIOUS_TRACK
+
+                await self.hass.services.async_call(
+                    media_player.DOMAIN,
+                    service, {
+                        ATTR_ENTITY_ID: self.state.entity_id
+                    },
+                    blocking=True,
+                    context=data.context
+                )
+                return
+
+        await self.hass.services.async_call(
+            media_player.DOMAIN,
+            media_player.SERVICE_PLAY_MEDIA, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                media_player.ATTR_MEDIA_CONTENT_ID: value,
+                media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+            },
+            blocking=True,
+            context=data.context
+        )

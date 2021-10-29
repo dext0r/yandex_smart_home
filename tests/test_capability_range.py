@@ -600,7 +600,7 @@ async def test_capability_range_channel_set_random(hass, caplog):
             'precision': 1
         },
     }
-    assert cap.get_value() == 0
+    assert cap.get_value() is None
 
     calls_set = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_PLAY_MEDIA)
     await cap.set_state(BASIC_DATA, {'value': 15})
@@ -622,6 +622,42 @@ async def test_capability_range_channel_set_random(hass, caplog):
     assert calls_down[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
+async def test_capability_range_channel_set_random_with_value(hass, caplog):
+    state = State('media_player.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        media_player.ATTR_MEDIA_CONTENT_ID: 15,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
+    assert cap.retrievable
+    assert cap.support_random_access
+    assert cap.parameters() == {
+        'instance': 'channel',
+        'random_access': True,
+        'range': {
+            'max': 999,
+            'min': 0,
+            'precision': 1
+        },
+    }
+    assert cap.get_value() == 15
+
+    calls_set = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_PLAY_MEDIA)
+    await cap.set_state(BASIC_DATA, {'value': 5, 'relative': True})
+    await cap.set_state(BASIC_DATA, {'value': -3, 'relative': True})
+    assert len(calls_set) == 2
+    assert calls_set[0].data == {
+        ATTR_ENTITY_ID: state.entity_id,
+        media_player.ATTR_MEDIA_CONTENT_ID: 20,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+    }
+    assert calls_set[1].data == {
+        ATTR_ENTITY_ID: state.entity_id,
+        media_player.ATTR_MEDIA_CONTENT_ID: 12,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+    }
+
+
 async def test_capability_range_channel_value(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
@@ -637,7 +673,7 @@ async def test_capability_range_channel_value(hass, caplog):
         media_player.ATTR_MEDIA_CONTENT_ID: '5'
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
-    assert cap.get_value() == 0
+    assert cap.get_value() is None
 
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
@@ -645,7 +681,7 @@ async def test_capability_range_channel_value(hass, caplog):
         media_player.ATTR_MEDIA_CONTENT_ID: 'foo'
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
-    assert cap.get_value() == 0
+    assert cap.get_value() is None
     assert len(caplog.records) == 0
 
 
@@ -665,7 +701,7 @@ async def test_capability_range_channel_set_relative(hass):
         'instance': 'channel',
         'random_access': False
     }
-    assert cap.get_value() == 0
+    assert cap.get_value() is None
 
     calls_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_NEXT_TRACK)
     await cap.set_state(BASIC_DATA, {'value': 1, 'relative': True})
