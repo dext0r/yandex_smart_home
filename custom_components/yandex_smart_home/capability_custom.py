@@ -22,6 +22,7 @@ from .const import (
     CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION,
     ERR_DEVICE_UNREACHABLE,
+    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
 from .error import SmartHomeError
 from .helpers import Config, RequestData
@@ -138,9 +139,13 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
     def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  instance: str, capability_config: dict[str, Any]):
         self.capability_config = capability_config
+
+        self.set_value = self.capability_config.get(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE)
+        self.increase_value = self.capability_config.get(const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE)
+        self.decrease_value = self.capability_config.get(const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE)
+
         super().__init__(hass, config, state, instance, capability_config)
 
-        self.set_value = self.capability_config[const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE]
         self.default_range = (
             self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, self.default_range[0]),
             self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, self.default_range[1]),
@@ -158,11 +163,11 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
             if key not in self.capability_config.get(CONF_ENTITY_RANGE, {}):
                 return False
 
-        return True
+        return self.set_value is not None
 
     def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
-        if not self.support_random_access:
+        if not self.retrievable:
             return None
 
         return self.float_value(super().get_value())
@@ -170,12 +175,27 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = state['value']
-        if state.get('relative') and self.support_random_access:
-            value = self.get_absolute_value(state['value'])
+        service = self.set_value
+
+        if state.get('relative'):
+            if self.increase_value or self.decrease_value:
+                if value >= 0:
+                    service = self.increase_value
+                else:
+                    service = self.decrease_value
+            else:
+                if not self.retrievable:
+                    raise SmartHomeError(
+                        ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                        f'Failed to set relative value for {self.instance} instance of {self.state.entity_id}. '
+                        f'No state or service found.'
+                    )
+
+                value = self.get_absolute_value(state['value'])
 
         await async_call_from_config(
             self.hass,
-            self.set_value,
+            service,
             validate_config=False,
             variables={'value': value},
             blocking=True,

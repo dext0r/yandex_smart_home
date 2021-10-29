@@ -134,12 +134,21 @@ def range_instance_validate(instance: str) -> str:
 
 
 ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema({
-    vol.All(cv.string, range_instance_validate): vol.Schema({
-        vol.Required(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE): cv.SERVICE_SCHEMA,
-        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
-        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-        vol.Optional(const.CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
-    })
+    vol.All(cv.string, range_instance_validate): vol.All(
+        cv.has_at_least_one_key(
+            const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE,
+            const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE,
+            const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
+        ),
+        vol.Schema({
+            vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE): vol.Any(cv.SERVICE_SCHEMA),
+            vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
+            vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
+            vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
+            vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
+            vol.Optional(const.CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
+        })
+    )
 })
 
 

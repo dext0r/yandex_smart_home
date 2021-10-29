@@ -34,6 +34,26 @@ yandex_smart_home:
             - Blink
     media_player.tv_lg:
       channel_set_via_media_content_id: true
+      custom_ranges:
+        channel:
+          set_value:
+            service: media_player.play_media
+            entity_id: media_player.stupid_tv
+            data:
+              media_content_type: channel
+              media_content_id: '{{ value }}'
+          increase_value:
+            service: script.next_channel_via_ir
+          decrease_value:
+            service: script.prev_channel_via_ir
+          range:
+            min: 0
+            max: 999
+        volume:
+          increase_value:
+            service: script.increase_volume
+          decrease_value:
+            service: script.decrease_volume
     fan.xiaomi_miio_device:
       name: Увлажнитель
       room: Гостинная

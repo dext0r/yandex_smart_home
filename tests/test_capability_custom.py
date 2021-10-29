@@ -214,11 +214,13 @@ async def test_capability_custom_range_random_access(hass):
     assert calls[4].data['value'] == 'value: 10'
 
 
-async def test_capability_custom_range_relative_only(hass):
-    state = State('switch.test', STATE_ON, {})
+async def test_capability_custom_range_random_access_no_state(hass):
+    state = State('switch.test', '30', {})
+    hass.states.async_set(state.entity_id, state.state)
     cap = CustomRangeCapability(hass, BASIC_CONFIG, state, 'test_range', {
         const.CONF_ENTITY_RANGE: {
             const.CONF_ENTITY_RANGE_MIN: 10,
+            const.CONF_ENTITY_RANGE_MAX: 50,
             const.CONF_ENTITY_RANGE_PRECISION: 3,
         },
         const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {
@@ -230,22 +232,82 @@ async def test_capability_custom_range_relative_only(hass):
         },
     })
     assert cap.supported()
-    assert not cap.support_random_access
+    assert cap.retrievable is False
+    assert cap.support_random_access
     assert cap.get_value() is None
 
     calls = async_mock_service(hass, 'test', 'set_value')
     await cap.set_state(BASIC_DATA, {'value': 40})
     await cap.set_state(BASIC_DATA, {'value': 100})
-    await cap.set_state(BASIC_DATA, {'value': 10, 'relative': True})
-    await cap.set_state(BASIC_DATA, {'value': -3, 'relative': True})
-    await cap.set_state(BASIC_DATA, {'value': -50, 'relative': True})
 
-    assert len(calls) == 5
+    assert len(calls) == 2
     for i in range(0, len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == 'input_number.test'
 
     assert calls[0].data['value'] == 'value: 40'
     assert calls[1].data['value'] == 'value: 100'
-    assert calls[2].data['value'] == 'value: 10'
-    assert calls[3].data['value'] == 'value: -3'
-    assert calls[4].data['value'] == 'value: -50'
+
+    for v in [10, -3, 50]:
+        with pytest.raises(SmartHomeError) as e:
+            await cap.set_state(BASIC_DATA, {'value': v, 'relative': True})
+        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+
+
+async def test_capability_custom_range_relative_override_no_state(hass):
+    state = State('switch.test', STATE_ON, {})
+    cap = CustomRangeCapability(hass, BASIC_CONFIG, state, 'test_range', {
+        const.CONF_ENTITY_RANGE: {
+            const.CONF_ENTITY_RANGE_MIN: 10,
+            const.CONF_ENTITY_RANGE_MAX: 99,
+            const.CONF_ENTITY_RANGE_PRECISION: 3,
+        },
+        const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {
+            CONF_SERVICE: 'test.set_value',
+            ATTR_ENTITY_ID: 'input_number.test',
+            CONF_SERVICE_DATA: {
+                'value': dynamic_template('value: {{ value|int }}')
+            }
+        },
+        const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: {
+            CONF_SERVICE: 'test.increase_value',
+            ATTR_ENTITY_ID: 'input_number.test',
+            CONF_SERVICE_DATA: {
+                'value': dynamic_template('value: {{ value|int }}')
+            }
+        },
+        const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE: {
+            CONF_SERVICE: 'test.decrease_value',
+            ATTR_ENTITY_ID: 'input_number.test',
+            CONF_SERVICE_DATA: {
+                'value': dynamic_template('value: {{ value|int }}')
+            }
+        },
+
+    })
+    assert cap.supported()
+    assert cap.support_random_access
+    assert cap.retrievable is False
+    assert cap.get_value() is None
+
+    calls = async_mock_service(hass, 'test', 'set_value')
+    await cap.set_state(BASIC_DATA, {'value': 40})
+    await cap.set_state(BASIC_DATA, {'value': 100})
+
+    assert len(calls) == 2
+    for i in range(0, len(calls)):
+        assert calls[i].data[ATTR_ENTITY_ID] == 'input_number.test'
+
+    assert calls[0].data['value'] == 'value: 40'
+    assert calls[1].data['value'] == 'value: 100'
+
+    calls = async_mock_service(hass, 'test', 'increase_value')
+    await cap.set_state(BASIC_DATA, {'value': 10, 'relative': True})
+    assert len(calls) == 1
+    assert calls[0].data == {'entity_id': 'input_number.test', 'value': 'value: 10'}
+
+    calls = async_mock_service(hass, 'test', 'decrease_value')
+    await cap.set_state(BASIC_DATA, {'value': -3, 'relative': True})
+    await cap.set_state(BASIC_DATA, {'value': -50, 'relative': True})
+    assert len(calls) == 2
+    assert calls[0].data == {'entity_id': 'input_number.test', 'value': 'value: -3'}
+    assert calls[1].data == {'entity_id': 'input_number.test', 'value': 'value: -50'}

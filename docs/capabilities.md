@@ -274,7 +274,7 @@ yandex_smart_home:
 Управление параметрами устройства, которые имеют диапазон регулировки (громкость, яркость, температура). Смотрите список **[всех доступных функций](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html)**.
 
 Специфичные параметры:
-* `set_value`: Сервис вызываемый при любой регулировке функции. В переменной `value` абсолютное или относительное значение (в зависимости от настроек `range`). Пример:
+* `set_value`: Сервис вызываемый при установке абсолютного значения функции. В переменной `value` абсолютное или относительное значение (в зависимости от настроек `range` и наличия `increase_value` и `decrease_value`). Если не задан - установка абсолютного значения поддерживаться не будет. Пример:
   ```yaml
   set_value:
     service: xiaomi_miio_airpurifier.fan_set_favorite_speed
@@ -282,6 +282,7 @@ yandex_smart_home:
     data:
       speed: '{{ value }}'
   ```
+* `increase_value` и `decrease_value`: Сервисы, вызываемые при относительной регулировке (кнопки `+` и `-` и "Алиса, убавь температуру"). Если не заданы - будет вызываться сервис `set_value`.
 * `range`: Граничные значения диапазона. Для `humidity`, `open`, `brightness` есть ограничение: минимум `0`, максимум `100`.
   Если не задать `min` и `max` регулировка будет только относительная (в переменной `value` - `1` или `-1`). Пример:
   ```yaml
@@ -302,7 +303,7 @@ yandex_smart_home:
     favorite_speed: 80
     ```
 
-    Конфигурация компонента
+    Конфигурация компонента:
     ```yaml
     yandex_smart_home:
       entity_config:
@@ -320,3 +321,28 @@ yandex_smart_home:
                 max: 300
                 precision: 20 # по вкусу
     ```
+2. Выбор канала на телевизоре через `media_player.play_media`, листание каналов через отдельные скрипты, номер текущего канала нигде не хранится.
+
+    Конфигурация компонента:
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        media_player.stupid_tv:
+          custom_ranges:
+            channel:
+              set_value:
+                service: media_player.play_media
+                entity_id: media_player.stupid_tv
+                data:
+                  media_content_type: channel
+                  media_content_id: '{{ value }}'
+              increase_value:
+                # сервис отправит нажатие кнопки "канал вверх" по IR
+                service: script.next_channel_via_ir
+              decrease_value:
+                # сервис отправит нажатие кнопки "канал вниз" по IR
+                service: script.prev_channel_via_ir
+              range:
+                min: 0
+                max: 999
+  ```
