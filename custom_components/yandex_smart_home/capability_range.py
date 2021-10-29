@@ -492,7 +492,6 @@ class ChannelCapability(RangeCapability):
         value = state['value']
 
         if state.get('relative'):
-            print(self.get_value())
             if self.get_value() is not None:
                 value = self.get_absolute_value(state['value'])
             else:
