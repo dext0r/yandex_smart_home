@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import asyncio
+from collections import deque
 import json
 import logging
 import time
@@ -10,7 +11,7 @@ from typing import Any
 from aiohttp import ContentTypeError
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, Event, HassJob, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_call_later
@@ -23,6 +24,7 @@ from .helpers import Config
 _LOGGER = logging.getLogger(__name__)
 
 DISCOVERY_REQUEST_DELAY = 10
+REPORT_STATE_WINDOW = 1
 
 
 class YandexNotifier(ABC):
@@ -33,6 +35,10 @@ class YandexNotifier(ABC):
 
         self._property_entities = self._get_property_entities()
         self._session = async_create_clientsession(hass)
+
+        self._unsub_pending: CALLBACK_TYPE | None = None
+        self._pending = deque()
+        self._report_states_job = HassJob(self._report_states)
 
     @property
     @abstractmethod
@@ -47,6 +53,10 @@ class YandexNotifier(ABC):
     @property
     def _config(self) -> Config:
         return self._hass.data[DOMAIN][CONFIG]
+
+    @property
+    def _ready(self) -> bool:
+        return self._config and self._config.devices_discovered
 
     @abstractmethod
     def _format_log_message(self, message: str) -> str:
@@ -79,19 +89,32 @@ class YandexNotifier(ABC):
 
         return rv
 
+    async def _report_states(self, *_):
+        devices = {}
+
+        while len(self._pending):
+            device = self._pending.popleft()
+            devices[device['id']] = device
+
+        await self.async_send_state(list(devices.values()))
+
+        if len(self._pending):
+            self._unsub_pending = async_call_later(self._hass, REPORT_STATE_WINDOW, self._report_states_job)
+        else:
+            self._unsub_pending = None
+
     async def async_send_state(self, devices: list):
         await self._async_send_callback(f'{self._base_url}/state', {'devices': devices})
 
     async def async_send_discovery(self, _):
+        if not self._ready:
+            return
+
         _LOGGER.debug(self._format_log_message('Device list update initiated'))
         await self._async_send_callback(f'{self._base_url}/discovery', {})
 
     # noinspection PyBroadException
     async def _async_send_callback(self, url: str, payload: dict[str, Any]):
-        if self._config and not self._config.devices_discovered:
-            _LOGGER.debug('Home Assistant devices is not discovered by Yandex yet')
-            return
-
         if self._session.closed:
             return
 
@@ -120,7 +143,9 @@ class YandexNotifier(ABC):
             _LOGGER.exception(self._format_log_message('Failed to send state notification'))
 
     async def async_event_handler(self, event: Event):
-        devices = []
+        if not self._ready:
+            return
+
         event_entity_id = event.data.get(ATTR_ENTITY_ID)
         old_state = event.data.get('old_state')
         new_state = event.data.get('new_state')
@@ -153,17 +178,17 @@ class YandexNotifier(ABC):
                     continue
 
             if device.get('capabilities') or device.get('properties'):
-                devices.append(device)
                 entity_text = entity_id
                 if entity_id != event_entity_id:
                     entity_text = f'{entity_text} => {event_entity_id}'
 
                 _LOGGER.debug(self._format_log_message(
-                    f'Notify Yandex about new state {entity_text}: {new_state.state}'
+                    f'Scheduling report state to Yandex for {entity_text}: {new_state.state}'
                 ))
+                self._pending.append(device)
 
-        if devices:
-            await self.async_send_state(devices)
+                if self._unsub_pending is None:
+                    self._unsub_pending = async_call_later(self._hass, REPORT_STATE_WINDOW, self._report_states_job)
 
 
 class YandexDirectNotifier(YandexNotifier):

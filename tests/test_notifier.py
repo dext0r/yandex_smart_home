@@ -1,6 +1,6 @@
 import asyncio
 import time
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 from homeassistant.config import YAML_CONFIG_FILE
 from homeassistant.const import (
@@ -48,9 +48,10 @@ def mock_call_later_fixture():
         yield mock_call_later
 
 
-def _mock_entry_with_cloud_connection(*_) -> MockConfigEntry:
+def _mock_entry_with_cloud_connection(_=None, devices_discovered=False) -> MockConfigEntry:
     return MockConfigEntry(data={
         const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
+        const.CONF_DEVICES_DISCOVERED: devices_discovered,
         const.CONF_CLOUD_INSTANCE: {
             const.CONF_CLOUD_INSTANCE_ID: 'test_instance',
             const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: 'foo',
@@ -58,9 +59,10 @@ def _mock_entry_with_cloud_connection(*_) -> MockConfigEntry:
     })
 
 
-def _mock_entry_with_direct_connection(hass_admin_user) -> MockConfigEntry:
+def _mock_entry_with_direct_connection(hass_admin_user, devices_discovered=False) -> MockConfigEntry:
     return MockConfigEntry(data={
         const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT,
+        const.CONF_DEVICES_DISCOVERED: devices_discovered,
         const.CONF_NOTIFIER: [{
             CONF_NOTIFIER_USER_ID: hass_admin_user.id,
             CONF_NOTIFIER_OAUTH_TOKEN: 'foo',
@@ -198,11 +200,41 @@ async def test_notifier_property_entities(hass, hass_admin_user):
 
 
 @pytest.mark.parametrize('entry', [_mock_entry_with_cloud_connection, _mock_entry_with_direct_connection])
-async def test_notifier_event_handler(hass, hass_admin_user, entry):
+async def test_notifier_event_handler_not_ready(hass, hass_admin_user, entry, mock_call_later):
+    async_setup_notifier(hass)
+
+    config = MockConfig(entry=entry(hass_admin_user, devices_discovered=False))
+    hass.data[DOMAIN] = {
+        CONFIG: config,
+        NOTIFIERS: [],
+    }
+    await async_start_notifier(hass)
+
+    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
+
+    state_switch = State('switch.test', STATE_ON, attributes={
+        ATTR_VOLTAGE: '3.5'
+    })
+    hass.states.async_set(state_switch.entity_id, state_switch.state, state_switch.attributes)
+
+    mock_call_later.reset_mock()
+    hass.states.async_set(state_switch.entity_id, 'off')
+    await hass.async_block_till_done()
+    mock_call_later.assert_not_called()
+
+    hass.data[DOMAIN][CONFIG] = MockConfig(entry=entry(hass_admin_user, devices_discovered=True))
+    hass.states.async_set(state_switch.entity_id, 'on')
+    await hass.async_block_till_done()
+    mock_call_later.assert_called_once()
+    assert '_report_states' in str(mock_call_later.call_args[0][2].target)
+
+
+@pytest.mark.parametrize('entry', [_mock_entry_with_cloud_connection, _mock_entry_with_direct_connection])
+async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_later):
     async_setup_notifier(hass)
 
     config = MockConfig(
-        entry=entry(hass_admin_user),
+        entry=entry(hass_admin_user, devices_discovered=True),
         should_expose=lambda e: e != 'sensor.not_expose',
         entity_config={
             'switch.test': {
@@ -222,70 +254,77 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry):
     }
     await async_start_notifier(hass)
 
-    with patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_send_state') as mock_notify:
-        assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
+    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
+    notifier = hass.data[DOMAIN][NOTIFIERS][0]
 
-        state_switch = State('switch.test', STATE_ON, attributes={
-            ATTR_VOLTAGE: '3.5'
-        })
-        state_temp = State('sensor.temp', '5', attributes={
-            ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
-            ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
-        })
-        state_humidity = State('sensor.humidity', '95', attributes={
-            ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
-            ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
-        })
-        state_not_expose = State('sensor.not_expose', '3', attributes={
-            ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
-            ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
-        })
-        for s in state_switch, state_temp, state_humidity, state_not_expose:
-            hass.states.async_set(s.entity_id, s.state, s.attributes)
+    state_switch = State('switch.test', STATE_ON, attributes={
+        ATTR_VOLTAGE: '3.5'
+    })
+    state_temp = State('sensor.temp', '5', attributes={
+        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+    })
+    state_humidity = State('sensor.humidity', '95', attributes={
+        ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
+    })
+    state_not_expose = State('sensor.not_expose', '3', attributes={
+        ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
+    })
+    for s in state_switch, state_temp, state_humidity, state_not_expose:
+        hass.states.async_set(s.entity_id, s.state, s.attributes)
 
+    await hass.async_block_till_done()
+    assert len(notifier._pending) == 0
+
+    for s in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
+        hass.states.async_set(state_temp.entity_id, s, state_temp.attributes)
         await hass.async_block_till_done()
-        mock_notify.assert_not_called()
+        assert len(notifier._pending) == 0
 
-        for s in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
-            hass.states.async_set(state_temp.entity_id, s, state_temp.attributes)
-            await hass.async_block_till_done()
-            mock_notify.assert_not_called()
+    assert notifier._unsub_pending is None
+    mock_call_later.reset_mock()
+    hass.states.async_set(state_temp.entity_id, '6', state_temp.attributes)
+    await hass.async_block_till_done()
+    assert len(notifier._pending) == 1
+    assert notifier._unsub_pending is not None
+    mock_call_later.assert_called_once()
+    assert '_report_states' in str(mock_call_later.call_args[0][2].target)
+    mock_call_later.reset_mock()
+    notifier._pending.clear()
 
-        hass.states.async_set(state_temp.entity_id, '6', state_temp.attributes)
-        await hass.async_block_till_done()
-        mock_notify.assert_called_once()
-        mock_notify.reset_mock()
+    hass.states.async_set(state_not_expose.entity_id, '4', state_not_expose.attributes)
+    await hass.async_block_till_done()
+    assert len(notifier._pending) == 0
 
-        hass.states.async_set(state_not_expose.entity_id, '4', state_not_expose.attributes)
-        await hass.async_block_till_done()
-        mock_notify.assert_not_called()
+    hass.states.async_set(state_humidity.entity_id, '60', state_humidity.attributes)
+    await hass.async_block_till_done()
+    assert len(notifier._pending) == 2
+    assert [c['id'] for c in notifier._pending] == ['sensor.humidity', 'switch.test']
+    mock_call_later.assert_not_called()
+    notifier._pending.clear()
 
-        hass.states.async_set(state_humidity.entity_id, '60', state_humidity.attributes)
-        await hass.async_block_till_done()
-        mock_notify.assert_called_once()
-        assert [c['id'] for c in mock_notify.call_args[0][0]] == ['sensor.humidity', 'switch.test']
-        mock_notify.reset_mock()
+    state_switch.attributes = {
+        ATTR_VOLTAGE: '3.5',
+        ATTR_UNIT_OF_MEASUREMENT: 'V',
+    }
+    hass.states.async_set(state_switch.entity_id, state_switch.state, state_switch.attributes)
+    await hass.async_block_till_done()
+    assert len(notifier._pending) == 0
 
-        state_switch.attributes = {
-            ATTR_VOLTAGE: '3.5',
-            ATTR_UNIT_OF_MEASUREMENT: 'V',
-        }
-        hass.states.async_set(state_switch.entity_id, state_switch.state, state_switch.attributes)
-        await hass.async_block_till_done()
-        mock_notify.assert_not_called()
+    state_switch.attributes = {
+        ATTR_VOLTAGE: '3',
+        ATTR_UNIT_OF_MEASUREMENT: 'V',
+    }
+    hass.states.async_set(state_switch.entity_id, state_switch.state, state_switch.attributes)
+    await hass.async_block_till_done()
+    assert len(notifier._pending) == 1
+    notifier._pending.clear()
 
-        state_switch.attributes = {
-            ATTR_VOLTAGE: '3',
-            ATTR_UNIT_OF_MEASUREMENT: 'V',
-        }
-        hass.states.async_set(state_switch.entity_id, state_switch.state, state_switch.attributes)
-        await hass.async_block_till_done()
-        mock_notify.assert_called_once()
-        mock_notify.reset_mock()
-
-        hass.states.async_remove(state_switch.entity_id)
-        hass.states.async_set(state_humidity.entity_id, '70', state_humidity.attributes)
-        await hass.async_block_till_done()
+    hass.states.async_remove(state_switch.entity_id)
+    hass.states.async_set(state_humidity.entity_id, '70', state_humidity.attributes)
+    await hass.async_block_till_done()
 
     async_unload_notifier(hass)
 
@@ -293,18 +332,11 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry):
 async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connection, caplog):
     hass = hass_platform_cloud_connection
     assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-
     notifier = hass.data[DOMAIN][NOTIFIERS][0]
 
-    await notifier.async_send_discovery(None)
-    assert len(caplog.records) == 2
-    assert 'devices is not discovered' in caplog.records[1].message
-    caplog.clear()
-
-    await notifier.async_send_state([])
-    assert len(caplog.records) == 1
-    assert 'devices is not discovered' in caplog.records[0].message
-    caplog.clear()
+    with patch('custom_components.yandex_smart_home.notifier.YandexNotifier._async_send_callback') as mock_send_cb:
+        await notifier.async_send_discovery(None)
+        mock_send_cb.assert_not_called()
 
     with patch_yaml_files({YAML_CONFIG_FILE: ''}), patch(
             'custom_components.yandex_smart_home.cloud.CloudManager.connect', return_value=None):
@@ -313,19 +345,20 @@ async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connect
 
     assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
     notifier = hass.data[DOMAIN][NOTIFIERS][0]
-    with patch.object(notifier, '_log_request', side_effect=Exception()):
-        caplog.clear()
+    with patch('custom_components.yandex_smart_home.notifier.YandexNotifier._async_send_callback') as mock_send_cb:
         await notifier.async_send_discovery(None)
-        assert len(caplog.records) == 2
-        assert 'Failed to send state notification' in caplog.records[1].message
-        caplog.clear()
+        mock_send_cb.assert_called_once()
 
-        await notifier.async_send_state([])
-        assert len(caplog.records) == 1
-        assert 'Failed to send state notification' in caplog.records[0].message
-        caplog.clear()
 
-    with patch.object(notifier, '_log_request', side_effect=asyncio.TimeoutError()):
+async def test_notifier_async_send_callback(hass_platform_cloud_connection, caplog):
+    hass = hass_platform_cloud_connection
+    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
+    notifier = hass.data[DOMAIN][NOTIFIERS][0]
+
+    with patch.object(notifier, '_log_request', side_effect=asyncio.TimeoutError()), patch(
+            'custom_components.yandex_smart_home.notifier.YandexNotifier._ready',
+            new_callable=PropertyMock(return_value=True)
+    ):
         caplog.clear()
         await notifier.async_send_discovery(None)
         assert len(caplog.records) == 2
@@ -336,6 +369,42 @@ async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connect
         assert len(caplog.records) == 1
         assert 'Failed to send state notification: TimeoutError()' in caplog.records[0].message
         caplog.clear()
+
+
+async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
+    hass.data[DOMAIN] = {
+        CONFIG: BASIC_CONFIG,
+        NOTIFIERS: [],
+    }
+
+    notifier = YandexCloudNotifier(hass, hass_admin_user.id, 'foo')
+
+    notifier._pending.append({'id': 'foo', 'v': 1})
+    notifier._pending.append({'id': 'bar', 'v': 2})
+
+    with patch.object(notifier, 'async_send_state') as mock_send_state:
+        await notifier._report_states(None)
+        assert mock_send_state.call_args[0][0] == [{'id': 'foo', 'v': 1}, {'id': 'bar', 'v': 2}]
+        mock_call_later.assert_not_called()
+
+    notifier._pending.append({'id': 'foo', 'v': 1})
+    with patch.object(notifier, 'async_send_state',
+                      side_effect=lambda v: notifier._pending.append('test')) as mock_send_state:
+        await notifier._report_states(None)
+        assert mock_send_state.call_args[0][0] == [{'id': 'foo', 'v': 1}]
+        mock_call_later.assert_called_once()
+        assert '_report_states' in str(mock_call_later.call_args[0][2].target)
+
+    notifier._pending.clear()
+    mock_call_later.reset_mock()
+    notifier._pending.append({'id': 'foo', 'v': 1})
+    notifier._pending.append({'id': 'bar', 'v': 2})
+    notifier._pending.append({'id': 'bar', 'v': 3})
+
+    with patch.object(notifier, 'async_send_state') as mock_send_state:
+        await notifier._report_states(None)
+        assert mock_send_state.call_args[0][0] == [{'id': 'foo', 'v': 1}, {'id': 'bar', 'v': 3}]
+        mock_call_later.assert_not_called()
 
 
 async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
