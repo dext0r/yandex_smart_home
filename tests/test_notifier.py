@@ -1,3 +1,4 @@
+import asyncio
 import time
 from unittest.mock import patch
 
@@ -134,7 +135,7 @@ async def test_notifier_format_log_message(hass, hass_admin_user):
         CONFIG: BASIC_CONFIG,
         NOTIFIERS: [n1],
     }
-    assert n1._format_log_message('test') == 'test'
+    assert n1._format_log_message('test') == '[direct] test'
 
     hass.data[DOMAIN] = {
         CONFIG: BASIC_CONFIG,
@@ -324,6 +325,18 @@ async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connect
         assert 'Failed to send state notification' in caplog.records[0].message
         caplog.clear()
 
+    with patch.object(notifier, '_log_request', side_effect=asyncio.TimeoutError()):
+        caplog.clear()
+        await notifier.async_send_discovery(None)
+        assert len(caplog.records) == 2
+        assert 'Failed to send state notification: TimeoutError()' in caplog.records[1].message
+        caplog.clear()
+
+        await notifier.async_send_state([])
+        assert len(caplog.records) == 1
+        assert 'Failed to send state notification: TimeoutError()' in caplog.records[0].message
+        caplog.clear()
+
 
 async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
     hass.data[DOMAIN] = {
@@ -387,9 +400,8 @@ async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
     assert aioclient_mock.call_count == 1
     aioclient_mock.clear_requests()
 
-    with patch.object(YandexDirectNotifier, '_log_request') as m:
-        m.side_effect = Exception
-        await notifier.async_send_state(['err'])
+    with patch.object(YandexDirectNotifier, '_log_request', side_effect=Exception):
+        await notifier.async_send_state([])
         assert aioclient_mock.call_count == 0
 
 
@@ -454,9 +466,8 @@ async def test_notifier_send_cloud(hass, hass_admin_user, aioclient_mock):
     assert aioclient_mock.call_count == 1
     aioclient_mock.clear_requests()
 
-    with patch.object(YandexDirectNotifier, '_log_request') as m:
-        m.side_effect = Exception
-        await notifier.async_send_state(['err'])
+    with patch.object(YandexDirectNotifier, '_log_request', side_effect=Exception):
+        await notifier.async_send_state([])
         assert aioclient_mock.call_count == 0
 
     aioclient_mock.clear_requests()

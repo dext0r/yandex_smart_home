@@ -8,6 +8,7 @@ import time
 from typing import Any
 
 from aiohttp import ContentTypeError
+from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -47,8 +48,9 @@ class YandexNotifier(ABC):
     def _config(self) -> Config:
         return self._hass.data[DOMAIN][CONFIG]
 
+    @abstractmethod
     def _format_log_message(self, message: str) -> str:
-        return message
+        pass
 
     @staticmethod
     def _log_request(url: str, data: dict[str, Any]):
@@ -109,9 +111,11 @@ class YandexNotifier(ABC):
                     error_message = response_body[:100]
 
             if r.status != 202 or error_message:
-                _LOGGER.error(
+                _LOGGER.warning(
                     self._format_log_message(f'Failed to send state notification: [{r.status}] {error_message}')
                 )
+        except (ClientConnectionError, asyncio.TimeoutError) as e:
+            _LOGGER.warning(self._format_log_message(f'Failed to send state notification: {e!r}'))
         except Exception:
             _LOGGER.exception(self._format_log_message('Failed to send state notification'))
 
@@ -180,7 +184,7 @@ class YandexDirectNotifier(YandexNotifier):
         if len(self._hass.data[DOMAIN][NOTIFIERS]) > 1:
             return f'[{self._skill_id} | {self._user_id}] {message}'
 
-        return message
+        return f'[direct] {message}'
 
     async def async_validate_config(self):
         if await self._hass.auth.async_get_user(self._user_id) is None:
@@ -195,6 +199,9 @@ class YandexCloudNotifier(YandexNotifier):
     @property
     def _request_headers(self) -> dict[str, str]:
         return {'Authorization': f'Bearer {self._token}'}
+
+    def _format_log_message(self, message: str) -> str:
+        return f'[cloud] {message}'
 
 
 @callback
