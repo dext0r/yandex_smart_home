@@ -517,6 +517,6 @@ class ChannelCapability(RangeCapability):
                 media_player.ATTR_MEDIA_CONTENT_ID: value,
                 media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
             },
-            blocking=True,
+            blocking=False,  # some tv's do it too slow
             context=data.context
         )

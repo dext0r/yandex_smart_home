@@ -604,6 +604,7 @@ async def test_capability_range_channel_set_random(hass, caplog):
 
     calls_set = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_PLAY_MEDIA)
     await cap.set_state(BASIC_DATA, {'value': 15})
+    await hass.async_block_till_done()
     assert len(calls_set) == 1
     assert calls_set[0].data == {
         ATTR_ENTITY_ID: state.entity_id,
@@ -613,11 +614,13 @@ async def test_capability_range_channel_set_random(hass, caplog):
 
     calls_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_NEXT_TRACK)
     await cap.set_state(BASIC_DATA, {'value': 1, 'relative': True})
+    await hass.async_block_till_done()
     assert len(calls_up) == 1
     assert calls_up[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
     calls_down = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_PREVIOUS_TRACK)
     await cap.set_state(BASIC_DATA, {'value': -1, 'relative': True})
+    await hass.async_block_till_done()
     assert len(calls_down) == 1
     assert calls_down[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
@@ -645,6 +648,7 @@ async def test_capability_range_channel_set_random_with_value(hass, caplog):
     calls_set = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_PLAY_MEDIA)
     await cap.set_state(BASIC_DATA, {'value': 5, 'relative': True})
     await cap.set_state(BASIC_DATA, {'value': -3, 'relative': True})
+    await hass.async_block_till_done()
     assert len(calls_set) == 2
     assert calls_set[0].data == {
         ATTR_ENTITY_ID: state.entity_id,
