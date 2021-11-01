@@ -1,17 +1,14 @@
 from homeassistant.components import cover, fan, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_ON
 from homeassistant.core import State
-import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
-from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_toggle import CAPABILITIES_TOGGLE
 from custom_components.yandex_smart_home.const import (
     TOGGLE_INSTANCE_MUTE,
     TOGGLE_INSTANCE_OSCILLATION,
     TOGGLE_INSTANCE_PAUSE,
 )
-from custom_components.yandex_smart_home.error import SmartHomeError
 
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
@@ -40,11 +37,14 @@ async def test_capability_mute(hass):
     assert cap.parameters() == {'instance': TOGGLE_INSTANCE_MUTE}
     assert cap.get_value() is False
 
-    for v in [True, False]:
-        with pytest.raises(SmartHomeError) as e:
-            await cap.set_state(BASIC_DATA, {'value': v})
-
-        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    calls = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_MUTE)
+    await cap.set_state(BASIC_DATA, {'value': True})
+    await cap.set_state(BASIC_DATA, {'value': False})
+    assert len(calls) == 2
+    assert calls[0].data[ATTR_ENTITY_ID] == state.entity_id
+    assert calls[0].data[media_player.ATTR_MEDIA_VOLUME_MUTED] is True
+    assert calls[1].data[ATTR_ENTITY_ID] == state.entity_id
+    assert calls[1].data[media_player.ATTR_MEDIA_VOLUME_MUTED] is False
 
     state = State('media_player.test', STATE_ON, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_VOLUME_MUTE,

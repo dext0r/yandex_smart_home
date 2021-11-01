@@ -10,8 +10,6 @@ from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES
 
 from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
-from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE
-from .error import SmartHomeError
 from .helpers import RequestData
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,13 +59,6 @@ class MuteCapability(ToggleCapability):
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        muted = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_MUTED)
-        if muted is None:
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Device {self.state.entity_id} probably turned off'
-            )
-
         await self.hass.services.async_call(
             media_player.DOMAIN,
             media_player.SERVICE_VOLUME_MUTE, {
