@@ -33,7 +33,7 @@ async def test_capability_mute(hass):
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_MUTE)
 
-    assert cap.retrievable
+    assert cap.retrievable is False
     assert cap.parameters() == {'instance': TOGGLE_INSTANCE_MUTE}
     assert cap.get_value() is False
 
@@ -51,6 +51,7 @@ async def test_capability_mute(hass):
         media_player.ATTR_MEDIA_VOLUME_MUTED: True
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_MUTE)
+    assert cap.retrievable
     assert cap.get_value() is True
 
     calls = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_MUTE)

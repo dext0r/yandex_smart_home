@@ -7,10 +7,11 @@ from typing import Any
 
 from homeassistant.components import cover, fan, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES
+from homeassistant.core import HomeAssistant, State
 
 from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
-from .helpers import RequestData
+from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +38,11 @@ class MuteCapability(ToggleCapability):
     """Mute and unmute functionality."""
 
     instance = const.TOGGLE_INSTANCE_MUTE
+
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        super().__init__(hass, config, state)
+
+        self.retrievable = media_player.ATTR_MEDIA_VOLUME_MUTED in self.state.attributes
 
     def supported(self) -> bool:
         """Test if capability is supported."""
