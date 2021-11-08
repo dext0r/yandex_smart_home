@@ -137,7 +137,7 @@ async def test_notifier_format_log_message(hass, hass_admin_user):
         CONFIG: BASIC_CONFIG,
         NOTIFIERS: [n1],
     }
-    assert n1._format_log_message('test') == '[direct] test'
+    assert n1._format_log_message('test') == 'test'
 
     hass.data[DOMAIN] = {
         CONFIG: BASIC_CONFIG,

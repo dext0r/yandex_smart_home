@@ -58,9 +58,8 @@ class YandexNotifier(ABC):
     def _ready(self) -> bool:
         return self._config and self._config.devices_discovered
 
-    @abstractmethod
     def _format_log_message(self, message: str) -> str:
-        pass
+        return message
 
     @staticmethod
     def _log_request(url: str, data: dict[str, Any]):
@@ -209,7 +208,7 @@ class YandexDirectNotifier(YandexNotifier):
         if len(self._hass.data[DOMAIN][NOTIFIERS]) > 1:
             return f'[{self._skill_id} | {self._user_id}] {message}'
 
-        return f'[direct] {message}'
+        return message
 
     async def async_validate_config(self):
         if await self._hass.auth.async_get_user(self._user_id) is None:
@@ -224,9 +223,6 @@ class YandexCloudNotifier(YandexNotifier):
     @property
     def _request_headers(self) -> dict[str, str]:
         return {'Authorization': f'Bearer {self._token}'}
-
-    def _format_log_message(self, message: str) -> str:
-        return f'[cloud] {message}'
 
 
 @callback
