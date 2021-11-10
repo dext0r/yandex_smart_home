@@ -2,8 +2,10 @@ name: CI
 
 on:
   push:
+    branches:
+      - '*'
     tags-ignore:
-      - v*
+      - 'v*'
   pull_request:
 
 jobs:
@@ -47,6 +49,8 @@ jobs:
             pytest-component-version: 0.4.4
           - ha-version: '2021.10'
             pytest-component-version: 0.4.5
+          - ha-version: '2021.11'
+            pytest-component-version: 0.4.9
             latest: true
     steps:
       - uses: actions/checkout@v2
@@ -58,7 +62,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pytest-homeassistant-custom-component==${{ matrix.pytest-component-version }} \
-                      aiohttp-cors==0.7.0
+                      aiohttp-cors==0.7.0 \
+                      pytest-socket==0.4.1
 
       - name: Test with pytest
         run: |
@@ -71,6 +76,7 @@ jobs:
             --cov-report xml \
             -o console_output_style=count \
             -p no:sugar \
+            --allow-unix-socket \
             tests
 
       - name: Upload coverage report

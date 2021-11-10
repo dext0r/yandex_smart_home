@@ -1,2 +1,3 @@
 pytest-homeassistant-custom-component==0.4.2  # 2021.7
 aiohttp-cors==0.7.0
+pytest-socket==0.4.1
