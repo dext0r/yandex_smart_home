@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from homeassistant.components import climate, cover, humidifier, light, media_player, water_heater
 from homeassistant.const import (
+    ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
     ATTR_MODEL,
     ATTR_SUPPORTED_FEATURES,
@@ -589,6 +590,22 @@ async def test_capability_range_channel_set_random(hass, caplog):
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
+    assert cap.retrievable is False
+    assert cap.support_random_access is False
+
+    state = State('media_player.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_RECEIVER
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
+    assert cap.retrievable is False
+    assert cap.support_random_access is False
+
+    state = State('media_player.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
     assert cap.retrievable
     assert cap.support_random_access
     assert cap.parameters() == {
@@ -628,6 +645,7 @@ async def test_capability_range_channel_set_random(hass, caplog):
 async def test_capability_range_channel_set_random_with_value(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV,
         media_player.ATTR_MEDIA_CONTENT_ID: 15,
         media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
     })

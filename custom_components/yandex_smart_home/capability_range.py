@@ -7,6 +7,7 @@ from typing import Any
 
 from homeassistant.components import climate, cover, fan, humidifier, light, media_player, water_heater
 from homeassistant.const import (
+    ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
     ATTR_MODEL,
     ATTR_SUPPORTED_FEATURES,
@@ -477,8 +478,9 @@ class ChannelCapability(RangeCapability):
     def support_random_access(self) -> bool:
         """Test if capability supports random access."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        device_class = self.state.attributes.get(ATTR_DEVICE_CLASS)
 
-        return bool(features & media_player.SUPPORT_PLAY_MEDIA)
+        return bool(features & media_player.SUPPORT_PLAY_MEDIA and device_class == media_player.DEVICE_CLASS_TV)
 
     def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
