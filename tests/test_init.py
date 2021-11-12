@@ -355,6 +355,7 @@ async def test_async_setup_update_from_yaml(hass, hass_admin_user):
 
     assert entry.data[const.CONF_NOTIFIER][0][const.CONF_NOTIFIER_OAUTH_TOKEN] == 'entry'
     assert entry.data[const.CONF_PRESSURE_UNIT] == 'mmHg'
+    assert entry.data[const.CONF_DEVICES_DISCOVERED] is True  # pre-0.3 migration
 
     with patch_yaml_files({YAML_CONFIG_FILE: f"""
 yandex_smart_home:

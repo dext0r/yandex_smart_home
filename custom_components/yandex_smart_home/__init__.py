@@ -345,6 +345,8 @@ def _async_update_config_entry_from_yaml(hass: HomeAssistant, entry: ConfigEntry
     """Update a config entry with the latest yaml."""
     data = entry.data.copy()
     data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
+    if const.CONF_DEVICES_DISCOVERED not in data:  # pre-0.3 migration
+        data.setdefault(const.CONF_DEVICES_DISCOVERED, True)
     data.setdefault(const.CONF_DEVICES_DISCOVERED, False)
 
     if DOMAIN in yaml_config:
