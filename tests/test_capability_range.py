@@ -629,17 +629,13 @@ async def test_capability_range_channel_set_random(hass, caplog):
         media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
     }
 
-    calls_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_NEXT_TRACK)
-    await cap.set_state(BASIC_DATA, {'value': 1, 'relative': True})
-    await hass.async_block_till_done()
-    assert len(calls_up) == 1
-    assert calls_up[0].data == {ATTR_ENTITY_ID: state.entity_id}
+    with pytest.raises(SmartHomeError) as e:
+        await cap.set_state(BASIC_DATA, {'value': 1, 'relative': True})
+    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 
-    calls_down = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_PREVIOUS_TRACK)
-    await cap.set_state(BASIC_DATA, {'value': -1, 'relative': True})
-    await hass.async_block_till_done()
-    assert len(calls_down) == 1
-    assert calls_down[0].data == {ATTR_ENTITY_ID: state.entity_id}
+    with pytest.raises(SmartHomeError) as e:
+        await cap.set_state(BASIC_DATA, {'value': -1, 'relative': True})
+    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 
 
 async def test_capability_range_channel_set_random_with_value(hass, caplog):
@@ -707,23 +703,33 @@ async def test_capability_range_channel_value(hass, caplog):
     assert len(caplog.records) == 0
 
 
-async def test_capability_range_channel_set_relative(hass):
+@pytest.mark.parametrize('features', [
+    media_player.SUPPORT_PREVIOUS_TRACK | media_player.SUPPORT_NEXT_TRACK,
+    media_player.SUPPORT_PREVIOUS_TRACK | media_player.SUPPORT_NEXT_TRACK | media_player.SUPPORT_PLAY_MEDIA
+])
+@pytest.mark.parametrize('device_class', [media_player.DEVICE_CLASS_TV, media_player.DEVICE_CLASS_RECEIVER])
+async def test_capability_range_channel_set_relative(hass, features, device_class):
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PREVIOUS_TRACK
     })
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PREVIOUS_TRACK | media_player.SUPPORT_NEXT_TRACK
+        ATTR_SUPPORTED_FEATURES: features,
+        ATTR_DEVICE_CLASS: device_class
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
-    assert not cap.retrievable
-    assert not cap.support_random_access
-    assert cap.parameters() == {
-        'instance': 'channel',
-        'random_access': False
-    }
-    assert cap.get_value() is None
+    if device_class == media_player.DEVICE_CLASS_TV:
+        assert cap.retrievable is bool(features & media_player.SUPPORT_PLAY_MEDIA)
+        assert cap.support_random_access is bool(features & media_player.SUPPORT_PLAY_MEDIA)
+    else:
+        assert not cap.retrievable
+        assert not cap.support_random_access
+        assert cap.parameters() == {
+            'instance': 'channel',
+            'random_access': False
+        }
+        assert cap.get_value() is None
 
     calls_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_NEXT_TRACK)
     await cap.set_state(BASIC_DATA, {'value': 1, 'relative': True})

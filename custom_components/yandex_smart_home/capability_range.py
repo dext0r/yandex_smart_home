@@ -492,11 +492,10 @@ class ChannelCapability(RangeCapability):
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = state['value']
+        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
         if state.get('relative'):
-            if self.get_value() is not None:
-                value = self.get_absolute_value(state['value'])
-            else:
+            if features & media_player.SUPPORT_PREVIOUS_TRACK and features & media_player.SUPPORT_NEXT_TRACK:
                 if state['value'] >= 0:
                     service = media_player.SERVICE_MEDIA_NEXT_TRACK
                 else:
@@ -511,6 +510,14 @@ class ChannelCapability(RangeCapability):
                     context=data.context
                 )
                 return
+
+            if self.get_value() is None:
+                raise SmartHomeError(
+                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                    f'Failed to set relative value for {self.instance} instance of {self.state.entity_id}.'
+                )
+            else:
+                value = self.get_absolute_value(state['value'])
 
         await self.hass.services.async_call(
             media_player.DOMAIN,
