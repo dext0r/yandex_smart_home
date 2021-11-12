@@ -1,7 +1,7 @@
 from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
-from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF
+from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF, STATE_ON, STATE_UNKNOWN
 from homeassistant.core import State
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
@@ -349,6 +349,39 @@ async def test_capability_mode_input_source(hass, caplog):
     await cap.set_state(BASIC_DATA, {'value': 'three'})
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, media_player.ATTR_INPUT_SOURCE: 's3'}
+
+
+@pytest.mark.parametrize('off_state', [STATE_OFF, STATE_UNKNOWN])
+async def test_capability_mode_input_source_cache(hass, off_state):
+    state = State('media_player.test', off_state, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        media_player.ATTR_INPUT_SOURCE_LIST: ['s1', 's2', 's3']
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
+    assert cap.supported_ha_modes == ['s1', 's2', 's3']
+
+    state = State('media_player.test', off_state, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        media_player.ATTR_INPUT_SOURCE_LIST: []
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
+    assert cap.supported_ha_modes == ['s1', 's2', 's3']
+
+    state = State('media_player.test', off_state, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
+    assert cap.supported_ha_modes == ['s1', 's2', 's3']
+
+    state = State('media_player.test', STATE_ON, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+    })
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
+
+    state = State('media_player.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+    })
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
 
 
 async def test_capability_mode_fan_speed_fan_legacy(hass):

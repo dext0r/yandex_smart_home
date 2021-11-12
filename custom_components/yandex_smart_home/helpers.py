@@ -4,11 +4,12 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Context, HomeAssistant
+from homeassistant.core import Context, HomeAssistant, callback
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
 from . import const
-from .const import DOMAIN, NOTIFIERS
+from .const import DOMAIN, NOTIFIERS, STORE_CACHE_ATTRS
 
 
 class Config:
@@ -23,8 +24,13 @@ class Config:
         self._hass = hass
         self._data = entry.data
         self._options = entry.options
+        self.cache: CacheStore | None = None
         self.entity_config = entity_config or {}
         self.should_expose = should_expose
+
+    async def async_init(self):
+        self.cache = CacheStore(self._hass)
+        await self.cache.async_load()
 
     @property
     def is_reporting_state(self) -> bool:
@@ -73,6 +79,42 @@ class Config:
 
     def get_entity_config(self, entity_id: str) -> dict[str, Any]:
         return self.entity_config.get(entity_id, {})
+
+
+class CacheStore:
+    _STORAGE_VERSION = 1
+    _STORAGE_KEY = f'{DOMAIN}.cache'
+
+    def __init__(self, hass):
+        self._hass = hass
+        self._store = Store(hass, self._STORAGE_VERSION, self._STORAGE_KEY)
+        self._data = {STORE_CACHE_ATTRS: {}}
+
+    def get_attr_value(self, entity_id: str, attr: str) -> Any | None:
+        """Return a cached value of attribute for entity."""
+        if entity_id not in self._data[STORE_CACHE_ATTRS]:
+            return None
+
+        return self._data[STORE_CACHE_ATTRS][entity_id].get(attr)
+
+    @callback
+    def save_attr_value(self, entity_id: str, attr: str, value: Any):
+        """Cache entity's attribute value to disk."""
+        if entity_id not in self._data[STORE_CACHE_ATTRS]:
+            self._data[STORE_CACHE_ATTRS][entity_id] = {}
+            has_changed = True
+        else:
+            has_changed = self._data[STORE_CACHE_ATTRS][entity_id][attr] != value
+
+        self._data[STORE_CACHE_ATTRS][entity_id][attr] = value
+
+        if has_changed:
+            self._store.async_delay_save(lambda: self._data, 5.0)
+
+    async def async_load(self):
+        data = await self._store.async_load()
+        if data:
+            self._data = data
 
 
 class RequestData:

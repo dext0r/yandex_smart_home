@@ -301,6 +301,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         should_expose=FILTER_SCHEMA(filters),
         entity_config=yaml_domain_config.get(const.CONF_ENTITY_CONFIG, {})
     )
+    await config.async_init()
     hass.data[DOMAIN][CONFIG] = config
 
     if config.is_cloud_connection:

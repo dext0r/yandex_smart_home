@@ -418,6 +418,16 @@ class InputSourceCapability(ModeCapability):
         return False
 
     @property
+    def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes for this entity."""
+        modes = self.state.attributes.get(self.modes_list_attribute, []) or []
+        if modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
+            self._cache.save_attr_value(self.state.entity_id, self.modes_list_attribute, modes)
+            return modes
+
+        return self._cache.get_attr_value(self.state.entity_id, self.modes_list_attribute) or []
+
+    @property
     def modes_list_attribute(self) -> str | None:
         """Return HA attribute contains modes list for this entity."""
         return media_player.ATTR_INPUT_SOURCE_LIST

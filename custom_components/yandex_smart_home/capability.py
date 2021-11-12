@@ -37,6 +37,8 @@ class AbstractCapability(ABC):
         self.entity_config = config.get_entity_config(state.entity_id)
         self.reportable = config.is_reporting_state
 
+        self._cache = config.cache
+
     @abstractmethod
     def supported(self) -> bool:
         """Test if capability is supported."""
