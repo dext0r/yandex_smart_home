@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+from homeassistant.components import media_player, switch
 from homeassistant.components.binary_sensor import DEVICE_CLASS_DOOR
 from homeassistant.components.demo.light import DemoLight
-from homeassistant.components.media_player import DEVICE_CLASS_TV
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
@@ -49,10 +49,6 @@ from custom_components.yandex_smart_home.const import (
     ERR_INVALID_ACTION,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     TOGGLE_INSTANCE_PAUSE,
-    TYPE_MEDIA_DEVICE,
-    TYPE_MEDIA_DEVICE_TV,
-    TYPE_OPENABLE,
-    TYPE_SWITCH,
 )
 from custom_components.yandex_smart_home.entity import YandexEntity
 from custom_components.yandex_smart_home.error import SmartHomeError
@@ -197,14 +193,14 @@ async def test_yandex_entity_devices_serialize_state(hass, registries):
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
     assert s['id'] == 'switch.test_1'
     assert s['name'] == 'test 1'
-    assert s['type'] == TYPE_SWITCH
+    assert s['type'] == const.TYPE_SWITCH
     assert 'room' not in s
     assert s['device_info'] == {'model': 'switch.test_1'}
 
     config = MockConfig(entity_config={
         'switch.test_1': {
             CONF_NAME: 'Тест',
-            CONF_TYPE: TYPE_OPENABLE,
+            CONF_TYPE: const.TYPE_OPENABLE,
             CONF_ROOM: 'Кухня'
         }
     })
@@ -213,7 +209,7 @@ async def test_yandex_entity_devices_serialize_state(hass, registries):
     assert s['id'] == 'switch.test_1'
     assert s['name'] == 'Тест'
     assert s['room'] == 'Кухня'
-    assert s['type'] == TYPE_OPENABLE
+    assert s['type'] == const.TYPE_OPENABLE
 
 
 async def test_yandex_entity_devices_serialize_device(hass, registries):
@@ -310,17 +306,43 @@ async def test_yandex_entity_should_expose(hass):
     assert not entity.should_expose
 
 
-async def test_yandex_entity_device_type(hass):
+async def test_yandex_entity_device_type_media_player(hass):
     state = State('media_player.tv', STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == TYPE_MEDIA_DEVICE
+    assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE
 
     state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TV
+        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == TYPE_MEDIA_DEVICE_TV
+    assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE_TV
 
+    state = State('media_player.tv', STATE_ON, attributes={
+        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_RECEIVER
+    })
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE_RECIEVER
+
+    state = State('media_player.tv', STATE_ON, attributes={
+        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_SPEAKER
+    })
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE
+
+
+async def test_yandex_entity_device_type_switch(hass):
+    state = State('switch.test', STATE_ON)
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == const.TYPE_SWITCH
+
+    state = State('switch.test', STATE_ON, attributes={
+        ATTR_DEVICE_CLASS: switch.DEVICE_CLASS_OUTLET
+    })
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == const.TYPE_SOCKET
+
+
+async def test_yandex_entity_device_type(hass):
     state = State('input_number.test', '40')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type is None

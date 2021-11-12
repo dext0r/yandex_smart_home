@@ -345,7 +345,7 @@ async def test_capability_demo_platform(hass):
 
     state = hass.states.get('switch.ac')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == 'devices.types.switch'
+    assert entity.yandex_device_type == 'devices.types.socket'
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [('devices.capabilities.on_off', 'on')]
 
