@@ -585,6 +585,33 @@ async def test_capability_range_channel_via_features(hass):
     assert cap.support_random_access is False
 
 
+async def test_capability_range_channel_set_via_config(hass):
+    state = State('media_player.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+    })
+    config = MockConfig(
+        entity_config={
+            state.entity_id: {
+                const.CONF_SUPPORT_SET_CHANNEL: False
+            }
+        }
+    )
+    assert_no_capabilities(hass, config, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
+
+    state = State('media_player.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES:
+            media_player.SUPPORT_PLAY_MEDIA |
+            media_player.SUPPORT_PREVIOUS_TRACK |
+            media_player.SUPPORT_NEXT_TRACK,
+        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+    })
+
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
+    assert cap.retrievable is False
+    assert cap.support_random_access is False
+
+
 async def test_capability_range_channel_set_random(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
@@ -636,6 +663,22 @@ async def test_capability_range_channel_set_random(hass, caplog):
     with pytest.raises(SmartHomeError) as e:
         await cap.set_state(BASIC_DATA, {'value': -1, 'relative': True})
     assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+
+
+async def test_capability_range_channel_set_not_supported(hass, caplog):
+    state = State('media_player.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
+    assert cap.retrievable is True
+    assert cap.support_random_access is True
+
+    with patch.object(cap.hass.services, 'async_call', side_effect=ValueError('nope')):
+        with pytest.raises(SmartHomeError) as e:
+            await cap.set_state(BASIC_DATA, {'value': 15})
+        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert 'Please change setting' in e.value.message
 
 
 async def test_capability_range_channel_set_random_with_value(hass, caplog):

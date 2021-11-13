@@ -46,6 +46,7 @@ CONF_TYPE = 'type'
 CONF_TURN_ON = 'turn_on'
 CONF_TURN_OFF = 'turn_off'
 CONF_FEATURES = 'features'
+CONF_SUPPORT_SET_CHANNEL = 'support_set_channel'
 CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID = 'channel_set_via_media_content_id'  # Deprecated
 CONF_ENTITY_PROPERTY_ENTITY = 'entity'
 CONF_ENTITY_PROPERTY_TYPE = 'type'

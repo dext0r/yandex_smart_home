@@ -83,6 +83,7 @@ yandex_smart_home:
         min: 20
         precision: 2
     media_player.cast:
+      support_set_channel: false
       features:
         - volume_mute
         - volume_set
