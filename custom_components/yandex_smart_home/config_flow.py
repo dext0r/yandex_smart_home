@@ -182,7 +182,7 @@ class OptionsFlowHandler(OptionsFlow):
             step_id='include_domains',
             data_schema=vol.Schema({
                 vol.Required(
-                    CONF_DOMAINS, default=list(set(domains))
+                    CONF_DOMAINS, default=sorted(set(domains))
                 ): cv.multi_select(name_to_type_map),
             }),
         )
@@ -237,7 +237,7 @@ class OptionsFlowHandler(OptionsFlow):
             step_id='include_exclude',
             data_schema=vol.Schema({
                 vol.Required(CONF_INCLUDE_EXCLUDE_MODE, default=include_exclude_mode): vol.In(INCLUDE_EXCLUDE_MODES),
-                vol.Optional(CONF_ENTITIES, default=list(set(entities))): cv.multi_select(all_supported_entities)
+                vol.Optional(CONF_ENTITIES, default=sorted(set(entities))): cv.multi_select(all_supported_entities)
             })
         )
 
