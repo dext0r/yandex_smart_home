@@ -220,16 +220,18 @@ class OptionsFlowHandler(OptionsFlow):
 
         entity_filter = self._options.get(const.CONF_FILTER, {})
         all_supported_entities = _async_get_matching_entities(self.hass, domains=self._options[CONF_DOMAINS])
-        entities = [
-            entity_id
-            for entity_id in entity_filter.get(CONF_INCLUDE_ENTITIES, [])
-            if entity_id in all_supported_entities
-        ]
+        entities = entity_filter.get(CONF_INCLUDE_ENTITIES, [])
         include_exclude_mode = MODE_INCLUDE
 
         if not entities:
             include_exclude_mode = MODE_EXCLUDE
             entities = entity_filter.get(CONF_EXCLUDE_ENTITIES, [])
+
+        entities = [
+            entity_id
+            for entity_id in entities
+            if entity_id in all_supported_entities
+        ]
 
         return self.async_show_form(
             step_id='include_exclude',
