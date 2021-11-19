@@ -245,7 +245,7 @@ class OptionsFlowHandler(OptionsFlow):
             return await self.async_step_cloud_info()
 
         return self.async_show_form(step_id='cloud_settings', data_schema=vol.Schema({
-            vol.Optional(const.CONF_USER_ID, default=self._options.get(const.CONF_USER_ID)): vol.In({
+            vol.Required(const.CONF_USER_ID, default=self._options.get(const.CONF_USER_ID)): vol.In({
                 u.id: u.name for u in await self.hass.auth.async_get_users()
             })
         }))
