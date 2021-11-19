@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from asyncio import TimeoutError
 from dataclasses import dataclass
+from http import HTTPStatus
 import json
 import logging
 from typing import Any
@@ -16,7 +17,6 @@ from aiohttp import (
     WSMsgType,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import HTTP_OK
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_call_later
@@ -145,5 +145,5 @@ async def delete_cloud_instance(hass: HomeAssistant, entry: ConfigEntry):
     response = await session.delete(f'{BASE_API_URL}/instance/{instance_id}', headers={
         'Authorization': f'Bearer {token}'
     })
-    if response.status != HTTP_OK:
+    if response.status != HTTPStatus.OK:
         _LOGGER.error(f'Failed to delete cloud instance, status code: {response.status}')
