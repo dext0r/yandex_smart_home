@@ -74,8 +74,7 @@
 
 ### Настройка
 Для настройки понадобятся:
-* `oauth_token`: Получить по [этой ссылке](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd).
-  В Яндексе нужно быть авторизованным под тем же аккаунтом, под которым используется УДЯ.
+* `oauth_token`: Получить по [этой ссылке](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd) с аккаунта владельца диалога.
 * `skill_id`: "Идентификатор диалога" на вкладке "Общие сведения" в [консоли](https://dialogs.yandex.ru/developer/skills) Яндекс.Диалоги.
 * `user_id`: ID пользователя в Home Assistant под которым выполнялась авторизация при привязке диалога.
   Посмотреть в Настройки > Пользователи > (выбрать пользователя) > ID (для видимости раздела включите "Расширенный режим" в профиле пользователя):
@@ -90,11 +89,12 @@ yandex_smart_home:
       skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
       user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-    # Если к диалогу предоставлен доступ другому пользователю,
-    # или используется несколько разных диалогов - можно добавить несколько записей:
-    - oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX
+    # Если в диалоге авторизовано несколько пользователей Home Assistant или
+    # к одному Home Assistant подключено несколько навыков - на каждое сочетание
+    # диалог/пользователь_HA нужно добавить отдельные записи:
+    - oauth_token: XXXXXXXXXXXXXXXXXXXXXXXXXXX  # запрашивается с аккаунта владельца диалога, в котором авторизован user_id
       skill_id: xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxx
-      user_id: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      user_id: yyyyyyyyyyyyyyyyyyyyyyyyyyyy
 ```
 
 ## Проблемы
