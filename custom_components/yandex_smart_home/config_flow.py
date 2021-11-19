@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -12,6 +13,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entityfilter import CONF_EXCLUDE_ENTITIES, CONF_INCLUDE_DOMAINS, CONF_INCLUDE_ENTITIES
 from homeassistant.helpers.reload import async_integration_yaml_config
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import async_get_integration
 import voluptuous as vol
 
 from . import DOMAIN, const, is_config_filter_empty
@@ -94,12 +96,13 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             self._data[const.CONF_FILTER] = entity_filter
             return await self.async_step_connection_type()
 
+        name_to_type_map = await _async_name_to_type_map(self.hass)
         return self.async_show_form(
             step_id='include_domains',
             data_schema=vol.Schema({
                 vol.Required(
                     CONF_INCLUDE_DOMAINS, default=DEFAULT_DOMAINS
-                ): cv.multi_select({v: v for v in SUPPORTED_DOMAINS}),
+                ): cv.multi_select(name_to_type_map),
             }),
         )
 
@@ -173,13 +176,14 @@ class OptionsFlowHandler(OptionsFlow):
         include_entities = entity_filter.get(CONF_INCLUDE_ENTITIES)
         if include_entities:
             domains.extend(_domains_set_from_entities(include_entities))
+        name_to_type_map = await _async_name_to_type_map(self.hass)
 
         return self.async_show_form(
             step_id='include_domains',
             data_schema=vol.Schema({
                 vol.Required(
                     CONF_DOMAINS, default=set(domains)
-                ): cv.multi_select({v: v for v in SUPPORTED_DOMAINS}),
+                ): cv.multi_select(name_to_type_map),
             }),
         )
 
@@ -278,3 +282,19 @@ def _async_get_matching_entities(hass: HomeAssistant, domains: list[str] | None 
             key=lambda item: item.entity_id,
         )
     }
+
+
+async def _async_name_to_type_map(hass: HomeAssistant) -> dict[str, str]:
+    """Create a mapping of types of devices/entities Yandex Smart Home can support."""
+    integrations = await asyncio.gather(
+        *[async_get_integration(hass, domain) for domain in SUPPORTED_DOMAINS],
+        return_exceptions=True,
+    )
+    name_to_type_map = {
+        domain: domain
+        if isinstance(integrations[idx], Exception)
+        else integrations[idx].name
+        for idx, domain in enumerate(SUPPORTED_DOMAINS)
+    }
+
+    return name_to_type_map
