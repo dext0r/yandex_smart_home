@@ -343,3 +343,54 @@ async def test_options_flow_filter_exclude2(hass):
                 'include_entities': ['climate.new'],
             }
         }
+
+
+async def test_options_flow_with_non_existant_entity(hass):
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            'connection_type': 'direct'
+        },
+        options={
+            'filter': {
+                'include_domains': [],
+                'include_entities': ['climate.not_exist', 'climate.front_gate'],
+            },
+        },
+    )
+    config_entry.add_to_hass(hass)
+    hass.states.async_set('climate.front_gate', 'off')
+    hass.states.async_set('climate.new', 'off')
+
+    await hass.async_block_till_done()
+
+    with patch_yaml_files({YAML_CONFIG_FILE: ''}):
+        result = await hass.config_entries.options.async_init(config_entry.entry_id)
+
+        assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
+        assert result['step_id'] == 'include_domains'
+
+        result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
+            'domains': ['fan', 'vacuum', 'climate']
+        })
+
+        assert result2['type'] == data_entry_flow.RESULT_TYPE_FORM
+        assert result2['step_id'] == 'include_exclude'
+        entities = result2['data_schema']({'include_exclude_mode': 'include'})['entities']
+
+        print(entities)
+        assert 'climate.not_exist' not in entities
+
+        result3 = await hass.config_entries.options.async_configure(result2['flow_id'], user_input={
+                'entities': ['climate.new', 'climate.front_gate'],
+                'include_exclude_mode': 'include',
+            }
+        )
+        assert result3['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+        assert config_entry.options == {
+            'filter': {
+                'exclude_entities': [],
+                'include_domains': ['fan', 'vacuum'],
+                'include_entities': ['climate.new', 'climate.front_gate'],
+            },
+        }

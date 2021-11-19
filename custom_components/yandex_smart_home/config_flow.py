@@ -182,7 +182,7 @@ class OptionsFlowHandler(OptionsFlow):
             step_id='include_domains',
             data_schema=vol.Schema({
                 vol.Required(
-                    CONF_DOMAINS, default=set(domains)
+                    CONF_DOMAINS, default=list(set(domains))
                 ): cv.multi_select(name_to_type_map),
             }),
         )
@@ -220,11 +220,14 @@ class OptionsFlowHandler(OptionsFlow):
 
         entity_filter = self._options.get(const.CONF_FILTER, {})
         all_supported_entities = _async_get_matching_entities(self.hass, domains=self._options[CONF_DOMAINS])
-        entities = entity_filter.get(CONF_INCLUDE_ENTITIES, [])
+        entities = [
+            entity_id
+            for entity_id in entity_filter.get(CONF_INCLUDE_ENTITIES, [])
+            if entity_id in all_supported_entities
+        ]
+        include_exclude_mode = MODE_INCLUDE
 
-        if entities:
-            include_exclude_mode = MODE_INCLUDE
-        else:
+        if not entities:
             include_exclude_mode = MODE_EXCLUDE
             entities = entity_filter.get(CONF_EXCLUDE_ENTITIES, [])
 
@@ -232,7 +235,7 @@ class OptionsFlowHandler(OptionsFlow):
             step_id='include_exclude',
             data_schema=vol.Schema({
                 vol.Required(CONF_INCLUDE_EXCLUDE_MODE, default=include_exclude_mode): vol.In(INCLUDE_EXCLUDE_MODES),
-                vol.Optional(CONF_ENTITIES, default=set(entities)): cv.multi_select(all_supported_entities)
+                vol.Optional(CONF_ENTITIES, default=list(set(entities))): cv.multi_select(all_supported_entities)
             })
         )
 
