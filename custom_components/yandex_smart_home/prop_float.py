@@ -92,8 +92,12 @@ class FloatProperty(AbstractProperty, ABC):
     def parameters(self) -> dict[str, Any]:
         return {
             'instance': self.instance,
-            'unit': PROPERTY_FLOAT_INSTANCE_TO_UNITS[self.instance]
+            'unit': self.unit
         }
+
+    @property
+    def unit(self) -> str:
+        return PROPERTY_FLOAT_INSTANCE_TO_UNITS[self.instance]
 
     def float_value(self, value: Any) -> float | None:
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
@@ -191,8 +195,12 @@ class PressureProperty(FloatProperty):
     def parameters(self) -> dict[str, Any]:
         return {
             'instance': self.instance,
-            'unit': PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.pressure_unit],
+            'unit': self.unit,
         }
+
+    @property
+    def unit(self) -> str:
+        return PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.pressure_unit]
 
     def get_value(self) -> float | None:
         return self.convert_value(self.state.state, self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
