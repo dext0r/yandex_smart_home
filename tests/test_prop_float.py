@@ -33,6 +33,8 @@ from .test_prop import assert_no_properties, get_exact_one_property
 
 
 class MockFloatProperty(FloatProperty):
+    instance = 'humidity'
+
     def supported(self) -> bool:
         return True
 
@@ -77,8 +79,14 @@ async def test_property_float_humidity(hass, domain, device_class, attribute, su
 
     assert prop.retrievable
     assert prop.parameters() == {'instance': 'humidity', 'unit': 'unit.percent'}
-
     assert prop.get_value() == 69
+
+    if attribute is None:
+        value = -5
+    else:
+        attributes[attribute] = -5
+    prop.state = State(f'{domain}.test', value, attributes)
+    assert prop.get_value() == 0
 
     if attribute is None:
         value = STATE_UNKNOWN
@@ -120,8 +128,14 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
 
     assert prop.retrievable
     assert prop.parameters() == {'instance': 'temperature', 'unit': 'unit.temperature.celsius'}
-
     assert prop.get_value() == 34
+
+    if attribute is None:
+        value = -50
+    else:
+        attributes[attribute] = -50
+    prop.state = State(f'{domain}.test', value, attributes)
+    assert prop.get_value() == -50
 
     if attribute is None:
         value = STATE_UNKNOWN
@@ -170,6 +184,12 @@ def test_property_float_pressure(hass, yandex_pressure_unit, v):
     }
     assert prop.get_value() == v
 
+    prop.state = State('sensor.test', '-5', {
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
+        ATTR_UNIT_OF_MEASUREMENT: const.PRESSURE_UNIT_MMHG
+    })
+    assert prop.get_value() == 0
+
 
 @pytest.mark.parametrize('domain,device_class,attribute,supported', [
     (sensor.DOMAIN, DEVICE_CLASS_ILLUMINANCE, None, True),
@@ -203,6 +223,13 @@ async def test_property_float_illuminance(hass, domain, device_class, attribute,
     assert prop.get_value() == 48
 
     if attribute is None:
+        value = -5
+    else:
+        attributes[attribute] = -5
+    prop.state = State(f'{domain}.test', value, attributes)
+    assert prop.get_value() == 0
+
+    if attribute is None:
         value = STATE_UNKNOWN
     else:
         attributes[attribute] = None
@@ -226,6 +253,10 @@ async def test_property_float_water_level(hass, domain, attribute, supported):
     assert prop.retrievable
     assert prop.parameters() == {'instance': 'water_level', 'unit': 'unit.percent'}
     assert prop.get_value() == 90
+
+    for v in [-5, 200]:
+        prop.state = State(f'{domain}.test', STATE_ON, {attribute: v})
+        assert prop.get_value() == 0
 
     prop.state = State(f'{domain}.test', STATE_ON, {attribute: None})
     assert prop.get_value() is None
@@ -263,6 +294,13 @@ async def test_property_float_co2(hass, domain, device_class, attribute, support
     assert prop.get_value() == 643
 
     if attribute is None:
+        value = -5
+    else:
+        attributes[attribute] = -5
+    prop.state = State(f'{domain}.test', value, attributes)
+    assert prop.get_value() == 0
+
+    if attribute is None:
         value = STATE_UNKNOWN
     else:
         attributes[attribute] = None
@@ -282,6 +320,9 @@ async def test_property_float_pm(hass, attribute, instance):
     assert prop.retrievable
     assert prop.parameters() == {'instance': instance, 'unit': 'unit.density.mcg_m3'}
     assert prop.get_value() == 300
+
+    prop.state = State('air_quality.test', STATE_ON, {attribute: -5})
+    assert prop.get_value() == 0
 
     prop.state = State('air_quality.test', STATE_ON, {attribute: None})
     assert prop.get_value() is None
@@ -308,6 +349,9 @@ async def test_property_float_tvoc(hass, unit, v):
     assert prop.retrievable
     assert prop.parameters() == {'instance': const.FLOAT_INSTANCE_TVOC, 'unit': 'unit.density.mcg_m3'}
     assert prop.get_value() == v
+
+    prop.state = State('air_quality.test', STATE_ON, {'total_volatile_organic_compounds': -5})
+    assert prop.get_value() == 0
 
     prop.state = State('air_quality.test', STATE_ON, {'total_volatile_organic_compounds': None})
     assert prop.get_value() is None
@@ -360,6 +404,13 @@ async def test_property_float_simple(hass, domain, device_class, attribute, inst
     assert prop.get_value() == 220
 
     if attribute is None:
+        value = -5
+    else:
+        attributes[attribute] = -5
+    prop.state = State(f'{domain}.test', value, attributes)
+    assert prop.get_value() == 0
+
+    if attribute is None:
         value = STATE_UNKNOWN
     else:
         attributes[attribute] = None
@@ -390,7 +441,7 @@ async def test_property_float_battery_class(hass, domain):
     })
     assert prop.get_value() is None
 
-    for s in ['low', 'charging']:
+    for s in ['low', 'charging', -5, 200]:
         prop.state = State(f'{domain}.test', s, {
             ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY,
             ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE
@@ -414,7 +465,7 @@ async def test_property_float_battery_attr(hass, domain):
     })
     assert prop.get_value() is None
 
-    for s in ['low', 'charging']:
+    for s in ['low', 'charging', -5, 200]:
         prop.state = State(f'{domain}.test', STATE_ON, {
             ATTR_BATTERY_LEVEL: s
         })

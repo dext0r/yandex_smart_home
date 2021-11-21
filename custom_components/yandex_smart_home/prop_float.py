@@ -84,6 +84,19 @@ PROPERTY_FLOAT_INSTANCE_TO_UNITS = {
     const.FLOAT_INSTANCE_PM2_5_DENSITY: 'unit.density.mcg_m3',
     const.FLOAT_INSTANCE_PM10_DENSITY: 'unit.density.mcg_m3'
 }
+PROPERTY_FLOAT_VALUE_LIMITS = {
+    'unit.percent': (0, 100),
+    'unit.pressure.atm': (0, None),
+    'unit.pressure.pascal': (0, None),
+    'unit.pressure.bar': (0, None),
+    'unit.pressure.mmhg': (0, None),
+    'unit.ppm': (0, None),
+    'unit.watt': (0, None),
+    'unit.volt': (0, None),
+    'unit.ampere': (0, None),
+    'unit.illumination.lux': (0, None),
+    'unit.density.mcg_m3': (0, None),
+}
 
 
 class FloatProperty(AbstractProperty, ABC):
@@ -104,12 +117,21 @@ class FloatProperty(AbstractProperty, ABC):
             return None
 
         try:
-            return float(value)
+            value = float(value)
         except (ValueError, TypeError):
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                 f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
             )
+
+        if self.unit in PROPERTY_FLOAT_VALUE_LIMITS:
+            lower_limit, upper_limit = PROPERTY_FLOAT_VALUE_LIMITS.get(self.unit, (None, None))
+
+            if (lower_limit is not None and value < lower_limit) or \
+                    (upper_limit is not None and value > upper_limit):
+                return 0
+
+        return value
 
     def convert_value(self, value: Any, from_unit: str | None) -> float | None:
         float_value = self.float_value(value)

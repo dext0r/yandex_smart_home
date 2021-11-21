@@ -168,6 +168,15 @@ async def test_property_custom_get_value_float(hass):
     assert prop.get_value() == 9.99
 
 
+async def test_property_custom_value_float_limit(hass):
+    state = State('sensor.test', '-5')
+    prop = CustomEntityProperty.get(hass, BASIC_CONFIG, state, {
+        const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_BATTERY_LEVEL,
+    })
+    assert prop.supported()
+    assert prop.get_value() == 0
+
+
 @pytest.mark.parametrize('instance,unit,value', [
     (const.FLOAT_INSTANCE_PRESSURE, 'mmHg', 100),
     (const.FLOAT_INSTANCE_TVOC, 'ppb', 449.63)
