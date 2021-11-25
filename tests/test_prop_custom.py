@@ -94,14 +94,32 @@ async def test_property_custom_no_beta(hass):
     assert prop.supported() is False
 
 
-async def test_property_custom_get_value_event(hass):
-    state = State('binary_sensor.test', STATE_ON)
+async def test_property_custom_get_value_button_event(hass):
+    state = State('sensor.button', '')
     prop = CustomEntityProperty.get(hass, BASIC_CONFIG, state, {
         const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON,
     })
     assert prop.supported()
     assert prop.get_value() is None
 
+    state = State('sensor.button', '', {'action': 'foo'})
+    prop = CustomEntityProperty.get(hass, BASIC_CONFIG, state, {
+        const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON,
+        const.CONF_ENTITY_PROPERTY_ATTRIBUTE: 'action'
+    })
+    assert prop.supported()
+    assert prop.get_value() is None
+
+    state = State('sensor.button', '', {'action': 'long_click_press'})
+    prop = CustomEntityProperty.get(hass, BASIC_CONFIG, state, {
+        const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON,
+        const.CONF_ENTITY_PROPERTY_ATTRIBUTE: 'action'
+    })
+    assert prop.supported()
+    assert prop.get_value() == 'long_press'
+
+
+async def test_property_custom_get_value_binary_event(hass):
     state = State('binary_sensor.test', STATE_UNAVAILABLE)
     prop = CustomEntityProperty.get(hass, BASIC_CONFIG, state, {
         const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_GAS,

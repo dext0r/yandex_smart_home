@@ -72,9 +72,6 @@ class CustomEntityProperty(AbstractProperty, ABC):
         return True
 
     def get_value(self) -> str | float | None:
-        if not self.retrievable:
-            return None
-
         value_attribute = self.property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
 
         if value_attribute:
