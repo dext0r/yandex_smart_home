@@ -90,7 +90,7 @@ class CustomEntityProperty(AbstractProperty, ABC):
 
     @property
     def property_entity_id(self) -> str | None:
-        return self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
+        return self.property_config.get(CONF_ENTITY_PROPERTY_ENTITY, self.property_state.entity_id)
 
 
 class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):

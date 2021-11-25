@@ -39,6 +39,7 @@ from custom_components.yandex_smart_home.capability_onoff import CAPABILITIES_ON
 from custom_components.yandex_smart_home.capability_range import BrightnessCapability
 from custom_components.yandex_smart_home.capability_toggle import CAPABILITIES_TOGGLE, ToggleCapability
 from custom_components.yandex_smart_home.const import (
+    CONF_ENTITY_PROPERTY_ATTRIBUTE,
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_NAME,
@@ -406,9 +407,18 @@ async def test_yandex_entity_serialize(hass):
     })
     prop_voltage = VoltageProperty(hass, BASIC_CONFIG, state_voltage)
 
+    state_button = State('binary_sensor.button', '', attributes={
+        'action': 'click'
+    })
+    prop_button = CustomEventEntityProperty(hass, BASIC_CONFIG, state, state_button, {
+        CONF_ENTITY_PROPERTY_ATTRIBUTE: 'action',
+        CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON
+    })
+
     entity = YandexEntity(hass, BASIC_CONFIG, state)
+
     with patch.object(entity, 'capabilities', return_value=[cap_onoff, cap_pause]), patch.object(
-        entity, 'properties', return_value=[prop_temp, prop_voltage, prop_humidity_custom]
+        entity, 'properties', return_value=[prop_temp, prop_voltage, prop_humidity_custom, prop_button]
     ):
         assert entity.query_serialize() == {
             'id': 'switch.test',
@@ -483,6 +493,21 @@ async def test_yandex_entity_serialize(hass):
             'properties': []
         }
         prop_voltage.reportable = True
+
+        assert entity.notification_serialize('binary_sensor.button') == {
+            'id': 'switch.test',
+            'capabilities': [{
+                'type': 'devices.capabilities.on_off',
+                'state': {'instance': 'on', 'value': True}
+            }, {
+                'type': 'devices.capabilities.toggle',
+                'state': {'instance': 'pause', 'value': False}
+            }],
+            'properties': [{
+                'type': 'devices.properties.event',
+                'state': {'instance': 'button', 'value': 'click'}
+            }]
+        }
 
         cap_pause.retrievable = False
         prop_temp.retrievable = False
