@@ -125,7 +125,7 @@ yandex_smart_home:
 
 
 async def test_valid_config(hass):
-    with patch_yaml_files({YAML_CONFIG_FILE: load_fixture('config/valid.yaml')}):
+    with patch_yaml_files({YAML_CONFIG_FILE: load_fixture('valid-config.yaml')}):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
     assert DOMAIN in config
@@ -187,7 +187,7 @@ yandex_smart_home:
 async def test_setup_component(hass):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 
-    with patch_yaml_files({YAML_CONFIG_FILE: load_fixture('config/valid.yaml')}):
+    with patch_yaml_files({YAML_CONFIG_FILE: load_fixture('valid-config.yaml')}):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
     with patch.object(hass.config_entries.flow, 'async_init', return_value=None):

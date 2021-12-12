@@ -1,4 +1,5 @@
-from homeassistant.const import HTTP_NOT_FOUND, HTTP_OK, HTTP_SERVICE_UNAVAILABLE, HTTP_UNAUTHORIZED
+from http import HTTPStatus
+
 from homeassistant.setup import async_setup_component
 import pytest
 
@@ -16,23 +17,23 @@ from . import REQ_ID
 async def test_unauthorized_view(hass_platform, aiohttp_client, config_entry):
     http_client = await aiohttp_client(hass_platform.http.app)
     response = await http_client.head(YandexSmartHomeUnauthorizedView.url)
-    assert response.status == HTTP_OK
+    assert response.status == HTTPStatus.OK
 
     await async_unload_entry(hass_platform, config_entry)
     response = await http_client.head(YandexSmartHomeUnauthorizedView.url)
-    assert response.status == HTTP_NOT_FOUND
+    assert response.status == HTTPStatus.NOT_FOUND
 
 
 @pytest.mark.enable_socket
 async def test_ping(hass_platform, aiohttp_client, config_entry):
     http_client = await aiohttp_client(hass_platform.http.app)
     response = await http_client.get(YandexSmartHomePingView.url)
-    assert response.status == HTTP_OK
+    assert response.status == HTTPStatus.OK
     assert await response.text() == 'OK: 2'
 
     await async_unload_entry(hass_platform, config_entry)
     response = await http_client.get(YandexSmartHomePingView.url)
-    assert response.status == HTTP_SERVICE_UNAVAILABLE
+    assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
 
 
 @pytest.mark.enable_socket
@@ -41,7 +42,7 @@ async def test_smart_home_view_unloaded(hass_platform, hass_client, config_entry
 
     await async_unload_entry(hass_platform, config_entry)
     response = await http_client.get(YandexSmartHomeView.url + '/user/unlink')
-    assert response.status == HTTP_NOT_FOUND
+    assert response.status == HTTPStatus.NOT_FOUND
 
 
 @pytest.mark.enable_socket
@@ -49,7 +50,7 @@ async def test_smart_home_view_unauthorized(hass_platform, aiohttp_client):
     http_client = await aiohttp_client(hass_platform.http.app)
 
     response = await http_client.get(YandexSmartHomeView.url + '/user/unlink')
-    assert response.status == HTTP_UNAUTHORIZED
+    assert response.status == HTTPStatus.UNAUTHORIZED
 
 
 @pytest.mark.enable_socket
@@ -59,7 +60,7 @@ async def test_user_unlink(hass_platform, hass_client):
         YandexSmartHomeView.url + '/user/unlink',
         headers={'X-Request-Id': REQ_ID}
     )
-    assert response.status == HTTP_OK
+    assert response.status == HTTPStatus.OK
     assert await response.json() == {'request_id': REQ_ID}
 
 
@@ -71,7 +72,7 @@ async def test_user_devices(hass_platform, hass_client, hass_admin_user):
         headers={'X-Request-Id': REQ_ID}
     )
 
-    assert response.status == HTTP_OK
+    assert response.status == HTTPStatus.OK
     assert await response.json() == {
         'request_id': REQ_ID,
         'payload': {
@@ -141,7 +142,7 @@ async def test_user_devices_query(hass_platform, hass_client):
         json={'devices': [{'id': 'sensor.outside_temp'}]},
         headers={'X-Request-Id': REQ_ID}
     )
-    assert response.status == HTTP_OK
+    assert response.status == HTTPStatus.OK
     assert await response.json() == {
         'request_id': REQ_ID,
         'payload': {
@@ -161,7 +162,7 @@ async def test_user_devices_query(hass_platform, hass_client):
         json={'devices': [{'id': 'sensor.not_existed'}]},
         headers={'X-Request-Id': REQ_ID}
     )
-    assert response.status == HTTP_OK
+    assert response.status == HTTPStatus.OK
     assert await response.json() == {
         'request_id': REQ_ID,
         'payload': {
@@ -201,7 +202,7 @@ async def test_user_devices_action(hass_platform, hass_client):
         json=payload,
         headers={'X-Request-Id': REQ_ID}
     )
-    assert response.status == HTTP_OK
+    assert response.status == HTTPStatus.OK
     assert await response.json() == {
         'request_id': REQ_ID,
         'payload': {
