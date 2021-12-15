@@ -154,11 +154,11 @@ class YandexNotifier(ABC):
         if not new_state or new_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
             return
 
-        reportable_entity_ids = [event_entity_id]
+        reportable_entity_ids = {event_entity_id}
         if event_entity_id in self._property_entities.keys():
-            reportable_entity_ids.extend(list(self._property_entities.get(event_entity_id, {})))
+            reportable_entity_ids.update(self._property_entities.get(event_entity_id, {}))
 
-        for entity_id in reportable_entity_ids:
+        for entity_id in sorted(reportable_entity_ids):
             state = new_state
             if entity_id != event_entity_id:
                 state = self._hass.states.get(entity_id)
@@ -166,12 +166,11 @@ class YandexNotifier(ABC):
                     continue
 
             yandex_entity = YandexEntity(self._hass, self._config, state)
-
             if not yandex_entity.should_expose:
                 continue
 
             device = yandex_entity.notification_serialize(event_entity_id)
-            if entity_id == event_entity_id:
+            if entity_id == event_entity_id and entity_id not in self._property_entities.keys():
                 old_yandex_entity = YandexEntity(self._hass, self._config, old_state)
                 if old_yandex_entity.notification_serialize(event_entity_id) == device:
                     continue
