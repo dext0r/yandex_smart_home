@@ -571,6 +571,9 @@ TION_FAN_SPEED_6 = '6'
 FAN_SPEED_MIN = 'min'
 FAN_SPEED_MAX = 'max'
 
+# https://github.com/dmitry-k/yandex_smart_home/issues/347
+FAN_SPEED_MID = 'mid'
+
 MEDIA_PLAYER_FEATURE_VOLUME_MUTE = 'volume_mute'
 MEDIA_PLAYER_FEATURE_VOLUME_SET = 'volume_set'
 MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK = 'next_previous_track'

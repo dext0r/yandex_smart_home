@@ -481,6 +481,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         const.MODE_INSTANCE_MODE_MEDIUM: [
             climate.const.FAN_MEDIUM,
             climate.const.FAN_MIDDLE,
+            const.FAN_SPEED_MID,
             const.TION_FAN_SPEED_3,
         ],
         const.MODE_INSTANCE_MODE_HIGH: [
