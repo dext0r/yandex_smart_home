@@ -39,7 +39,7 @@ class ColorSettingCapability(AbstractCapability, ABC):
         const.COLOR_SCENE_NEON: ['Неон', 'Neon', 'Breath'],
         const.COLOR_SCENE_NIGHT: ['Ночь', 'Night', 'Aurora'],
         const.COLOR_SCENE_OCEAN: ['Океан', 'Ocean', 'Pacifica'],
-        const.COLOR_SCENE_PARTY: ['Вечеринка', 'Party','Juggle'],
+        const.COLOR_SCENE_PARTY: ['Вечеринка', 'Party', 'Juggle'],
         const.COLOR_SCENE_READING: ['Чтение', 'Reading', 'Read'],
         const.COLOR_SCENE_REST: ['Отдых', 'Rest', 'Soft'],
         const.COLOR_SCENE_ROMANCE: ['Романтика', 'Romance', 'Leasure', 'Lake'],
