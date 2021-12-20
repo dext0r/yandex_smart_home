@@ -28,22 +28,22 @@ class ColorSettingCapability(AbstractCapability, ABC):
 
     type = CAPABILITIES_COLOR_SETTING
     scenes_map_default = {
-        const.COLOR_SCENE_ALARM: ['Тревога', 'Alarm', 'Shine'],
+        const.COLOR_SCENE_ALARM: ['Тревога', 'Alarm', 'Shine', 'Strobe Mega'],
         const.COLOR_SCENE_ALICE: ['Алиса', 'Alice', 'Meeting'],
         const.COLOR_SCENE_CANDLE: ['Свеча', 'Огонь', 'Candle', 'Fire'],
         const.COLOR_SCENE_DINNER: ['Ужин', 'Dinner'],
-        const.COLOR_SCENE_FANTASY: ['Фантазия', 'Fantasy', 'Random', 'Beautiful'],
-        const.COLOR_SCENE_GARLAND: ['Гирлянда', 'Garland'],
+        const.COLOR_SCENE_FANTASY: ['Фантазия', 'Fantasy', 'Random', 'Beautiful', 'Sinelon Rainbow'],
+        const.COLOR_SCENE_GARLAND: ['Гирлянда', 'Garland', 'Dynamic'],
         const.COLOR_SCENE_JUNGLE: ['Джунгли', 'Jungle'],
         const.COLOR_SCENE_MOVIE: ['Кино', 'Movie'],
-        const.COLOR_SCENE_NEON: ['Неон', 'Neon'],
-        const.COLOR_SCENE_NIGHT: ['Ночь', 'Night'],
-        const.COLOR_SCENE_OCEAN: ['Океан', 'Ocean'],
-        const.COLOR_SCENE_PARTY: ['Вечеринка', 'Party'],
+        const.COLOR_SCENE_NEON: ['Неон', 'Neon', 'Breath'],
+        const.COLOR_SCENE_NIGHT: ['Ночь', 'Night', 'Aurora'],
+        const.COLOR_SCENE_OCEAN: ['Океан', 'Ocean', 'Pacifica'],
+        const.COLOR_SCENE_PARTY: ['Вечеринка', 'Party', 'Juggle'],
         const.COLOR_SCENE_READING: ['Чтение', 'Reading', 'Read'],
         const.COLOR_SCENE_REST: ['Отдых', 'Rest', 'Soft'],
-        const.COLOR_SCENE_ROMANCE: ['Романтика', 'Romance', 'Leasure'],
-        const.COLOR_SCENE_SIREN: ['Сирена', 'Siren', 'Rainbow'],
+        const.COLOR_SCENE_ROMANCE: ['Романтика', 'Romance', 'Leasure', 'Lake'],
+        const.COLOR_SCENE_SIREN: ['Сирена', 'Siren', 'Police', 'Rainbow'],
         const.COLOR_SCENE_SUNRISE: ['Рассвет', 'Sunrise'],
         const.COLOR_SCENE_SUNSET: ['Закат', 'Sunset']
     }
