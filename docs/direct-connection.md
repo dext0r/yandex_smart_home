@@ -153,7 +153,7 @@ yandex_smart_home:
     Sending request to provider: GET https://YOUR_HA_DOMAIN/api/yandex_smart_home/v1.0/user/devices
     Got response from provider XXXXX: 200 {"request_id": .... (большой json)
     ```
-  Нужно только то, что в строчке Got Response и ниже (лучше файлом).
+  Нужно только то, что в строчке Got Response и ниже.
   Пожалуйста, не включайте строку "Sending request", в ней адрес вашего Home Assistant, пусть эта информация лучше остается в тайне :)
 
 ### Получение лога обновления списка устройств (из Home Assistant)
@@ -170,4 +170,4 @@ yandex_smart_home:
     [custom_components.yandex_smart_home.http] Request: https://YOUR_HA_DOMAIN/api/yandex_smart_home/v1.0/user/devices
     [custom_components.yandex_smart_home.http] Response: {"request_id": ...
     ```
-  Нужно только то, что в строчке Response (лучше файлом). Если до этих строчек есть ошибки - их тоже приложить.
+  Нужно только то, что в строчке Response. Если до этих строк есть ошибки, захватите и их тоже.
