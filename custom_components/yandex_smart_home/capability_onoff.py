@@ -169,18 +169,15 @@ class OnOffCapabilityLock(OnOffCapability):
 class OnOffCapabilityCover(OnOffCapability):
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
         super().__init__(hass, config, state)
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if not features & cover.SUPPORT_SET_POSITION:
+        if self.entity_config.get(const.CONF_STATE_UNKNOWN):
             self.retrievable = False
 
     def get_value(self) -> bool:
         return self.state.state == cover.STATE_OPEN
 
     def parameters(self) -> dict[str, Any] | None:
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-        if not features & cover.SUPPORT_SET_POSITION:
+        if not self.retrievable:
             return {'split': True}
 
         return None

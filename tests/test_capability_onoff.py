@@ -121,7 +121,21 @@ async def test_capability_onoff_cover(hass):
         assert not cap.get_value()
 
     state_no_features = State('cover.test', cover.STATE_OPEN)
-    cap_binary = get_exact_one_capability(hass, BASIC_CONFIG, state_no_features, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap_no_features = get_exact_one_capability(hass, BASIC_CONFIG, state_no_features,
+                                               CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert cap_no_features.retrievable
+    assert cap_no_features.get_value()
+    assert cap_no_features.parameters() is None
+
+    config = MockConfig(
+        entity_config={
+            'cover.test': {
+                const.CONF_STATE_UNKNOWN: True
+            }
+        }
+    )
+    state_binary = State('cover.test', cover.STATE_OPEN)
+    cap_binary = get_exact_one_capability(hass, config, state_binary, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert not cap_binary.retrievable
     assert cap_binary.parameters() == {'split': True}
 

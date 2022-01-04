@@ -193,6 +193,7 @@ ENTITY_SCHEMA = vol.All(
         vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, features_validate),
         vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
         vol.Optional(const.CONF_SUPPORT_SET_CHANNEL): cv.boolean,
+        vol.Optional(const.CONF_STATE_UNKNOWN): cv.boolean,
         vol.Optional(const.CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID): cv.boolean,
         vol.Optional(const.CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
         vol.Optional(const.CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,

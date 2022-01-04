@@ -119,3 +119,6 @@ yandex_smart_home:
         - type: temperature
           entity: climate.r4s1_kettle_temp
           attribute: current_temperature
+    cover.ir_cover:
+      name: Глупые шторы
+      state_unknown: true
