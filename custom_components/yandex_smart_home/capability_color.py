@@ -18,6 +18,11 @@ from .helpers import RequestData
 _LOGGER = logging.getLogger(__name__)
 
 CAPABILITIES_COLOR_SETTING = PREFIX_CAPABILITIES + 'color_setting'
+COLOR_MODES_TEMP_TO_WHITE = (
+    light.COLOR_MODE_RGBW,
+    light.COLOR_MODE_RGB,
+    light.COLOR_MODE_HS
+)
 
 
 class ColorSettingCapability(AbstractCapability, ABC):
@@ -67,16 +72,19 @@ class ColorSettingCapability(AbstractCapability, ABC):
                 'min': color_util.color_temperature_mired_to_kelvin(min_temp),
                 'max': color_util.color_temperature_mired_to_kelvin(max_temp)
             }
-        elif light.COLOR_MODE_RGBW in supported_color_modes:
-            result['temperature_k'] = {
-                'min': self.default_white_temperature_k,
-                'max': self.cold_white_temperature_k
-            }
-        elif light.COLOR_MODE_RGB in supported_color_modes or light.COLOR_MODE_HS in supported_color_modes:
-            result['temperature_k'] = {
-                'min': self.default_white_temperature_k,
-                'max': self.default_white_temperature_k
-            }
+        else:
+            min_temp = self.default_white_temperature_k
+            max_temp = self.default_white_temperature_k
+            if light.COLOR_MODE_RGBW in supported_color_modes or light.COLOR_MODE_WHITE in supported_color_modes:
+                max_temp = self.cold_white_temperature_k
+
+            for color_mode in COLOR_MODES_TEMP_TO_WHITE:
+                if color_mode in supported_color_modes:
+                    result['temperature_k'] = {
+                        'min': min_temp,
+                        'max': max_temp
+                    }
+                    break
 
         if features & light.SUPPORT_EFFECT:
             supported_scenes = self.get_supported_scenes(
@@ -217,10 +225,10 @@ class TemperatureKCapability(ColorSettingCapability):
 
             if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
                 return True
-            elif light.COLOR_MODE_RGBW in supported_color_modes:
-                return True
-            elif light.COLOR_MODE_RGB in supported_color_modes or light.COLOR_MODE_HS in supported_color_modes:
-                return True
+
+            for color_mode in COLOR_MODES_TEMP_TO_WHITE:
+                if color_mode in supported_color_modes:
+                    return True
 
         return False
 
@@ -228,11 +236,15 @@ class TemperatureKCapability(ColorSettingCapability):
         """Return the state value of this capability for this entity."""
         temperature_mired = self.state.attributes.get(light.ATTR_COLOR_TEMP)
         supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+        color_mode = self.state.attributes.get(light.ATTR_COLOR_MODE)
 
         if temperature_mired is not None:
             return color_util.color_temperature_mired_to_kelvin(temperature_mired)
 
-        if light.COLOR_MODE_RGBW in supported_color_modes:
+        if color_mode == light.COLOR_MODE_WHITE:
+            return self.default_white_temperature_k
+
+        if color_mode == light.COLOR_MODE_RGBW:
             rgbw_color = self.state.attributes.get(light.ATTR_RGBW_COLOR)
             if rgbw_color is not None:
                 if rgbw_color[:3] == (0, 0, 0) and rgbw_color[3] > 0:
@@ -242,9 +254,12 @@ class TemperatureKCapability(ColorSettingCapability):
 
             return None
 
-        if light.COLOR_MODE_RGB in supported_color_modes or light.COLOR_MODE_HS in supported_color_modes:
+        if color_mode in [light.COLOR_MODE_RGB, light.COLOR_MODE_HS]:
             rgb_color = self.state.attributes.get(light.ATTR_RGB_COLOR)
             if rgb_color is not None and rgb_color == (255, 255, 255):
+                if light.COLOR_MODE_WHITE in supported_color_modes:
+                    return self.cold_white_temperature_k
+
                 return self.default_white_temperature_k
 
             return None
@@ -259,6 +274,9 @@ class TemperatureKCapability(ColorSettingCapability):
         if features & light.SUPPORT_COLOR_TEMP or \
                 light.color_temp_supported(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])):
             service_data[light.ATTR_KELVIN] = value
+
+        elif light.COLOR_MODE_WHITE in supported_color_modes and value == self.default_white_temperature_k:
+            service_data[light.ATTR_WHITE] = self.state.attributes.get(light.ATTR_BRIGHTNESS, 255)
 
         elif light.COLOR_MODE_RGBW in supported_color_modes:
             if value == self.default_white_temperature_k:

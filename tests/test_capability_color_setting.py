@@ -135,10 +135,16 @@ async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
     assert cap.parameters() == {'color_model': 'rgb', 'temperature_k': {'max': 4500, 'min': 4500}}
     assert cap.get_value() is None
 
-    cap.state = State('light.test', STATE_OFF, dict({light.ATTR_RGB_COLOR: (0, 0, 0)}, **attributes))
+    cap.state = State('light.test', STATE_OFF, dict({
+        light.ATTR_RGB_COLOR: (0, 0, 0),
+        light.ATTR_COLOR_MODE: color_modes[0]
+    }, **attributes))
     assert cap.get_value() is None
 
-    cap.state = State('light.test', STATE_OFF, dict({light.ATTR_RGB_COLOR: (255, 255, 255)}, **attributes))
+    cap.state = State('light.test', STATE_OFF, dict({
+        light.ATTR_RGB_COLOR: (255, 255, 255),
+        light.ATTR_COLOR_MODE: color_modes[0]
+    }, **attributes))
     assert cap.get_value() == 4500
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
@@ -147,6 +153,48 @@ async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
     assert len(calls) == 2
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 255, 255)}
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 255, 255)}
+
+
+@pytest.mark.parametrize('color_modes', [
+    [light.COLOR_MODE_RGB], [light.COLOR_MODE_HS],
+])
+async def test_capability_color_setting_temperature_k_rgb_white(hass, color_modes):
+    attributes = {
+        light.ATTR_SUPPORTED_COLOR_MODES: color_modes + [light.COLOR_MODE_WHITE]
+    }
+    state = State('light.test', STATE_OFF, attributes)
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.retrievable
+    assert cap.parameters() == {'color_model': 'rgb', 'temperature_k': {'max': 6500, 'min': 4500}}
+    assert cap.get_value() is None
+
+    cap.state = State('light.test', STATE_OFF, dict({
+        light.ATTR_RGB_COLOR: (0, 0, 0),
+        light.ATTR_COLOR_MODE: color_modes[0]
+    }, **attributes))
+    assert cap.get_value() is None
+
+    cap.state = State('light.test', STATE_OFF, dict({
+        light.ATTR_RGB_COLOR: (255, 255, 255),
+        light.ATTR_COLOR_MODE: color_modes[0]
+    }, **attributes))
+    assert cap.get_value() == 6500
+
+    cap.state = State('light.test', STATE_OFF, dict({
+        light.ATTR_RGB_COLOR: (255, 255, 255),
+        light.ATTR_COLOR_MODE: light.COLOR_MODE_WHITE,
+        light.ATTR_BRIGHTNESS: 56
+    }, **attributes))
+    assert cap.get_value() == 4500
+
+    calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
+    await cap.set_state(BASIC_DATA, {'value': 6500})
+    await cap.set_state(BASIC_DATA, {'value': 4500})
+    await cap.set_state(BASIC_DATA, {'value': 4300})
+    assert len(calls) == 3
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 255, 255)}
+    assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_WHITE: 56}
+    assert calls[2].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 255, 255)}
 
 
 async def test_capability_color_setting_temperature_k_rgbw(hass):
@@ -159,16 +207,28 @@ async def test_capability_color_setting_temperature_k_rgbw(hass):
     assert cap.parameters() == {'color_model': 'rgb', 'temperature_k': {'max': 6500, 'min': 4500}}
     assert cap.get_value() is None
 
-    cap.state = State('light.test', STATE_OFF, dict({light.ATTR_RGBW_COLOR: (0, 0, 0, 0)}, **attributes))
+    cap.state = State('light.test', STATE_OFF, dict({
+        light.ATTR_RGBW_COLOR: (0, 0, 0, 0),
+        light.ATTR_COLOR_MODE: light.COLOR_MODE_RGBW
+    }, **attributes))
     assert cap.get_value() is None
 
-    cap.state = State('light.test', STATE_OFF, dict({light.ATTR_RGBW_COLOR: (100, 100, 100, 255)}, **attributes))
+    cap.state = State('light.test', STATE_OFF, dict({
+        light.ATTR_RGBW_COLOR: (100, 100, 100, 255),
+        light.ATTR_COLOR_MODE: light.COLOR_MODE_RGBW
+    }, **attributes))
     assert cap.get_value() is None
 
-    cap.state = State('light.test', STATE_OFF, dict({light.ATTR_RGBW_COLOR: (255, 255, 255, 0)}, **attributes))
+    cap.state = State('light.test', STATE_OFF, dict({
+        light.ATTR_RGBW_COLOR: (255, 255, 255, 0),
+        light.ATTR_COLOR_MODE: light.COLOR_MODE_RGBW
+    }, **attributes))
     assert cap.get_value() == 6500
 
-    cap.state = State('light.test', STATE_OFF, dict({light.ATTR_RGBW_COLOR: (0, 0, 0, 255)}, **attributes))
+    cap.state = State('light.test', STATE_OFF, dict({
+        light.ATTR_RGBW_COLOR: (0, 0, 0, 255),
+        light.ATTR_COLOR_MODE: light.COLOR_MODE_RGBW
+    }, **attributes))
     assert cap.get_value() == 4500
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
