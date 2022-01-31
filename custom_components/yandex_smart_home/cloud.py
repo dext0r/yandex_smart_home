@@ -77,7 +77,7 @@ class CloudManager:
         # noinspection PyBroadException
         try:
             _LOGGER.debug(f'Connecting to {self._url}')
-            self._ws = await self._session.ws_connect(self._url, heartbeat=45, headers={
+            self._ws = await self._session.ws_connect(self._url, heartbeat=45, compress=15, headers={
                 'Authorization': f'Bearer {self._token}'
             })
 
