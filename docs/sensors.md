@@ -38,7 +38,7 @@
             entity: sensor.humidifier_level
           - type: battery_level  # если хочется переместить датчик "из атрибута" в конец списка
             attribute: battery_level
-      sensor.kitchen_meteo_temperature:
+      sensor.kitchen_meteo_temperature:  # должен быть существующим устройством
         name: Погода на кухне
         properties:
           # температуру отдельно можно не прописывать, она подхватится сама
