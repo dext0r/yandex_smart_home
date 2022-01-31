@@ -152,6 +152,22 @@ async def test_cloud_try_reconnect(hass_platform_cloud_connection, config, aiocl
 
 
 # noinspection PyTypeChecker
+async def test_cloud_fast_reconnect(hass_platform_cloud_connection, config, aioclient_mock, mock_call_later, caplog):
+    hass = hass_platform_cloud_connection
+
+    session = MockSession(aioclient_mock, ws_close_code=1000)
+    manager = CloudManager(hass, config, session)
+
+    for _ in range(1, 5):
+        await manager.connect()
+        assert manager._ws_reconnect_delay == 4
+
+    await manager.connect()
+    assert manager._ws_reconnect_delay == 180
+    assert 'too fast' in caplog.records[-2].message
+
+
+# noinspection PyTypeChecker
 async def test_cloud_messages_invalid_format(hass_platform_cloud_connection, config, aioclient_mock):
     hass = hass_platform_cloud_connection
 
