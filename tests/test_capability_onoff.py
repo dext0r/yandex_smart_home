@@ -40,6 +40,11 @@ from .test_capability import (
     get_exact_one_capability,
 )
 
+try:
+    from homeassistant.components.scene import STATE as SCENE_DEFAULT_STATE
+except ImportError:
+    from homeassistant.const import STATE_UNKNOWN as SCENE_DEFAULT_STATE
+
 
 @pytest.mark.parametrize(
     'state_domain,service_domain', [
@@ -73,7 +78,7 @@ async def test_capability_onoff_simple(hass, state_domain, service_domain):
     assert not cap_off.get_value()
 
 
-@pytest.mark.parametrize('domain,initial_state', [(script.DOMAIN, STATE_OFF), (scene.DOMAIN, scene.STATE)])
+@pytest.mark.parametrize('domain,initial_state', [(script.DOMAIN, STATE_OFF), (scene.DOMAIN, SCENE_DEFAULT_STATE)])
 async def test_capability_onoff_only_on(hass, domain, initial_state):
     state = State(f'{domain}.test', initial_state)
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
