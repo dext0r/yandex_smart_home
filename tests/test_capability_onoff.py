@@ -18,11 +18,13 @@ from homeassistant.const import (
     ATTR_SUPPORTED_FEATURES,
     CONF_ENTITY_ID,
     CONF_SERVICE,
+    MAJOR_VERSION,
     MINOR_VERSION,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     STATE_OFF,
     STATE_ON,
+    STATE_UNKNOWN,
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN, State
 import pytest
@@ -88,6 +90,34 @@ async def test_capability_onoff_only_on(hass, domain, initial_state):
     assert cap.get_value() is None
 
     on_calls = async_mock_service(hass, domain, SERVICE_TURN_ON)
+    await cap.set_state(BASIC_DATA, {'value': True})
+    await cap.set_state(BASIC_DATA, {'value': False})
+
+    if domain == script.DOMAIN:
+        await hass.async_block_till_done()
+
+    assert len(on_calls) == 2
+    assert on_calls[0].data == {ATTR_ENTITY_ID: f'{domain}.test'}
+    assert on_calls[1].data == {ATTR_ENTITY_ID: f'{domain}.test'}
+
+
+# TODO: move to test_capability_onoff_only_on after drop support ha < 2021.12
+async def test_capability_onoff_button(hass):
+    if not (MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12)):
+        pytest.skip('unsupported version')
+
+    from homeassistant.components import button
+
+    domain = button.DOMAIN
+    initial_state = STATE_UNKNOWN
+    state = State(f'{domain}.test', initial_state)
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+
+    assert not cap.retrievable
+    assert cap.parameters() is None
+    assert cap.get_value() is None
+
+    on_calls = async_mock_service(hass, domain, button.SERVICE_PRESS)
     await cap.set_state(BASIC_DATA, {'value': True})
     await cap.set_state(BASIC_DATA, {'value': False})
 

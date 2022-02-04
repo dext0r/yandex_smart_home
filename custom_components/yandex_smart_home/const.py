@@ -18,6 +18,7 @@ from homeassistant.components import (
     vacuum,
     water_heater,
 )
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION
 
 DOMAIN = 'yandex_smart_home'
 CONFIG = 'config'
@@ -150,6 +151,9 @@ DOMAIN_TO_YANDEX_TYPES = {
     sensor.DOMAIN: TYPE_SENSOR,
     air_quality.DOMAIN: TYPE_SENSOR,
 }
+if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12):
+    from homeassistant.components import button
+    DOMAIN_TO_YANDEX_TYPES[button.DOMAIN] = TYPE_OTHER
 
 DEVICE_CLASS_TO_YANDEX_TYPES = {
     (media_player.DOMAIN, media_player.DEVICE_CLASS_TV): TYPE_MEDIA_DEVICE_TV,
