@@ -386,7 +386,9 @@ class PowerProperty(FloatProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_POWER
         elif self.state.domain == switch.DOMAIN:
-            return const.ATTR_POWER in self.state.attributes or const.ATTR_LOAD_POWER in self.state.attributes
+            for attribute in [const.ATTR_POWER, const.ATTR_LOAD_POWER, const.ATTR_CURRENT_CONSUMPTION]:
+                if attribute in self.state.attributes:
+                    return True
 
         return False
 
@@ -395,10 +397,9 @@ class PowerProperty(FloatProperty):
         if self.state.domain == sensor.DOMAIN:
             value = self.state.state
         elif self.state.domain == switch.DOMAIN:
-            if const.ATTR_POWER in self.state.attributes:
-                value = self.state.attributes.get(const.ATTR_POWER)
-            elif const.ATTR_LOAD_POWER in self.state.attributes:
-                value = self.state.attributes.get(const.ATTR_LOAD_POWER)
+            for attribute in [const.ATTR_POWER, const.ATTR_LOAD_POWER, const.ATTR_CURRENT_CONSUMPTION]:
+                if attribute in self.state.attributes:
+                    value = self.state.attributes[attribute]
 
         return self.float_value(value)
 
