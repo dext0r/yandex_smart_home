@@ -2,7 +2,6 @@ import asyncio
 import time
 from unittest.mock import PropertyMock, patch
 
-from homeassistant.config import YAML_CONFIG_FILE
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_UNIT_OF_MEASUREMENT,
@@ -19,7 +18,7 @@ from homeassistant.const import (
 from homeassistant.core import State
 from homeassistant.exceptions import ConfigEntryNotReady
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry, patch_yaml_files
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.const import (
@@ -338,8 +337,7 @@ async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connect
         await notifier.async_send_discovery(None)
         mock_send_cb.assert_not_called()
 
-    with patch_yaml_files({YAML_CONFIG_FILE: ''}), patch(
-            'custom_components.yandex_smart_home.cloud.CloudManager.connect', return_value=None):
+    with patch('custom_components.yandex_smart_home.cloud.CloudManager.connect', return_value=None):
         await async_devices(hass, RequestData(hass.data[DOMAIN][CONFIG], None, None), {})
         await hass.async_block_till_done()
 
