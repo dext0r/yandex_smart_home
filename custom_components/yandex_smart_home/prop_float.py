@@ -152,8 +152,10 @@ class FloatProperty(AbstractProperty, ABC):
             )
         elif self.instance == const.FLOAT_INSTANCE_TVOC:
             return round(float_value * TVOC_CONCENTRATION_TO_MCG_M3.get(from_unit, 1), 2)
+        elif self.instance == const.FLOAT_INSTANCE_AMPERAGE and from_unit == const.ELECTRIC_CURRENT_MILLIAMPERE:
+            return float_value / 1000
 
-        return value
+        return float_value
 
 
 @register_property
@@ -373,9 +375,11 @@ class CurrentProperty(FloatProperty):
 
     def get_value(self) -> float | None:
         if self.state.domain == sensor.DOMAIN:
-            return self.float_value(self.state.state)
+            value = self.state.state
+        else:
+            value = self.state.attributes.get(const.ATTR_CURRENT)
 
-        return self.float_value(self.state.attributes.get(const.ATTR_CURRENT))
+        return self.convert_value(value, self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
 
 
 @register_property

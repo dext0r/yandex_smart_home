@@ -66,5 +66,6 @@
 ```
 
 Поддерживаемые единицы измерения:
+* `amperage`: `A`, `mA`
 * `tvoc`: `ppb`, `ppm`, `p/m³`, `μg/ft³`, `mg/m³`, `µg/m³`
 * `pressure`: `pa`, `hPa`, `kPa`, `MPa`, `mmHg`, `atm`, `bar`, `mbar`

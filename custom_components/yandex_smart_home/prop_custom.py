@@ -108,7 +108,7 @@ class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):
     def get_value(self) -> float | None:
         value = super().get_value()
 
-        if self.instance in [const.FLOAT_INSTANCE_PRESSURE, const.FLOAT_INSTANCE_TVOC]:
+        if self.instance in [const.FLOAT_INSTANCE_PRESSURE, const.FLOAT_INSTANCE_TVOC, const.FLOAT_INSTANCE_AMPERAGE]:
             value_unit = self.property_config.get(CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
                                                   self.property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
             return self.convert_value(value, value_unit)

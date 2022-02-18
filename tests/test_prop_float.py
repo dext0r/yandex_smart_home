@@ -357,6 +357,22 @@ async def test_property_float_tvoc(hass, unit, v):
     assert prop.get_value() is None
 
 
+@pytest.mark.parametrize('unit,v', [
+    ('A', 1245),
+    ('mA', 1.245),
+])
+async def test_property_float_amperage_value(hass, unit, v):
+    state = State('switch.test', STATE_ON, {
+        'current': 1245,
+        ATTR_UNIT_OF_MEASUREMENT: unit
+    })
+    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_AMPERAGE)
+
+    assert prop.retrievable
+    assert prop.parameters() == {'instance': const.FLOAT_INSTANCE_AMPERAGE, 'unit': 'unit.ampere'}
+    assert prop.get_value() == v
+
+
 @pytest.mark.parametrize('domain,device_class,attribute,instance,unit,supported', [
     (binary_sensor.DOMAIN, DEVICE_CLASS_VOLTAGE, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
     (sensor.DOMAIN, DEVICE_CLASS_VOLTAGE, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', True),

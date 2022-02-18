@@ -519,6 +519,9 @@ PRESSURE_UNIT_ATM = 'atm'
 PRESSURE_UNIT_BAR = 'bar'
 PRESSURE_UNIT_MBAR = 'mbar'
 
+# 2021.8+
+ELECTRIC_CURRENT_MILLIAMPERE = 'mA'
+
 # Additional states
 STATE_NONE = 'none'
 STATE_NONE_UI = '-'

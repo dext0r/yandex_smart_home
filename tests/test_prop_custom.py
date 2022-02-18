@@ -197,7 +197,8 @@ async def test_property_custom_value_float_limit(hass):
 
 @pytest.mark.parametrize('instance,unit,value', [
     (const.FLOAT_INSTANCE_PRESSURE, 'mmHg', 100),
-    (const.FLOAT_INSTANCE_TVOC, 'ppb', 449.63)
+    (const.FLOAT_INSTANCE_TVOC, 'ppb', 449.63),
+    (const.FLOAT_INSTANCE_AMPERAGE, 'mA', 0.1)
 ])
 async def test_property_custom_get_value_float_conversion(hass, instance: str, unit, value):
     state = State('sensor.test', '100')
