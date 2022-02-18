@@ -148,7 +148,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         })
 
     async def async_step_done(self) -> data_entry_flow.FlowResult:
-        return self.async_create_entry(title='Yandex Smart Home', data=self._data)
+        return self.async_create_entry(title=const.CONFIG_ENTRY_TITLE, data=self._data)
 
     @staticmethod
     @callback

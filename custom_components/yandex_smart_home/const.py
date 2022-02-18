@@ -22,6 +22,7 @@ from homeassistant.const import MAJOR_VERSION, MINOR_VERSION
 
 DOMAIN = 'yandex_smart_home'
 CONFIG = 'config'
+CONFIG_ENTRY_TITLE = 'Yandex Smart Home'
 NOTIFIERS = 'notifiers'
 CLOUD_MANAGER = 'cloud_manager'
 
