@@ -25,7 +25,7 @@ from homeassistant.helpers.json import JSONEncoder
 from homeassistant.util import dt
 
 from . import const
-from .const import CONFIG, DOMAIN
+from .const import CLOUD_BASE_URL, CONFIG, DOMAIN
 from .helpers import Config, RequestData
 from .smart_home import async_handle_message
 
@@ -35,7 +35,7 @@ DEFAULT_RECONNECTION_DELAY = 2
 MAX_RECONNECTION_DELAY = 180
 FAST_RECONNECTION_TIME = timedelta(seconds=6)
 FAST_RECONNECTION_THRESHOLD = 5
-BASE_API_URL = 'https://yaha-cloud.ru/api/home_assistant/v1'
+BASE_API_URL = f'{CLOUD_BASE_URL}/api/home_assistant/v1'
 
 
 @dataclass

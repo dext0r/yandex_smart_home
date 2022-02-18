@@ -77,6 +77,7 @@ STORE_CACHE_ATTRS = 'attrs'
 CONNECTION_TYPE_DIRECT = 'direct'
 CONNECTION_TYPE_CLOUD = 'cloud'
 
+CLOUD_BASE_URL = 'https://yaha-cloud.ru'
 EVENT_DEVICE_DISCOVERY = 'yandex_smart_home_device_discovery'
 
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html
