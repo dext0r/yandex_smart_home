@@ -31,9 +31,6 @@
             entity: sensor.bedroom_temperature
           - type: humidity
             entity: sensor.bedroom_humidity
-          - type: tvoc
-            attribute: total_volatile_organic_compounds
-            unit_of_measurement: ppb  # для автоматической конвертации из миллиардных долей в мкг/м³
           - type: water_level
             entity: sensor.humidifier_level
           - type: battery_level  # если хочется переместить датчик "из атрибута" в конец списка
@@ -52,3 +49,22 @@
   Возможные значения `type`:
   * [Для цифровых датчиков](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html)
   * [Для бинарных датчиков и событий](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html)
+
+## Конвертация значений
+Компонент автоматически конвертирует значения сенсоров из одних единиц измерения в другие на основании атрибута устройства/сенсора `unit_of_measurement`. Атрибут содержит единицу измерения, в которой находится значение в Home Assistant. Если атрибут отсутствует (или неверный), его можно задать через параметр `unit_of_measurement` в `properties`, пример:
+```yaml
+  yandex_smart_home:
+    filter:
+      include_entities:
+        - humidifier.bedroom
+    entity_config:
+      humidifier.bedroom:
+        properties:
+          - type: tvoc
+            attribute: total_volatile_organic_compounds
+            unit_of_measurement: ppb  # для автоматической конвертации из миллиардных долей в мкг/м³
+```
+
+Поддерживаемые единицы измерения:
+* `tvoc`: `ppb`, `ppm`, `p/m³`, `μg/ft³`, `mg/m³`, `µg/m³`
+* `pressure`: `pa`, `hPa`, `kPa`, `MPa`, `mmHg`, `atm`, `bar`, `mbar`
