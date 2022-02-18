@@ -248,7 +248,7 @@ async def async_start_notifier(hass: HomeAssistant):
                     conf[CONF_NOTIFIER_SKILL_ID],
                 )
                 await notifier.async_validate_config()
-                async_call_later(hass, DISCOVERY_REQUEST_DELAY, notifier.async_send_discovery)
+                async_call_later(hass, DISCOVERY_REQUEST_DELAY, HassJob(notifier.async_send_discovery))
 
                 hass.data[DOMAIN][NOTIFIERS].append(notifier)
             except Exception as exc:
@@ -256,7 +256,7 @@ async def async_start_notifier(hass: HomeAssistant):
 
     if config.is_cloud_connection:
         notifier = YandexCloudNotifier(hass, config.cloud_instance_id, config.cloud_connection_token)
-        async_call_later(hass, DISCOVERY_REQUEST_DELAY, notifier.async_send_discovery)
+        async_call_later(hass, DISCOVERY_REQUEST_DELAY, HassJob(notifier.async_send_discovery))
 
         hass.data[DOMAIN][NOTIFIERS].append(notifier)
 

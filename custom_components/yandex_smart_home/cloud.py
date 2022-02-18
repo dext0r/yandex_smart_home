@@ -18,7 +18,7 @@ from aiohttp import (
     WSMsgType,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HassJob, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.json import JSONEncoder
@@ -141,7 +141,7 @@ class CloudManager:
             _LOGGER.warning(f'Reconnecting too fast, next reconnection in {self._ws_reconnect_delay} seconds')
 
         _LOGGER.debug(f'Trying to reconnect in {self._ws_reconnect_delay} seconds')
-        async_call_later(self._hass, self._ws_reconnect_delay, self.connect)
+        async_call_later(self._hass, self._ws_reconnect_delay, HassJob(self.connect))
 
 
 async def register_cloud_instance(hass: HomeAssistant) -> CloudInstanceData:

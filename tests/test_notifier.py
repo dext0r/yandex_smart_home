@@ -116,7 +116,7 @@ async def test_notifier_async_start(hass, entry, mock_call_later, hass_admin_use
         await hass.async_block_till_done()
         mock_call_later.assert_called_once()
 
-        await mock_call_later.call_args[0][2]()
+        await mock_call_later.call_args[0][2].target()
         mock_discovery.assert_called_once()
 
         hass.bus.async_fire(EVENT_STATE_CHANGED, {'test': True})
