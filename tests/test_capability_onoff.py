@@ -33,6 +33,7 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_onoff import CAPABILITIES_ONOFF
 from custom_components.yandex_smart_home.const import ON_OFF_INSTANCE_ON
+from custom_components.yandex_smart_home.error import SmartHomeError
 
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 from .test_capability import (
@@ -487,49 +488,77 @@ async def test_capability_onoff_custom_service(hass):
     assert off_calls[1].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
 
 
-async def test_capability_onoff_water_heater_bare(hass):
+async def test_capability_onoff_water_heater(hass):
     state = State('water_heater.test', STATE_ON)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-
-
-@pytest.mark.parametrize('op_on', ['On', 'ON', 'electric', 'gas', 'performance', None])
-@pytest.mark.parametrize('op_off', ['Off', 'OFF', None])
-@pytest.mark.parametrize('op,value', [
-    ('On', True), ('ON', True), ('electric', True), ('gas', None), ('performance', None),
-    ('Off', False), ('OFF', False)
-])
-async def test_capability_onoff_water_heater(hass, op_on, op_off, op, value):
-    operation_list = []
-    if op_on:
-        operation_list.append(op_on)
-
-    if op_off:
-        operation_list.append(op_off)
-
-    if op not in operation_list:
-        return
-
-    state = State('water_heater.test', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: water_heater.SUPPORT_OPERATION_MODE,
-        water_heater.ATTR_OPERATION_LIST: operation_list,
-        water_heater.ATTR_OPERATION_MODE: op,
-    })
-    if value is None or op_on in ['gas', 'performance', None] or op_off in [None]:
-        return assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert cap.retrievable
     assert cap.parameters() is None
-    assert bool(cap.get_value()) == value
+    assert bool(cap.get_value())
 
-    on_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_SET_OPERATION_MODE)
+    state = State('water_heater.test', STATE_OFF)
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert not bool(cap.get_value())
+
+    on_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_TURN_ON)
     await cap.set_state(BASIC_DATA, {'value': True})
     assert len(on_calls) == 1
     assert on_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
-    assert on_calls[0].data[water_heater.ATTR_OPERATION_MODE] in ['On', 'ON', 'electric']
 
-    off_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_SET_OPERATION_MODE)
+    off_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_TURN_OFF)
     await cap.set_state(BASIC_DATA, {'value': False})
     assert len(off_calls) == 1
     assert off_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
-    assert off_calls[0].data[water_heater.ATTR_OPERATION_MODE] in ['Off', 'OFF']
+
+
+@pytest.mark.parametrize('op_on', ['on', 'On', 'ON', 'electric'])
+@pytest.mark.parametrize('op_off', ['off', 'Off', 'OFF'])
+async def test_capability_onoff_water_heater_set_op_mode(hass, op_on, op_off):
+    state = State('water_heater.test', op_on, {
+        ATTR_SUPPORTED_FEATURES: water_heater.SUPPORT_OPERATION_MODE,
+        water_heater.ATTR_OPERATION_LIST: [op_on, op_off],
+        water_heater.ATTR_OPERATION_MODE: op_on,
+    })
+
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert cap.retrievable
+    assert cap.parameters() is None
+    assert bool(cap.get_value())
+
+    state = State('water_heater.test', op_off, {
+        ATTR_SUPPORTED_FEATURES: water_heater.SUPPORT_OPERATION_MODE,
+        water_heater.ATTR_OPERATION_LIST: [op_on, op_off],
+        water_heater.ATTR_OPERATION_MODE: op_off,
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert not bool(cap.get_value())
+
+    set_mode_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_SET_OPERATION_MODE)
+    await cap.set_state(BASIC_DATA, {'value': True})
+    assert len(set_mode_calls) == 1
+    assert set_mode_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
+    assert set_mode_calls[0].data[water_heater.ATTR_OPERATION_MODE] == op_on
+
+    set_mode_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_SET_OPERATION_MODE)
+    await cap.set_state(BASIC_DATA, {'value': False})
+    assert len(set_mode_calls) == 1
+    assert set_mode_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
+    assert set_mode_calls[0].data[water_heater.ATTR_OPERATION_MODE] == op_off
+
+
+async def test_capability_onoff_water_heater_set_unsupported_op_mode(hass):
+    state = State('water_heater.test', 'foo', {
+        ATTR_SUPPORTED_FEATURES: water_heater.SUPPORT_OPERATION_MODE,
+        water_heater.ATTR_OPERATION_LIST: ['foo', 'bar'],
+        water_heater.ATTR_OPERATION_MODE: 'foo'
+    })
+
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert bool(cap.get_value())
+
+    for v in [True, False]:
+        with pytest.raises(SmartHomeError) as e:
+            await cap.set_state(BASIC_DATA, {'value': v})
+
+        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert 'Unable to determine operation mode ' in e.value.message
