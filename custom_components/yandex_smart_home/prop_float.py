@@ -5,7 +5,7 @@ from abc import ABC
 import logging
 from typing import Any
 
-from homeassistant.components import air_quality, climate, fan, humidifier, light, sensor, switch
+from homeassistant.components import air_quality, climate, fan, humidifier, light, sensor, switch, water_heater
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     ATTR_DEVICE_CLASS,
@@ -167,7 +167,7 @@ class TemperatureProperty(FloatProperty):
             return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_TEMPERATURE
         elif self.state.domain == air_quality.DOMAIN:
             return self.state.attributes.get(climate.ATTR_TEMPERATURE) is not None
-        elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
+        elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN, water_heater.DOMAIN):
             return self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE) is not None
 
         return False
@@ -177,7 +177,7 @@ class TemperatureProperty(FloatProperty):
             return self.float_value(self.state.state)
         elif self.state.domain == air_quality.DOMAIN:
             return self.float_value(self.state.attributes.get(climate.ATTR_TEMPERATURE))
-        elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
+        elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN, water_heater.DOMAIN):
             return self.float_value(self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE))
 
 

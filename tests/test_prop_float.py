@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from homeassistant.components import air_quality, binary_sensor, climate, cover, fan, humidifier, light, sensor, switch
+from homeassistant.components import (
+    air_quality,
+    binary_sensor,
+    climate,
+    cover,
+    fan,
+    humidifier,
+    light,
+    sensor,
+    switch,
+    water_heater,
+)
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     ATTR_DEVICE_CLASS,
@@ -106,6 +117,8 @@ async def test_property_float_humidity(hass, domain, device_class, attribute, su
     (fan.DOMAIN, None, None, False),
     (humidifier.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, True),
     (humidifier.DOMAIN, None, None, False),
+    (water_heater.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, True),
+    (water_heater.DOMAIN, None, None, False),
 ])
 async def test_property_float_temperature(hass, domain, device_class, attribute, supported):
     attributes = {}
