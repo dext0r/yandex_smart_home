@@ -6,6 +6,7 @@ from typing import Any
 
 from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant import data_entry_flow
+from homeassistant.auth.const import GROUP_ID_READ_ONLY
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import ATTR_FRIENDLY_NAME, CONF_DOMAINS, CONF_ENTITIES, MAJOR_VERSION, MINOR_VERSION
 from homeassistant.core import HomeAssistant, callback, split_entity_id
@@ -259,9 +260,9 @@ class OptionsFlowHandler(OptionsFlow):
             return await self.async_step_cloud_info()
 
         return self.async_show_form(step_id='cloud_settings', data_schema=vol.Schema({
-            vol.Required(const.CONF_USER_ID, default=self._options.get(const.CONF_USER_ID)): vol.In({
-                u.id: u.name for u in await self.hass.auth.async_get_users()
-            })
+            vol.Required(const.CONF_USER_ID, default=self._options.get(const.CONF_USER_ID)): vol.In(
+                await _async_get_users(self.hass)
+            )
         }))
 
     async def async_step_cloud_info(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
@@ -296,6 +297,17 @@ def _async_get_matching_entities(hass: HomeAssistant, domains: list[str] | None 
             key=lambda item: item.entity_id,
         )
     }
+
+
+async def _async_get_users(hass: HomeAssistant) -> dict[str, str]:
+    rv = {}
+    for user in await hass.auth.async_get_users():
+        if any(gr.id == GROUP_ID_READ_ONLY for gr in user.groups):
+            continue
+
+        rv[user.id] = user.name
+
+    return rv
 
 
 async def _async_name_to_type_map(hass: HomeAssistant) -> dict[str, str]:

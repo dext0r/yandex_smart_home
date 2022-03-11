@@ -197,7 +197,7 @@ async def test_options_flow_with_yaml_filters_direct(hass):
     assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
 
 
-async def test_options_flow_with_yaml_filters_cloud(hass, hass_admin_user):
+async def test_options_flow_with_yaml_filters_cloud(hass, hass_admin_user, hass_read_only_user):
     config_entry = _mock_config_entry_with_options_populated({
         const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
         const.CONF_FILTER_FROM_YAML: {
@@ -214,6 +214,7 @@ async def test_options_flow_with_yaml_filters_cloud(hass, hass_admin_user):
     result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={})
     assert result2['type'] == data_entry_flow.RESULT_TYPE_FORM
     assert result2['step_id'] == 'cloud_settings'
+    assert len(result2['data_schema'].schema['user_id'].container) == 1
 
     result3 = await hass.config_entries.options.async_configure(result2['flow_id'], user_input={
         'user_id': hass_admin_user.id
