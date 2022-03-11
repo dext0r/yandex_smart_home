@@ -44,6 +44,10 @@ def property_type_validate(property_type: str) -> str:
             f'https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html'
         )
 
+    if property_type == const.EVENT_INSTANCE_BUTTON:
+        _LOGGER.warning('Property type "button" is not supported. See documentation '
+                        'at https://github.com/dmitry-k/yandex_smart_home/blob/master/docs/sensors.md')
+
     return property_type
 
 

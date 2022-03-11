@@ -1,5 +1,9 @@
 
 # Датчики
+
+- [Конвертация значений](#конвертация-значений)
+- [Кнопки (предварительная реализация)](#кнопки-предварительная-реализация)
+
 В УДЯ кроме устройств можно отдавать значения некоторых цифровых датчиков, таких как "температура", "заряд батареи" и других.
 
 **Бинарные датчики (двери, утечка) и события (вибрация, нажатие кнопки) доступны только участникам бета-теста УДЯ ([подробнее](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event.html)). Если вы один из них, то для включения поддержки бинарных датчиков требуется задать `beta: true` в секции `settings` настроек интеграции.**
@@ -69,3 +73,66 @@
 * `amperage`: `A`, `mA`
 * `tvoc`: `ppb`, `ppm`, `p/m³`, `μg/ft³`, `mg/m³`, `µg/m³`
 * `pressure`: `pa`, `hPa`, `kPa`, `MPa`, `mmHg`, `atm`, `bar`, `mbar`
+
+
+## Кнопки (предварительная реализация)
+На данный момент поддерживаются кнопки, представленные в виде объекта (entity). События по ним (`click`, `hold` и т.п.) должны появляться в атрибутах `action`, `last_action` или состоянии самого объекта. Так же объект должен **обязательно** содержать атрибут `device_class: button`, его можно задать в YAML конфигурации Home Assistant в секции `homeassistant.customize` ([подробнее...](https://www.home-assistant.io/docs/configuration/customizing-devices/#manual-customization))
+
+Для кнопок, которые не представлены в виде объекта или если события появляются не в атрибутах `action` и `last_action`, требуется создать вспомогательные объекты в домене `input_text` и заполнять их состояние по триггеру. Пример для кнопки `WXKG01LM`, подключенной через Z2M:
+```yaml
+homeassistant:
+  customize:
+    input_text.test_button:
+      device_class: button
+
+yandex_smart_home:
+  settings:
+    beta: true
+  filter:  # через GUI тоже можно
+    include_entities:
+      - input_text.test_button
+
+input_text:
+  test_button:
+    name: Test Button
+    initial: ''
+
+automation:
+  - alias: test_button_click
+    trigger:
+      - platform: device
+        domain: mqtt
+        device_id: 88c16946d5bfcee7dfce360e772ab881
+        type: action
+        subtype: single
+        discovery_id: 0x00158d0003cb48af action_single
+    action:
+      - service: input_text.set_value
+        entity_id: input_text.test_button
+        data:
+          value: click # поддерживаются click, double_click, hold
+
+      - service: input_text.set_value
+        entity_id: input_text.test_button
+        data:
+          value: ''
+
+  - alias: test_button_hold
+    trigger:
+      - platform: device
+        domain: mqtt
+        device_id: 88c16946d5bfcee7dfce360e772ab881
+        type: action
+        subtype: hold
+        discovery_id: 0x00158d0003cb48af action_hold
+    action:
+      - service: input_text.set_value
+        entity_id: input_text.test_button
+        data:
+          value: hold
+
+      - service: input_text.set_value
+        entity_id: input_text.test_button
+        data:
+          value: ''
+```

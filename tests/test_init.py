@@ -124,6 +124,20 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
 
+async def test_property_type_button(hass, caplog):
+    files = {YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    media_player.test:
+      properties:
+        - type: button
+          attribute: bla
+"""}
+    with patch_yaml_files(files):
+        await async_integration_yaml_config(hass, DOMAIN)
+        assert 'not supported' in caplog.records[-1].message
+
+
 async def test_valid_config(hass):
     with patch_yaml_files({YAML_CONFIG_FILE: load_fixture('valid-config.yaml')}):
         config = await async_integration_yaml_config(hass, DOMAIN)

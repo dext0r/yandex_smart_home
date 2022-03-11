@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Type
 
-from homeassistant.components import binary_sensor, sensor
+from homeassistant.components import binary_sensor, input_text, sensor
 from homeassistant.const import ATTR_DEVICE_CLASS, STATE_OFF, STATE_ON
 from homeassistant.core import State
 import pytest
@@ -211,14 +211,16 @@ async def test_property_event_water_leak(hass, device_class, supported):
     assert prop.get_value() == 'dry'
 
 
-@pytest.mark.parametrize('domain,attribute,supported', [
-    (binary_sensor.DOMAIN, 'last_action', True),
-    (sensor.DOMAIN, 'action', True),
-    (binary_sensor.DOMAIN, 'bar', False),
+@pytest.mark.parametrize('domain,attribute,device_class,supported', [
+    (binary_sensor.DOMAIN, 'last_action', None, True),
+    (sensor.DOMAIN, 'action', None, True),
+    (input_text.DOMAIN, 'bar', 'button', True),
+    (binary_sensor.DOMAIN, 'bar', None, False),
 ])
-async def test_property_event_button_sensor(hass, domain, attribute, supported):
+async def test_property_event_button_sensor(hass, domain, attribute, device_class, supported):
     state = State(f'{domain}.test', STATE_ON, {
-        attribute: 'single'
+        attribute: 'single',
+        ATTR_DEVICE_CLASS: device_class
     })
     assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.EVENT_INSTANCE_VIBRATION)
     if supported:
@@ -227,27 +229,31 @@ async def test_property_event_button_sensor(hass, domain, attribute, supported):
         assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.EVENT_INSTANCE_BUTTON)
         return
 
-    assert not prop.retrievable
-    assert prop.parameters() == {
-        'events': [{'value': 'click'}, {'value': 'double_click'}, {'value': 'long_press'}],
-        'instance': 'button'
-    }
+    if domain != input_text.DOMAIN:
+        assert not prop.retrievable
+        assert prop.parameters() == {
+            'events': [{'value': 'click'}, {'value': 'double_click'}, {'value': 'long_press'}],
+            'instance': 'button'
+        }
+        assert prop.get_value() == 'click'
+
+        prop.state = State(f'{domain}.test', STATE_ON, {
+            attribute: 'double'
+        })
+        assert prop.get_value() == 'double_click'
+
+        prop.state = State(f'{domain}.test', STATE_ON, {
+            attribute: 'hold'
+        })
+        assert prop.get_value() == 'long_press'
+
+        prop.state = State(f'{domain}.test', STATE_ON, {
+            attribute: 'invalid'
+        })
+        assert prop.get_value() is None
+
+    prop.state = State(f'{domain}.test', 'click')
     assert prop.get_value() == 'click'
-
-    prop.state = State(f'{domain}.test', STATE_ON, {
-        attribute: 'double'
-    })
-    assert prop.get_value() == 'double_click'
-
-    prop.state = State(f'{domain}.test', STATE_ON, {
-        attribute: 'hold'
-    })
-    assert prop.get_value() == 'long_press'
-
-    prop.state = State(f'{domain}.test', STATE_ON, {
-        attribute: 'invalid'
-    })
-    assert prop.get_value() is None
 
 
 @pytest.mark.parametrize('domain,attribute,device_class,supported', [

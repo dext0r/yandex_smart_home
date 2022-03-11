@@ -9,6 +9,7 @@ from homeassistant.components import (
     group,
     humidifier,
     input_boolean,
+    input_text,
     light,
     lock,
     media_player,
@@ -147,6 +148,7 @@ DOMAIN_TO_YANDEX_TYPES = {
     group.DOMAIN: TYPE_SWITCH,
     humidifier.DOMAIN: TYPE_HUMIDIFIER,
     input_boolean.DOMAIN: TYPE_SWITCH,
+    input_text.DOMAIN: TYPE_SENSOR,
     light.DOMAIN: TYPE_LIGHT,
     lock.DOMAIN: TYPE_OPENABLE,
     media_player.DOMAIN: TYPE_MEDIA_DEVICE,
@@ -589,6 +591,8 @@ FAN_SPEED_MAX = 'max'
 
 # https://github.com/dmitry-k/yandex_smart_home/issues/347
 FAN_SPEED_MID = 'mid'
+
+DEVICE_CLASS_BUTTON = 'button'
 
 MEDIA_PLAYER_FEATURE_VOLUME_MUTE = 'volume_mute'
 MEDIA_PLAYER_FEATURE_VOLUME_SET = 'volume_set'
