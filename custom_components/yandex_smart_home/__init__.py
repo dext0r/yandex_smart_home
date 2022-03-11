@@ -27,7 +27,7 @@ from . import (  # noqa: F401
     prop_float,
 )
 from .cloud import CloudManager, delete_cloud_instance
-from .const import CLOUD_MANAGER, CONFIG, DOMAIN, EVENT_DEVICE_DISCOVERY, NOTIFIERS
+from .const import CLOUD_MANAGER, CONFIG, DOMAIN, EVENT_CONFIG_CHANGED, EVENT_DEVICE_DISCOVERY, NOTIFIERS
 from .helpers import Config
 from .http import async_register_http
 from .notifier import YandexNotifier, async_setup_notifier, async_start_notifier, async_unload_notifier
@@ -328,7 +328,8 @@ async def async_unload_entry(hass: HomeAssistant, _: ConfigEntry):
     hass.data[DOMAIN][CONFIG]: Config | None = None
     hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None
 
-    async_unload_notifier(hass)
+    await async_unload_notifier(hass)
+
     return True
 
 
@@ -339,6 +340,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
     await hass.config_entries.async_reload(entry.entry_id)
+    hass.bus.async_fire(EVENT_CONFIG_CHANGED)
 
 
 def _get_config_entry_data_from_yaml(data: dict, yaml_config: ConfigType) -> dict:

@@ -10,20 +10,35 @@ from typing import Any
 
 from aiohttp import ContentTypeError
 from aiohttp.client_exceptions import ClientConnectionError
-from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import (
+    ATTR_ENTITY_ID,
+    EVENT_HOMEASSISTANT_STARTED,
+    EVENT_STATE_CHANGED,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import CALLBACK_TYPE, Event, HassJob, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_call_later
 
 from . import const
-from .const import CONF_NOTIFIER_OAUTH_TOKEN, CONF_NOTIFIER_SKILL_ID, CONF_NOTIFIER_USER_ID, CONFIG, DOMAIN, NOTIFIERS
+from .const import (
+    CONF_NOTIFIER_OAUTH_TOKEN,
+    CONF_NOTIFIER_SKILL_ID,
+    CONF_NOTIFIER_USER_ID,
+    CONFIG,
+    DOMAIN,
+    EVENT_CONFIG_CHANGED,
+    NOTIFIERS,
+)
 from .entity import YandexEntity
 from .helpers import Config
 
 _LOGGER = logging.getLogger(__name__)
 
-DISCOVERY_REQUEST_DELAY = 10
+DISCOVERY_REQUEST_DELAY = 15
+DISCOVERY_REQUEST_DELAY_ON_CONFIG_RELOAD = 5
 REPORT_STATE_WINDOW = 1
 
 
@@ -37,6 +52,7 @@ class YandexNotifier(ABC):
         self._session = async_create_clientsession(hass)
 
         self._unsub_pending: CALLBACK_TYPE | None = None
+        self._unsub_send_discovery: CALLBACK_TYPE | None = None
         self._pending = deque()
         self._report_states_job = HassJob(self._report_states)
 
@@ -105,12 +121,15 @@ class YandexNotifier(ABC):
     async def async_send_state(self, devices: list):
         await self._async_send_callback(f'{self._base_url}/state', {'devices': devices})
 
-    async def async_send_discovery(self, _):
+    async def async_send_discovery(self, _=None):
         if not self._ready:
             return
 
         _LOGGER.debug(self._format_log_message('Device list update initiated'))
         await self._async_send_callback(f'{self._base_url}/discovery', {})
+
+    async def async_schedule_discovery(self, delay: int):
+        self._unsub_send_discovery = async_call_later(self._hass, delay, HassJob(self.async_send_discovery))
 
     # noinspection PyBroadException
     async def _async_send_callback(self, url: str, payload: dict[str, Any]):
@@ -188,6 +207,10 @@ class YandexNotifier(ABC):
                 if self._unsub_pending is None:
                     self._unsub_pending = async_call_later(self._hass, REPORT_STATE_WINDOW, self._report_states_job)
 
+    async def async_unload(self):
+        if self._unsub_send_discovery:
+            self._unsub_send_discovery()
+
 
 class YandexDirectNotifier(YandexNotifier):
     def __init__(self, hass: HomeAssistant, user_id: str, token: str, skill_id: str):
@@ -227,10 +250,20 @@ class YandexCloudNotifier(YandexNotifier):
 @callback
 def async_setup_notifier(hass: HomeAssistant):
     """Set up notifiers."""
-    async def state_change_listener(event: Event):
+    async def _state_change_listener(event: Event):
         await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
 
-    hass.bus.async_listen(EVENT_STATE_CHANGED, state_change_listener)
+    hass.bus.async_listen(EVENT_STATE_CHANGED, _state_change_listener)
+
+    async def _schedule_discovery_listener(event: Event):
+        delay = DISCOVERY_REQUEST_DELAY
+        if event.event_type == EVENT_CONFIG_CHANGED:
+            delay = DISCOVERY_REQUEST_DELAY_ON_CONFIG_RELOAD
+
+        await asyncio.gather(*[n.async_schedule_discovery(delay) for n in hass.data[DOMAIN][NOTIFIERS]])
+
+    hass.bus.async_listen(EVENT_HOMEASSISTANT_STARTED, _schedule_discovery_listener)
+    hass.bus.async_listen(EVENT_CONFIG_CHANGED, _schedule_discovery_listener)
 
 
 async def async_start_notifier(hass: HomeAssistant):
@@ -248,19 +281,18 @@ async def async_start_notifier(hass: HomeAssistant):
                     conf[CONF_NOTIFIER_SKILL_ID],
                 )
                 await notifier.async_validate_config()
-                async_call_later(hass, DISCOVERY_REQUEST_DELAY, HassJob(notifier.async_send_discovery))
 
                 hass.data[DOMAIN][NOTIFIERS].append(notifier)
             except Exception as exc:
                 raise ConfigEntryNotReady from exc
 
     if config.is_cloud_connection:
-        notifier = YandexCloudNotifier(hass, config.cloud_instance_id, config.cloud_connection_token)
-        async_call_later(hass, DISCOVERY_REQUEST_DELAY, HassJob(notifier.async_send_discovery))
+        hass.data[DOMAIN][NOTIFIERS].append(
+            YandexCloudNotifier(hass, config.cloud_instance_id, config.cloud_connection_token)
+        )
 
-        hass.data[DOMAIN][NOTIFIERS].append(notifier)
 
+async def async_unload_notifier(hass: HomeAssistant):
+    await asyncio.gather(*[notifier.async_unload() for notifier in hass.data[DOMAIN][NOTIFIERS]])
 
-@callback
-def async_unload_notifier(hass: HomeAssistant):
     hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []

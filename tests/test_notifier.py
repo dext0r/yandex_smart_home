@@ -8,6 +8,7 @@ from homeassistant.const import (
     ATTR_VOLTAGE,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
+    EVENT_HOMEASSISTANT_STARTED,
     EVENT_STATE_CHANGED,
     PERCENTAGE,
     STATE_ON,
@@ -95,7 +96,7 @@ async def test_notifier_async_start_direct_invalid(hass, mock_call_later, hass_a
 
 
 @pytest.mark.parametrize('entry', [_mock_entry_with_cloud_connection, _mock_entry_with_direct_connection])
-async def test_notifier_async_start(hass, entry, mock_call_later, hass_admin_user):
+async def test_notifier_async_start(hass, entry, hass_admin_user):
     async_setup_notifier(hass)
 
     config = MockConfig(entry=entry(hass_admin_user))
@@ -104,24 +105,65 @@ async def test_notifier_async_start(hass, entry, mock_call_later, hass_admin_use
         NOTIFIERS: [],
     }
 
-    with patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_send_discovery') as mock_discovery, \
-         patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_event_handler') as mock_evh, \
-         patch('custom_components.yandex_smart_home.notifier.DISCOVERY_REQUEST_DELAY', 0):
-        mock_call_later.reset_mock()
-
+    with patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_event_handler') as mock_evh:
         await async_start_notifier(hass)
-        assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-
         await hass.async_block_till_done()
-        mock_call_later.assert_called_once()
-
-        await mock_call_later.call_args[0][2].target()
-        mock_discovery.assert_called_once()
+        assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
 
         hass.bus.async_fire(EVENT_STATE_CHANGED, {'test': True})
         await hass.async_block_till_done()
         mock_evh.assert_called_once()
         assert mock_evh.call_args[0][0].data == {'test': True}
+
+
+async def test_notifier_schedule_discovery_on_start(hass, mock_call_later, hass_admin_user):
+    async_setup_notifier(hass)
+
+    entry = _mock_entry_with_cloud_connection(devices_discovered=True)
+    entry.add_to_hass(hass)
+
+    config = MockConfig(entry=entry)
+    hass.data[DOMAIN] = {
+        CONFIG: config,
+        NOTIFIERS: [],
+    }
+
+    await async_start_notifier(hass)
+
+    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
+    notifier = hass.data[DOMAIN][NOTIFIERS][0]
+
+    assert notifier._unsub_send_discovery is None
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+    await hass.async_block_till_done()
+    assert notifier._unsub_send_discovery is not None
+
+    await async_unload_notifier(hass)
+    await hass.async_block_till_done()
+
+    # noinspection PyUnresolvedReferences
+    notifier._unsub_send_discovery.assert_called_once()
+
+
+async def test_notifier_schedule_discovery_on_config_change(hass, mock_call_later, hass_admin_user):
+    async_setup_notifier(hass)
+
+    entry = _mock_entry_with_cloud_connection(devices_discovered=True)
+    entry.add_to_hass(hass)
+
+    config = MockConfig(entry=entry)
+    hass.data[DOMAIN] = {
+        CONFIG: config,
+        NOTIFIERS: [],
+    }
+
+    await async_start_notifier(hass)
+
+    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
+    with patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_schedule_discovery') as mock:
+        hass.bus.async_fire(const.EVENT_CONFIG_CHANGED)
+        await hass.async_block_till_done()
+        mock.assert_called_once_with(5)
 
 
 async def test_notifier_format_log_message(hass, hass_admin_user):
@@ -325,7 +367,7 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
     hass.states.async_set(state_humidity.entity_id, '70', state_humidity.attributes)
     await hass.async_block_till_done()
 
-    async_unload_notifier(hass)
+    await async_unload_notifier(hass)
 
 
 async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connection, caplog):
