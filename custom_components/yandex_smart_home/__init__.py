@@ -20,6 +20,7 @@ from . import (  # noqa: F401
     capability_onoff,
     capability_range,
     capability_toggle,
+    capability_video,
     const,
     prop_custom,
     prop_event,

@@ -146,7 +146,7 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
             instance = capability['state']['instance']
 
             try:
-                await entity.execute(data, capability_type, instance, capability['state'])
+                value = await entity.execute(data, capability_type, instance, capability['state'])
             except SmartHomeError as e:
                 _LOGGER.error(f'{e.code}: {e.message}')
 
@@ -162,7 +162,7 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
                 })
                 continue
 
-            capabilities_result.append({
+            result = {
                 'type': capability_type,
                 'state': {
                     'instance': instance,
@@ -170,7 +170,11 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
                         'status': 'DONE',
                     }
                 }
-            })
+            }
+            if value:
+                result['state']['action_result']['value'] = value
+
+            capabilities_result.append(result)
 
         devices.append({
             'id': entity_id,

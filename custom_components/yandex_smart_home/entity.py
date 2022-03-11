@@ -234,7 +234,7 @@ class YandexEntity:
                       data: RequestData,
                       capability_type: str,
                       instance: str,
-                      state: dict[str, str | int | bool]) -> None:
+                      state: dict[str, str | int | bool]) -> dict[str, Any] | None:
         """Execute action.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
@@ -248,7 +248,7 @@ class YandexEntity:
 
         for capability in target_capabilities:
             try:
-                await capability.set_state(data, state)
+                return await capability.set_state(data, state)
             except SmartHomeError:
                 raise
             except Exception as e:

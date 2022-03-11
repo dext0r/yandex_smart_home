@@ -2,6 +2,7 @@
 from homeassistant.components import (
     air_quality,
     binary_sensor,
+    camera,
     climate,
     cover,
     fan,
@@ -93,6 +94,7 @@ TYPE_MEDIA_DEVICE = PREFIX_TYPES + 'media_device'
 TYPE_MEDIA_DEVICE_TV = PREFIX_TYPES + 'media_device.tv'
 TYPE_MEDIA_DEVICE_TV_BOX = PREFIX_TYPES + 'media_device.tv_box'
 TYPE_MEDIA_DEVICE_RECIEVER = PREFIX_TYPES + 'media_device.receiver'
+TYPE_CAMERA = PREFIX_TYPES + 'camera'
 TYPE_COOKING = PREFIX_TYPES + 'cooking'
 TYPE_COFFEE_MAKER = PREFIX_TYPES + 'cooking.coffee_maker'
 TYPE_KETTLE = PREFIX_TYPES + 'cooking.kettle'
@@ -118,6 +120,7 @@ TYPES = (
     TYPE_MEDIA_DEVICE_TV,
     TYPE_MEDIA_DEVICE_TV_BOX,
     TYPE_MEDIA_DEVICE_RECIEVER,
+    TYPE_CAMERA,
     TYPE_COOKING,
     TYPE_COFFEE_MAKER,
     TYPE_KETTLE,
@@ -137,6 +140,7 @@ TYPES = (
 
 DOMAIN_TO_YANDEX_TYPES = {
     binary_sensor.DOMAIN: TYPE_SENSOR,
+    camera.DOMAIN: TYPE_CAMERA,
     climate.DOMAIN: TYPE_THERMOSTAT,
     cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
     fan.DOMAIN: TYPE_FAN,

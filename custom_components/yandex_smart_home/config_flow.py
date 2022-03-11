@@ -29,6 +29,7 @@ MODE_EXCLUDE = 'exclude'
 
 SUPPORTED_DOMAINS = [
     'binary_sensor',
+    'camera',
     'climate',
     'cover',
     'fan',

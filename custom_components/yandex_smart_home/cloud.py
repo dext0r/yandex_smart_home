@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from asyncio import TimeoutError
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from http import HTTPStatus
 import json
@@ -19,7 +19,7 @@ from aiohttp import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HassJob, HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession, async_get_clientsession
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.json import JSONEncoder
 from homeassistant.util import dt
@@ -54,11 +54,18 @@ class CloudRequest:
     @classmethod
     def from_dict(cls, data: dict[str, Any]):
         if 'message' in data:
-            data['message'] = json.loads(data['message'])
+            if isinstance(data['message'], str):
+                data['message'] = json.loads(data['message'])
         else:
             data['message'] = {}
 
         return cls(**data)
+
+
+@dataclass
+class ProxyResponseMeta:
+    status_code: int
+    headers: dict[str, Any] | None = None
 
 
 class CloudManager:
@@ -115,6 +122,9 @@ class CloudManager:
         request = CloudRequest.from_dict(payload)
         _LOGGER.debug('Request: %s (message: %s)' % (request.action, request.message))
 
+        if request.action == '/proxy':
+            return await self._on_proxy_request(request)
+
         data = RequestData(
             config=self._hass.data[DOMAIN][CONFIG],
             request_user_id=self._instance_id,
@@ -127,6 +137,26 @@ class CloudManager:
         _LOGGER.debug(f'Response: {response}')
 
         await self._ws.send_str(response)
+
+    async def _on_proxy_request(self, request: CloudRequest):
+        url = request.message['url']
+        body = b''
+
+        if not url.startswith('/api/hls'):
+            meta = ProxyResponseMeta(HTTPStatus.FORBIDDEN)
+        else:
+            # TODO: find a better way
+            internal_url = f'{self._hass.http.site.name}{url}'
+
+            _LOGGER.debug(f'Request to {internal_url}')
+            session = async_get_clientsession(self._hass, verify_ssl=False)
+            async with session.get(internal_url) as r:
+                meta = ProxyResponseMeta(status_code=r.status, headers=dict(r.headers))
+                body = await r.read()
+
+        response = bytes(json.dumps(asdict(meta)), 'utf-8') + b'\r\n' + body
+
+        await self._ws.send_bytes(response, compress=False)
 
     def _try_reconnect(self):
         self._ws_reconnect_delay = min(2 * self._ws_reconnect_delay, MAX_RECONNECTION_DELAY)
