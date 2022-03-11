@@ -265,8 +265,8 @@ class HumidityCapabilityHumidifier(HumidityCapability):
         super().__init__(hass, config, state)
 
         self.default_range = (
-            self.state.attributes.get(humidifier.ATTR_MIN_HUMIDITY),
-            self.state.attributes.get(humidifier.ATTR_MAX_HUMIDITY),
+            self.state.attributes.get(humidifier.ATTR_MIN_HUMIDITY, 0),
+            self.state.attributes.get(humidifier.ATTR_MAX_HUMIDITY, 100),
             1
         )
 
