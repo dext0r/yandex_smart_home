@@ -270,12 +270,15 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
     async def _handle_reload(*_):
         config = await async_integration_yaml_config(hass, DOMAIN)
         for entry in hass.config_entries.async_entries(DOMAIN):
-            _async_update_config_entry_from_yaml(hass, entry, config)
+            hass.config_entries.async_update_entry(entry, data=_get_config_entry_data_from_yaml(entry.data, config))
 
     hass.helpers.service.async_register_admin_service(DOMAIN, SERVICE_RELOAD, _handle_reload)
 
     for config_entry in hass.config_entries.async_entries(DOMAIN):
-        _async_update_config_entry_from_yaml(hass, config_entry, yaml_config)
+        hass.config_entries.async_update_entry(
+            config_entry,
+            data=_get_config_entry_data_from_yaml(config_entry.data, yaml_config)
+        )
 
     return True
 
@@ -333,10 +336,8 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
     await hass.config_entries.async_reload(entry.entry_id)
 
 
-@callback
-def _async_update_config_entry_from_yaml(hass: HomeAssistant, entry: ConfigEntry, yaml_config: ConfigType):
-    """Update a config entry with the latest yaml."""
-    data = entry.data.copy()
+def _get_config_entry_data_from_yaml(data: dict, yaml_config: ConfigType) -> dict:
+    data = data.copy()
     data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
     if const.CONF_DEVICES_DISCOVERED not in data:  # pre-0.3 migration
         data.setdefault(const.CONF_DEVICES_DISCOVERED, True)
@@ -355,7 +356,7 @@ def _async_update_config_entry_from_yaml(hass: HomeAssistant, entry: ConfigEntry
             if v in data:
                 del data[v]
 
-    hass.config_entries.async_update_entry(entry, data=data)
+    return data
 
 
 @callback

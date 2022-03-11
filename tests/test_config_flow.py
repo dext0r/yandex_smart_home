@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import patch
 
 from homeassistant import config_entries, data_entry_flow
@@ -10,12 +12,8 @@ from custom_components.yandex_smart_home.config_flow import DOMAIN
 COMPONENT_PATH = 'custom_components.yandex_smart_home'
 
 
-def _mock_config_entry_with_options_populated(connection_type: str):
-    data = {
-        'connection_type': connection_type,
-    }
-
-    if connection_type == const.CONNECTION_TYPE_CLOUD:
+def _mock_config_entry_with_options_populated(data: dict):
+    if data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
         data[const.CONF_CLOUD_INSTANCE] = {
             const.CONF_CLOUD_INSTANCE_ID: 'test',
             const.CONF_CLOUD_INSTANCE_PASSWORD: 'secret',
@@ -94,6 +92,8 @@ async def test_step_user_cloud(hass, aioclient_mock):
             assert result6['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
             assert result6['data'] == {
                 'connection_type': 'cloud',
+                'beta': False,
+                'pressure_unit': 'mmHg',
                 'devices_discovered': False,
                 'cloud_instance': {
                     'id': 'test',
@@ -165,6 +165,8 @@ async def test_step_user_direct(hass):
 
             assert result3['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
             assert result3['data'] == {
+                'beta': False,
+                'pressure_unit': 'mmHg',
                 'connection_type': 'direct',
                 'devices_discovered': False,
                 'filter': {
@@ -179,84 +181,88 @@ async def test_step_user_direct(hass):
 
 
 async def test_options_flow_with_yaml_filters_direct(hass):
-    config_entry = _mock_config_entry_with_options_populated(const.CONNECTION_TYPE_DIRECT)
+    config_entry = _mock_config_entry_with_options_populated({
+        const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT,
+        const.CONF_FILTER_FROM_YAML: {
+            'include_domains': ['script']
+        }
+    })
     config_entry.add_to_hass(hass)
 
-    with patch_yaml_files({YAML_CONFIG_FILE: """
-yandex_smart_home:
-  filter:
-    include_domains:
-      - script"""}):
-        result = await hass.config_entries.options.async_init(config_entry.entry_id)
-        assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
-        assert result['step_id'] == 'include_domains_yaml'
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
+    assert result['step_id'] == 'include_domains_yaml'
 
-        result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={})
-        assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={})
+    assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
 
 
 async def test_options_flow_with_yaml_filters_cloud(hass, hass_admin_user):
-    config_entry = _mock_config_entry_with_options_populated(const.CONNECTION_TYPE_CLOUD)
+    config_entry = _mock_config_entry_with_options_populated({
+        const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
+        const.CONF_FILTER_FROM_YAML: {
+            'include_domains': ['script']
+        }
+    })
+
     config_entry.add_to_hass(hass)
 
-    with patch_yaml_files({YAML_CONFIG_FILE: """
-yandex_smart_home:
-  filter:
-    include_domains:
-      - script"""}):
-        result = await hass.config_entries.options.async_init(config_entry.entry_id)
-        assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
-        assert result['step_id'] == 'include_domains_yaml'
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
+    assert result['step_id'] == 'include_domains_yaml'
 
-        result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={})
-        assert result2['type'] == data_entry_flow.RESULT_TYPE_FORM
-        assert result2['step_id'] == 'cloud_settings'
+    result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={})
+    assert result2['type'] == data_entry_flow.RESULT_TYPE_FORM
+    assert result2['step_id'] == 'cloud_settings'
 
-        result3 = await hass.config_entries.options.async_configure(result2['flow_id'], user_input={
-            'user_id': hass_admin_user.id
-        })
-        assert result3['type'] == data_entry_flow.RESULT_TYPE_FORM
-        assert result3['step_id'] == 'cloud_info'
+    result3 = await hass.config_entries.options.async_configure(result2['flow_id'], user_input={
+        'user_id': hass_admin_user.id
+    })
+    assert result3['type'] == data_entry_flow.RESULT_TYPE_FORM
+    assert result3['step_id'] == 'cloud_info'
 
-        result4 = await hass.config_entries.options.async_configure(result3['flow_id'], user_input={})
-        assert result4['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-        assert config_entry.options['user_id'] == hass_admin_user.id
+    result4 = await hass.config_entries.options.async_configure(result3['flow_id'], user_input={})
+    assert result4['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert config_entry.options['user_id'] == hass_admin_user.id
 
 
 async def test_options_flow_filter_exclude(hass):
-    config_entry = _mock_config_entry_with_options_populated(const.CONNECTION_TYPE_DIRECT)
+    config_entry = _mock_config_entry_with_options_populated({
+        const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT,
+    })
     config_entry.add_to_hass(hass)
 
     hass.states.async_set('climate.old', 'off')
     await hass.async_block_till_done()
 
-    with patch_yaml_files({YAML_CONFIG_FILE: ''}):
-        result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
 
-        assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
-        assert result['step_id'] == 'include_domains'
+    assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
+    assert result['step_id'] == 'include_domains'
 
-        result = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
-            'domains': ['fan', 'vacuum', 'climate']
-        })
-        assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
-        assert result['step_id'] == 'include_exclude'
+    result = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
+        'domains': ['fan', 'vacuum', 'climate']
+    })
+    assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
+    assert result['step_id'] == 'include_exclude'
 
-        result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
-            'entities': ['climate.old'], 'include_exclude_mode': 'exclude'
-        })
-        assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-        assert config_entry.options == {
-            'filter': {
-                'exclude_entities': ['climate.old'],
-                'include_domains': ['fan', 'vacuum', 'climate'],
-                'include_entities': []
-            },
-        }
+    result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
+        'entities': ['climate.old'], 'include_exclude_mode': 'exclude'
+    })
+    assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert config_entry.options == {
+        'filter': {
+            'exclude_entities': ['climate.old'],
+            'include_domains': ['fan', 'vacuum', 'climate'],
+            'include_entities': []
+        },
+    }
 
 
 async def test_options_flow_filter_include(hass):
-    config_entry = _mock_config_entry_with_options_populated(const.CONNECTION_TYPE_DIRECT)
+    config_entry = _mock_config_entry_with_options_populated({
+        const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT,
+    })
     config_entry.add_to_hass(hass)
 
     hass.states.async_set('climate.old', 'off')
@@ -264,31 +270,30 @@ async def test_options_flow_filter_include(hass):
 
     await hass.async_block_till_done()
 
-    with patch_yaml_files({YAML_CONFIG_FILE: ''}):
-        result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
 
-        assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
-        assert result['step_id'] == 'include_domains'
+    assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
+    assert result['step_id'] == 'include_domains'
 
-        result = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
-            'domains': ['fan', 'vacuum', 'climate']
-        })
+    result = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
+        'domains': ['fan', 'vacuum', 'climate']
+    })
 
-        assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
-        assert result['step_id'] == 'include_exclude'
+    assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
+    assert result['step_id'] == 'include_exclude'
 
-        result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
-            'entities': ['climate.new'],
-            'include_exclude_mode': 'include'
-        })
-        assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-        assert config_entry.options == {
-            'filter': {
-                'exclude_entities': [],
-                'include_domains': ['fan', 'vacuum'],
-                'include_entities': ['climate.new'],
-            }
+    result2 = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
+        'entities': ['climate.new'],
+        'include_exclude_mode': 'include'
+    })
+    assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert config_entry.options == {
+        'filter': {
+            'exclude_entities': [],
+            'include_domains': ['fan', 'vacuum'],
+            'include_entities': ['climate.new'],
         }
+    }
 
 
 async def test_options_flow_filter_exclude2(hass):
