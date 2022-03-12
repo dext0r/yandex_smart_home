@@ -12,12 +12,11 @@ from homeassistant.const import ATTR_FRIENDLY_NAME, CONF_DOMAINS, CONF_ENTITIES,
 from homeassistant.core import HomeAssistant, callback, split_entity_id
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entityfilter import CONF_EXCLUDE_ENTITIES, CONF_INCLUDE_DOMAINS, CONF_INCLUDE_ENTITIES
-from homeassistant.helpers.reload import async_integration_yaml_config
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 import voluptuous as vol
 
-from . import DOMAIN, _get_config_entry_data_from_yaml, const, is_config_filter_empty
+from . import DOMAIN, YAML_CONFIG, _get_config_entry_data_from_yaml, const, is_config_filter_empty
 from .cloud import register_cloud_instance
 
 _LOGGER = logging.getLogger(__name__)
@@ -90,15 +89,13 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason='single_instance_allowed')
 
-        self._yaml_config = await async_integration_yaml_config(self.hass, DOMAIN)
+        self._yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
         self._data.update(_get_config_entry_data_from_yaml(self._data, self._yaml_config))
 
         return await self.async_step_include_domains()
 
     async def async_step_include_domains(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
-        if const.CONF_FILTER_FROM_YAML in self._data and not is_config_filter_empty(
-            self._data[const.CONF_FILTER_FROM_YAML]
-        ):
+        if self._yaml_config and not is_config_filter_empty(self._yaml_config.get(const.CONF_FILTER, {})):
             return await self.async_step_connection_type()
 
         if user_input is not None:
@@ -174,9 +171,9 @@ class OptionsFlowHandler(OptionsFlow):
         return await self.async_step_include_domains()
 
     async def async_step_include_domains(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
-        if const.CONF_FILTER_FROM_YAML in self._data and not is_config_filter_empty(
-                self._data[const.CONF_FILTER_FROM_YAML]
-        ):
+        yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
+
+        if yaml_config and not is_config_filter_empty(yaml_config.get(const.CONF_FILTER, {})):
             return await self.async_step_include_domains_yaml()
 
         if user_input is not None:

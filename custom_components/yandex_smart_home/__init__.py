@@ -1,6 +1,7 @@
 """Support for Actions on Yandex Smart Home."""
 from __future__ import annotations
 
+import hashlib
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -27,7 +28,7 @@ from . import (  # noqa: F401
     prop_float,
 )
 from .cloud import CloudManager, delete_cloud_instance
-from .const import CLOUD_MANAGER, CONFIG, DOMAIN, EVENT_CONFIG_CHANGED, EVENT_DEVICE_DISCOVERY, NOTIFIERS
+from .const import CLOUD_MANAGER, CONFIG, DOMAIN, EVENT_CONFIG_CHANGED, EVENT_DEVICE_DISCOVERY, NOTIFIERS, YAML_CONFIG
 from .helpers import Config
 from .http import async_register_http
 from .notifier import YandexNotifier, async_setup_notifier, async_start_notifier, async_unload_notifier
@@ -257,6 +258,7 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
     hass.data[DOMAIN] = {}
     hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []
     hass.data[DOMAIN][CONFIG]: Config | None = None
+    hass.data[DOMAIN][YAML_CONFIG]: ConfigType | None = yaml_config.get(DOMAIN)
     hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None
 
     async_register_http(hass)
@@ -273,26 +275,23 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
     hass.bus.async_listen(EVENT_DEVICE_DISCOVERY, _device_discovery_listener)
 
     async def _handle_reload(*_):
-        config = await async_integration_yaml_config(hass, DOMAIN)
-        for entry in hass.config_entries.async_entries(DOMAIN):
-            hass.config_entries.async_update_entry(entry, data=_get_config_entry_data_from_yaml(entry.data, config))
+        hass.data[DOMAIN][YAML_CONFIG] = (await async_integration_yaml_config(hass, DOMAIN)).get(DOMAIN)
+        _update_config_entries(hass)
 
     hass.helpers.service.async_register_admin_service(DOMAIN, SERVICE_RELOAD, _handle_reload)
 
-    for config_entry in hass.config_entries.async_entries(DOMAIN):
-        hass.config_entries.async_update_entry(
-            config_entry,
-            data=_get_config_entry_data_from_yaml(config_entry.data, yaml_config)
-        )
+    _update_config_entries(hass)
 
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    yaml_config = hass.data[DOMAIN][YAML_CONFIG] or {}
+
     _async_import_options_from_data_if_missing(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
-    entity_filter = entry.data.get(const.CONF_FILTER_FROM_YAML, {})
+    entity_filter = yaml_config.get(const.CONF_FILTER, {})
     if is_config_filter_empty(entity_filter) and const.CONF_FILTER in entry.options:
         entity_filter = entry.options[const.CONF_FILTER]
 
@@ -300,7 +299,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass=hass,
         entry=entry,
         should_expose=FILTER_SCHEMA(entity_filter),
-        entity_config=entry.data.get(const.CONF_ENTITY_CONFIG, {})
+        entity_config=yaml_config.get(const.CONF_ENTITY_CONFIG, {})
     )
     await config.async_init()
     hass.data[DOMAIN][CONFIG] = config
@@ -343,23 +342,22 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
     hass.bus.async_fire(EVENT_CONFIG_CHANGED)
 
 
-def _get_config_entry_data_from_yaml(data: dict, yaml_config: ConfigType) -> dict:
+def _get_config_entry_data_from_yaml(data: dict, yaml_config: ConfigType | None) -> dict:
     data = data.copy()
     data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
     if const.CONF_DEVICES_DISCOVERED not in data:  # pre-0.3 migration
         data.setdefault(const.CONF_DEVICES_DISCOVERED, True)
     data.setdefault(const.CONF_DEVICES_DISCOVERED, False)
 
-    if DOMAIN in yaml_config:
-        data.update(yaml_config[DOMAIN][const.CONF_SETTINGS])
+    if yaml_config:
+        data.update(yaml_config[const.CONF_SETTINGS])
         data.update({
-            const.CONF_NOTIFIER: yaml_config[DOMAIN][const.CONF_NOTIFIER],
-            const.CONF_FILTER_FROM_YAML: yaml_config[DOMAIN][const.CONF_FILTER],
-            const.CONF_ENTITY_CONFIG: yaml_config[DOMAIN][const.CONF_ENTITY_CONFIG]
+            const.CONF_NOTIFIER: yaml_config[const.CONF_NOTIFIER],
+            const.YAML_CONFIG_HASH: hashlib.md5(repr(yaml_config).encode('utf8')).hexdigest()
         })
     else:
         data.update(SETTINGS_SCHEMA(data={}))
-        for v in [const.CONF_NOTIFIER, const.CONF_FILTER_FROM_YAML, const.CONF_ENTITY_CONFIG]:
+        for v in [const.CONF_NOTIFIER, const.YAML_CONFIG_HASH]:
             if v in data:
                 del data[v]
 
@@ -380,3 +378,12 @@ def _async_import_options_from_data_if_missing(hass: HomeAssistant, entry: Confi
 
     if modified:
         hass.config_entries.async_update_entry(entry, data=data, options=options)
+
+
+@callback
+def _update_config_entries(hass: HomeAssistant):
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        hass.config_entries.async_update_entry(
+            entry,
+            data=_get_config_entry_data_from_yaml(entry.data, hass.data[DOMAIN][YAML_CONFIG])
+        )
