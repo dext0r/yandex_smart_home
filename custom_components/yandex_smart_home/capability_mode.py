@@ -541,17 +541,17 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
             const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
         ],
         const.MODE_INSTANCE_MODE_QUIET: [
-            fan.SPEED_OFF,
+            const.FAN_SPEED_OFF,
             const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
             const.XIAOMI_FAN_PRESET_LEVEL_1,
         ],
         const.MODE_INSTANCE_MODE_LOW: [
-            fan.SPEED_LOW,
+            const.FAN_SPEED_LOW,
             const.FAN_SPEED_MIN,
             const.XIAOMI_FAN_PRESET_LEVEL_2,
         ],
         const.MODE_INSTANCE_MODE_MEDIUM: [
-            fan.SPEED_MEDIUM,
+            const.FAN_SPEED_MEDIUM,
             const.XIAOMI_HUMIDIFIER_PRESET_MID,
             const.XIAOMI_FAN_PRESET_LEVEL_3,
         ],
@@ -559,7 +559,7 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
             const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
         ],
         const.MODE_INSTANCE_MODE_HIGH: [
-            fan.SPEED_HIGH,
+            const.FAN_SPEED_HIGH,
             const.XIAOMI_FAN_PRESET_LEVEL_4,
         ],
         const.MODE_INSTANCE_MODE_TURBO: [
@@ -706,10 +706,10 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
 class FanSpeedCapabilityFanLegacy(FanSpeedCapability):
     modes_map_default = {
         const.MODE_INSTANCE_MODE_AUTO: [climate.const.FAN_AUTO, climate.const.FAN_ON],
-        const.MODE_INSTANCE_MODE_QUIET: [fan.SPEED_OFF],
-        const.MODE_INSTANCE_MODE_LOW: [fan.SPEED_LOW],
-        const.MODE_INSTANCE_MODE_MEDIUM: [fan.SPEED_MEDIUM],
-        const.MODE_INSTANCE_MODE_HIGH: [fan.SPEED_HIGH],
+        const.MODE_INSTANCE_MODE_QUIET: [const.FAN_SPEED_OFF],
+        const.MODE_INSTANCE_MODE_LOW: [const.FAN_SPEED_LOW],
+        const.MODE_INSTANCE_MODE_MEDIUM: [const.FAN_SPEED_MEDIUM],
+        const.MODE_INSTANCE_MODE_HIGH: [const.FAN_SPEED_HIGH],
     }
 
     def supported(self) -> bool:

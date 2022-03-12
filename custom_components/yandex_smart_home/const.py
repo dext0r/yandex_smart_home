@@ -587,6 +587,12 @@ TION_FAN_SPEED_4 = '4'
 TION_FAN_SPEED_5 = '5'
 TION_FAN_SPEED_6 = '6'
 
+# https://github.com/home-assistant/core/pull/67743
+FAN_SPEED_OFF = 'off'
+FAN_SPEED_LOW = 'low'
+FAN_SPEED_MEDIUM = 'medium'
+FAN_SPEED_HIGH = 'high'
+
 # https://github.com/dmitry-k/yandex_smart_home/issues/173
 FAN_SPEED_MIN = 'min'
 FAN_SPEED_MAX = 'max'
