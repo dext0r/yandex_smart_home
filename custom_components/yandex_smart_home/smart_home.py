@@ -172,7 +172,7 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
                 }
             }
             if value:
-                result['state']['action_result']['value'] = value
+                result['state']['value'] = value
 
             capabilities_result.append(result)
 

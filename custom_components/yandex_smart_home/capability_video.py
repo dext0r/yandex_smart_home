@@ -62,5 +62,6 @@ class VideoStreamCapability(AbstractCapability):
                 )
 
         return {
-            'stream_url': f'{external_url}{stream_source}'
+            'stream_url': f'{external_url}{stream_source}',
+            'protocol': 'hls'
         }
