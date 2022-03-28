@@ -6,7 +6,7 @@ import itertools
 import logging
 from typing import Any
 
-from homeassistant.const import STATE_ON
+from homeassistant.const import STATE_OFF
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers.service import async_call_from_config
 
@@ -122,7 +122,7 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
         if not self.retrievable:
             return None
 
-        return super().get_value() in [STATE_ON, True]
+        return not super().get_value() in [STATE_OFF, False]
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
