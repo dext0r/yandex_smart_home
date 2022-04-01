@@ -200,36 +200,6 @@ class YandexEntity:
 
         return device
 
-    @callback
-    def notification_serialize(self, event_entity_id: str) -> dict[str, Any]:
-        """Serialize entity for a notification."""
-        if self.state.state == STATE_UNAVAILABLE:
-            return {'id': self.state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
-
-        device = {
-            'id': self.entity_id,
-            'capabilities': [],
-            'properties': [],
-        }
-
-        for item in [c for c in self.capabilities() if c.reportable]:
-            state = item.get_state()
-            if state is not None:
-                device['capabilities'].append(state)
-
-        for item in [c for c in self.properties() if c.reportable]:
-            if isinstance(item, CustomEntityProperty):
-                if item.property_entity_id != event_entity_id:
-                    continue
-            elif item.state.entity_id != event_entity_id:
-                continue
-
-            state = item.get_state()
-            if state is not None:
-                device['properties'].append(state)
-
-        return device
-
     async def execute(self,
                       data: RequestData,
                       capability_type: str,
@@ -280,3 +250,42 @@ class YandexEntity:
             return None
 
         return area_reg.areas.get(area_id)
+
+
+class YandexEntityCallbackState:
+    def __init__(self, entity: YandexEntity, event_entity_id: str):
+        self.device_id: str = entity.entity_id
+        self.old_state: YandexEntityCallbackState | None = None
+
+        self.capabilities: list[dict] = []
+        self.properties: list[dict] = []
+
+        if entity.state.state == STATE_UNAVAILABLE:
+            return
+
+        for item in [c for c in entity.capabilities() if c.reportable]:
+            state = item.get_state()
+            if state is not None:
+                self.capabilities.append(state)
+
+        for item in [c for c in entity.properties() if c.reportable]:
+            if isinstance(item, CustomEntityProperty):
+                if item.property_entity_id != event_entity_id:
+                    continue
+            elif item.state.entity_id != event_entity_id:
+                continue
+
+            state = item.get_state()
+            if state is not None:
+                self.properties.append(state)
+
+    @property
+    def should_report(self) -> bool:
+        if not self.capabilities and not self.properties:
+            return False
+
+        if self.old_state:
+            if self.properties == self.old_state.properties and self.capabilities == self.old_state.capabilities:
+                return False
+
+        return True

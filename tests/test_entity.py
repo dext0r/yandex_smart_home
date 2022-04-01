@@ -51,7 +51,7 @@ from custom_components.yandex_smart_home.const import (
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     TOGGLE_INSTANCE_PAUSE,
 )
-from custom_components.yandex_smart_home.entity import YandexEntity
+from custom_components.yandex_smart_home.entity import YandexEntity, YandexEntityCallbackState
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.prop_custom import (
     CustomEntityProperty,
@@ -378,7 +378,6 @@ async def test_yandex_entity_serialize(hass):
     state = State('switch.unavailable', STATE_UNAVAILABLE)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.query_serialize() == {'id': state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
-    assert entity.notification_serialize('') == {'id': state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
 
     state = State('switch.test', STATE_ON)
     state_pause = State('input_boolean.pause', STATE_OFF)
@@ -440,74 +439,69 @@ async def test_yandex_entity_serialize(hass):
                 'state': {'instance': 'humidity', 'value': 95.0}
             }]
         }
-        assert entity.notification_serialize('switch.test') == {
-            'id': 'switch.test',
-            'capabilities': [{
-                'type': 'devices.capabilities.on_off',
-                'state': {'instance': 'on', 'value': True}
-            }, {
-                'type': 'devices.capabilities.toggle',
-                'state': {'instance': 'pause', 'value': False}
-            }],
-            'properties': []
-        }
-        assert entity.notification_serialize('sensor.voltage') == {
-            'id': 'switch.test',
-            'capabilities': [{
-                'type': 'devices.capabilities.on_off',
-                'state': {'instance': 'on', 'value': True}
-            }, {
-                'type': 'devices.capabilities.toggle',
-                'state': {'instance': 'pause', 'value': False}
-            }],
-            'properties': [{
-                'type': 'devices.properties.float',
-                'state': {'instance': 'voltage', 'value': 220.0}
-            }]
-        }
-        assert entity.notification_serialize('sensor.humidity') == {
-            'id': 'switch.test',
-            'capabilities': [{
-                'type': 'devices.capabilities.on_off',
-                'state': {'instance': 'on', 'value': True}
-            }, {
-                'type': 'devices.capabilities.toggle',
-                'state': {'instance': 'pause', 'value': False}
-            }],
-            'properties': [{
-                'type': 'devices.properties.float',
-                'state': {'instance': 'humidity', 'value': 95.0}
-            }]
-        }
+
+        # TODO: move to dedicated test
+        callback_state = YandexEntityCallbackState(entity, 'switch.test')
+        assert callback_state.properties == []
+        assert callback_state.capabilities == [{
+            'type': 'devices.capabilities.on_off',
+            'state': {'instance': 'on', 'value': True}
+        }, {
+            'type': 'devices.capabilities.toggle',
+            'state': {'instance': 'pause', 'value': False}
+        }]
+
+        callback_state = YandexEntityCallbackState(entity, 'sensor.voltage')
+        assert callback_state.properties == [{
+            'type': 'devices.properties.float',
+            'state': {'instance': 'voltage', 'value': 220.0}
+        }]
+        assert callback_state.capabilities == [{
+            'type': 'devices.capabilities.on_off',
+            'state': {'instance': 'on', 'value': True}
+        }, {
+            'type': 'devices.capabilities.toggle',
+            'state': {'instance': 'pause', 'value': False}
+        }]
+
+        callback_state = YandexEntityCallbackState(entity, 'sensor.humidity')
+        assert callback_state.properties == [{
+            'type': 'devices.properties.float',
+            'state': {'instance': 'humidity', 'value': 95.0}
+        }]
+        assert callback_state.capabilities == [{
+            'type': 'devices.capabilities.on_off',
+            'state': {'instance': 'on', 'value': True}
+        }, {
+            'type': 'devices.capabilities.toggle',
+            'state': {'instance': 'pause', 'value': False}
+        }]
 
         prop_voltage.reportable = False
-        assert entity.notification_serialize('sensor.voltage') == {
-            'id': 'switch.test',
-            'capabilities': [{
-                'type': 'devices.capabilities.on_off',
-                'state': {'instance': 'on', 'value': True}
-            }, {
-                'type': 'devices.capabilities.toggle',
-                'state': {'instance': 'pause', 'value': False}
-            }],
-            'properties': []
-        }
+        callback_state = YandexEntityCallbackState(entity, 'sensor.voltage')
+        assert callback_state.properties == []
+        assert callback_state.capabilities == [{
+            'type': 'devices.capabilities.on_off',
+            'state': {'instance': 'on', 'value': True}
+        }, {
+            'type': 'devices.capabilities.toggle',
+            'state': {'instance': 'pause', 'value': False}
+        }]
+
         prop_voltage.reportable = True
 
-        assert entity.notification_serialize('binary_sensor.button') == {
-            'id': 'switch.test',
-            'capabilities': [{
-                'type': 'devices.capabilities.on_off',
-                'state': {'instance': 'on', 'value': True}
-            }, {
-                'type': 'devices.capabilities.toggle',
-                'state': {'instance': 'pause', 'value': False}
-            }],
-            'properties': [{
-                'type': 'devices.properties.event',
-                'state': {'instance': 'button', 'value': 'click'}
-            }]
-        }
+        callback_state = YandexEntityCallbackState(entity, 'binary_sensor.button')
+        assert callback_state.properties == [{
+            'type': 'devices.properties.event',
+            'state': {'instance': 'button', 'value': 'click'}
+        }]
+        assert callback_state.capabilities == [{
+            'type': 'devices.capabilities.on_off',
+            'state': {'instance': 'on', 'value': True}
+        }, {
+            'type': 'devices.capabilities.toggle',
+            'state': {'instance': 'pause', 'value': False}
+        }]
 
         cap_pause.retrievable = False
         prop_temp.retrievable = False
@@ -585,3 +579,12 @@ async def test_yandex_entity_execute_exception(hass):
                                  MockBrightnessCapability.instance, {'value': True})
 
     assert e.value.code == ERR_INVALID_ACTION
+
+
+async def test_yandex_entity_callback_state_unavailable(hass):
+    state = State('switch.unavailable', STATE_UNAVAILABLE)
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    callback_state = YandexEntityCallbackState(entity, state.entity_id)
+    assert callback_state.capabilities == []
+    assert callback_state.properties == []
+    assert not callback_state.should_report

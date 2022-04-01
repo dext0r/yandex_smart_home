@@ -30,6 +30,7 @@ from custom_components.yandex_smart_home.const import (
     DOMAIN,
     NOTIFIERS,
 )
+from custom_components.yandex_smart_home.entity import YandexEntityCallbackState
 from custom_components.yandex_smart_home.notifier import (
     YandexCloudNotifier,
     YandexDirectNotifier,
@@ -40,6 +41,15 @@ from custom_components.yandex_smart_home.notifier import (
 from custom_components.yandex_smart_home.smart_home import RequestData, async_devices
 
 from . import BASIC_CONFIG, REQ_ID, MockConfig
+
+
+class MockYandexEntityCallbackState(YandexEntityCallbackState):
+    # noinspection PyMissingConstructor
+    def __init__(self, device_id, capabilities=None, properties=None):
+        self.device_id = device_id
+        self.old_state = None
+        self.capabilities = capabilities or []
+        self.properties = properties or []
 
 
 @pytest.fixture(autouse=True, name='mock_call_later')
@@ -342,7 +352,7 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
     hass.states.async_set(state_humidity.entity_id, '60', state_humidity.attributes)
     await hass.async_block_till_done()
     assert len(notifier._pending) == 2
-    assert [c['id'] for c in notifier._pending] == ['sensor.humidity', 'switch.test']
+    assert [s.device_id for s in notifier._pending] == ['sensor.humidity', 'switch.test']
     mock_call_later.assert_not_called()
     notifier._pending.clear()
 
@@ -419,31 +429,40 @@ async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
 
     notifier = YandexCloudNotifier(hass, hass_admin_user.id, 'foo')
 
-    notifier._pending.append({'id': 'foo', 'v': 1})
-    notifier._pending.append({'id': 'bar', 'v': 2})
+    notifier._pending.append(MockYandexEntityCallbackState('foo', properties=['prop']))
+    notifier._pending.append(MockYandexEntityCallbackState('bar', capabilities=['cap']))
 
     with patch.object(notifier, 'async_send_state') as mock_send_state:
         await notifier._report_states(None)
-        assert mock_send_state.call_args[0][0] == [{'id': 'foo', 'v': 1}, {'id': 'bar', 'v': 2}]
+        assert mock_send_state.call_args[0][0] == [
+            {'id': 'foo', 'properties': ['prop'], 'capabilities': []},
+            {'id': 'bar', 'properties': [], 'capabilities': ['cap']}
+        ]
         mock_call_later.assert_not_called()
 
-    notifier._pending.append({'id': 'foo', 'v': 1})
+    notifier._pending.append(MockYandexEntityCallbackState('foo', properties=['prop']))
     with patch.object(notifier, 'async_send_state',
-                      side_effect=lambda v: notifier._pending.append('test')) as mock_send_state:
+                      side_effect=lambda v: notifier._pending.append(
+                          MockYandexEntityCallbackState('test')
+                      )) as mock_send_state:
         await notifier._report_states(None)
-        assert mock_send_state.call_args[0][0] == [{'id': 'foo', 'v': 1}]
+        assert mock_send_state.call_args[0][0] == [{'id': 'foo', 'properties': ['prop'], 'capabilities': []}]
         mock_call_later.assert_called_once()
         assert '_report_states' in str(mock_call_later.call_args[0][2].target)
 
     notifier._pending.clear()
     mock_call_later.reset_mock()
-    notifier._pending.append({'id': 'foo', 'v': 1})
-    notifier._pending.append({'id': 'bar', 'v': 2})
-    notifier._pending.append({'id': 'bar', 'v': 3})
+    notifier._pending.append(MockYandexEntityCallbackState('foo', properties=['prop'], capabilities=['cap']))
+    notifier._pending.append(MockYandexEntityCallbackState('bar', properties=['prop1'], capabilities=['cap1']))
+    notifier._pending.append(MockYandexEntityCallbackState('bar', properties=['prop2']))
+    notifier._pending.append(MockYandexEntityCallbackState('bar', properties=['prop3']))
 
     with patch.object(notifier, 'async_send_state') as mock_send_state:
         await notifier._report_states(None)
-        assert mock_send_state.call_args[0][0] == [{'id': 'foo', 'v': 1}, {'id': 'bar', 'v': 3}]
+        assert mock_send_state.call_args[0][0] == [
+            {'id': 'foo', 'properties': ['prop'], 'capabilities': ['cap']},
+            {'id': 'bar', 'properties': ['prop3', 'prop2', 'prop1'], 'capabilities': ['cap1']},
+        ]
         mock_call_later.assert_not_called()
 
 
