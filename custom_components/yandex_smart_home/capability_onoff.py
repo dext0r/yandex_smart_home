@@ -232,6 +232,12 @@ class OnOffCapabilityCover(OnOffCapability):
 
 @register_capability
 class OnOffCapabilityMediaPlayer(OnOffCapability):
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        super().__init__(hass, config, state)
+
+        if self.entity_config.get(const.CONF_STATE_UNKNOWN):
+            self.retrievable = False
+
     def supported(self) -> bool:
         if self.state.domain == media_player.DOMAIN:
             features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
@@ -246,17 +252,6 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
     def parameters(self) -> dict[str, Any] | None:
         if not self.retrievable:
             return {'split': True}
-
-    @property
-    def retrievable(self) -> bool:
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-        support_turn_on = const.CONF_TURN_ON in self.entity_config or features & media_player.SUPPORT_TURN_ON
-        support_turn_off = const.CONF_TURN_OFF in self.entity_config or features & media_player.SUPPORT_TURN_OFF
-
-        if support_turn_on and support_turn_off:
-            return True
-
-        return False
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
         if state['value']:

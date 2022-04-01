@@ -181,62 +181,25 @@ async def test_capability_onoff_media_player(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
     state = State('media_player.only_on', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_TURN_ON
-    })
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.retrievable
-    assert cap.parameters() == {'split': True}
-
-    state = State('media_player.only_on_custom_off', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_TURN_ON
-    })
-    config = MockConfig(entity_config={
-        state.entity_id: {
-            const.CONF_TURN_OFF: {}
-        }
-    })
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert cap.retrievable
-    assert cap.parameters() is None
-
-    state = State('media_player.only_on_custom', STATE_ON)
-    config = MockConfig(entity_config={
-        state.entity_id: {
-            const.CONF_TURN_ON: {}
-        }
-    })
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.retrievable
-    assert cap.parameters() == {'split': True}
-
-    state = State('media_player.only_off', STATE_ON, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_TURN_OFF
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.retrievable
-    assert cap.parameters() == {'split': True}
-
-    state = State('media_player.only_off_custom_on', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_TURN_OFF
-    })
-    config = MockConfig(entity_config={
-        state.entity_id: {
-            const.CONF_TURN_ON: {}
-        }
-    })
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert cap.retrievable
     assert cap.parameters() is None
 
-    state = State('media_player.only_off_custom', STATE_OFF)
-    config = MockConfig(entity_config={
-        state.entity_id: {
-            const.CONF_TURN_OFF: {}
+    config = MockConfig(
+        entity_config={
+            'media_player.test': {
+                const.CONF_STATE_UNKNOWN: True
+            }
         }
+    )
+    state_binary = State('media_player.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_TURN_OFF
     })
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.retrievable
-    assert cap.parameters() == {'split': True}
+    cap_binary = get_exact_one_capability(hass, config, state_binary, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert not cap_binary.retrievable
+    assert cap_binary.parameters() == {'split': True}
 
     state = State('media_player.test', STATE_ON, {
         ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_TURN_ON | media_player.SUPPORT_TURN_OFF
