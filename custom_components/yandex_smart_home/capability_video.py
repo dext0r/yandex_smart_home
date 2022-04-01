@@ -73,7 +73,7 @@ class VideoStreamCapability(AbstractCapability):
                 )
 
             endpoint_url = stream.endpoint_url(VIDEO_STREAM_FORMAT)
-            stream_url = f'{external_url}/{endpoint_url}'
+            stream_url = f'{external_url}{endpoint_url}'
 
         return {
             'stream_url': stream_url,
