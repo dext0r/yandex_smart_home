@@ -1,7 +1,15 @@
 from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
-from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF, STATE_ON, STATE_UNKNOWN
+from homeassistant.const import (
+    ATTR_ENTITY_ID,
+    ATTR_SUPPORTED_FEATURES,
+    MAJOR_VERSION,
+    MINOR_VERSION,
+    STATE_OFF,
+    STATE_ON,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import State
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
@@ -385,6 +393,9 @@ async def test_capability_mode_input_source_cache(hass, off_state):
 
 
 async def test_capability_mode_fan_speed_fan_legacy(hass):
+    if MAJOR_VERSION == 2022 and MINOR_VERSION > 2:
+        pytest.skip('unsupported version')
+
     state = State('fan.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: fan.SUPPORT_SET_SPEED
     })
@@ -571,7 +582,6 @@ async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
     state = State('fan.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: features,
         fan.ATTR_PRESET_MODES: ['Level 4', 'Level 5'],
-        fan.ATTR_SPEED_LIST: ['1', '2']
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
     assert isinstance(cap, FanSpeedCapabilityFanViaPreset)
@@ -585,8 +595,6 @@ async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
     state = State('fan.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: features,
         fan.ATTR_PRESET_MODES: ['Level 4', 'Level 5'],
-        fan.ATTR_SPEED_LIST: ['1', '2'],
-        fan.ATTR_SPEED: '2',
         fan.ATTR_PRESET_MODE: 'Level 5',
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
