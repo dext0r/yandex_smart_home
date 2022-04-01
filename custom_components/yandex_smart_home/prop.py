@@ -28,6 +28,7 @@ class AbstractProperty(ABC):
     instance = ''
     values = []
     retrievable = True
+    report_immediately = False
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a trait for a state."""

@@ -259,6 +259,7 @@ class YandexEntityCallbackState:
 
         self.capabilities: list[dict] = []
         self.properties: list[dict] = []
+        self.should_report_immediately = False
 
         if entity.state.state == STATE_UNAVAILABLE:
             return
@@ -274,6 +275,9 @@ class YandexEntityCallbackState:
                     continue
             elif item.state.entity_id != event_entity_id:
                 continue
+
+            if item.report_immediately:
+                self.should_report_immediately = True
 
             state = item.get_state()
             if state is not None:

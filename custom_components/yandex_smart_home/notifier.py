@@ -213,7 +213,8 @@ class YandexNotifier(ABC):
                 self._pending.append(callback_state)
 
                 if self._unsub_pending is None:
-                    self._unsub_pending = async_call_later(self._hass, REPORT_STATE_WINDOW, self._report_states_job)
+                    delay = 0 if callback_state.should_report_immediately else REPORT_STATE_WINDOW
+                    self._unsub_pending = async_call_later(self._hass, delay, self._report_states_job)
 
     async def async_unload(self):
         if self._unsub_send_discovery:

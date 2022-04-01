@@ -76,6 +76,7 @@ def require_beta(method):
 
 class EventProperty(AbstractProperty, ABC):
     type = PROPERTY_EVENT
+    report_immediately = True
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
         super().__init__(hass, config, state)

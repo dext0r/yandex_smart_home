@@ -117,6 +117,8 @@ class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):
 
 
 class CustomEventEntityProperty(CustomEntityProperty, EventProperty):
+    report_immediately = True
+
     def __init__(self, hass: HomeAssistant, config: Config, state: State,
                  property_state: State, property_config: dict[str, str]):
         super().__init__(hass, config, state, property_state, property_config)
