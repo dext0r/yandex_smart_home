@@ -28,7 +28,17 @@ from . import (  # noqa: F401
     prop_float,
 )
 from .cloud import CloudManager, delete_cloud_instance
-from .const import CLOUD_MANAGER, CONFIG, DOMAIN, EVENT_CONFIG_CHANGED, EVENT_DEVICE_DISCOVERY, NOTIFIERS, YAML_CONFIG
+from .cloud_stream import CloudStream
+from .const import (
+    CLOUD_MANAGER,
+    CLOUD_STREAMS,
+    CONFIG,
+    DOMAIN,
+    EVENT_CONFIG_CHANGED,
+    EVENT_DEVICE_DISCOVERY,
+    NOTIFIERS,
+    YAML_CONFIG,
+)
 from .helpers import Config
 from .http import async_register_http
 from .notifier import YandexNotifier, async_setup_notifier, async_start_notifier, async_unload_notifier
@@ -225,7 +235,8 @@ SETTINGS_SCHEMA = vol.Schema({
     vol.Optional(const.CONF_PRESSURE_UNIT, default=const.PRESSURE_UNIT_MMHG): vol.Schema(
         vol.All(str, pressure_unit_validate)
     ),
-    vol.Optional(const.CONF_BETA, default=False): cv.boolean
+    vol.Optional(const.CONF_BETA, default=False): cv.boolean,
+    vol.Optional(const.CONF_CLOUD_STREAM, default=False): cv.boolean
 })
 
 
@@ -260,6 +271,7 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
     hass.data[DOMAIN][CONFIG]: Config | None = None
     hass.data[DOMAIN][YAML_CONFIG]: ConfigType | None = yaml_config.get(DOMAIN)
     hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None
+    hass.data[DOMAIN][CLOUD_STREAMS]: dict[str, CloudStream] = {}
 
     async_register_http(hass)
     async_setup_notifier(hass)
@@ -360,6 +372,9 @@ def _get_config_entry_data_from_yaml(data: dict, yaml_config: ConfigType | None)
         for v in [const.CONF_NOTIFIER, const.YAML_CONFIG_HASH]:
             if v in data:
                 del data[v]
+
+    if data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
+        data[const.CONF_CLOUD_STREAM] = True
 
     return data
 

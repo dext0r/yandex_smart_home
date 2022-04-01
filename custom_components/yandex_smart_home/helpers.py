@@ -49,6 +49,10 @@ class Config:
         return self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_DIRECT
 
     @property
+    def use_cloud_stream(self) -> bool:
+        return self._data[const.CONF_CLOUD_STREAM]
+
+    @property
     def cloud_instance_id(self) -> str | None:
         return self._data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_ID]
 

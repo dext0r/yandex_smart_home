@@ -4,12 +4,16 @@ import logging
 from typing import Any
 
 from homeassistant.components import camera
+from homeassistant.components.camera import _get_camera_from_entity_id
+from homeassistant.components.stream import Stream
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import network
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
-from .const import CLOUD_BASE_URL, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+from .cloud_stream import CloudStream
+from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
 from .helpers import Config, RequestData
 
@@ -48,10 +52,17 @@ class VideoStreamCapability(AbstractCapability):
         return None
 
     async def set_state(self, data: RequestData, state: dict[str, Any]) -> dict[str, Any] | None:
-        stream_source = await camera.async_request_stream(self.hass, self.state.entity_id, fmt=VIDEO_STREAM_FORMAT)
+        entity_id = self.state.entity_id
+        stream = await self._async_request_stream(entity_id)
 
-        if self._config.is_cloud_connection:
-            external_url = f'{CLOUD_BASE_URL}/api/proxy/{self._config.cloud_instance_id}'
+        if self._config.use_cloud_stream:
+            cloud_stream = self.hass.data[DOMAIN][CLOUD_STREAMS].get(entity_id)
+            if not cloud_stream:
+                cloud_stream = CloudStream(self.hass, stream, async_get_clientsession(self.hass))
+                self.hass.data[DOMAIN][CLOUD_STREAMS][entity_id] = cloud_stream
+
+            await cloud_stream.start()
+            stream_url = cloud_stream.stream_url
         else:
             try:
                 external_url = network.get_url(self.hass, allow_internal=False)
@@ -61,7 +72,32 @@ class VideoStreamCapability(AbstractCapability):
                     'Unable to get Home Assistant external URL. Have you set external URLs in Configuration -> General?'
                 )
 
+            endpoint_url = stream.endpoint_url(VIDEO_STREAM_FORMAT)
+            stream_url = f'{external_url}/{endpoint_url}'
+
         return {
-            'stream_url': f'{external_url}{stream_source}',
+            'stream_url': stream_url,
             'protocol': 'hls'
         }
+
+    async def _async_request_stream(self, entity_id: str) -> Stream:
+        camera_entity = _get_camera_from_entity_id(self.hass, self.state.entity_id)
+
+        try:
+            # noinspection PyUnresolvedReferences
+            stream = await camera_entity.async_create_stream()
+        except AttributeError:  # < 2022.2
+            # noinspection PyUnresolvedReferences
+            stream = await camera_entity.create_stream()
+
+        if not stream:
+            raise SmartHomeError(
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                f'{entity_id} does not support play stream service'
+            )
+
+        stream.add_provider(VIDEO_STREAM_FORMAT)
+        stream.start()
+        stream.endpoint_url(VIDEO_STREAM_FORMAT)
+
+        return stream
