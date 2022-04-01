@@ -89,8 +89,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason='single_instance_allowed')
 
-        self._yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
-        self._data.update(_get_config_entry_data_from_yaml(self._data, self._yaml_config))
+        if DOMAIN in self.hass.data:
+            self._yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
+            self._data.update(_get_config_entry_data_from_yaml(self._data, self._yaml_config))
 
         return await self.async_step_include_domains()
 
