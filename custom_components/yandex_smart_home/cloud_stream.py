@@ -17,13 +17,8 @@ from aiohttp import (
 )
 from aiohttp.web_request import Request as AIOWebRequest
 from homeassistant.components.stream import Stream
-from homeassistant.components.stream.hls import (
-    HlsInitView,
-    HlsMasterPlaylistView,
-    HlsPartView,
-    HlsPlaylistView,
-    HlsSegmentView,
-)
+from homeassistant.components.stream.hls import HlsInitView, HlsMasterPlaylistView, HlsPlaylistView, HlsSegmentView
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION
 from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
 from homeassistant.helpers.event import async_call_later
 from multidict import MultiDictProxy
@@ -145,9 +140,13 @@ class CloudStream:
             'master_playlist': HlsMasterPlaylistView,
             'playlist': HlsPlaylistView,
             'init': HlsInitView,
-            'part': HlsPartView,
             'segment': HlsSegmentView
         }
+
+        if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION >= 10):
+            from homeassistant.components.stream.hls import HlsPartView
+            views['part'] = HlsPartView
+
         view = views[request.view]()
 
         r = await view.get(web_request, self._stream.access_token, request.sequence, request.part_num)

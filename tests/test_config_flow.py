@@ -97,6 +97,7 @@ async def test_step_user_cloud(hass, aioclient_mock):
         assert result6['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
         assert result6['data'] == {
             'connection_type': 'cloud',
+            'cloud_stream': False,
             'beta': False,
             'pressure_unit': 'mmHg',
             'devices_discovered': False,
@@ -178,6 +179,7 @@ async def test_step_user_direct(hass):
             'beta': False,
             'pressure_unit': 'mmHg',
             'connection_type': 'direct',
+            'cloud_stream': False,
             'devices_discovered': False,
             'filter': {
                 'exclude_entities': [],
