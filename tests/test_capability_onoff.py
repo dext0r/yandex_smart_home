@@ -122,8 +122,29 @@ async def test_capability_onoff_button(hass):
     await cap.set_state(BASIC_DATA, {'value': True})
     await cap.set_state(BASIC_DATA, {'value': False})
 
-    if domain == script.DOMAIN:
-        await hass.async_block_till_done()
+    assert len(on_calls) == 2
+    assert on_calls[0].data == {ATTR_ENTITY_ID: f'{domain}.test'}
+    assert on_calls[1].data == {ATTR_ENTITY_ID: f'{domain}.test'}
+
+
+async def test_capability_onoff_input_button(hass):
+    if not MAJOR_VERSION >= 2022:
+        pytest.skip('unsupported version')
+
+    from homeassistant.components import input_button
+
+    domain = input_button.DOMAIN
+    initial_state = STATE_UNKNOWN
+    state = State(f'{domain}.test', initial_state)
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+
+    assert not cap.retrievable
+    assert cap.parameters() is None
+    assert cap.get_value() is None
+
+    on_calls = async_mock_service(hass, domain, input_button.SERVICE_PRESS)
+    await cap.set_state(BASIC_DATA, {'value': True})
+    await cap.set_state(BASIC_DATA, {'value': False})
 
     assert len(on_calls) == 2
     assert on_calls[0].data == {ATTR_ENTITY_ID: f'{domain}.test'}

@@ -169,6 +169,29 @@ if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12):
                 context=data.context
             )
 
+if MAJOR_VERSION >= 2022:
+    from homeassistant.components import input_button
+
+    @register_capability
+    class OnOffCapabilityInputButton(OnOffCapability):
+        retrievable = False
+
+        def get_value(self) -> bool | None:
+            return None
+
+        def supported(self) -> bool:
+            return self.state.domain == input_button.DOMAIN
+
+        async def _set_state(self, data: RequestData, state: dict[str, Any]):
+            await self.hass.services.async_call(
+                self.state.domain,
+                input_button.SERVICE_PRESS, {
+                    ATTR_ENTITY_ID: self.state.entity_id
+                },
+                blocking=True,
+                context=data.context
+            )
+
 
 @register_capability
 class OnOffCapabilityLock(OnOffCapability):
