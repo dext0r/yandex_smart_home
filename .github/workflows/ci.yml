@@ -53,9 +53,9 @@ jobs:
             pytest-component-version: 0.5.4
           - ha-version: '2022.02'
             pytest-component-version: 0.6.7
+          - ha-version: '2022.04'
+            pytest-component-version: 0.8.8
             latest: true
-          - ha-version: '2022.04b1'
-            pytest-component-version: 0.8.1
     steps:
       - uses: actions/checkout@v2
 
