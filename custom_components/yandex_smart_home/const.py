@@ -607,6 +607,9 @@ FAN_SPEED_MAX = 'max'
 # https://github.com/dmitry-k/yandex_smart_home/issues/347
 FAN_SPEED_MID = 'mid'
 
+# SmartIR
+FAN_SPEED_HIGHEST = 'highest'
+
 DEVICE_CLASS_BUTTON = 'button'
 
 MEDIA_PLAYER_FEATURE_VOLUME_MUTE = 'volume_mute'
