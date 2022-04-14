@@ -491,6 +491,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         ],
         const.MODE_INSTANCE_MODE_TURBO: [
             climate.const.FAN_FOCUS,
+            const.FAN_SPEED_HIGHEST,
             const.TION_FAN_SPEED_5,
         ],
         const.MODE_INSTANCE_MODE_MAX: [
@@ -564,7 +565,6 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
         ],
         const.MODE_INSTANCE_MODE_TURBO: [
             const.FAN_SPEED_MAX,
-            const.FAN_SPEED_HIGHEST,
             const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
             const.XIAOMI_FAN_PRESET_LEVEL_5,
         ],
