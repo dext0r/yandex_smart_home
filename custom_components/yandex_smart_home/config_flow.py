@@ -47,6 +47,8 @@ SUPPORTED_DOMAINS = [
 ]
 if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12):
     SUPPORTED_DOMAINS.insert(1, 'button')
+if MAJOR_VERSION >= 2022:
+    SUPPORTED_DOMAINS.insert(1, 'input_button')
 
 DEFAULT_DOMAINS = [
     'climate',
