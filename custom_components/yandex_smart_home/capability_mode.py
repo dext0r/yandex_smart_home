@@ -704,57 +704,6 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
 
 
 @register_capability
-class FanSpeedCapabilityFanLegacy(FanSpeedCapability):
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_AUTO: [climate.const.FAN_AUTO, climate.const.FAN_ON],
-        const.MODE_INSTANCE_MODE_QUIET: [const.FAN_SPEED_OFF],
-        const.MODE_INSTANCE_MODE_LOW: [const.FAN_SPEED_LOW],
-        const.MODE_INSTANCE_MODE_MEDIUM: [const.FAN_SPEED_MEDIUM],
-        const.MODE_INSTANCE_MODE_HIGH: [const.FAN_SPEED_HIGH],
-    }
-
-    def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-        if self.state.domain == fan.DOMAIN:
-            if features & fan.SUPPORT_PRESET_MODE:
-                return False
-
-            if features & fan.SUPPORT_SET_SPEED and fan.ATTR_PERCENTAGE_STEP not in self.state.attributes:
-                return super().supported()
-
-        return False
-
-    @property
-    def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
-        return fan.ATTR_SPEED
-
-    @property
-    def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
-        return fan.ATTR_SPEED_LIST
-
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        _LOGGER.warning(
-            f'Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" '
-            f'instead for {self.instance} instance of {self.state.entity_id}'
-        )
-
-        await self.hass.services.async_call(
-            fan.DOMAIN,
-            fan.SERVICE_SET_SPEED, {
-                ATTR_ENTITY_ID: self.state.entity_id,
-                fan.ATTR_SPEED: self.get_ha_mode_by_yandex_mode(state['value'])
-            },
-            blocking=True,
-            context=data.context
-        )
-
-
-@register_capability
 class CleanupModeCapability(ModeCapability):
     """Vacuum cleanup mode functionality."""
 
