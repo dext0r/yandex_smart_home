@@ -531,9 +531,6 @@ PRESSURE_UNIT_ATM = 'atm'
 PRESSURE_UNIT_BAR = 'bar'
 PRESSURE_UNIT_MBAR = 'mbar'
 
-# 2021.8+
-ELECTRIC_CURRENT_MILLIAMPERE = 'mA'
-
 # Additional states
 STATE_NONE = 'none'
 STATE_NONE_UI = '-'
@@ -606,6 +603,7 @@ FAN_SPEED_MID = 'mid'
 # SmartIR
 FAN_SPEED_HIGHEST = 'highest'
 
+# Fake device class
 DEVICE_CLASS_BUTTON = 'button'
 
 MEDIA_PLAYER_FEATURE_VOLUME_MUTE = 'volume_mute'
