@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from homeassistant.components import climate, cover, fan, humidifier, light, lock, media_player, switch
-from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, STATE_ON
+from homeassistant.components import button, climate, cover, fan, humidifier, light, lock, media_player, switch
+from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
@@ -111,11 +111,7 @@ def test_capability(hass):
 
 
 async def test_capability_demo_platform(hass):
-    components = [switch, light, cover, media_player, fan, climate, humidifier, lock]
-
-    if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12):
-        from homeassistant.components import button
-        components.append(button)
+    components = [button, switch, light, cover, media_player, fan, climate, humidifier, lock]
 
     for component in components:
         await async_setup_component(
@@ -133,12 +129,11 @@ async def test_capability_demo_platform(hass):
     #     print(f'assert capabilities == {l}')
     #     print()
 
-    if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12):
-        state = hass.states.get('button.push')
-        entity = YandexEntity(hass, BASIC_CONFIG, state)
-        assert entity.yandex_device_type == 'devices.types.other'
-        capabilities = list((c.type, c.instance) for c in entity.capabilities())
-        assert capabilities == [('devices.capabilities.on_off', 'on')]
+    state = hass.states.get('button.push')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == 'devices.types.other'
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('climate.ecobee')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
@@ -310,12 +305,11 @@ async def test_capability_demo_platform(hass):
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [('devices.capabilities.on_off', 'on')]
 
-    if MINOR_VERSION > 7:
-        state = hass.states.get('lock.poorly_installed_door')
-        entity = YandexEntity(hass, BASIC_CONFIG, state)
-        assert entity.yandex_device_type == 'devices.types.openable'
-        capabilities = list((c.type, c.instance) for c in entity.capabilities())
-        assert capabilities == [('devices.capabilities.on_off', 'on')]
+    state = hass.states.get('lock.poorly_installed_door')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == 'devices.types.openable'
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('media_player.bedroom')
     entity = YandexEntity(hass, BASIC_CONFIG, state)

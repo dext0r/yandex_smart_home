@@ -1,9 +1,11 @@
 from homeassistant.components import (
+    button,
     climate,
     cover,
     fan,
     group,
     input_boolean,
+    input_button,
     light,
     lock,
     media_player,
@@ -18,8 +20,6 @@ from homeassistant.const import (
     ATTR_SUPPORTED_FEATURES,
     CONF_ENTITY_ID,
     CONF_SERVICE,
-    MAJOR_VERSION,
-    MINOR_VERSION,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     STATE_OFF,
@@ -42,11 +42,6 @@ from .test_capability import (
     get_capabilities,
     get_exact_one_capability,
 )
-
-try:
-    from homeassistant.components.scene import STATE as SCENE_DEFAULT_STATE
-except ImportError:
-    from homeassistant.const import STATE_UNKNOWN as SCENE_DEFAULT_STATE
 
 
 @pytest.mark.parametrize(
@@ -81,8 +76,13 @@ async def test_capability_onoff_simple(hass, state_domain, service_domain):
     assert not cap_off.get_value()
 
 
-@pytest.mark.parametrize('domain,initial_state', [(script.DOMAIN, STATE_OFF), (scene.DOMAIN, SCENE_DEFAULT_STATE)])
-async def test_capability_onoff_only_on(hass, domain, initial_state):
+@pytest.mark.parametrize('domain,initial_state,service', [
+    (script.DOMAIN, STATE_OFF, SERVICE_TURN_ON),
+    (scene.DOMAIN, STATE_UNKNOWN, SERVICE_TURN_ON),
+    (button.DOMAIN, STATE_UNKNOWN, button.SERVICE_PRESS),
+    (input_button.DOMAIN, STATE_UNKNOWN, input_button.SERVICE_PRESS),
+])
+async def test_capability_onoff_only_on(hass, domain, initial_state, service):
     state = State(f'{domain}.test', initial_state)
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
@@ -90,61 +90,12 @@ async def test_capability_onoff_only_on(hass, domain, initial_state):
     assert cap.parameters() is None
     assert cap.get_value() is None
 
-    on_calls = async_mock_service(hass, domain, SERVICE_TURN_ON)
+    on_calls = async_mock_service(hass, domain, service)
     await cap.set_state(BASIC_DATA, {'value': True})
     await cap.set_state(BASIC_DATA, {'value': False})
 
     if domain == script.DOMAIN:
         await hass.async_block_till_done()
-
-    assert len(on_calls) == 2
-    assert on_calls[0].data == {ATTR_ENTITY_ID: f'{domain}.test'}
-    assert on_calls[1].data == {ATTR_ENTITY_ID: f'{domain}.test'}
-
-
-# TODO: move to test_capability_onoff_only_on after drop support ha < 2021.12
-async def test_capability_onoff_button(hass):
-    if not (MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12)):
-        pytest.skip('unsupported version')
-
-    from homeassistant.components import button
-
-    domain = button.DOMAIN
-    initial_state = STATE_UNKNOWN
-    state = State(f'{domain}.test', initial_state)
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-
-    assert not cap.retrievable
-    assert cap.parameters() is None
-    assert cap.get_value() is None
-
-    on_calls = async_mock_service(hass, domain, button.SERVICE_PRESS)
-    await cap.set_state(BASIC_DATA, {'value': True})
-    await cap.set_state(BASIC_DATA, {'value': False})
-
-    assert len(on_calls) == 2
-    assert on_calls[0].data == {ATTR_ENTITY_ID: f'{domain}.test'}
-    assert on_calls[1].data == {ATTR_ENTITY_ID: f'{domain}.test'}
-
-
-async def test_capability_onoff_input_button(hass):
-    if not MAJOR_VERSION >= 2022:
-        pytest.skip('unsupported version')
-
-    from homeassistant.components import input_button
-
-    domain = input_button.DOMAIN
-    initial_state = STATE_UNKNOWN
-    state = State(f'{domain}.test', initial_state)
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-
-    assert not cap.retrievable
-    assert cap.parameters() is None
-    assert cap.get_value() is None
-
-    on_calls = async_mock_service(hass, domain, input_button.SERVICE_PRESS)
-    await cap.set_state(BASIC_DATA, {'value': True})
-    await cap.set_state(BASIC_DATA, {'value': False})
 
     assert len(on_calls) == 2
     assert on_calls[0].data == {ATTR_ENTITY_ID: f'{domain}.test'}
@@ -263,12 +214,11 @@ async def test_capability_onoff_lock(hass):
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
-    if MINOR_VERSION > 7:
-        for s in [lock.STATE_UNLOCKING, lock.STATE_LOCKING]:
-            state_other = State('lock.test', s)
-            cap = get_exact_one_capability(hass, BASIC_CONFIG, state_other, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    for s in [lock.STATE_UNLOCKING, lock.STATE_LOCKING]:
+        state_other = State('lock.test', s)
+        cap = get_exact_one_capability(hass, BASIC_CONFIG, state_other, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
-            assert not cap.get_value()
+        assert not cap.get_value()
 
     state.state = lock.STATE_LOCKED
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)

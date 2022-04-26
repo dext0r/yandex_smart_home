@@ -6,12 +6,14 @@ import logging
 from typing import Any
 
 from homeassistant.components import (
+    button,
     climate,
     cover,
     fan,
     group,
     humidifier,
     input_boolean,
+    input_button,
     light,
     lock,
     media_player,
@@ -24,8 +26,6 @@ from homeassistant.components import (
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_SUPPORTED_FEATURES,
-    MAJOR_VERSION,
-    MINOR_VERSION,
     SERVICE_CLOSE_COVER,
     SERVICE_LOCK,
     SERVICE_OPEN_COVER,
@@ -146,51 +146,46 @@ class OnOffCapabilityScript(OnOffCapability):
         )
 
 
-if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12):
-    from homeassistant.components import button
+@register_capability
+class OnOffCapabilityButton(OnOffCapability):
+    retrievable = False
 
-    @register_capability
-    class OnOffCapabilityButton(OnOffCapability):
-        retrievable = False
+    def get_value(self) -> bool | None:
+        return None
 
-        def get_value(self) -> bool | None:
-            return None
+    def supported(self) -> bool:
+        return self.state.domain == button.DOMAIN
 
-        def supported(self) -> bool:
-            return self.state.domain == button.DOMAIN
+    async def _set_state(self, data: RequestData, state: dict[str, Any]):
+        await self.hass.services.async_call(
+            self.state.domain,
+            button.SERVICE_PRESS, {
+                ATTR_ENTITY_ID: self.state.entity_id
+            },
+            blocking=True,
+            context=data.context
+        )
 
-        async def _set_state(self, data: RequestData, state: dict[str, Any]):
-            await self.hass.services.async_call(
-                self.state.domain,
-                button.SERVICE_PRESS, {
-                    ATTR_ENTITY_ID: self.state.entity_id
-                },
-                blocking=True,
-                context=data.context
-            )
 
-if MAJOR_VERSION >= 2022:
-    from homeassistant.components import input_button
+@register_capability
+class OnOffCapabilityInputButton(OnOffCapability):
+    retrievable = False
 
-    @register_capability
-    class OnOffCapabilityInputButton(OnOffCapability):
-        retrievable = False
+    def get_value(self) -> bool | None:
+        return None
 
-        def get_value(self) -> bool | None:
-            return None
+    def supported(self) -> bool:
+        return self.state.domain == input_button.DOMAIN
 
-        def supported(self) -> bool:
-            return self.state.domain == input_button.DOMAIN
-
-        async def _set_state(self, data: RequestData, state: dict[str, Any]):
-            await self.hass.services.async_call(
-                self.state.domain,
-                input_button.SERVICE_PRESS, {
-                    ATTR_ENTITY_ID: self.state.entity_id
-                },
-                blocking=True,
-                context=data.context
-            )
+    async def _set_state(self, data: RequestData, state: dict[str, Any]):
+        await self.hass.services.async_call(
+            self.state.domain,
+            input_button.SERVICE_PRESS, {
+                ATTR_ENTITY_ID: self.state.entity_id
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability

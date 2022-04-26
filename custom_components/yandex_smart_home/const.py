@@ -2,6 +2,7 @@
 from homeassistant.components import (
     air_quality,
     binary_sensor,
+    button,
     camera,
     climate,
     cover,
@@ -9,6 +10,7 @@ from homeassistant.components import (
     group,
     humidifier,
     input_boolean,
+    input_button,
     input_text,
     light,
     lock,
@@ -20,7 +22,6 @@ from homeassistant.components import (
     vacuum,
     water_heater,
 )
-from homeassistant.const import MAJOR_VERSION, MINOR_VERSION
 
 DOMAIN = 'yandex_smart_home'
 CONFIG = 'config'
@@ -145,7 +146,9 @@ TYPES = (
 )
 
 DOMAIN_TO_YANDEX_TYPES = {
+    air_quality.DOMAIN: TYPE_SENSOR,
     binary_sensor.DOMAIN: TYPE_SENSOR,
+    button.DOMAIN: TYPE_OTHER,
     camera.DOMAIN: TYPE_CAMERA,
     climate.DOMAIN: TYPE_THERMOSTAT,
     cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
@@ -153,25 +156,18 @@ DOMAIN_TO_YANDEX_TYPES = {
     group.DOMAIN: TYPE_SWITCH,
     humidifier.DOMAIN: TYPE_HUMIDIFIER,
     input_boolean.DOMAIN: TYPE_SWITCH,
+    input_button.DOMAIN: TYPE_OTHER,
     input_text.DOMAIN: TYPE_SENSOR,
     light.DOMAIN: TYPE_LIGHT,
     lock.DOMAIN: TYPE_OPENABLE,
     media_player.DOMAIN: TYPE_MEDIA_DEVICE,
     scene.DOMAIN: TYPE_OTHER,
     script.DOMAIN: TYPE_OTHER,
+    sensor.DOMAIN: TYPE_SENSOR,
     switch.DOMAIN: TYPE_SWITCH,
     vacuum.DOMAIN: TYPE_VACUUM_CLEANER,
     water_heater.DOMAIN: TYPE_KETTLE,
-    sensor.DOMAIN: TYPE_SENSOR,
-    air_quality.DOMAIN: TYPE_SENSOR,
 }
-if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12):
-    from homeassistant.components import button
-    DOMAIN_TO_YANDEX_TYPES[button.DOMAIN] = TYPE_OTHER
-
-if MAJOR_VERSION >= 2022:
-    from homeassistant.components import input_button
-    DOMAIN_TO_YANDEX_TYPES[input_button.DOMAIN] = TYPE_OTHER
 
 DEVICE_CLASS_TO_YANDEX_TYPES = {
     (media_player.DOMAIN, media_player.DEVICE_CLASS_TV): TYPE_MEDIA_DEVICE_TV,

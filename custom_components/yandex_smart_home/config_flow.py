@@ -8,7 +8,7 @@ from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant import data_entry_flow
 from homeassistant.auth.const import GROUP_ID_READ_ONLY
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
-from homeassistant.const import ATTR_FRIENDLY_NAME, CONF_DOMAINS, CONF_ENTITIES, MAJOR_VERSION, MINOR_VERSION
+from homeassistant.const import ATTR_FRIENDLY_NAME, CONF_DOMAINS, CONF_ENTITIES
 from homeassistant.core import HomeAssistant, callback, split_entity_id
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entityfilter import CONF_EXCLUDE_ENTITIES, CONF_INCLUDE_DOMAINS, CONF_INCLUDE_ENTITIES
@@ -27,6 +27,7 @@ MODE_INCLUDE = 'include'
 MODE_EXCLUDE = 'exclude'
 
 SUPPORTED_DOMAINS = [
+    'button',
     'binary_sensor',
     'camera',
     'climate',
@@ -34,6 +35,7 @@ SUPPORTED_DOMAINS = [
     'fan',
     'humidifier',
     'input_boolean',
+    'input_button',
     'input_text',
     'light',
     'lock',
@@ -45,10 +47,6 @@ SUPPORTED_DOMAINS = [
     'vacuum',
     'water_heater',
 ]
-if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12):
-    SUPPORTED_DOMAINS.insert(1, 'button')
-if MAJOR_VERSION >= 2022:
-    SUPPORTED_DOMAINS.insert(1, 'input_button')
 
 DEFAULT_DOMAINS = [
     'climate',
