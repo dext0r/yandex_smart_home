@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import patch
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import State
 from homeassistant.util.decorator import Registry
 
-from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic
-from custom_components.yandex_smart_home.capability_toggle import MuteCapability, PauseCapability
+from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
+from custom_components.yandex_smart_home.capability_toggle import ToggleCapability
 from custom_components.yandex_smart_home.const import ERR_INTERNAL_ERROR, ERR_INVALID_ACTION
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.helpers import RequestData
@@ -67,21 +68,34 @@ async def test_async_handle_message(hass):
 
 
 async def test_async_devices_execute(hass):
-    class MockOnOffCapability(OnOffCapabilityBasic):
+    class MockCapabilityA(OnOffCapability):
         def supported(self) -> bool:
             return True
+
+        def get_value(self) -> float | str | None:
+            return None
 
         async def set_state(self, data, state):
             pass
 
-    class MockMuteCapability(MuteCapability):
+        async def _set_state(self, data: RequestData, state: dict[str, Any]):
+            pass
+
+    class MockCapabilityB(ToggleCapability):
+        instance = 'b'
+
         def supported(self) -> bool:
             return True
 
-        async def set_state(self, data, state):
-            pass
+        def get_value(self) -> float | str | None:
+            return None
 
-    class MockPauseCapability(PauseCapability):
+        async def set_state(self, data, state):
+            return {'foo': 'bar', 'int': 0}
+
+    class MockCapabilityWithFail(ToggleCapability):
+        instance = 'fail'
+
         def supported(self) -> bool:
             return True
 
@@ -99,21 +113,27 @@ async def test_async_devices_execute(hass):
     hass.states.async_set(switch_3.entity_id, switch_3.state, switch_3.attributes)
 
     with patch('custom_components.yandex_smart_home.capability.CAPABILITIES',
-               [MockOnOffCapability, MockMuteCapability, MockPauseCapability]):
+               [MockCapabilityA, MockCapabilityB, MockCapabilityWithFail]):
         message = {
             'payload': {
                 'devices': [{
                     'id': switch_1.entity_id,
                     'capabilities': [{
-                        'type': MockOnOffCapability.type,
+                        'type': MockCapabilityA.type,
                         'state': {
-                            'instance': 'on',
+                            'instance': MockCapabilityA.instance,
                             'value': True
                         }
                     }, {
-                        'type': MockPauseCapability.type,
+                        'type': MockCapabilityB.type,
                         'state': {
-                            'instance': MockPauseCapability.instance,
+                            'instance': MockCapabilityB.instance,
+                            'value': True
+                        }
+                    }, {
+                        'type': MockCapabilityWithFail.type,
+                        'state': {
+                            'instance': MockCapabilityWithFail.instance,
                             'value': True
                         }
                     }]
@@ -126,7 +146,7 @@ async def test_async_devices_execute(hass):
                             'value': True
                         }
                     }, {
-                        'type': MockMuteCapability.type,
+                        'type': MockCapabilityB.type,
                         'state': {
                             'instance': 'unsupported',
                             'value': True
@@ -135,18 +155,18 @@ async def test_async_devices_execute(hass):
                 }, {
                     'id': switch_3.entity_id,
                     'capabilities': [{
-                        'type': MockOnOffCapability.type,
+                        'type': MockCapabilityA.type,
                         'state': {
-                            'instance': 'on',
+                            'instance': MockCapabilityA.instance,
                             'value': True
                         }
                     }]
                 }, {
                     'id': 'not_exist',
                     'capabilities': [{
-                        'type': MockOnOffCapability.type,
+                        'type': MockCapabilityA.type,
                         'state': {
-                            'instance': 'on',
+                            'instance': MockCapabilityA.instance,
                             'value': True
                         }
                     }]
@@ -163,7 +183,19 @@ async def test_async_devices_execute(hass):
                 }, {
                     'type': 'devices.capabilities.toggle',
                     'state': {
-                        'instance': 'pause',
+                        'instance': 'b',
+                        'action_result': {
+                            'status': 'DONE',
+                        },
+                        'value': {
+                            'foo': 'bar',
+                            'int': 0
+                        }
+                    }
+                }, {
+                    'type': 'devices.capabilities.toggle',
+                    'state': {
+                        'instance': 'fail',
                         'action_result': {
                             'status': 'ERROR',
                             'error_code': 'INTERNAL_ERROR'
