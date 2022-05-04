@@ -22,6 +22,7 @@ from . import (  # noqa: F401
     capability_range,
     capability_toggle,
     capability_video,
+    config_validation as ycv,
     const,
     prop_custom,
     prop_event,
@@ -42,32 +43,14 @@ from .const import (
 from .helpers import Config
 from .http import async_register_http
 from .notifier import YandexNotifier, async_setup_notifier, async_start_notifier, async_unload_notifier
-from .prop_float import PRESSURE_UNITS_TO_YANDEX_UNITS
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def property_type_validate(property_type: str) -> str:
-    if property_type not in const.FLOAT_INSTANCES and property_type not in const.EVENT_INSTANCES:
-        raise vol.Invalid(
-            f'Property type {property_type!r} is not supported. '
-            f'See valid types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html and '
-            f'https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html'
-        )
-
-    if property_type == const.EVENT_INSTANCE_BUTTON:
-        _LOGGER.warning('Property type "button" is not supported. See documentation '
-                        'at https://github.com/dmitry-k/yandex_smart_home/blob/master/docs/sensors.md')
-
-    return property_type
 
 
 ENTITY_PROPERTY_SCHEMA = vol.All(
     cv.has_at_least_one_key(const.CONF_ENTITY_PROPERTY_ENTITY, const.CONF_ENTITY_PROPERTY_ATTRIBUTE),
     vol.Schema({
-        vol.Required(const.CONF_ENTITY_PROPERTY_TYPE): vol.Schema(
-            vol.All(str, property_type_validate)
-        ),
+        vol.Required(const.CONF_ENTITY_PROPERTY_TYPE): vol.Schema(vol.All(str, ycv.property_type)),
         vol.Optional(const.CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT): cv.string,
         vol.Optional(const.CONF_ENTITY_PROPERTY_ENTITY): cv.entity_id,
         vol.Optional(const.CONF_ENTITY_PROPERTY_ATTRIBUTE): cv.string,
@@ -75,50 +58,11 @@ ENTITY_PROPERTY_SCHEMA = vol.All(
 )
 
 
-def mode_instance_validate(instance: str) -> str:
-    if instance not in const.MODE_INSTANCES and instance not in const.COLOR_SETTING_SCENE:
-        _LOGGER.error(
-            f'Mode instance {instance!r} is not supported. '
-            f'See valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html'
-        )
-
-        raise vol.Invalid(f'Mode instance {instance!r} is not supported.')
-
-    return instance
-
-
-def mode_validate(mode: str) -> str:
-    if mode not in const.MODE_INSTANCE_MODES and mode not in const.COLOR_SCENES:
-        _LOGGER.error(
-            f'Mode {mode!r} is not supported. '
-            f'See valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html and '
-            f'https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html#discovery__discovery-'
-            f'parameters-color-setting-table__entry__75'
-        )
-
-        raise vol.Invalid(f'Mode {mode!r} is not supported.')
-
-    return mode
-
-
 ENTITY_MODE_MAP_SCHEMA = vol.Schema({
-    vol.All(cv.string, mode_instance_validate): vol.Schema({
-        vol.All(cv.string, mode_validate): [cv.string]
+    vol.All(cv.string, ycv.mode_instance): vol.Schema({
+        vol.All(cv.string, ycv.mode): [cv.string]
     })
 })
-
-
-def toggle_instance_validate(instance: str) -> str:
-    if instance not in const.TOGGLE_INSTANCES:
-        _LOGGER.error(
-            f'Toggle instance {instance!r} is not supported. '
-            f'See valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html'
-        )
-
-        raise vol.Invalid(f'Toggle instance {instance!r} is not supported.')
-
-    return instance
-
 
 ENTITY_RANGE_SCHEMA = vol.Schema({
     vol.Optional(const.CONF_ENTITY_RANGE_MAX): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
@@ -127,28 +71,15 @@ ENTITY_RANGE_SCHEMA = vol.Schema({
 }, extra=vol.PREVENT_EXTRA)
 
 ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema({
-    vol.All(cv.string, mode_instance_validate): vol.Schema({
+    vol.All(cv.string, ycv.mode_instance): vol.Schema({
         vol.Required(const.CONF_ENTITY_CUSTOM_MODE_SET_MODE): cv.SERVICE_SCHEMA,
         vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
         vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
     })
 })
 
-
-def range_instance_validate(instance: str) -> str:
-    if instance not in const.RANGE_INSTANCES:
-        _LOGGER.error(
-            f'Range instance {instance!r} is not supported. '
-            f'See valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html'
-        )
-
-        raise vol.Invalid(f'Range instance {instance!r} is not supported.')
-
-    return instance
-
-
 ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema({
-    vol.All(cv.string, range_instance_validate): vol.All(
+    vol.All(cv.string, ycv.range_instance): vol.All(
         cv.has_at_least_one_key(
             const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE,
             const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE,
@@ -167,7 +98,7 @@ ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema({
 
 
 ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema({
-    vol.All(cv.string, toggle_instance_validate): vol.Schema({
+    vol.All(cv.string, ycv.toggle_instance): vol.Schema({
         vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON): cv.SERVICE_SCHEMA,
         vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF): cv.SERVICE_SCHEMA,
         vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
@@ -176,35 +107,15 @@ ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema({
 })
 
 
-def features_validate(features):
-    for feature in features:
-        if feature not in const.MEDIA_PLAYER_FEATURES:
-            raise vol.Invalid(f'Feature {feature!r} is not supported')
-
-    return features
-
-
-def device_type_validate(device_type: str) -> str:
-    if device_type not in const.TYPES:
-        _LOGGER.error(
-            f'Device type {device_type!r} is not supported. '
-            f'See valid device types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html'
-        )
-
-        raise vol.Invalid(f'Device type {device_type!r} is not supported.')
-
-    return device_type
-
-
 ENTITY_SCHEMA = vol.All(
     cv.deprecated(const.CONF_CHANNEL_SET_VIA_MEDIA_CONTENT_ID),
     vol.Schema({
         vol.Optional(const.CONF_NAME): cv.string,
         vol.Optional(const.CONF_ROOM): cv.string,
-        vol.Optional(const.CONF_TYPE): vol.All(cv.string, device_type_validate),
+        vol.Optional(const.CONF_TYPE): vol.All(cv.string, ycv.device_type),
         vol.Optional(const.CONF_TURN_ON): cv.SERVICE_SCHEMA,
         vol.Optional(const.CONF_TURN_OFF): cv.SERVICE_SCHEMA,
-        vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, features_validate),
+        vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, ycv.entity_features),
         vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
         vol.Optional(const.CONF_SUPPORT_SET_CHANNEL): cv.boolean,
         vol.Optional(const.CONF_STATE_UNKNOWN): cv.boolean,
@@ -224,28 +135,13 @@ NOTIFIER_SCHEMA = vol.Schema({
 }, extra=vol.PREVENT_EXTRA)
 
 
-def pressure_unit_validate(unit):
-    if unit not in PRESSURE_UNITS_TO_YANDEX_UNITS:
-        raise vol.Invalid(f'Pressure unit "{unit}" is not supported')
-
-    return unit
-
-
 SETTINGS_SCHEMA = vol.Schema({
     vol.Optional(const.CONF_PRESSURE_UNIT, default=const.PRESSURE_UNIT_MMHG): vol.Schema(
-        vol.All(str, pressure_unit_validate)
+        vol.All(str, ycv.pressure_unit)
     ),
     vol.Optional(const.CONF_BETA, default=False): cv.boolean,
     vol.Optional(const.CONF_CLOUD_STREAM, default=False): cv.boolean
 })
-
-
-def is_config_filter_empty(config_filter: ConfigType) -> bool:
-    for entities in config_filter.values():
-        if entities:
-            return False
-
-    return True
 
 
 YANDEX_SMART_HOME_SCHEMA = vol.All(
@@ -402,3 +298,11 @@ def _update_config_entries(hass: HomeAssistant):
             entry,
             data=_get_config_entry_data_from_yaml(entry.data, hass.data[DOMAIN][YAML_CONFIG])
         )
+
+
+def is_config_filter_empty(config_filter: ConfigType) -> bool:
+    for entities in config_filter.values():
+        if entities:
+            return False
+
+    return True
