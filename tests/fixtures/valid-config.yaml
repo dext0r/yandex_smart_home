@@ -33,7 +33,6 @@ yandex_smart_home:
           alarm:
             - Blink
     media_player.tv_lg:
-      channel_set_via_media_content_id: true
       custom_ranges:
         channel:
           set_value:
