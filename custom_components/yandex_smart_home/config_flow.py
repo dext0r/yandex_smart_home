@@ -121,12 +121,12 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             self._data.update(user_input)
             if user_input[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
                 try:
-                    return await self.async_step_cloud_info()
+                    return await self.async_step_cloud()
                 except (ClientConnectorError, ClientResponseError):
                     errors['base'] = 'cannot_connect'
                     _LOGGER.exception('Failed to register instance in Yandex Smart Home cloud')
             else:
-                return await self.async_step_done()
+                return self.async_create_entry(title=const.CONFIG_ENTRY_TITLE, data=self._data)
 
         return self.async_show_form(
             step_id='connection_type',
@@ -137,10 +137,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             errors=errors
         )
 
-    async def async_step_cloud_info(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
-        if user_input is not None:
-            return await self.async_step_done()
-
+    async def async_step_cloud(self) -> data_entry_flow.FlowResult:
         instance = await register_cloud_instance(self.hass)
         self._data[const.CONF_CLOUD_INSTANCE] = {
             const.CONF_CLOUD_INSTANCE_ID: instance.id,
@@ -148,13 +145,15 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: instance.connection_token
         }
 
-        return self.async_show_form(step_id='cloud_info', description_placeholders={
-            const.CONF_CLOUD_INSTANCE_ID: instance.id,
-            const.CONF_CLOUD_INSTANCE_PASSWORD: instance.password
-        })
-
-    async def async_step_done(self) -> data_entry_flow.FlowResult:
-        return self.async_create_entry(title=const.CONFIG_ENTRY_TITLE, data=self._data)
+        return self.async_create_entry(
+            title=const.CONFIG_ENTRY_TITLE,
+            data=self._data,
+            description='cloud',
+            description_placeholders={
+                const.CONF_CLOUD_INSTANCE_ID: instance.id,
+                const.CONF_CLOUD_INSTANCE_PASSWORD: instance.password
+            }
+        )
 
     @staticmethod
     @callback

@@ -82,20 +82,17 @@ async def test_step_user_cloud(hass, aioclient_mock):
         status=202,
         json={'id': 'test', 'password': 'simple', 'connection_token': 'foo'},
     )
-    result5 = await hass.config_entries.flow.async_configure(result4['flow_id'], {
-        const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD
-    })
-    assert result5['type'] == 'form'
-    assert result5['step_id'] == 'cloud_info'
-    assert result5['errors'] is None
 
     with patch(f'{COMPONENT_PATH}.async_setup', return_value=True) as mock_setup, patch(
             f'{COMPONENT_PATH}.async_setup_entry', return_value=True) as mock_setup_entry:
-        result6 = await hass.config_entries.flow.async_configure(result5['flow_id'], {})
+        result5 = await hass.config_entries.flow.async_configure(result4['flow_id'], {
+            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD
+        })
         await hass.async_block_till_done()
 
-        assert result6['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-        assert result6['data'] == {
+        assert result5['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+        assert result5['description'] == 'cloud'
+        assert result5['data'] == {
             'connection_type': 'cloud',
             'cloud_stream': False,
             'beta': False,
