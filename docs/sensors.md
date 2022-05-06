@@ -24,7 +24,7 @@
    В этом случае дополнительные датчики и их типы (поле `type`) задаются как элементы списка `properties` основного устройства:
   ```yaml
   yandex_smart_home:
-    filter:  # можно через GUI
+    filter:  # можно через интерфейс
       include_entities:
         - humidifier.bedroom
         - sensor.kitchen_meteo_temperature
@@ -88,7 +88,7 @@ homeassistant:
 yandex_smart_home:
   settings:
     beta: true
-  filter:  # через GUI тоже можно
+  filter:  # через интерфейс тоже можно
     include_entities:
       - input_text.test_button
 
