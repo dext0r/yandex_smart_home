@@ -257,7 +257,7 @@ def _get_config_entry_data_from_yaml(data: dict, yaml_config: ConfigType | None)
         data.update(yaml_config[const.CONF_SETTINGS])
         data.update({
             const.CONF_NOTIFIER: yaml_config[const.CONF_NOTIFIER],
-            const.YAML_CONFIG_HASH: hashlib.md5(repr(yaml_config).encode('utf8')).hexdigest()
+            const.YAML_CONFIG_HASH: _yaml_config_checksum(yaml_config)
         })
     else:
         data.update(SETTINGS_SCHEMA(data={}))
@@ -278,3 +278,10 @@ def _update_config_entries(hass: HomeAssistant):
             entry,
             data=_get_config_entry_data_from_yaml(entry.data, hass.data[DOMAIN][YAML_CONFIG])
         )
+
+
+def _yaml_config_checksum(yaml_config: ConfigType) -> str:
+    def _order_dict(d):
+        return {k: _order_dict(v) if isinstance(v, dict) else v for k, v in sorted(d.items())}
+
+    return hashlib.md5(repr(_order_dict(yaml_config)).encode('utf8')).hexdigest()

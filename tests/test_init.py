@@ -224,9 +224,13 @@ async def test_async_setup_update_from_yaml(hass, hass_admin_user):
     assert await async_setup(hass, {})
     assert await async_setup_entry(hass, entry)
 
-    assert const.CONF_NOTIFIER not in entry.data
-    assert entry.data[const.CONF_PRESSURE_UNIT] == 'mmHg'
-    assert entry.data[const.CONF_DEVICES_DISCOVERED] is True  # pre-0.3 migration
+    assert entry.data == {
+        'beta': False,
+        'cloud_stream': False,
+        'connection_type': 'direct',
+        'devices_discovered': True,
+        'pressure_unit': 'mmHg'
+    }
 
     with patch_yaml_files({YAML_CONFIG_FILE: f"""
 yandex_smart_home:
@@ -242,3 +246,45 @@ yandex_smart_home:
 
     assert entry.data[const.CONF_NOTIFIER][0][const.CONF_NOTIFIER_OAUTH_TOKEN] == 'yaml'
     assert entry.data[const.CONF_PRESSURE_UNIT] == 'pa'
+
+
+async def test_async_setup_update_from_yaml_checksum(hass, hass_admin_user):
+    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
+
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+
+    with patch_yaml_files({YAML_CONFIG_FILE: """
+yandex_smart_home:
+  settings:
+    pressure_unit: pa"""}):
+        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
+        assert await async_setup_entry(hass, entry)
+
+    assert entry.data == {
+        'beta': False,
+        'cloud_stream': False,
+        'connection_type': 'direct',
+        'devices_discovered': True,
+        'notifier': [],
+        'pressure_unit': 'pa',
+        'yaml_config_hash': 'e43356ae879b7927d234724acc8f978c'
+    }
+
+    with patch_yaml_files({YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    switch.test:
+      turn_on:
+        service: switch.turn_on
+        data:
+          entity_id: 'switch.test_{{ 1 + 2 }}'
+  settings:
+    pressure_unit: mmHg
+"""}):
+        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
+        with patch('custom_components.yandex_smart_home.async_setup', return_value=True):
+            assert await async_setup_entry(hass, entry)
+
+    assert entry.data[const.CONF_PRESSURE_UNIT] == 'mmHg'
+    assert entry.data[const.YAML_CONFIG_HASH] == 'dc49045a0e52e013db5c1d5587330461'
