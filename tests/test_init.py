@@ -106,7 +106,7 @@ async def test_async_setup_entry(hass, config_entry_with_notifier):
     assert await async_setup_entry(hass, config_entry_with_notifier)
 
     assert len(hass.data[DOMAIN][CONFIG].notifier) == 0
-    assert const.CONF_PRESSURE_UNIT in config_entry_with_notifier.data
+    assert const.CONF_PRESSURE_UNIT in config_entry_with_notifier.options
 
 
 async def test_async_setup_entry_filters(hass):
@@ -225,10 +225,12 @@ async def test_async_setup_update_from_yaml(hass, hass_admin_user):
     assert await async_setup_entry(hass, entry)
 
     assert entry.data == {
-        'beta': False,
-        'cloud_stream': False,
         'connection_type': 'direct',
         'devices_discovered': True,
+    }
+    assert entry.options == {
+        'beta': False,
+        'cloud_stream': False,
         'pressure_unit': 'mmHg'
     }
 
@@ -245,7 +247,7 @@ yandex_smart_home:
             assert await async_setup_entry(hass, entry)
 
     assert entry.data[const.CONF_NOTIFIER][0][const.CONF_NOTIFIER_OAUTH_TOKEN] == 'yaml'
-    assert entry.data[const.CONF_PRESSURE_UNIT] == 'pa'
+    assert entry.options[const.CONF_PRESSURE_UNIT] == 'pa'
 
 
 async def test_async_setup_update_from_yaml_checksum(hass, hass_admin_user):
@@ -262,13 +264,15 @@ yandex_smart_home:
         assert await async_setup_entry(hass, entry)
 
     assert entry.data == {
-        'beta': False,
-        'cloud_stream': False,
         'connection_type': 'direct',
         'devices_discovered': True,
         'notifier': [],
-        'pressure_unit': 'pa',
         'yaml_config_hash': 'e43356ae879b7927d234724acc8f978c'
+    }
+    assert entry.options == {
+        'beta': False,
+        'cloud_stream': False,
+        'pressure_unit': 'pa',
     }
 
     with patch_yaml_files({YAML_CONFIG_FILE: """
@@ -286,5 +290,5 @@ yandex_smart_home:
         with patch('custom_components.yandex_smart_home.async_setup', return_value=True):
             assert await async_setup_entry(hass, entry)
 
-    assert entry.data[const.CONF_PRESSURE_UNIT] == 'mmHg'
+    assert entry.options[const.CONF_PRESSURE_UNIT] == 'mmHg'
     assert entry.data[const.YAML_CONFIG_HASH] == 'dc49045a0e52e013db5c1d5587330461'

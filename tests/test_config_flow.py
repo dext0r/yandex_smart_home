@@ -100,9 +100,6 @@ async def test_config_step_user_cloud(hass, setup, aioclient_mock):
         assert result5['description'] == 'cloud'
         assert result5['data'] == {
             'connection_type': 'cloud',
-            'cloud_stream': False,
-            'beta': False,
-            'pressure_unit': 'mmHg',
             'devices_discovered': False,
             'cloud_instance': {
                 'id': 'test',
@@ -110,7 +107,11 @@ async def test_config_step_user_cloud(hass, setup, aioclient_mock):
                 'token': 'foo'
             }
         }
-
+        assert result5['options'] == {
+            'cloud_stream': True,
+            'beta': False,
+            'pressure_unit': 'mmHg',
+        }
         mock_setup.assert_called_once()
         mock_setup_entry.assert_called_once()
 
@@ -130,11 +131,13 @@ async def test_config_step_user_direct(hass, setup):
 
         assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
         assert result2['data'] == {
+            'connection_type': 'direct',
+            'devices_discovered': False
+        }
+        assert result2['options'] == {
             'beta': False,
             'pressure_unit': 'mmHg',
-            'connection_type': 'direct',
             'cloud_stream': False,
-            'devices_discovered': False
         }
 
         mock_setup.assert_called_once()
@@ -165,13 +168,15 @@ yandex_smart_home:
 
         assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
         assert result2['data'] == {
-            'beta': True,
-            'pressure_unit': 'mmHg',
             'connection_type': 'direct',
-            'cloud_stream': True,
             'devices_discovered': False,
             'notifier': [],
             'yaml_config_hash': '9b73ab2a58d8184f5856e4b4aef394cc'
+        }
+        assert result2['options'] == {
+            'beta': True,
+            'pressure_unit': 'mmHg',
+            'cloud_stream': True,
         }
 
         mock_setup.assert_called_once()

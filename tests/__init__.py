@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entityfilter
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import DOMAIN, SETTINGS_SCHEMA, const
+from custom_components.yandex_smart_home import DOMAIN, const, get_config_entry_data_from_yaml_config
 from custom_components.yandex_smart_home.helpers import CacheStore, Config, RequestData
 
 
@@ -19,10 +19,9 @@ class MockConfig(Config):
                  entry: ConfigEntry | None = None,
                  entity_config: dict[str, Any] | None = None,
                  entity_filter: entityfilter.EntityFilter | None = None):
-        entry = entry or MockConfigEntry(
-            domain=DOMAIN,
-            data=SETTINGS_SCHEMA(data={})
-        )
+        if not entry:
+            data, options = get_config_entry_data_from_yaml_config({}, {}, None)
+            entry = MockConfigEntry(domain=DOMAIN, data=data, options=options)
 
         super().__init__(hass, entry, entity_config, entity_filter)
 

@@ -52,7 +52,7 @@ class Config:
 
     @property
     def use_cloud_stream(self) -> bool:
-        return self._data[const.CONF_CLOUD_STREAM]
+        return self._options[const.CONF_CLOUD_STREAM]
 
     @property
     def cloud_instance_id(self) -> str | None:
@@ -69,15 +69,15 @@ class Config:
 
     @property
     def pressure_unit(self) -> str:
-        return self._data[const.CONF_PRESSURE_UNIT]
+        return self._options[const.CONF_PRESSURE_UNIT]
 
     @property
     def beta(self) -> bool:
-        return self._data[const.CONF_BETA]
+        return self._options[const.CONF_BETA]
 
     @property
     def notifier(self) -> list[ConfigType]:
-        return self._data.get(const.CONF_NOTIFIER, {})
+        return self._data.get(const.CONF_NOTIFIER, [])
 
     @property
     def devices_discovered(self) -> bool:

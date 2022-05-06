@@ -246,38 +246,39 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
     hass.bus.async_fire(EVENT_CONFIG_CHANGED)
 
 
-def _get_config_entry_data_from_yaml(data: dict, yaml_config: ConfigType | None) -> dict:
-    data = data.copy()
+def get_config_entry_data_from_yaml_config(data: dict, options: dict, yaml_config: ConfigType | None) -> (dict, dict):
+    data, options = data.copy(), options.copy()
     data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
-    if const.CONF_DEVICES_DISCOVERED not in data:  # pre-0.3 migration
-        data.setdefault(const.CONF_DEVICES_DISCOVERED, True)
-    data.setdefault(const.CONF_DEVICES_DISCOVERED, False)
+    data.setdefault(const.CONF_DEVICES_DISCOVERED, True)  # <0.3 migration
+
+    for v in [const.PRESSURE_UNIT_MMHG, const.CONF_BETA, const.CONF_CLOUD_STREAM,
+              const.CONF_NOTIFIER, const.YAML_CONFIG_HASH]:
+        if v in data:
+            del data[v]
 
     if yaml_config:
-        data.update(yaml_config[const.CONF_SETTINGS])
         data.update({
             const.CONF_NOTIFIER: yaml_config[const.CONF_NOTIFIER],
             const.YAML_CONFIG_HASH: _yaml_config_checksum(yaml_config)
         })
+        options.update(yaml_config[const.CONF_SETTINGS])
     else:
-        data.update(SETTINGS_SCHEMA(data={}))
-        for v in [const.CONF_NOTIFIER, const.YAML_CONFIG_HASH]:
-            if v in data:
-                del data[v]
+        options.update(SETTINGS_SCHEMA(data={}))
 
     if data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
-        data[const.CONF_CLOUD_STREAM] = True
+        options[const.CONF_CLOUD_STREAM] = True
 
-    return data
+    return data, options
 
 
 @callback
 def _update_config_entries(hass: HomeAssistant):
     for entry in hass.config_entries.async_entries(DOMAIN):
-        hass.config_entries.async_update_entry(
-            entry,
-            data=_get_config_entry_data_from_yaml(entry.data, hass.data[DOMAIN][YAML_CONFIG])
+        data, options = get_config_entry_data_from_yaml_config(
+            entry.data, entry.options, hass.data[DOMAIN][YAML_CONFIG]
         )
+
+        hass.config_entries.async_update_entry(entry, data=data, options=options)
 
 
 def _yaml_config_checksum(yaml_config: ConfigType) -> str:

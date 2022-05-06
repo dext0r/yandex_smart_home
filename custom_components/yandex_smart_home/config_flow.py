@@ -16,7 +16,7 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 import voluptuous as vol
 
-from . import DOMAIN, YAML_CONFIG, _get_config_entry_data_from_yaml, const
+from . import DOMAIN, YAML_CONFIG, const, get_config_entry_data_from_yaml_config
 from .cloud import register_cloud_instance
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,14 +49,11 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {
             const.CONF_DEVICES_DISCOVERED: False
         }
+        self._options: dict[str, Any] = {}
 
     async def async_step_user(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         if self._async_current_entries():
             return self.async_abort(reason='single_instance_allowed')
-
-        if DOMAIN in self.hass.data:
-            self._yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
-            self._data.update(_get_config_entry_data_from_yaml(self._data, self._yaml_config))
 
         return await self.async_step_connection_type()
 
@@ -71,7 +68,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     errors['base'] = 'cannot_connect'
                     _LOGGER.exception('Failed to register instance in Yandex Smart Home cloud')
             else:
-                return self.async_create_entry(title=const.CONFIG_ENTRY_TITLE, data=self._data)
+                self._populate_data_from_yaml_config()
+
+                return self.async_create_entry(title=const.CONFIG_ENTRY_TITLE, data=self._data, options=self._options)
 
         return self.async_show_form(
             step_id='connection_type',
@@ -90,9 +89,12 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: instance.connection_token
         }
 
+        self._populate_data_from_yaml_config()
+
         return self.async_create_entry(
             title=const.CONFIG_ENTRY_TITLE,
             data=self._data,
+            options=self._options,
             description='cloud',
             description_placeholders={
                 const.CONF_CLOUD_INSTANCE_ID: instance.id,
@@ -104,6 +106,15 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(entry: ConfigEntry) -> OptionsFlow:
         return OptionsFlowHandler(entry)
+
+    def _populate_data_from_yaml_config(self):
+        yaml_config = None
+        if DOMAIN in self.hass.data:
+            yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
+
+        data, options = get_config_entry_data_from_yaml_config(self._data, self._options, yaml_config)
+        self._data.update(data)
+        self._options.update(options)
 
 
 class OptionsFlowHandler(OptionsFlow):
