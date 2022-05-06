@@ -26,28 +26,6 @@ CONF_INCLUDE_EXCLUDE_MODE = 'include_exclude_mode'
 MODE_INCLUDE = 'include'
 MODE_EXCLUDE = 'exclude'
 
-SUPPORTED_DOMAINS = [
-    'button',
-    'binary_sensor',
-    'camera',
-    'climate',
-    'cover',
-    'fan',
-    'humidifier',
-    'input_boolean',
-    'input_button',
-    'input_text',
-    'light',
-    'lock',
-    'media_player',
-    'scene',
-    'script',
-    'sensor',
-    'switch',
-    'vacuum',
-    'water_heater',
-]
-
 _EMPTY_ENTITY_FILTER = {
     CONF_INCLUDE_DOMAINS: [],
     CONF_INCLUDE_ENTITIES: [],
@@ -283,15 +261,16 @@ async def _async_get_users(hass: HomeAssistant) -> dict[str, str]:
 
 async def _async_name_to_type_map(hass: HomeAssistant) -> dict[str, str]:
     """Create a mapping of types of devices/entities Yandex Smart Home can support."""
+    supported_domains = sorted(const.DOMAIN_TO_YANDEX_TYPES)
     integrations = await asyncio.gather(
-        *[async_get_integration(hass, domain) for domain in SUPPORTED_DOMAINS],
+        *[async_get_integration(hass, domain) for domain in supported_domains],
         return_exceptions=True,
     )
     name_to_type_map = {
         domain: domain
         if isinstance(integrations[idx], Exception)
         else integrations[idx].name
-        for idx, domain in enumerate(SUPPORTED_DOMAINS)
+        for idx, domain in enumerate(supported_domains)
     }
 
     return name_to_type_map
