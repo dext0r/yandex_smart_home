@@ -1,7 +1,9 @@
 import asyncio
+import logging
 import time
 from unittest.mock import PropertyMock, patch
 
+from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_UNIT_OF_MEASUREMENT,
@@ -408,20 +410,25 @@ async def test_notifier_async_send_callback(hass_platform_cloud_connection, capl
     assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
     notifier = hass.data[DOMAIN][NOTIFIERS][0]
 
-    with patch.object(notifier, '_log_request', side_effect=asyncio.TimeoutError()), patch(
+    with patch.object(notifier, '_log_request', side_effect=ClientConnectionError()), patch(
             'custom_components.yandex_smart_home.notifier.YandexNotifier._ready',
             new_callable=PropertyMock(return_value=True)
     ):
         caplog.clear()
         await notifier.async_send_discovery(None)
         assert len(caplog.records) == 2
-        assert 'Failed to send state notification: TimeoutError()' in caplog.records[1].message
+        assert 'Failed to send state notification: ClientConnectionError()' in caplog.records[1].message
+        assert caplog.records[1].levelno == logging.WARN
         caplog.clear()
 
+    with patch.object(notifier, '_log_request', side_effect=asyncio.TimeoutError()), patch(
+            'custom_components.yandex_smart_home.notifier.YandexNotifier._ready',
+            new_callable=PropertyMock(return_value=True)
+    ):
         await notifier.async_send_state([])
         assert len(caplog.records) == 1
         assert 'Failed to send state notification: TimeoutError()' in caplog.records[0].message
-        caplog.clear()
+        assert caplog.records[0].levelno == logging.DEBUG
 
 
 async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
