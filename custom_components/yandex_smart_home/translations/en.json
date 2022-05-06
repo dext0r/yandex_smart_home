@@ -12,7 +12,7 @@
     "step": {
       "connection_type": {
         "title": "Выберите тип подключения к УДЯ",
-        "description": "* **Через облако (бета-тест)** (cloud): настройка в несколько кликов, не требует доступа к Home Assistant из интернета, полностью бесплатно\n* **Напрямую** (direct): *только для продвинутых пользователей*, УДЯ подключается к Home Assistant через интернет, необходимо самостоятельно настроить доступ к Home Assistant по HTTPS извне, сложная многоступенчатая настройка ([подробнее](https://github.com/dmitry-k/yandex_smart_home/blob/master/docs/direct-connection.md))",
+        "description": "* **Через облако** (cloud): настройка в несколько кликов, не требует доступа к Home Assistant из интернета, полностью бесплатно\n* **Напрямую** (direct): *только для продвинутых пользователей*, УДЯ подключается к Home Assistant через интернет, необходимо самостоятельно настроить доступ к Home Assistant по HTTPS извне, сложная многоступенчатая настройка ([подробнее](https://github.com/dmitry-k/yandex_smart_home/blob/master/docs/direct-connection.md))",
         "data": {
           "connection_type": "Тип подключения"
         }

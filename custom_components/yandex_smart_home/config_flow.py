@@ -33,8 +33,8 @@ _EMPTY_ENTITY_FILTER = {
 }
 
 CONNECTION_TYPES = {
-    const.CONNECTION_TYPE_DIRECT: 'Напрямую',
-    const.CONNECTION_TYPE_CLOUD: 'Через облако (бета-тест)'
+    const.CONNECTION_TYPE_CLOUD: 'Через облако',
+    const.CONNECTION_TYPE_DIRECT: 'Напрямую'
 }
 
 INCLUDE_EXCLUDE_MODES = {
