@@ -16,7 +16,7 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 import voluptuous as vol
 
-from . import DOMAIN, YAML_CONFIG, _get_config_entry_data_from_yaml, const, is_config_filter_empty
+from . import DOMAIN, YAML_CONFIG, _get_config_entry_data_from_yaml, const
 from .cloud import register_cloud_instance
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,19 +43,6 @@ SUPPORTED_DOMAINS = [
     'scene',
     'script',
     'sensor',
-    'switch',
-    'vacuum',
-    'water_heater',
-]
-
-DEFAULT_DOMAINS = [
-    'climate',
-    'cover',
-    'humidifier',
-    'fan',
-    'light',
-    'lock',
-    'media_player',
     'switch',
     'vacuum',
     'water_heater',
@@ -93,27 +80,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             self._yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
             self._data.update(_get_config_entry_data_from_yaml(self._data, self._yaml_config))
 
-        return await self.async_step_include_domains()
-
-    async def async_step_include_domains(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
-        if self._yaml_config and not is_config_filter_empty(self._yaml_config.get(const.CONF_FILTER, {})):
-            return await self.async_step_connection_type()
-
-        if user_input is not None:
-            entity_filter = _EMPTY_ENTITY_FILTER.copy()
-            entity_filter[CONF_INCLUDE_DOMAINS] = user_input[CONF_INCLUDE_DOMAINS]
-            self._data[const.CONF_FILTER] = entity_filter
-            return await self.async_step_connection_type()
-
-        name_to_type_map = await _async_name_to_type_map(self.hass)
-        return self.async_show_form(
-            step_id='include_domains',
-            data_schema=vol.Schema({
-                vol.Required(
-                    CONF_INCLUDE_DOMAINS, default=DEFAULT_DOMAINS
-                ): cv.multi_select(name_to_type_map),
-            }),
-        )
+        return await self.async_step_connection_type()
 
     async def async_step_connection_type(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         errors = {}
@@ -171,29 +138,34 @@ class OptionsFlowHandler(OptionsFlow):
         return await self.async_step_include_domains()
 
     async def async_step_include_domains(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+        errors = {}
         yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
 
-        if yaml_config and not is_config_filter_empty(yaml_config.get(const.CONF_FILTER, {})):
+        if yaml_config and yaml_config.get(const.CONF_FILTER):
             return await self.async_step_include_domains_yaml()
 
         if user_input is not None:
-            self._options.update(user_input)
-            return await self.async_step_include_exclude()
+            domains = user_input[CONF_DOMAINS]
+            if domains:
+                self._options.update(user_input)
+                return await self.async_step_include_exclude()
+            else:
+                errors['base'] = 'domains_not_selected'
+        else:
+            entity_filter = self._options.get(const.CONF_FILTER, _EMPTY_ENTITY_FILTER)
+            domains = set(entity_filter[CONF_INCLUDE_DOMAINS])
+            include_entities = entity_filter[CONF_INCLUDE_ENTITIES]
+            if include_entities:
+                domains.update(_domains_set_from_entities(include_entities))
 
-        entity_filter = self._options.get(const.CONF_FILTER, {})
-        domains = entity_filter.get(CONF_INCLUDE_DOMAINS, [])
-        include_entities = entity_filter.get(CONF_INCLUDE_ENTITIES)
-        if include_entities:
-            domains.extend(_domains_set_from_entities(include_entities))
         name_to_type_map = await _async_name_to_type_map(self.hass)
 
         return self.async_show_form(
             step_id='include_domains',
             data_schema=vol.Schema({
-                vol.Required(
-                    CONF_DOMAINS, default=sorted(set(domains))
-                ): cv.multi_select(name_to_type_map),
+                vol.Required(CONF_DOMAINS, default=sorted(domains)): cv.multi_select(name_to_type_map)
             }),
+            errors=errors
         )
 
     async def async_step_include_domains_yaml(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
@@ -225,11 +197,15 @@ class OptionsFlowHandler(OptionsFlow):
 
             self._options[const.CONF_FILTER] = entity_filter
 
+            for key in (CONF_DOMAINS, CONF_ENTITIES):
+                if key in self._options:
+                    del self._options[key]
+
             return await self.async_step_cloud_settings()
 
-        entity_filter = self._options.get(const.CONF_FILTER, {})
+        entity_filter = self._options.get(const.CONF_FILTER, _EMPTY_ENTITY_FILTER)
         all_supported_entities = _async_get_matching_entities(self.hass, domains=self._options[CONF_DOMAINS])
-        entities = entity_filter.get(CONF_INCLUDE_ENTITIES, [])
+        entities = entity_filter[CONF_INCLUDE_ENTITIES]
         include_exclude_mode = MODE_INCLUDE
 
         if not entities:
@@ -246,7 +222,7 @@ class OptionsFlowHandler(OptionsFlow):
             step_id='include_exclude',
             data_schema=vol.Schema({
                 vol.Required(CONF_INCLUDE_EXCLUDE_MODE, default=include_exclude_mode): vol.In(INCLUDE_EXCLUDE_MODES),
-                vol.Optional(CONF_ENTITIES, default=sorted(set(entities))): cv.multi_select(all_supported_entities)
+                vol.Optional(CONF_ENTITIES, default=sorted(entities)): cv.multi_select(all_supported_entities)
             })
         )
 
@@ -275,10 +251,6 @@ class OptionsFlowHandler(OptionsFlow):
         })
 
     async def async_step_done(self) -> data_entry_flow.FlowResult:
-        for key in (CONF_DOMAINS, CONF_ENTITIES):
-            if key in self._options:
-                del self._options[key]
-
         return self.async_create_entry(title='', data=self._options)
 
 

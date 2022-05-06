@@ -50,31 +50,24 @@ async def test_step_user_cloud(hass, aioclient_mock):
         DOMAIN, context={'source': config_entries.SOURCE_USER}
     )
     assert result['type'] == 'form'
-    assert result['step_id'] == 'include_domains'
-    assert result['errors'] is None
+    assert result['step_id'] == 'connection_type'
+    assert result['errors'] == {}
 
+    aioclient_mock.post(f'{cloud.BASE_API_URL}/instance/register', status=500)
     result2 = await hass.config_entries.flow.async_configure(result['flow_id'], {
-        'include_domains': ['light']
+        const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD
     })
     assert result2['type'] == 'form'
     assert result2['step_id'] == 'connection_type'
-    assert result2['errors'] == {}
+    assert result2['errors']['base'] == 'cannot_connect'
 
-    aioclient_mock.post(f'{cloud.BASE_API_URL}/instance/register', status=500)
+    aioclient_mock.post(f'{cloud.BASE_API_URL}/instance/register', side_effect=Exception())
     result3 = await hass.config_entries.flow.async_configure(result2['flow_id'], {
         const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD
     })
     assert result3['type'] == 'form'
     assert result3['step_id'] == 'connection_type'
     assert result3['errors']['base'] == 'cannot_connect'
-
-    aioclient_mock.post(f'{cloud.BASE_API_URL}/instance/register', side_effect=Exception())
-    result4 = await hass.config_entries.flow.async_configure(result3['flow_id'], {
-        const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD
-    })
-    assert result4['type'] == 'form'
-    assert result4['step_id'] == 'connection_type'
-    assert result4['errors']['base'] == 'cannot_connect'
 
     aioclient_mock.clear_requests()
     aioclient_mock.post(
@@ -85,7 +78,7 @@ async def test_step_user_cloud(hass, aioclient_mock):
 
     with patch(f'{COMPONENT_PATH}.async_setup', return_value=True) as mock_setup, patch(
             f'{COMPONENT_PATH}.async_setup_entry', return_value=True) as mock_setup_entry:
-        result5 = await hass.config_entries.flow.async_configure(result4['flow_id'], {
+        result5 = await hass.config_entries.flow.async_configure(result3['flow_id'], {
             const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD
         })
         await hass.async_block_till_done()
@@ -102,12 +95,7 @@ async def test_step_user_cloud(hass, aioclient_mock):
                 'id': 'test',
                 'password': 'simple',
                 'token': 'foo'
-            },
-            'filter': {
-                'exclude_entities': [],
-                'include_domains': ['light'],
-                'include_entities': []
-            },
+            }
         }
 
         mock_setup.assert_called_once()
@@ -154,35 +142,23 @@ async def test_step_user_direct(hass):
         DOMAIN, context={'source': config_entries.SOURCE_USER}
     )
     assert result['type'] == 'form'
-    assert result['step_id'] == 'include_domains'
-    assert result['errors'] is None
-
-    result2 = await hass.config_entries.flow.async_configure(result['flow_id'], {
-        'include_domains': ['light']
-    })
-    assert result2['type'] == 'form'
-    assert result2['step_id'] == 'connection_type'
-    assert result2['errors'] == {}
+    assert result['step_id'] == 'connection_type'
+    assert result['errors'] == {}
 
     with patch(f'{COMPONENT_PATH}.async_setup', return_value=True) as mock_setup, patch(
             f'{COMPONENT_PATH}.async_setup_entry', return_value=True) as mock_setup_entry:
-        result3 = await hass.config_entries.flow.async_configure(result['flow_id'], {
+        result2 = await hass.config_entries.flow.async_configure(result['flow_id'], {
             const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT
         })
         await hass.async_block_till_done()
 
-        assert result3['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-        assert result3['data'] == {
+        assert result2['type'] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+        assert result2['data'] == {
             'beta': False,
             'pressure_unit': 'mmHg',
             'connection_type': 'direct',
             'cloud_stream': False,
-            'devices_discovered': False,
-            'filter': {
-                'exclude_entities': [],
-                'include_domains': ['light'],
-                'include_entities': []
-            },
+            'devices_discovered': False
         }
 
         mock_setup.assert_called_once()
@@ -379,6 +355,26 @@ async def test_options_flow_filter_exclude2(hass):
                 'include_entities': ['climate.new'],
             }
         }
+
+
+async def test_options_flow_no_domains(hass):
+    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
+    await async_setup(hass, {})
+
+    config_entry = _mock_config_entry_with_options_populated({
+        const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT,
+    })
+    config_entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result['type'] == data_entry_flow.RESULT_TYPE_FORM
+    assert result['step_id'] == 'include_domains'
+
+    result = await hass.config_entries.options.async_configure(result['flow_id'], user_input={
+        'domains': []
+    })
+
+    assert result['errors']['base'] == 'domains_not_selected'
 
 
 async def test_options_flow_with_non_existant_entity(hass):

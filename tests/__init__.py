@@ -1,44 +1,36 @@
 """Tests for yandex_smart_home integration."""
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 from unittest.mock import MagicMock
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entityfilter
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import SETTINGS_SCHEMA, const
+from custom_components.yandex_smart_home import DOMAIN, SETTINGS_SCHEMA, const
 from custom_components.yandex_smart_home.helpers import CacheStore, Config, RequestData
 
 
 class MockConfig(Config):
-    # noinspection PyMissingConstructor
     def __init__(self,
                  hass: HomeAssistant | None = None,
                  entry: ConfigEntry | None = None,
                  entity_config: dict[str, Any] | None = None,
-                 should_expose: Callable[[str], bool] = None):
-        """Initialize the configuration."""
-        self._hass = hass
-        self._data = entry.data if entry else {}
-        self._options = entry.options if entry else {}
-        self._should_expose = should_expose
-        self.cache = MockCacheStore()
-        self.entity_config = entity_config or {}
+                 entity_filter: entityfilter.EntityFilter | None = None):
+        entry = entry or MockConfigEntry(
+            domain=DOMAIN,
+            data=SETTINGS_SCHEMA(data={})
+        )
 
-        if not self._data:
-            self._data.update(SETTINGS_SCHEMA(data={}))
-            self._data[const.CONF_CONNECTION_TYPE] = const.CONNECTION_TYPE_DIRECT
-            self._data[const.CONF_DEVICES_DISCOVERED] = True
+        super().__init__(hass, entry, entity_config, entity_filter)
+
+        self.cache = MockCacheStore()
 
     @property
     def is_reporting_state(self) -> bool:
-        """Return if we're actively reporting states."""
         return True
-
-    def should_expose(self, state):
-        """Expose it all."""
-        return self._should_expose is None or self._should_expose(state)
 
     @property
     def beta(self):
@@ -61,8 +53,21 @@ class MockCacheStore(CacheStore):
         self._store = MockStore()
 
 
+def generate_entity_filter(include_entity_globs=None, exclude_entities=None) -> entityfilter.EntityFilter:
+    return entityfilter.EntityFilter({
+        entityfilter.CONF_INCLUDE_DOMAINS: [],
+        entityfilter.CONF_INCLUDE_ENTITY_GLOBS: include_entity_globs or [],
+        entityfilter.CONF_INCLUDE_ENTITIES: [],
+        entityfilter.CONF_EXCLUDE_DOMAINS: [],
+        entityfilter.CONF_EXCLUDE_ENTITY_GLOBS: [],
+        entityfilter.CONF_EXCLUDE_ENTITIES: exclude_entities or [],
+    })
+
+
 REQ_ID = '5ca6622d-97b5-465c-a494-fd9954f7599a'
 
-BASIC_CONFIG = MockConfig()
+BASIC_CONFIG = MockConfig(
+    entity_filter=generate_entity_filter(include_entity_globs=['*'])
+)
 
 BASIC_DATA = RequestData(BASIC_CONFIG, 'test', REQ_ID)

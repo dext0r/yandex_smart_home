@@ -40,7 +40,7 @@ from custom_components.yandex_smart_home.notifier import (
 )
 from custom_components.yandex_smart_home.smart_home import RequestData, async_devices
 
-from . import BASIC_CONFIG, REQ_ID, MockConfig
+from . import BASIC_CONFIG, REQ_ID, MockConfig, generate_entity_filter
 
 
 class MockYandexEntityCallbackState(YandexEntityCallbackState):
@@ -273,7 +273,10 @@ async def test_notifier_event_handler_not_ready(hass, hass_admin_user, entry, mo
     await hass.async_block_till_done()
     mock_call_later.assert_not_called()
 
-    hass.data[DOMAIN][CONFIG] = MockConfig(entry=entry(hass_admin_user, devices_discovered=True))
+    hass.data[DOMAIN][CONFIG] = MockConfig(
+        entry=entry(hass_admin_user, devices_discovered=True),
+        entity_filter=generate_entity_filter(include_entity_globs=['*'])
+    )
     hass.states.async_set(state_switch.entity_id, 'on')
     await hass.async_block_till_done()
     mock_call_later.assert_called_once()
@@ -286,7 +289,6 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
 
     config = MockConfig(
         entry=entry(hass_admin_user, devices_discovered=True),
-        should_expose=lambda e: e != 'sensor.not_expose',
         entity_config={
             'switch.test': {
                 const.CONF_ENTITY_CUSTOM_MODES: {},
@@ -297,7 +299,8 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
                     const.CONF_ENTITY_PROPERTY_ENTITY: 'sensor.humidity'
                 }]
             }
-        }
+        },
+        entity_filter=generate_entity_filter(exclude_entities=['sensor.not_expose'])
     )
     hass.data[DOMAIN] = {
         CONFIG: config,
@@ -467,8 +470,11 @@ async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
 
 
 async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
+    config = MockConfig(
+        entry=_mock_entry_with_direct_connection(hass_admin_user, devices_discovered=True)
+    )
     hass.data[DOMAIN] = {
-        CONFIG: BASIC_CONFIG,
+        CONFIG: config,
         NOTIFIERS: [],
     }
 
@@ -534,8 +540,11 @@ async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
 
 
 async def test_notifier_send_cloud(hass, hass_admin_user, aioclient_mock):
+    config = MockConfig(
+        entry=_mock_entry_with_cloud_connection(hass_admin_user, devices_discovered=True)
+    )
     hass.data[DOMAIN] = {
-        CONFIG: BASIC_CONFIG,
+        CONFIG: config,
         NOTIFIERS: [],
     }
 

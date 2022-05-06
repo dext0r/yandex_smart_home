@@ -19,7 +19,7 @@ from custom_components.yandex_smart_home.smart_home import (
     async_handle_message,
 )
 
-from . import BASIC_DATA, REQ_ID, MockConfig
+from . import BASIC_DATA, REQ_ID, MockConfig, generate_entity_filter
 
 
 async def test_async_handle_message(hass):
@@ -242,7 +242,7 @@ async def test_async_devices(hass):
     hass.states.async_set(sensor.entity_id, sensor.state, sensor.attributes)
 
     config = MockConfig(
-        should_expose=lambda s: s != 'switch.not_expose'
+        entity_filter=generate_entity_filter(exclude_entities=['switch.not_expose'])
     )
     data = RequestData(config, 'test', REQ_ID)
     message = {

@@ -1,10 +1,11 @@
 """Helper classes for Yandex Smart Home integration."""
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, HomeAssistant, callback
+from homeassistant.helpers.entityfilter import EntityFilter
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
@@ -18,15 +19,16 @@ class Config:
     def __init__(self,
                  hass: HomeAssistant,
                  entry: ConfigEntry,
-                 entity_config: dict[str, Any] | None,
-                 should_expose: Callable[[str], bool]):
+                 entity_config: dict[str, Any] | None = None,
+                 entity_filter: EntityFilter | None = None):
         """Initialize the configuration."""
         self._hass = hass
         self._data = entry.data
         self._options = entry.options
+        self._entity_filter = entity_filter
+
         self.cache: CacheStore | None = None
         self.entity_config = entity_config or {}
-        self.should_expose = should_expose
 
     async def async_init(self):
         self.cache = CacheStore(self._hass)
@@ -83,6 +85,12 @@ class Config:
 
     def get_entity_config(self, entity_id: str) -> dict[str, Any]:
         return self.entity_config.get(entity_id, {})
+
+    def should_expose(self, entity_id: str) -> bool:
+        if self._entity_filter and not self._entity_filter.empty_filter:
+            return self._entity_filter(entity_id)
+
+        return False
 
 
 class CacheStore:

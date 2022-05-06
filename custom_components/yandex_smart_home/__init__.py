@@ -146,7 +146,7 @@ YANDEX_SMART_HOME_SCHEMA = vol.All(
     vol.Schema({
         vol.Optional(const.CONF_NOTIFIER, default=[]): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
         vol.Optional(const.CONF_SETTINGS, default={}): vol.All(lambda value: value or {}, SETTINGS_SCHEMA),
-        vol.Optional(const.CONF_FILTER, default={}): BASE_FILTER_SCHEMA,
+        vol.Optional(const.CONF_FILTER): BASE_FILTER_SCHEMA,
         vol.Optional(const.CONF_ENTITY_CONFIG, default={}): vol.All(
             lambda value: value or {},
             {cv.entity_id: ENTITY_SCHEMA}
@@ -192,20 +192,18 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    yaml_config = hass.data[DOMAIN][YAML_CONFIG] or {}
-
-    _async_import_options_from_data_if_missing(hass, entry)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
-    entity_filter = yaml_config.get(const.CONF_FILTER, {})
-    if is_config_filter_empty(entity_filter) and const.CONF_FILTER in entry.options:
-        entity_filter = entry.options[const.CONF_FILTER]
+    yaml_config = hass.data[DOMAIN][YAML_CONFIG] or {}
+
+    entity_config = yaml_config.get(const.CONF_ENTITY_CONFIG)
+    entity_filter_config = yaml_config.get(const.CONF_FILTER, entry.options.get(const.CONF_FILTER))
 
     config = Config(
         hass=hass,
         entry=entry,
-        should_expose=FILTER_SCHEMA(entity_filter),
-        entity_config=yaml_config.get(const.CONF_ENTITY_CONFIG, {})
+        entity_config=entity_config,
+        entity_filter=FILTER_SCHEMA(entity_filter_config) if entity_filter_config else None
     )
     await config.async_init()
     hass.data[DOMAIN][CONFIG] = config
@@ -274,33 +272,9 @@ def _get_config_entry_data_from_yaml(data: dict, yaml_config: ConfigType | None)
 
 
 @callback
-def _async_import_options_from_data_if_missing(hass: HomeAssistant, entry: ConfigEntry):
-    options = dict(entry.options)
-    data = dict(entry.data)
-    modified = False
-
-    for option in [const.CONF_FILTER]:
-        if option not in entry.options and option in entry.data:
-            options[option] = entry.data[option]
-            del data[option]
-            modified = True
-
-    if modified:
-        hass.config_entries.async_update_entry(entry, data=data, options=options)
-
-
-@callback
 def _update_config_entries(hass: HomeAssistant):
     for entry in hass.config_entries.async_entries(DOMAIN):
         hass.config_entries.async_update_entry(
             entry,
             data=_get_config_entry_data_from_yaml(entry.data, hass.data[DOMAIN][YAML_CONFIG])
         )
-
-
-def is_config_filter_empty(config_filter: ConfigType) -> bool:
-    for entities in config_filter.values():
-        if entities:
-            return False
-
-    return True

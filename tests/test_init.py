@@ -154,27 +154,6 @@ yandex_smart_home:
         assert hass.data[DOMAIN][CONFIG].should_expose('climate.test') is False
 
 
-async def test_async_setup_entry_import_options(hass):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            const.CONF_FILTER: {
-                'include_domains': ['media_player'],
-            },
-        },
-    )
-    entry.add_to_hass(hass)
-
-    assert await async_setup(hass, {})
-    assert await async_setup_entry(hass, entry)
-
-    assert const.CONF_FILTER not in entry.data
-    assert const.CONF_FILTER in entry.options
-    assert len(entry.options[const.CONF_FILTER]['include_domains']) == 1
-
-
 async def test_async_setup_entry_cloud(hass, config_entry_cloud_connection):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 

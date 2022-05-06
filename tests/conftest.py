@@ -6,6 +6,7 @@ from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.demo.sensor import DemoSensor
 from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
 from homeassistant.const import DEVICE_CLASS_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.helpers import entityfilter
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -22,7 +23,14 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 
 @pytest.fixture
 def config_entry():
-    return MockConfigEntry(domain=DOMAIN)
+    return MockConfigEntry(
+        domain=DOMAIN,
+        options={
+            const.CONF_FILTER: {
+                entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ['*']
+            }
+        }
+    )
 
 
 @pytest.fixture
@@ -43,6 +51,10 @@ def config_entry_cloud_connection():
             const.CONF_CLOUD_INSTANCE_ID: 'test',
             const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: 'foo',
 
+        }
+    }, options={
+        const.CONF_FILTER: {
+            entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ['*']
         }
     })
 
