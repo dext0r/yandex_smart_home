@@ -113,20 +113,30 @@ class OptionsFlowHandler(OptionsFlow):
         self._data = dict(entry.data)
 
     async def async_step_init(self, _: ConfigType | None = None) -> data_entry_flow.FlowResult:
-        return await self.async_step_include_domains()
+        options = ['filter_domains']
+        if self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
+            options += ['cloud_settings', 'cloud_info']
 
-    async def async_step_include_domains(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+        return self.async_show_menu(step_id='menu', menu_options=options)
+
+    async def async_step_filter_yaml(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+        if user_input is not None:
+            return await self.async_step_init()
+
+        return self.async_show_form(step_id='filter_yaml')
+
+    async def async_step_filter_domains(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         errors = {}
         yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
 
         if yaml_config and yaml_config.get(const.CONF_FILTER):
-            return await self.async_step_include_domains_yaml()
+            return await self.async_step_filter_yaml()
 
         if user_input is not None:
             domains = user_input[CONF_DOMAINS]
             if domains:
                 self._options.update(user_input)
-                return await self.async_step_include_exclude()
+                return await self.async_step_filter_entities()
             else:
                 errors['base'] = 'domains_not_selected'
         else:
@@ -139,21 +149,14 @@ class OptionsFlowHandler(OptionsFlow):
         name_to_type_map = await _async_name_to_type_map(self.hass)
 
         return self.async_show_form(
-            step_id='include_domains',
+            step_id='filter_domains',
             data_schema=vol.Schema({
                 vol.Required(CONF_DOMAINS, default=sorted(domains)): cv.multi_select(name_to_type_map)
             }),
             errors=errors
         )
 
-    async def async_step_include_domains_yaml(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
-        if user_input is not None:
-            return await self.async_step_cloud_settings()
-
-        return self.async_show_form(step_id='include_domains_yaml')
-
-    async def async_step_include_exclude(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
-        """Choose entities to include or exclude from the domain."""
+    async def async_step_filter_entities(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         if user_input is not None:
             entity_filter = _EMPTY_ENTITY_FILTER.copy()
             entities = user_input[CONF_ENTITIES]
@@ -179,7 +182,7 @@ class OptionsFlowHandler(OptionsFlow):
                 if key in self._options:
                     del self._options[key]
 
-            return await self.async_step_cloud_settings()
+            return await self.async_step_done()
 
         entity_filter = self._options.get(const.CONF_FILTER, _EMPTY_ENTITY_FILTER)
         all_supported_entities = _async_get_matching_entities(self.hass, domains=self._options[CONF_DOMAINS])
@@ -197,7 +200,7 @@ class OptionsFlowHandler(OptionsFlow):
         ]
 
         return self.async_show_form(
-            step_id='include_exclude',
+            step_id='filter_entities',
             data_schema=vol.Schema({
                 vol.Required(CONF_INCLUDE_EXCLUDE_MODE, default=include_exclude_mode): vol.In(INCLUDE_EXCLUDE_MODES),
                 vol.Optional(CONF_ENTITIES, default=sorted(entities)): cv.multi_select(all_supported_entities)
@@ -205,12 +208,9 @@ class OptionsFlowHandler(OptionsFlow):
         )
 
     async def async_step_cloud_settings(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
-        if self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_DIRECT:
-            return await self.async_step_done()
-
         if user_input is not None:
             self._options.update(user_input)
-            return await self.async_step_cloud_info()
+            return await self.async_step_done()
 
         return self.async_show_form(step_id='cloud_settings', data_schema=vol.Schema({
             vol.Required(const.CONF_USER_ID, default=self._options.get(const.CONF_USER_ID)): vol.In(
@@ -220,7 +220,7 @@ class OptionsFlowHandler(OptionsFlow):
 
     async def async_step_cloud_info(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         if user_input is not None:
-            return await self.async_step_done()
+            return await self.async_step_init()
 
         instance = self._data[const.CONF_CLOUD_INSTANCE]
         return self.async_show_form(step_id='cloud_info', description_placeholders={
