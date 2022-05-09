@@ -1,2 +1,2 @@
-git+https://github.com/dext0r/pytest-homeassistant-custom-component@2022.5.1 # https://github.com/MatthewFlamm/pytest-homeassistant-custom-component/issues/115
+pytest-homeassistant-custom-component==0.9.0  # 2022.5.2
 aiohttp-cors==0.7.0

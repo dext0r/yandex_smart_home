@@ -42,7 +42,7 @@ jobs:
       matrix:
         include:
           - ha-version: '2022.5'
-            pytest-component-version: 2022.5.1
+            pytest-component-version: 0.9.0
             latest: true
     steps:
       - uses: actions/checkout@v2
@@ -55,14 +55,6 @@ jobs:
         run: |
           pip install pytest-homeassistant-custom-component==${{ matrix.pytest-component-version }} \
                       aiohttp-cors==0.7.0
-        if: ${{ !contains(matrix.pytest-component-version, '2022') }}
-
-      # https://github.com/MatthewFlamm/pytest-homeassistant-custom-component/issues/115
-      - name: Install dependencies
-        run: |
-          pip install git+https://github.com/dext0r/pytest-homeassistant-custom-component@${{ matrix.pytest-component-version }} \
-                      aiohttp-cors==0.7.0
-        if: ${{ contains(matrix.pytest-component-version, '2022') }}
 
       - name: Test with pytest
         run: |
