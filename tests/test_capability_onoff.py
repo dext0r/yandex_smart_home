@@ -104,7 +104,7 @@ async def test_capability_onoff_only_on(hass, domain, initial_state, service):
 
 async def test_capability_onoff_cover(hass):
     state_open = State('cover.test', cover.STATE_OPEN,
-                       attributes={ATTR_SUPPORTED_FEATURES: cover.SUPPORT_SET_POSITION})
+                       attributes={ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION})
     cap_open = get_exact_one_capability(hass, BASIC_CONFIG, state_open, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
     assert cap_open.retrievable
@@ -123,7 +123,7 @@ async def test_capability_onoff_cover(hass):
 
     for state in [cover.STATE_CLOSED, cover.STATE_CLOSING, cover.STATE_OPENING]:
         state_other = State('cover.test', state,
-                            attributes={ATTR_SUPPORTED_FEATURES: cover.SUPPORT_SET_POSITION})
+                            attributes={ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION})
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state_other, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
         assert not cap.get_value()
@@ -153,7 +153,7 @@ async def test_capability_onoff_media_player(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
     state = State('media_player.only_on', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_TURN_OFF
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.TURN_OFF
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert cap.retrievable
@@ -167,14 +167,15 @@ async def test_capability_onoff_media_player(hass):
         }
     )
     state_binary = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_TURN_OFF
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.TURN_OFF
     })
     cap_binary = get_exact_one_capability(hass, config, state_binary, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert not cap_binary.retrievable
     assert cap_binary.parameters() == {'split': True}
 
     state = State('media_player.test', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_TURN_ON | media_player.SUPPORT_TURN_OFF
+        ATTR_SUPPORTED_FEATURES:
+            media_player.MediaPlayerEntityFeature.TURN_ON | media_player.MediaPlayerEntityFeature.TURN_OFF
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert cap.retrievable
@@ -228,7 +229,7 @@ async def test_capability_onoff_lock(hass):
 async def test_capability_onoff_vacuum(hass):
     for s in [STATE_ON, vacuum.STATE_CLEANING]:
         state = State('vacuum.test', s, attributes={
-            ATTR_SUPPORTED_FEATURES: vacuum.SUPPORT_START | vacuum.SUPPORT_STOP
+            ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.STOP
         })
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
         assert cap.get_value()
@@ -239,7 +240,7 @@ async def test_capability_onoff_vacuum(hass):
         if s == vacuum.STATE_CLEANING:
             continue
         state = State('vacuum.test', s, attributes={
-            ATTR_SUPPORTED_FEATURES: vacuum.SUPPORT_START | vacuum.SUPPORT_STOP
+            ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.STOP
         })
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
         assert not cap.get_value()
@@ -248,11 +249,11 @@ async def test_capability_onoff_vacuum(hass):
 @pytest.mark.parametrize(
     'features,supported', [
         (0, False),
-        (vacuum.SUPPORT_START, False),
-        (vacuum.SUPPORT_START | vacuum.SUPPORT_RETURN_HOME, True),
-        (vacuum.SUPPORT_START | vacuum.SUPPORT_STOP, True),
-        (vacuum.SUPPORT_TURN_ON, False),
-        (vacuum.SUPPORT_TURN_ON | vacuum.SUPPORT_TURN_OFF, True),
+        (vacuum.VacuumEntityFeature.START, False),
+        (vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.RETURN_HOME, True),
+        (vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.STOP, True),
+        (vacuum.VacuumEntityFeature.TURN_ON, False),
+        (vacuum.VacuumEntityFeature.TURN_ON | vacuum.VacuumEntityFeature.TURN_OFF, True),
     ]
 )
 async def test_capability_onoff_vacuum_supported(hass, features, supported):
@@ -264,10 +265,12 @@ async def test_capability_onoff_vacuum_supported(hass, features, supported):
 
 @pytest.mark.parametrize(
     'features,service', [
-        (vacuum.SUPPORT_START | vacuum.SUPPORT_RETURN_HOME, vacuum.SERVICE_START),
-        (vacuum.SUPPORT_START | vacuum.SUPPORT_STOP | vacuum.SUPPORT_RETURN_HOME, vacuum.SERVICE_START),
-        (vacuum.SUPPORT_START | vacuum.SUPPORT_STOP, vacuum.SERVICE_START),
-        (vacuum.SUPPORT_TURN_ON | vacuum.SUPPORT_TURN_OFF, vacuum.SERVICE_TURN_ON),
+        (vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.RETURN_HOME, vacuum.SERVICE_START),
+        (vacuum.VacuumEntityFeature.START |
+         vacuum.VacuumEntityFeature.STOP |
+         vacuum.VacuumEntityFeature.RETURN_HOME, vacuum.SERVICE_START),
+        (vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.STOP, vacuum.SERVICE_START),
+        (vacuum.VacuumEntityFeature.TURN_ON | vacuum.VacuumEntityFeature.TURN_OFF, vacuum.SERVICE_TURN_ON),
     ]
 )
 async def test_capability_onoff_vacuum_turn_on(hass, features, service):
@@ -284,10 +287,12 @@ async def test_capability_onoff_vacuum_turn_on(hass, features, service):
 
 @pytest.mark.parametrize(
     'features,service', [
-        (vacuum.SUPPORT_START | vacuum.SUPPORT_RETURN_HOME, vacuum.SERVICE_RETURN_TO_BASE),
-        (vacuum.SUPPORT_START | vacuum.SUPPORT_STOP | vacuum.SUPPORT_RETURN_HOME, vacuum.SERVICE_RETURN_TO_BASE),
-        (vacuum.SUPPORT_START | vacuum.SUPPORT_STOP, vacuum.SERVICE_STOP),
-        (vacuum.SUPPORT_TURN_ON | vacuum.SUPPORT_TURN_OFF, vacuum.SERVICE_TURN_OFF),
+        (vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.RETURN_HOME, vacuum.SERVICE_RETURN_TO_BASE),
+        (vacuum.VacuumEntityFeature.START |
+         vacuum.VacuumEntityFeature.STOP |
+         vacuum.VacuumEntityFeature.RETURN_HOME, vacuum.SERVICE_RETURN_TO_BASE),
+        (vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.STOP, vacuum.SERVICE_STOP),
+        (vacuum.VacuumEntityFeature.TURN_ON | vacuum.VacuumEntityFeature.TURN_OFF, vacuum.SERVICE_TURN_OFF),
     ]
 )
 async def test_capability_onoff_vacuum_turn_off(hass, features, service):
@@ -304,7 +309,7 @@ async def test_capability_onoff_vacuum_turn_off(hass, features, service):
 
 async def test_capability_onoff_climate(hass):
     for s in climate.const.HVAC_MODES:
-        if s == climate.const.HVAC_MODE_OFF:
+        if s == climate.HVACMode.OFF:
             continue
 
         state = State('climate.test', s)
@@ -326,13 +331,13 @@ async def test_capability_onoff_climate(hass):
 @pytest.mark.parametrize(
     'hvac_modes,service,service_hvac_mode', [
         ([], SERVICE_TURN_ON, None),
-        ([climate.const.HVAC_MODE_COOL], SERVICE_TURN_ON, None),
-        ([climate.const.HVAC_MODE_AUTO, climate.const.HVAC_MODE_COOL],
-         climate.SERVICE_SET_HVAC_MODE, climate.const.HVAC_MODE_AUTO),
-        ([climate.const.HVAC_MODE_HEAT_COOL, climate.const.HVAC_MODE_COOL],
-         climate.SERVICE_SET_HVAC_MODE, climate.const.HVAC_MODE_HEAT_COOL),
-        ([climate.const.HVAC_MODE_HEAT_COOL, climate.const.HVAC_MODE_AUTO, climate.const.HVAC_MODE_COOL],
-         climate.SERVICE_SET_HVAC_MODE, climate.const.HVAC_MODE_HEAT_COOL),
+        ([climate.HVACMode.COOL], SERVICE_TURN_ON, None),
+        ([climate.HVACMode.AUTO, climate.HVACMode.COOL],
+         climate.SERVICE_SET_HVAC_MODE, climate.HVACMode.AUTO),
+        ([climate.HVACMode.HEAT_COOL, climate.HVACMode.COOL],
+         climate.SERVICE_SET_HVAC_MODE, climate.HVACMode.HEAT_COOL),
+        ([climate.HVACMode.HEAT_COOL, climate.HVACMode.AUTO, climate.HVACMode.COOL],
+         climate.SERVICE_SET_HVAC_MODE, climate.HVACMode.HEAT_COOL),
     ]
 )
 async def test_capability_onoff_climate_turn_on(hass, hvac_modes, service, service_hvac_mode):
@@ -449,7 +454,7 @@ async def test_capability_onoff_water_heater(hass):
 @pytest.mark.parametrize('op_off', ['off', 'Off', 'OFF'])
 async def test_capability_onoff_water_heater_set_op_mode(hass, op_on, op_off):
     state = State('water_heater.test', op_on, {
-        ATTR_SUPPORTED_FEATURES: water_heater.SUPPORT_OPERATION_MODE,
+        ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.OPERATION_MODE,
         water_heater.ATTR_OPERATION_LIST: [op_on, op_off],
         water_heater.ATTR_OPERATION_MODE: op_on,
     })
@@ -460,7 +465,7 @@ async def test_capability_onoff_water_heater_set_op_mode(hass, op_on, op_off):
     assert bool(cap.get_value())
 
     state = State('water_heater.test', op_off, {
-        ATTR_SUPPORTED_FEATURES: water_heater.SUPPORT_OPERATION_MODE,
+        ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.OPERATION_MODE,
         water_heater.ATTR_OPERATION_LIST: [op_on, op_off],
         water_heater.ATTR_OPERATION_MODE: op_off,
     })
@@ -482,7 +487,7 @@ async def test_capability_onoff_water_heater_set_op_mode(hass, op_on, op_off):
 
 async def test_capability_onoff_water_heater_set_unsupported_op_mode(hass):
     state = State('water_heater.test', 'foo', {
-        ATTR_SUPPORTED_FEATURES: water_heater.SUPPORT_OPERATION_MODE,
+        ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.OPERATION_MODE,
         water_heater.ATTR_OPERATION_LIST: ['foo', 'bar'],
         water_heater.ATTR_OPERATION_MODE: 'foo'
     })

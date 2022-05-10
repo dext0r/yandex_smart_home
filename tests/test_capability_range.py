@@ -131,7 +131,7 @@ async def test_capability_range_cover(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_OPEN)
 
     state = State('cover.test', cover.STATE_OPEN, {
-        ATTR_SUPPORTED_FEATURES: cover.SUPPORT_SET_POSITION
+        ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_OPEN)
     assert cap.retrievable
@@ -149,7 +149,7 @@ async def test_capability_range_cover(hass):
     assert cap.get_value() is None
 
     state = State('cover.test', cover.STATE_OPEN, {
-        ATTR_SUPPORTED_FEATURES: cover.SUPPORT_SET_POSITION,
+        ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION,
         cover.ATTR_CURRENT_POSITION: '30',
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_OPEN)
@@ -176,7 +176,7 @@ async def test_capability_range_temperature_climate(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_TEMPERATURE)
 
     state = State('climate.test', climate.STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: climate.SUPPORT_TARGET_TEMPERATURE,
+        ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.TARGET_TEMPERATURE,
         climate.ATTR_MIN_TEMP: 10,
         climate.ATTR_MAX_TEMP: 25,
         climate.ATTR_TARGET_TEMP_STEP: 1,
@@ -197,7 +197,7 @@ async def test_capability_range_temperature_climate(hass):
     assert not cap.get_value()
 
     state = State('climate.test', climate.HVAC_MODE_HEAT_COOL, {
-        ATTR_SUPPORTED_FEATURES: climate.SUPPORT_TARGET_TEMPERATURE,
+        ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.TARGET_TEMPERATURE,
         climate.ATTR_MIN_TEMP: 12,
         climate.ATTR_MAX_TEMP: 27,
         climate.ATTR_TEMPERATURE: 23.5
@@ -241,7 +241,7 @@ async def test_capability_range_temperature_water_heater(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_TEMPERATURE)
 
     state = State('water_heater.test', water_heater.STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: water_heater.SUPPORT_TARGET_TEMPERATURE,
+        ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.TARGET_TEMPERATURE,
         water_heater.ATTR_MIN_TEMP: 30,
         water_heater.ATTR_MAX_TEMP: 90,
     })
@@ -261,7 +261,7 @@ async def test_capability_range_temperature_water_heater(hass):
     assert not cap.get_value()
 
     state = State('water_heater.test', water_heater.STATE_ELECTRIC, {
-        ATTR_SUPPORTED_FEATURES: water_heater.SUPPORT_TARGET_TEMPERATURE,
+        ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.TARGET_TEMPERATURE,
         water_heater.ATTR_MIN_TEMP: 30,
         water_heater.ATTR_MAX_TEMP: 90,
         water_heater.ATTR_TEMPERATURE: 50
@@ -467,8 +467,8 @@ async def test_capability_range_volume(hass):
 
 
 @pytest.mark.parametrize('features', [
-    media_player.SUPPORT_VOLUME_SET,
-    media_player.SUPPORT_VOLUME_SET | media_player.SUPPORT_VOLUME_STEP,
+    media_player.MediaPlayerEntityFeature.VOLUME_SET,
+    media_player.MediaPlayerEntityFeature.VOLUME_SET | media_player.MediaPlayerEntityFeature.VOLUME_STEP,
 ])
 async def test_capability_range_volume_support_random(hass, features):
     state = State('media_player.test', STATE_OFF)
@@ -520,7 +520,7 @@ async def test_capability_range_volume_support_random(hass, features):
 @pytest.mark.parametrize('precision', [2, 10, None])
 async def test_capability_range_volume_only_relative(hass, precision):
     state = State('media_player.test', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_VOLUME_STEP
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_STEP
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_VOLUME)
     assert not cap.support_random_access
@@ -587,7 +587,7 @@ async def test_capability_range_channel_via_features(hass):
 
 async def test_capability_range_channel_set_via_config(hass):
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
         ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
     })
     config = MockConfig(
@@ -601,9 +601,9 @@ async def test_capability_range_channel_set_via_config(hass):
 
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES:
-            media_player.SUPPORT_PLAY_MEDIA |
-            media_player.SUPPORT_PREVIOUS_TRACK |
-            media_player.SUPPORT_NEXT_TRACK,
+            media_player.MediaPlayerEntityFeature.PLAY_MEDIA |
+            media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK |
+            media_player.MediaPlayerEntityFeature.NEXT_TRACK,
         ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
     })
 
@@ -614,14 +614,14 @@ async def test_capability_range_channel_set_via_config(hass):
 
 async def test_capability_range_channel_set_random(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
     assert cap.retrievable is False
     assert cap.support_random_access is False
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
         ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_RECEIVER
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
@@ -629,7 +629,7 @@ async def test_capability_range_channel_set_random(hass, caplog):
     assert cap.support_random_access is False
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
         ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
@@ -667,7 +667,7 @@ async def test_capability_range_channel_set_random(hass, caplog):
 
 async def test_capability_range_channel_set_not_supported(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
         ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
@@ -683,7 +683,7 @@ async def test_capability_range_channel_set_not_supported(hass, caplog):
 
 async def test_capability_range_channel_set_random_with_value(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
         ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV,
         media_player.ATTR_MEDIA_CONTENT_ID: 15,
         media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
@@ -721,7 +721,7 @@ async def test_capability_range_channel_set_random_with_value(hass, caplog):
 
 async def test_capability_range_channel_value(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
         media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
         media_player.ATTR_MEDIA_CONTENT_ID: '5'
     })
@@ -729,7 +729,7 @@ async def test_capability_range_channel_value(hass, caplog):
     assert cap.get_value() == 5
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
         media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_CLASS_ALBUM,
         media_player.ATTR_MEDIA_CONTENT_ID: '5'
     })
@@ -737,7 +737,7 @@ async def test_capability_range_channel_value(hass, caplog):
     assert cap.get_value() is None
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PLAY_MEDIA,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
         media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
         media_player.ATTR_MEDIA_CONTENT_ID: 'foo'
     })
@@ -747,13 +747,15 @@ async def test_capability_range_channel_value(hass, caplog):
 
 
 @pytest.mark.parametrize('features', [
-    media_player.SUPPORT_PREVIOUS_TRACK | media_player.SUPPORT_NEXT_TRACK,
-    media_player.SUPPORT_PREVIOUS_TRACK | media_player.SUPPORT_NEXT_TRACK | media_player.SUPPORT_PLAY_MEDIA
+    media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK | media_player.MediaPlayerEntityFeature.NEXT_TRACK,
+    media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK |
+    media_player.MediaPlayerEntityFeature.NEXT_TRACK |
+    media_player.MediaPlayerEntityFeature.PLAY_MEDIA
 ])
 @pytest.mark.parametrize('device_class', [media_player.DEVICE_CLASS_TV, media_player.DEVICE_CLASS_RECEIVER])
 async def test_capability_range_channel_set_relative(hass, features, device_class):
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PREVIOUS_TRACK
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK
     })
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
 
@@ -763,8 +765,8 @@ async def test_capability_range_channel_set_relative(hass, features, device_clas
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
     if device_class == media_player.DEVICE_CLASS_TV:
-        assert cap.retrievable is bool(features & media_player.SUPPORT_PLAY_MEDIA)
-        assert cap.support_random_access is bool(features & media_player.SUPPORT_PLAY_MEDIA)
+        assert cap.retrievable is bool(features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA)
+        assert cap.support_random_access is bool(features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA)
     else:
         assert not cap.retrievable
         assert not cap.support_random_access

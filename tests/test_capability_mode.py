@@ -199,14 +199,14 @@ async def test_capability_mode_thermostat(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_THERMOSTAT)
 
     state = State('climate.test', STATE_OFF, {
-        climate.ATTR_HVAC_MODES: [climate.HVAC_MODE_HEAT_COOL, climate.const.HVAC_MODE_FAN_ONLY, climate.HVAC_MODE_OFF]
+        climate.ATTR_HVAC_MODES: [climate.HVAC_MODE_HEAT_COOL, climate.HVACMode.FAN_ONLY, climate.HVAC_MODE_OFF]
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_THERMOSTAT)
     assert cap.retrievable
     assert cap.parameters() == {'instance': 'thermostat', 'modes': [{'value': 'auto'}, {'value': 'fan_only'}]}
     assert not cap.get_value()
 
-    cap.state.state = climate.const.HVAC_MODE_FAN_ONLY
+    cap.state.state = climate.HVACMode.FAN_ONLY
     assert cap.get_value() == 'fan_only'
 
     calls = async_mock_service(hass, climate.DOMAIN, climate.SERVICE_SET_HVAC_MODE)
@@ -220,7 +220,7 @@ async def test_capability_mode_swing(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_SWING)
 
     state = State('climate.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: climate.SUPPORT_SWING_MODE,
+        ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.SWING_MODE,
         climate.ATTR_SWING_MODES: ['lr', 'ud']
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_SWING)
@@ -229,7 +229,7 @@ async def test_capability_mode_swing(hass):
     assert not cap.get_value()
 
     state = State('climate.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: climate.SUPPORT_SWING_MODE,
+        ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.SWING_MODE,
         climate.ATTR_SWING_MODES: ['lr', 'ud'],
         climate.ATTR_SWING_MODE: 'ud'
     })
@@ -247,7 +247,7 @@ async def test_capability_mode_program_humidifier(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_PROGRAM)
 
     state = State('humidifier.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: humidifier.SUPPORT_MODES,
+        ATTR_SUPPORTED_FEATURES: humidifier.HumidifierEntityFeature.MODES,
         humidifier.ATTR_AVAILABLE_MODES: ['Idle', 'Middle']
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_PROGRAM)
@@ -256,7 +256,7 @@ async def test_capability_mode_program_humidifier(hass):
     assert not cap.get_value()
 
     state = State('humidifier.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: humidifier.SUPPORT_MODES,
+        ATTR_SUPPORTED_FEATURES: humidifier.HumidifierEntityFeature.MODES,
         humidifier.ATTR_AVAILABLE_MODES: ['Idle', 'Middle'],
         humidifier.ATTR_MODE: 'Idle'
     })
@@ -274,13 +274,13 @@ async def test_capability_mode_program_fan(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_PROGRAM)
 
     state = State('fan.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_PRESET_MODE | fan.SUPPORT_SET_SPEED,
+        ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.PRESET_MODE | fan.FanEntityFeature.SET_SPEED,
         fan.ATTR_PRESET_MODES: ['Nature', 'Normal']
     })
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_PROGRAM)
 
     state = State('fan.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_PRESET_MODE | fan.SUPPORT_SET_SPEED,
+        ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.PRESET_MODE | fan.FanEntityFeature.SET_SPEED,
         fan.ATTR_PERCENTAGE_STEP: 50,
         fan.ATTR_PRESET_MODES: ['Nature', 'Normal']
     })
@@ -290,7 +290,7 @@ async def test_capability_mode_program_fan(hass):
     assert not cap.get_value()
 
     state = State('fan.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_PRESET_MODE | fan.SUPPORT_SET_SPEED,
+        ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.PRESET_MODE | fan.FanEntityFeature.SET_SPEED,
         fan.ATTR_PERCENTAGE_STEP: 50,
         fan.ATTR_PRESET_MODES: ['Nature', 'Normal'],
         fan.ATTR_PRESET_MODE: 'Nature'
@@ -309,14 +309,14 @@ async def test_capability_mode_input_source(hass, caplog):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
         media_player.ATTR_INPUT_SOURCE_LIST: [f's{i}' for i in range(1, 15)]
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
     assert len(cap.supported_yandex_modes) == 10
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
         media_player.ATTR_INPUT_SOURCE_LIST: ['s1', 's2', 's3']
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
@@ -328,7 +328,7 @@ async def test_capability_mode_input_source(hass, caplog):
     assert not cap.get_value()
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
         media_player.ATTR_INPUT_SOURCE_LIST: ['s1', 's2', 's3'],
         media_player.ATTR_INPUT_SOURCE: 'test'
     })
@@ -337,7 +337,7 @@ async def test_capability_mode_input_source(hass, caplog):
     assert len(caplog.records) == 0
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
         media_player.ATTR_INPUT_SOURCE_LIST: ['s1', 's2', 's3'],
         media_player.ATTR_INPUT_SOURCE: 's2'
     })
@@ -353,39 +353,39 @@ async def test_capability_mode_input_source(hass, caplog):
 @pytest.mark.parametrize('off_state', [STATE_OFF, STATE_UNKNOWN])
 async def test_capability_mode_input_source_cache(hass, off_state):
     state = State('media_player.test', off_state, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
         media_player.ATTR_INPUT_SOURCE_LIST: ['s1', 's2', 's3']
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
     assert cap.supported_ha_modes == ['s1', 's2', 's3']
 
     state = State('media_player.test', off_state, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
         media_player.ATTR_INPUT_SOURCE_LIST: []
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
     assert cap.supported_ha_modes == ['s1', 's2', 's3']
 
     state = State('media_player.test', off_state, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
     assert cap.supported_ha_modes == ['s1', 's2', 's3']
 
     state = State('media_player.test', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
     })
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
 
     state = State('media_player.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_SELECT_SOURCE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
     })
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
 
 
 @pytest.mark.parametrize('features', [
-    fan.SUPPORT_SET_SPEED | fan.SUPPORT_PRESET_MODE,
-    fan.SUPPORT_SET_SPEED
+    fan.FanEntityFeature.SET_SPEED | fan.FanEntityFeature.PRESET_MODE,
+    fan.FanEntityFeature.SET_SPEED
 ])
 async def test_capability_mode_fan_speed_fan_via_percentage(hass, features):
     state = State('fan.test', STATE_OFF, {
@@ -452,8 +452,8 @@ async def test_capability_mode_fan_speed_fan_via_percentage(hass, features):
 
 
 @pytest.mark.parametrize('features', [
-    fan.SUPPORT_SET_SPEED | fan.SUPPORT_PRESET_MODE,
-    fan.SUPPORT_SET_SPEED
+    fan.FanEntityFeature.SET_SPEED | fan.FanEntityFeature.PRESET_MODE,
+    fan.FanEntityFeature.SET_SPEED
 ])
 async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, features):
     state = State('fan.test', STATE_OFF, {
@@ -518,8 +518,8 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
 
 
 @pytest.mark.parametrize('features', [
-    fan.SUPPORT_SET_SPEED | fan.SUPPORT_PRESET_MODE,
-    fan.SUPPORT_PRESET_MODE
+    fan.FanEntityFeature.SET_SPEED | fan.FanEntityFeature.PRESET_MODE,
+    fan.FanEntityFeature.PRESET_MODE
 ])
 async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
     state = State('fan.test', STATE_OFF, {
@@ -559,7 +559,7 @@ async def test_capability_mode_fan_speed_climate(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
 
     state = State('climate.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: climate.SUPPORT_FAN_MODE,
+        ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.FAN_MODE,
         climate.ATTR_FAN_MODES: ['3', '2'],
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_FAN_SPEED)
@@ -571,7 +571,7 @@ async def test_capability_mode_fan_speed_climate(hass):
     assert not cap.get_value()
 
     state = State('climate.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: climate.SUPPORT_FAN_MODE,
+        ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.FAN_MODE,
         climate.ATTR_FAN_MODES: ['3', '2'],
         climate.ATTR_FAN_MODE:  '3',
     })
@@ -589,7 +589,7 @@ async def test_capability_mode_cleanup_mode(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_CLEANUP_MODE)
 
     state = State('vacuum.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: vacuum.SUPPORT_FAN_SPEED,
+        ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.FAN_SPEED,
         vacuum.ATTR_FAN_SPEED_LIST: ['gentle', 'mop'],
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_CLEANUP_MODE)
@@ -601,7 +601,7 @@ async def test_capability_mode_cleanup_mode(hass):
     assert not cap.get_value()
 
     state = State('vacuum.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: vacuum.SUPPORT_FAN_SPEED,
+        ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.FAN_SPEED,
         vacuum.ATTR_FAN_SPEED_LIST: ['gentle', 'mop'],
         vacuum.ATTR_FAN_SPEED: 'mop'
     })

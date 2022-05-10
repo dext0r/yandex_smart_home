@@ -29,7 +29,7 @@ async def test_capability_mute(hass):
     assert_exact_one_capability(hass, config, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_MUTE)
 
     state = State('media_player.test', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_VOLUME_MUTE
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_MUTE
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_MUTE)
 
@@ -47,7 +47,7 @@ async def test_capability_mute(hass):
     assert calls[1].data[media_player.ATTR_MEDIA_VOLUME_MUTED] is False
 
     state = State('media_player.test', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_VOLUME_MUTE,
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_MUTE,
         media_player.ATTR_MEDIA_VOLUME_MUTED: True
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_MUTE)
@@ -70,7 +70,8 @@ async def test_capability_pause_media_player(hass):
 
     for s in [media_player.STATE_IDLE, media_player.STATE_OFF]:
         state = State('media_player.test', s, {
-            ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PAUSE | media_player.SUPPORT_PLAY
+            ATTR_SUPPORTED_FEATURES:
+                media_player.MediaPlayerEntityFeature.PAUSE | media_player.MediaPlayerEntityFeature.PLAY
         })
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
         assert cap.retrievable
@@ -78,7 +79,8 @@ async def test_capability_pause_media_player(hass):
         assert cap.get_value() is True
 
     state = State('media_player.test', media_player.STATE_PLAYING, {
-        ATTR_SUPPORTED_FEATURES: media_player.SUPPORT_PAUSE | media_player.SUPPORT_PLAY
+        ATTR_SUPPORTED_FEATURES:
+            media_player.MediaPlayerEntityFeature.PAUSE | media_player.MediaPlayerEntityFeature.PLAY
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
     assert cap.get_value() is False
@@ -100,7 +102,7 @@ async def test_capability_pause_cover(hass):
 
     for s in [cover.STATE_OPEN, cover.STATE_CLOSED, cover.STATE_CLOSING, cover.STATE_CLOSING]:
         state = State('cover.test', s, {
-            ATTR_SUPPORTED_FEATURES: cover.SUPPORT_STOP
+            ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.STOP
         })
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
         assert cap.retrievable
@@ -121,7 +123,7 @@ async def test_capability_pause_vacuum(hass):
 
     for s in vacuum.STATES:
         state = State('vacuum.test', s, {
-            ATTR_SUPPORTED_FEATURES: vacuum.SUPPORT_PAUSE
+            ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.PAUSE
         })
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
         assert cap.retrievable
@@ -129,7 +131,7 @@ async def test_capability_pause_vacuum(hass):
         assert cap.get_value() is False
 
     state = State('vacuum.test', vacuum.STATE_PAUSED, {
-        ATTR_SUPPORTED_FEATURES: vacuum.SUPPORT_PAUSE
+        ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.PAUSE
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
     assert cap.get_value() is True
@@ -150,7 +152,7 @@ async def test_capability_oscillation(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_OSCILLATION)
 
     state = State('fan.test', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_OSCILLATE
+        ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.OSCILLATE
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_OSCILLATION)
     assert cap.retrievable
@@ -158,14 +160,14 @@ async def test_capability_oscillation(hass):
     assert cap.get_value() is False
 
     state = State('fan.test', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_OSCILLATE,
+        ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.OSCILLATE,
         fan.ATTR_OSCILLATING: True
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_OSCILLATION)
     assert cap.get_value() is True
 
     state = State('fan.test', STATE_ON, {
-        ATTR_SUPPORTED_FEATURES: fan.SUPPORT_OSCILLATE,
+        ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.OSCILLATE,
         fan.ATTR_OSCILLATING: False
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_OSCILLATION)

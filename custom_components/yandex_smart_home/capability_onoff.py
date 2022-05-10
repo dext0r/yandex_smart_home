@@ -263,7 +263,8 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
             if const.CONF_TURN_ON in self.entity_config or const.CONF_TURN_OFF in self.entity_config:
                 return True
 
-            return features & media_player.SUPPORT_TURN_ON or features & media_player.SUPPORT_TURN_OFF
+            return features & media_player.MediaPlayerEntityFeature.TURN_ON or \
+                features & media_player.MediaPlayerEntityFeature.TURN_OFF
 
         return False
 
@@ -301,11 +302,11 @@ class OnOffCapabilityVacuum(OnOffCapability):
 
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if features & vacuum.SUPPORT_TURN_ON and features & vacuum.SUPPORT_TURN_OFF:
+        if features & vacuum.VacuumEntityFeature.TURN_ON and features & vacuum.VacuumEntityFeature.TURN_OFF:
             return True
 
-        if features & vacuum.SUPPORT_START:
-            if features & vacuum.SUPPORT_RETURN_HOME or features & vacuum.SUPPORT_STOP:
+        if features & vacuum.VacuumEntityFeature.START:
+            if features & vacuum.VacuumEntityFeature.RETURN_HOME or features & vacuum.VacuumEntityFeature.STOP:
                 return True
 
         return False
@@ -314,14 +315,14 @@ class OnOffCapabilityVacuum(OnOffCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
 
         if state['value']:
-            if features & vacuum.SUPPORT_START:
+            if features & vacuum.VacuumEntityFeature.START:
                 service = vacuum.SERVICE_START
             else:
                 service = SERVICE_TURN_ON
         else:
-            if features & vacuum.SUPPORT_RETURN_HOME:
+            if features & vacuum.VacuumEntityFeature.RETURN_HOME:
                 service = vacuum.SERVICE_RETURN_TO_BASE
-            elif features & vacuum.SUPPORT_STOP:
+            elif features & vacuum.VacuumEntityFeature.STOP:
                 service = vacuum.SERVICE_STOP
             else:
                 service = SERVICE_TURN_OFF
@@ -353,8 +354,8 @@ class OnOffCapabilityClimate(OnOffCapability):
             service = SERVICE_TURN_ON
 
             hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES)
-            for mode in (climate.const.HVAC_MODE_HEAT_COOL,
-                         climate.const.HVAC_MODE_AUTO):
+            for mode in (climate.HVACMode.HEAT_COOL,
+                         climate.HVACMode.AUTO):
                 if mode not in hvac_modes:
                     continue
 
