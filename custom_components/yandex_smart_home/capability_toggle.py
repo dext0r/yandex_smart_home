@@ -49,7 +49,7 @@ class MuteCapability(ToggleCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
         if self.state.domain == media_player.DOMAIN:
-            if features & media_player.SUPPORT_VOLUME_MUTE:
+            if features & media_player.MediaPlayerEntityFeature.VOLUME_MUTE:
                 return True
 
             if const.MEDIA_PLAYER_FEATURE_VOLUME_MUTE in self.entity_config.get(const.CONF_FEATURES, []):
@@ -89,7 +89,8 @@ class PauseCapabilityMediaPlayer(PauseCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
         if self.state.domain == media_player.DOMAIN:
-            return features & media_player.SUPPORT_PAUSE and features & media_player.SUPPORT_PLAY
+            return features & media_player.MediaPlayerEntityFeature.PAUSE and \
+                   features & media_player.MediaPlayerEntityFeature.PLAY
 
         return False
 
@@ -120,7 +121,7 @@ class PauseCapabilityCover(PauseCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        return self.state.domain == cover.DOMAIN and features & cover.SUPPORT_STOP
+        return self.state.domain == cover.DOMAIN and features & cover.CoverEntityFeature.STOP
 
     def get_value(self) -> bool:
         """Return the state value of this capability for this entity."""
@@ -146,7 +147,7 @@ class PauseCapabilityVacuum(PauseCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        return self.state.domain == vacuum.DOMAIN and features & vacuum.SUPPORT_PAUSE
+        return self.state.domain == vacuum.DOMAIN and features & vacuum.VacuumEntityFeature.PAUSE
 
     def get_value(self) -> bool:
         """Return the state value of this capability for this entity."""
@@ -179,7 +180,7 @@ class OscillationCapability(ToggleCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        return self.state.domain == fan.DOMAIN and features & fan.SUPPORT_OSCILLATE
+        return self.state.domain == fan.DOMAIN and features & fan.FanEntityFeature.OSCILLATE
 
     def get_value(self) -> bool:
         """Return the state value of this capability for this entity."""

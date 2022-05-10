@@ -29,115 +29,6 @@ async def test_bad_config(hass):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
 
-async def test_invalid_property_type(hass):
-    files = {YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    sensor.test:
-      properties:
-        - type: invalid
-          entity: sensor.test
-"""}
-    with patch_yaml_files(files):
-        assert await async_integration_yaml_config(hass, DOMAIN) is None
-
-
-async def test_invalid_mode(hass):
-    files = {YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    sensor.test:
-      modes:
-        fan_speed:
-          invalid: ['invalid']
-"""}
-    with patch_yaml_files(files):
-        assert await async_integration_yaml_config(hass, DOMAIN) is None
-
-
-async def test_invalid_mode_instance(hass):
-    files = {YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    sensor.test:
-      modes:
-        invalid:
-"""}
-    with patch_yaml_files(files):
-        assert await async_integration_yaml_config(hass, DOMAIN) is None
-
-
-async def test_invalid_toggle_instance(hass):
-    files = {YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    sensor.test:
-      custom_toggles:
-        invalid:
-"""}
-    with patch_yaml_files(files):
-        assert await async_integration_yaml_config(hass, DOMAIN) is None
-
-
-async def test_invalid_range_instance(hass):
-    files = {YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    sensor.test:
-      custom_ranges:
-        invalid:
-"""}
-    with patch_yaml_files(files):
-        assert await async_integration_yaml_config(hass, DOMAIN) is None
-
-
-async def test_invalid_entity_feature(hass):
-    files = {YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    media_player.test:
-      features:
-        - invalid
-"""}
-    with patch_yaml_files(files):
-        assert await async_integration_yaml_config(hass, DOMAIN) is None
-
-
-async def test_invalid_device_type(hass):
-    files = {YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    media_player.test:
-      type: unsupported
-"""}
-    with patch_yaml_files(files):
-        assert await async_integration_yaml_config(hass, DOMAIN) is None
-
-
-async def test_invalid_pressure_unit(hass):
-    files = {YAML_CONFIG_FILE: """
-yandex_smart_home:
-  settings:
-    pressure_unit: invalid
-"""}
-    with patch_yaml_files(files):
-        assert await async_integration_yaml_config(hass, DOMAIN) is None
-
-
-async def test_property_type_button(hass, caplog):
-    files = {YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    media_player.test:
-      properties:
-        - type: button
-          attribute: bla
-"""}
-    with patch_yaml_files(files):
-        await async_integration_yaml_config(hass, DOMAIN)
-        assert 'not supported' in caplog.records[-1].message
-
-
 async def test_valid_config(hass):
     with patch_yaml_files({YAML_CONFIG_FILE: load_fixture('valid-config.yaml')}):
         config = await async_integration_yaml_config(hass, DOMAIN)
@@ -215,7 +106,7 @@ async def test_async_setup_entry(hass, config_entry_with_notifier):
     assert await async_setup_entry(hass, config_entry_with_notifier)
 
     assert len(hass.data[DOMAIN][CONFIG].notifier) == 0
-    assert const.CONF_PRESSURE_UNIT in config_entry_with_notifier.data
+    assert const.CONF_PRESSURE_UNIT in config_entry_with_notifier.options
 
 
 async def test_async_setup_entry_filters(hass):
@@ -261,27 +152,6 @@ yandex_smart_home:
 
         assert hass.data[DOMAIN][CONFIG].should_expose('light.test') is True
         assert hass.data[DOMAIN][CONFIG].should_expose('climate.test') is False
-
-
-async def test_async_setup_entry_import_options(hass):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            const.CONF_FILTER: {
-                'include_domains': ['media_player'],
-            },
-        },
-    )
-    entry.add_to_hass(hass)
-
-    assert await async_setup(hass, {})
-    assert await async_setup_entry(hass, entry)
-
-    assert const.CONF_FILTER not in entry.data
-    assert const.CONF_FILTER in entry.options
-    assert len(entry.options[const.CONF_FILTER]['include_domains']) == 1
 
 
 async def test_async_setup_entry_cloud(hass, config_entry_cloud_connection):
@@ -354,9 +224,15 @@ async def test_async_setup_update_from_yaml(hass, hass_admin_user):
     assert await async_setup(hass, {})
     assert await async_setup_entry(hass, entry)
 
-    assert const.CONF_NOTIFIER not in entry.data
-    assert entry.data[const.CONF_PRESSURE_UNIT] == 'mmHg'
-    assert entry.data[const.CONF_DEVICES_DISCOVERED] is True  # pre-0.3 migration
+    assert entry.data == {
+        'connection_type': 'direct',
+        'devices_discovered': True,
+    }
+    assert entry.options == {
+        'beta': False,
+        'cloud_stream': False,
+        'pressure_unit': 'mmHg'
+    }
 
     with patch_yaml_files({YAML_CONFIG_FILE: f"""
 yandex_smart_home:
@@ -371,4 +247,48 @@ yandex_smart_home:
             assert await async_setup_entry(hass, entry)
 
     assert entry.data[const.CONF_NOTIFIER][0][const.CONF_NOTIFIER_OAUTH_TOKEN] == 'yaml'
-    assert entry.data[const.CONF_PRESSURE_UNIT] == 'pa'
+    assert entry.options[const.CONF_PRESSURE_UNIT] == 'pa'
+
+
+async def test_async_setup_update_from_yaml_checksum(hass, hass_admin_user):
+    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
+
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+
+    with patch_yaml_files({YAML_CONFIG_FILE: """
+yandex_smart_home:
+  settings:
+    pressure_unit: pa"""}):
+        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
+        assert await async_setup_entry(hass, entry)
+
+    assert entry.data == {
+        'connection_type': 'direct',
+        'devices_discovered': True,
+        'notifier': [],
+        'yaml_config_hash': 'e43356ae879b7927d234724acc8f978c'
+    }
+    assert entry.options == {
+        'beta': False,
+        'cloud_stream': False,
+        'pressure_unit': 'pa',
+    }
+
+    with patch_yaml_files({YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    switch.test:
+      turn_on:
+        service: switch.turn_on
+        data:
+          entity_id: 'switch.test_{{ 1 + 2 }}'
+  settings:
+    pressure_unit: mmHg
+"""}):
+        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
+        with patch('custom_components.yandex_smart_home.async_setup', return_value=True):
+            assert await async_setup_entry(hass, entry)
+
+    assert entry.options[const.CONF_PRESSURE_UNIT] == 'mmHg'
+    assert entry.data[const.YAML_CONFIG_HASH] == 'dc49045a0e52e013db5c1d5587330461'

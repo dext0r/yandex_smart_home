@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from asyncio import TimeoutError
 from dataclasses import asdict, dataclass
 from datetime import timedelta
 import json
@@ -8,7 +9,7 @@ import logging
 from typing import Any, cast
 
 from aiohttp import (
-    ClientConnectorError,
+    ClientConnectionError,
     ClientResponseError,
     ClientSession,
     ClientWebSocketResponse,
@@ -17,8 +18,13 @@ from aiohttp import (
 )
 from aiohttp.web_request import Request as AIOWebRequest
 from homeassistant.components.stream import Stream
-from homeassistant.components.stream.hls import HlsInitView, HlsMasterPlaylistView, HlsPlaylistView, HlsSegmentView
-from homeassistant.const import MAJOR_VERSION, MINOR_VERSION
+from homeassistant.components.stream.hls import (
+    HlsInitView,
+    HlsMasterPlaylistView,
+    HlsPartView,
+    HlsPlaylistView,
+    HlsSegmentView,
+)
 from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
 from homeassistant.helpers.event import async_call_later
 from multidict import MultiDictProxy
@@ -110,7 +116,7 @@ class CloudStream:
             _LOGGER.debug(f'Disconnected: {self._ws.close_code}')
             if self._ws.close_code is not None:
                 self._try_reconnect()
-        except (ClientConnectorError, ClientResponseError, TimeoutError):
+        except (ClientConnectionError, ClientResponseError, TimeoutError):
             _LOGGER.exception('Failed to connect to Yandex Smart Home cloud')
             self._try_reconnect()
         except Exception:
@@ -140,12 +146,9 @@ class CloudStream:
             'master_playlist': HlsMasterPlaylistView,
             'playlist': HlsPlaylistView,
             'init': HlsInitView,
+            'part': HlsPartView,
             'segment': HlsSegmentView
         }
-
-        if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION >= 10):
-            from homeassistant.components.stream.hls import HlsPartView
-            views['part'] = HlsPartView
 
         view = views[request.view]()
 

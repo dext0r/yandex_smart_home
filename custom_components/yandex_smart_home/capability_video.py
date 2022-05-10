@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from homeassistant.components import camera
-from homeassistant.components.camera import _get_camera_from_entity_id
+from homeassistant.components.camera import StreamType, _get_camera_from_entity_id
 from homeassistant.components.stream import Stream
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, State
@@ -13,21 +13,20 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
 from .cloud_stream import CloudStream
-from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE, VIDEO_STREAM_INSTANCE_GET_STREAM
 from .error import SmartHomeError
 from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
 CAPABILITIES_VIDEO_STREAM = PREFIX_CAPABILITIES + 'video_stream'
-VIDEO_STREAM_FORMAT = 'hls'
 
 
 @register_capability
 class VideoStreamCapability(AbstractCapability):
 
     type = CAPABILITIES_VIDEO_STREAM
-    instance = 'get_stream'
+    instance = VIDEO_STREAM_INSTANCE_GET_STREAM
     retrievable = False
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
@@ -38,7 +37,7 @@ class VideoStreamCapability(AbstractCapability):
 
     def parameters(self) -> dict[str, Any]:
         return {
-            'protocol': VIDEO_STREAM_FORMAT
+            'protocol': StreamType.HLS
         }
 
     def supported(self) -> bool:
@@ -46,7 +45,7 @@ class VideoStreamCapability(AbstractCapability):
             return False
 
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-        return bool(features & camera.SUPPORT_STREAM) and self._config.beta
+        return bool(features & camera.CameraEntityFeature.STREAM) and self._config.beta
 
     def get_value(self) -> float | str | bool | None:
         return None
@@ -72,7 +71,7 @@ class VideoStreamCapability(AbstractCapability):
                     'Unable to get Home Assistant external URL. Have you set external URLs in Configuration -> General?'
                 )
 
-            endpoint_url = stream.endpoint_url(VIDEO_STREAM_FORMAT)
+            endpoint_url = stream.endpoint_url(StreamType.HLS)
             stream_url = f'{external_url}{endpoint_url}'
 
         return {
@@ -82,13 +81,7 @@ class VideoStreamCapability(AbstractCapability):
 
     async def _async_request_stream(self, entity_id: str) -> Stream:
         camera_entity = _get_camera_from_entity_id(self.hass, self.state.entity_id)
-
-        try:
-            # noinspection PyUnresolvedReferences
-            stream = await camera_entity.async_create_stream()
-        except AttributeError:  # < 2022.2
-            # noinspection PyUnresolvedReferences
-            stream = await camera_entity.create_stream()
+        stream = await camera_entity.async_create_stream()
 
         if not stream:
             raise SmartHomeError(
@@ -96,8 +89,8 @@ class VideoStreamCapability(AbstractCapability):
                 f'{entity_id} does not support play stream service'
             )
 
-        stream.add_provider(VIDEO_STREAM_FORMAT)
+        stream.add_provider(StreamType.HLS)
         stream.start()
-        stream.endpoint_url(VIDEO_STREAM_FORMAT)
+        stream.endpoint_url(StreamType.HLS)
 
         return stream

@@ -25,6 +25,7 @@ from homeassistant.const import (
     DEVICE_CLASS_PRESSURE,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
+    ELECTRIC_CURRENT_MILLIAMPERE,
     PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
@@ -152,7 +153,7 @@ class FloatProperty(AbstractProperty, ABC):
             )
         elif self.instance == const.FLOAT_INSTANCE_TVOC:
             return round(float_value * TVOC_CONCENTRATION_TO_MCG_M3.get(from_unit, 1), 2)
-        elif self.instance == const.FLOAT_INSTANCE_AMPERAGE and from_unit == const.ELECTRIC_CURRENT_MILLIAMPERE:
+        elif self.instance == const.FLOAT_INSTANCE_AMPERAGE and from_unit == ELECTRIC_CURRENT_MILLIAMPERE:
             return float_value / 1000
 
         return float_value

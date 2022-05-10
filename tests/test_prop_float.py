@@ -165,7 +165,7 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
     (const.PRESSURE_UNIT_BAR, 0.99),
 ])
 def test_property_float_pressure(hass, yandex_pressure_unit, v):
-    entry = MockConfigEntry(data={
+    entry = MockConfigEntry(options={
         const.CONF_PRESSURE_UNIT: yandex_pressure_unit
     })
     config = MockConfig(entry=entry)

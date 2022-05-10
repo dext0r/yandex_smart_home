@@ -1,7 +1,9 @@
 import asyncio
+import logging
 import time
 from unittest.mock import PropertyMock, patch
 
+from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_UNIT_OF_MEASUREMENT,
@@ -40,7 +42,7 @@ from custom_components.yandex_smart_home.notifier import (
 )
 from custom_components.yandex_smart_home.smart_home import RequestData, async_devices
 
-from . import BASIC_CONFIG, REQ_ID, MockConfig
+from . import BASIC_CONFIG, REQ_ID, MockConfig, generate_entity_filter
 
 
 class MockYandexEntityCallbackState(YandexEntityCallbackState):
@@ -273,7 +275,10 @@ async def test_notifier_event_handler_not_ready(hass, hass_admin_user, entry, mo
     await hass.async_block_till_done()
     mock_call_later.assert_not_called()
 
-    hass.data[DOMAIN][CONFIG] = MockConfig(entry=entry(hass_admin_user, devices_discovered=True))
+    hass.data[DOMAIN][CONFIG] = MockConfig(
+        entry=entry(hass_admin_user, devices_discovered=True),
+        entity_filter=generate_entity_filter(include_entity_globs=['*'])
+    )
     hass.states.async_set(state_switch.entity_id, 'on')
     await hass.async_block_till_done()
     mock_call_later.assert_called_once()
@@ -286,7 +291,6 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
 
     config = MockConfig(
         entry=entry(hass_admin_user, devices_discovered=True),
-        should_expose=lambda e: e != 'sensor.not_expose',
         entity_config={
             'switch.test': {
                 const.CONF_ENTITY_CUSTOM_MODES: {},
@@ -297,7 +301,8 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
                     const.CONF_ENTITY_PROPERTY_ENTITY: 'sensor.humidity'
                 }]
             }
-        }
+        },
+        entity_filter=generate_entity_filter(exclude_entities=['sensor.not_expose'])
     )
     hass.data[DOMAIN] = {
         CONFIG: config,
@@ -405,20 +410,25 @@ async def test_notifier_async_send_callback(hass_platform_cloud_connection, capl
     assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
     notifier = hass.data[DOMAIN][NOTIFIERS][0]
 
-    with patch.object(notifier, '_log_request', side_effect=asyncio.TimeoutError()), patch(
+    with patch.object(notifier, '_log_request', side_effect=ClientConnectionError()), patch(
             'custom_components.yandex_smart_home.notifier.YandexNotifier._ready',
             new_callable=PropertyMock(return_value=True)
     ):
         caplog.clear()
         await notifier.async_send_discovery(None)
         assert len(caplog.records) == 2
-        assert 'Failed to send state notification: TimeoutError()' in caplog.records[1].message
+        assert 'Failed to send state notification: ClientConnectionError()' in caplog.records[1].message
+        assert caplog.records[1].levelno == logging.WARN
         caplog.clear()
 
+    with patch.object(notifier, '_log_request', side_effect=asyncio.TimeoutError()), patch(
+            'custom_components.yandex_smart_home.notifier.YandexNotifier._ready',
+            new_callable=PropertyMock(return_value=True)
+    ):
         await notifier.async_send_state([])
         assert len(caplog.records) == 1
         assert 'Failed to send state notification: TimeoutError()' in caplog.records[0].message
-        caplog.clear()
+        assert caplog.records[0].levelno == logging.DEBUG
 
 
 async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
@@ -467,8 +477,11 @@ async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
 
 
 async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
+    config = MockConfig(
+        entry=_mock_entry_with_direct_connection(hass_admin_user, devices_discovered=True)
+    )
     hass.data[DOMAIN] = {
-        CONFIG: BASIC_CONFIG,
+        CONFIG: config,
         NOTIFIERS: [],
     }
 
@@ -534,8 +547,11 @@ async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
 
 
 async def test_notifier_send_cloud(hass, hass_admin_user, aioclient_mock):
+    config = MockConfig(
+        entry=_mock_entry_with_cloud_connection(hass_admin_user, devices_discovered=True)
+    )
     hass.data[DOMAIN] = {
-        CONFIG: BASIC_CONFIG,
+        CONFIG: config,
         NOTIFIERS: [],
     }
 

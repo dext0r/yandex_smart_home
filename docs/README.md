@@ -1,6 +1,6 @@
 * [Основная документация](../README.md)
-* [Настройка прямого подключения](direct-connection.md)
-* [Тонкая настройка через YAML](advanced-settings.md)
+* [Прямое подключение](direct-connection.md)
+* [Расширенная настройка](advanced-settings.md)
 * [Режимы и пользовательские умения](capabilities.md)
 * [Датчики](sensors.md)
 * [Камеры](stream.md)

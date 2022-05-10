@@ -162,8 +162,10 @@ class YandexNotifier(ABC):
                 _LOGGER.warning(
                     self._format_log_message(f'Failed to send state notification: [{r.status}] {error_message}')
                 )
-        except (ClientConnectionError, asyncio.TimeoutError) as e:
+        except ClientConnectionError as e:
             _LOGGER.warning(self._format_log_message(f'Failed to send state notification: {e!r}'))
+        except asyncio.TimeoutError as e:
+            _LOGGER.debug(self._format_log_message(f'Failed to send state notification: {e!r}'))
         except Exception:
             _LOGGER.exception(self._format_log_message('Failed to send state notification'))
 

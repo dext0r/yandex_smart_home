@@ -18,7 +18,7 @@ from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 
 @pytest.mark.parametrize('color_modes', [
-    [light.COLOR_MODE_RGB], [light.COLOR_MODE_RGBW], [light.COLOR_MODE_RGBWW], [light.COLOR_MODE_HS], []
+    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS], []
 ])
 @pytest.mark.parametrize('features', [
     light.SUPPORT_COLOR, 0
@@ -37,13 +37,13 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
 
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_RGB)
     assert cap.retrievable
-    if light.COLOR_MODE_RGBWW in color_modes or not color_modes:
+    if light.ColorMode.RGBWW in color_modes or not color_modes:
         assert cap.parameters() == {'color_model': 'rgb'}
     else:
         assert cap.parameters() == {
             'color_model': 'rgb',
             'temperature_k': {
-                'max': 4500 if light.COLOR_MODE_RGBW not in color_modes else 6500,
+                'max': 4500 if light.ColorMode.RGBW not in color_modes else 6500,
                 'min': 4500
             }
         }
@@ -53,7 +53,7 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
         ATTR_SUPPORTED_FEATURES: features,
         light.ATTR_SUPPORTED_COLOR_MODES: color_modes
     }
-    if light.COLOR_MODE_HS in color_modes:
+    if light.ColorMode.HS in color_modes:
         attributes[light.ATTR_HS_COLOR] = (240, 100)
     else:
         attributes[light.ATTR_RGB_COLOR] = (0, 0, 255)
@@ -79,13 +79,13 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
 @pytest.mark.parametrize('attributes,temp_range', [
     ({ATTR_SUPPORTED_FEATURES: light.SUPPORT_COLOR_TEMP}, (2000, 6535)),
     ({
-         light.ATTR_SUPPORTED_COLOR_MODES: [light.COLOR_MODE_COLOR_TEMP]
+         light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP]
      }, (2000, 6535)),
     ({
-         light.ATTR_SUPPORTED_COLOR_MODES: [light.COLOR_MODE_COLOR_TEMP, light.COLOR_MODE_RGB]
+         light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.RGB]
      }, (2000, 6535)),
     ({
-        light.ATTR_SUPPORTED_COLOR_MODES: [light.COLOR_MODE_COLOR_TEMP, light.COLOR_MODE_HS],
+        light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS],
         light.ATTR_MAX_MIREDS: 200,
         light.ATTR_MIN_MIREDS: 500,
      }, (2000, 5000)),
@@ -114,7 +114,7 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
 
     state = State('light.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: 0,
-        light.ATTR_COLOR_MODE: light.COLOR_MODE_UNKNOWN,
+        light.ATTR_COLOR_MODE: light.ColorMode.UNKNOWN,
     })
     cap.state = state
     with pytest.raises(SmartHomeError) as e:
@@ -123,7 +123,7 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
 
 
 @pytest.mark.parametrize('color_modes', [
-    [light.COLOR_MODE_RGB], [light.COLOR_MODE_HS],
+    [light.ColorMode.RGB], [light.ColorMode.HS],
 ])
 async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
     attributes = {
@@ -156,11 +156,11 @@ async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
 
 
 @pytest.mark.parametrize('color_modes', [
-    [light.COLOR_MODE_RGB], [light.COLOR_MODE_HS],
+    [light.ColorMode.RGB], [light.ColorMode.HS],
 ])
 async def test_capability_color_setting_temperature_k_rgb_white(hass, color_modes):
     attributes = {
-        light.ATTR_SUPPORTED_COLOR_MODES: color_modes + [light.COLOR_MODE_WHITE]
+        light.ATTR_SUPPORTED_COLOR_MODES: color_modes + [light.ColorMode.WHITE]
     }
     state = State('light.test', STATE_OFF, attributes)
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
@@ -182,7 +182,7 @@ async def test_capability_color_setting_temperature_k_rgb_white(hass, color_mode
 
     cap.state = State('light.test', STATE_OFF, dict({
         light.ATTR_RGB_COLOR: (255, 255, 255),
-        light.ATTR_COLOR_MODE: light.COLOR_MODE_WHITE,
+        light.ATTR_COLOR_MODE: light.ColorMode.WHITE,
         light.ATTR_BRIGHTNESS: 56
     }, **attributes))
     assert cap.get_value() == 4500
@@ -199,7 +199,7 @@ async def test_capability_color_setting_temperature_k_rgb_white(hass, color_mode
 
 async def test_capability_color_setting_temperature_k_rgbw(hass):
     attributes = {
-        light.ATTR_SUPPORTED_COLOR_MODES: [light.COLOR_MODE_RGBW]
+        light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.RGBW]
     }
     state = State('light.test', STATE_OFF, attributes)
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
@@ -209,25 +209,25 @@ async def test_capability_color_setting_temperature_k_rgbw(hass):
 
     cap.state = State('light.test', STATE_OFF, dict({
         light.ATTR_RGBW_COLOR: (0, 0, 0, 0),
-        light.ATTR_COLOR_MODE: light.COLOR_MODE_RGBW
+        light.ATTR_COLOR_MODE: light.ColorMode.RGBW
     }, **attributes))
     assert cap.get_value() is None
 
     cap.state = State('light.test', STATE_OFF, dict({
         light.ATTR_RGBW_COLOR: (100, 100, 100, 255),
-        light.ATTR_COLOR_MODE: light.COLOR_MODE_RGBW
+        light.ATTR_COLOR_MODE: light.ColorMode.RGBW
     }, **attributes))
     assert cap.get_value() is None
 
     cap.state = State('light.test', STATE_OFF, dict({
         light.ATTR_RGBW_COLOR: (255, 255, 255, 0),
-        light.ATTR_COLOR_MODE: light.COLOR_MODE_RGBW
+        light.ATTR_COLOR_MODE: light.ColorMode.RGBW
     }, **attributes))
     assert cap.get_value() == 6500
 
     cap.state = State('light.test', STATE_OFF, dict({
         light.ATTR_RGBW_COLOR: (0, 0, 0, 255),
-        light.ATTR_COLOR_MODE: light.COLOR_MODE_RGBW
+        light.ATTR_COLOR_MODE: light.ColorMode.RGBW
     }, **attributes))
     assert cap.get_value() == 4500
 
@@ -246,13 +246,13 @@ async def test_capability_color_setting_scene(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_SCENE)
 
     state = State('light.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: light.SUPPORT_EFFECT,
+        ATTR_SUPPORTED_FEATURES: light.LightEntityFeature.EFFECT,
         light.ATTR_EFFECT_LIST: ['foo', 'bar']
     })
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_SCENE)
 
     state = State('light.test', STATE_OFF, {
-        ATTR_SUPPORTED_FEATURES: light.SUPPORT_EFFECT,
+        ATTR_SUPPORTED_FEATURES: light.LightEntityFeature.EFFECT,
         light.ATTR_EFFECT_LIST: ['foo', 'bar', 'Alice'],
         light.ATTR_EFFECT: 'foo',
     })
@@ -272,7 +272,7 @@ async def test_capability_color_setting_scene(hass):
     assert cap.get_value() == 'garland'
 
     attributes = {
-        ATTR_SUPPORTED_FEATURES: light.SUPPORT_EFFECT,
+        ATTR_SUPPORTED_FEATURES: light.LightEntityFeature.EFFECT,
         light.ATTR_EFFECT_LIST: ['Leasure', 'Rainbow']
     }
     state = State('light.test', STATE_OFF, attributes)

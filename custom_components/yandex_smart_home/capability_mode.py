@@ -148,11 +148,11 @@ class ThermostatCapability(ModeCapability):
 
     instance = const.MODE_INSTANCE_THERMOSTAT
     modes_map_default = {
-        const.MODE_INSTANCE_MODE_HEAT: [climate.const.HVAC_MODE_HEAT],
-        const.MODE_INSTANCE_MODE_COOL: [climate.const.HVAC_MODE_COOL],
-        const.MODE_INSTANCE_MODE_AUTO: [climate.const.HVAC_MODE_HEAT_COOL, climate.const.HVAC_MODE_AUTO],
-        const.MODE_INSTANCE_MODE_DRY: [climate.const.HVAC_MODE_DRY],
-        const.MODE_INSTANCE_MODE_FAN_ONLY: [climate.const.HVAC_MODE_FAN_ONLY],
+        const.MODE_INSTANCE_MODE_HEAT: [climate.HVACMode.HEAT],
+        const.MODE_INSTANCE_MODE_COOL: [climate.HVACMode.COOL],
+        const.MODE_INSTANCE_MODE_AUTO: [climate.HVACMode.HEAT_COOL, climate.HVACMode.AUTO],
+        const.MODE_INSTANCE_MODE_DRY: [climate.HVACMode.DRY],
+        const.MODE_INSTANCE_MODE_FAN_ONLY: [climate.HVACMode.FAN_ONLY],
     }
 
     def supported(self) -> bool:
@@ -196,7 +196,7 @@ class SwingCapability(ModeCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if self.state.domain == climate.DOMAIN and features & climate.SUPPORT_SWING_MODE:
+        if self.state.domain == climate.DOMAIN and features & climate.ClimateEntityFeature.SWING_MODE:
             return super().supported()
 
         return False
@@ -293,7 +293,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if self.state.domain == humidifier.DOMAIN and features & humidifier.SUPPORT_MODES:
+        if self.state.domain == humidifier.DOMAIN and features & humidifier.HumidifierEntityFeature.MODES:
             return super().supported()
 
         return False
@@ -361,8 +361,8 @@ class ProgramCapabilityFan(ProgramCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
         if self.state.domain == fan.DOMAIN:
-            if features & fan.SUPPORT_PRESET_MODE:
-                if features & fan.SUPPORT_SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
+            if features & fan.FanEntityFeature.PRESET_MODE:
+                if features & fan.FanEntityFeature.SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
                     return super().supported()
 
         return False
@@ -412,7 +412,7 @@ class InputSourceCapability(ModeCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if self.state.domain == media_player.DOMAIN and features & media_player.SUPPORT_SELECT_SOURCE:
+        if self.state.domain == media_player.DOMAIN and features & media_player.MediaPlayerEntityFeature.SELECT_SOURCE:
             return super().supported()
 
         return False
@@ -503,7 +503,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if self.state.domain == climate.DOMAIN and features & climate.SUPPORT_FAN_MODE:
+        if self.state.domain == climate.DOMAIN and features & climate.ClimateEntityFeature.FAN_MODE:
             return super().supported()
 
         return False
@@ -575,8 +575,8 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
         if self.state.domain == fan.DOMAIN:
-            if features & fan.SUPPORT_PRESET_MODE:
-                if features & fan.SUPPORT_SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
+            if features & fan.FanEntityFeature.PRESET_MODE:
+                if features & fan.FanEntityFeature.SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
                     return False
 
                 return super().supported()
@@ -613,7 +613,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
         if self.state.domain == fan.DOMAIN:
-            if features & fan.SUPPORT_SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
+            if features & fan.FanEntityFeature.SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
                 return super().supported()
 
         return False
@@ -704,57 +704,6 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
 
 
 @register_capability
-class FanSpeedCapabilityFanLegacy(FanSpeedCapability):
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_AUTO: [climate.const.FAN_AUTO, climate.const.FAN_ON],
-        const.MODE_INSTANCE_MODE_QUIET: [const.FAN_SPEED_OFF],
-        const.MODE_INSTANCE_MODE_LOW: [const.FAN_SPEED_LOW],
-        const.MODE_INSTANCE_MODE_MEDIUM: [const.FAN_SPEED_MEDIUM],
-        const.MODE_INSTANCE_MODE_HIGH: [const.FAN_SPEED_HIGH],
-    }
-
-    def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-        if self.state.domain == fan.DOMAIN:
-            if features & fan.SUPPORT_PRESET_MODE:
-                return False
-
-            if features & fan.SUPPORT_SET_SPEED and fan.ATTR_PERCENTAGE_STEP not in self.state.attributes:
-                return super().supported()
-
-        return False
-
-    @property
-    def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
-        return fan.ATTR_SPEED
-
-    @property
-    def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
-        return fan.ATTR_SPEED_LIST
-
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        _LOGGER.warning(
-            f'Usage fan attribute "speed_list" is deprecated, use attribute "preset_modes" '
-            f'instead for {self.instance} instance of {self.state.entity_id}'
-        )
-
-        await self.hass.services.async_call(
-            fan.DOMAIN,
-            fan.SERVICE_SET_SPEED, {
-                ATTR_ENTITY_ID: self.state.entity_id,
-                fan.ATTR_SPEED: self.get_ha_mode_by_yandex_mode(state['value'])
-            },
-            blocking=True,
-            context=data.context
-        )
-
-
-@register_capability
 class CleanupModeCapability(ModeCapability):
     """Vacuum cleanup mode functionality."""
 
@@ -774,7 +723,7 @@ class CleanupModeCapability(ModeCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if self.state.domain == vacuum.DOMAIN and features & vacuum.SUPPORT_FAN_SPEED:
+        if self.state.domain == vacuum.DOMAIN and features & vacuum.VacuumEntityFeature.FAN_SPEED:
             return super().supported()
 
         return False

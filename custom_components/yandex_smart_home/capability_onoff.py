@@ -6,12 +6,14 @@ import logging
 from typing import Any
 
 from homeassistant.components import (
+    button,
     climate,
     cover,
     fan,
     group,
     humidifier,
     input_boolean,
+    input_button,
     light,
     lock,
     media_player,
@@ -24,8 +26,6 @@ from homeassistant.components import (
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_SUPPORTED_FEATURES,
-    MAJOR_VERSION,
-    MINOR_VERSION,
     SERVICE_CLOSE_COVER,
     SERVICE_LOCK,
     SERVICE_OPEN_COVER,
@@ -146,51 +146,46 @@ class OnOffCapabilityScript(OnOffCapability):
         )
 
 
-if MAJOR_VERSION >= 2022 or (MAJOR_VERSION == 2021 and MINOR_VERSION == 12):
-    from homeassistant.components import button
+@register_capability
+class OnOffCapabilityButton(OnOffCapability):
+    retrievable = False
 
-    @register_capability
-    class OnOffCapabilityButton(OnOffCapability):
-        retrievable = False
+    def get_value(self) -> bool | None:
+        return None
 
-        def get_value(self) -> bool | None:
-            return None
+    def supported(self) -> bool:
+        return self.state.domain == button.DOMAIN
 
-        def supported(self) -> bool:
-            return self.state.domain == button.DOMAIN
+    async def _set_state(self, data: RequestData, state: dict[str, Any]):
+        await self.hass.services.async_call(
+            self.state.domain,
+            button.SERVICE_PRESS, {
+                ATTR_ENTITY_ID: self.state.entity_id
+            },
+            blocking=True,
+            context=data.context
+        )
 
-        async def _set_state(self, data: RequestData, state: dict[str, Any]):
-            await self.hass.services.async_call(
-                self.state.domain,
-                button.SERVICE_PRESS, {
-                    ATTR_ENTITY_ID: self.state.entity_id
-                },
-                blocking=True,
-                context=data.context
-            )
 
-if MAJOR_VERSION >= 2022:
-    from homeassistant.components import input_button
+@register_capability
+class OnOffCapabilityInputButton(OnOffCapability):
+    retrievable = False
 
-    @register_capability
-    class OnOffCapabilityInputButton(OnOffCapability):
-        retrievable = False
+    def get_value(self) -> bool | None:
+        return None
 
-        def get_value(self) -> bool | None:
-            return None
+    def supported(self) -> bool:
+        return self.state.domain == input_button.DOMAIN
 
-        def supported(self) -> bool:
-            return self.state.domain == input_button.DOMAIN
-
-        async def _set_state(self, data: RequestData, state: dict[str, Any]):
-            await self.hass.services.async_call(
-                self.state.domain,
-                input_button.SERVICE_PRESS, {
-                    ATTR_ENTITY_ID: self.state.entity_id
-                },
-                blocking=True,
-                context=data.context
-            )
+    async def _set_state(self, data: RequestData, state: dict[str, Any]):
+        await self.hass.services.async_call(
+            self.state.domain,
+            input_button.SERVICE_PRESS, {
+                ATTR_ENTITY_ID: self.state.entity_id
+            },
+            blocking=True,
+            context=data.context
+        )
 
 
 @register_capability
@@ -268,7 +263,8 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
             if const.CONF_TURN_ON in self.entity_config or const.CONF_TURN_OFF in self.entity_config:
                 return True
 
-            return features & media_player.SUPPORT_TURN_ON or features & media_player.SUPPORT_TURN_OFF
+            return features & media_player.MediaPlayerEntityFeature.TURN_ON or \
+                features & media_player.MediaPlayerEntityFeature.TURN_OFF
 
         return False
 
@@ -306,11 +302,11 @@ class OnOffCapabilityVacuum(OnOffCapability):
 
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if features & vacuum.SUPPORT_TURN_ON and features & vacuum.SUPPORT_TURN_OFF:
+        if features & vacuum.VacuumEntityFeature.TURN_ON and features & vacuum.VacuumEntityFeature.TURN_OFF:
             return True
 
-        if features & vacuum.SUPPORT_START:
-            if features & vacuum.SUPPORT_RETURN_HOME or features & vacuum.SUPPORT_STOP:
+        if features & vacuum.VacuumEntityFeature.START:
+            if features & vacuum.VacuumEntityFeature.RETURN_HOME or features & vacuum.VacuumEntityFeature.STOP:
                 return True
 
         return False
@@ -319,14 +315,14 @@ class OnOffCapabilityVacuum(OnOffCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
 
         if state['value']:
-            if features & vacuum.SUPPORT_START:
+            if features & vacuum.VacuumEntityFeature.START:
                 service = vacuum.SERVICE_START
             else:
                 service = SERVICE_TURN_ON
         else:
-            if features & vacuum.SUPPORT_RETURN_HOME:
+            if features & vacuum.VacuumEntityFeature.RETURN_HOME:
                 service = vacuum.SERVICE_RETURN_TO_BASE
-            elif features & vacuum.SUPPORT_STOP:
+            elif features & vacuum.VacuumEntityFeature.STOP:
                 service = vacuum.SERVICE_STOP
             else:
                 service = SERVICE_TURN_OFF
@@ -358,8 +354,8 @@ class OnOffCapabilityClimate(OnOffCapability):
             service = SERVICE_TURN_ON
 
             hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES)
-            for mode in (climate.const.HVAC_MODE_HEAT_COOL,
-                         climate.const.HVAC_MODE_AUTO):
+            for mode in (climate.HVACMode.HEAT_COOL,
+                         climate.HVACMode.AUTO):
                 if mode not in hvac_modes:
                     continue
 

@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 from homeassistant.setup import async_setup_component
-import pytest
 
 from custom_components.yandex_smart_home import async_unload_entry
 from custom_components.yandex_smart_home.http import (
@@ -13,8 +12,7 @@ from custom_components.yandex_smart_home.http import (
 from . import REQ_ID
 
 
-@pytest.mark.enable_socket
-async def test_unauthorized_view(hass_platform, aiohttp_client, config_entry):
+async def test_unauthorized_view(hass_platform, aiohttp_client, config_entry, socket_enabled):
     http_client = await aiohttp_client(hass_platform.http.app)
     response = await http_client.head(YandexSmartHomeUnauthorizedView.url)
     assert response.status == HTTPStatus.OK
@@ -24,8 +22,7 @@ async def test_unauthorized_view(hass_platform, aiohttp_client, config_entry):
     assert response.status == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.enable_socket
-async def test_ping(hass_platform, aiohttp_client, config_entry):
+async def test_ping(hass_platform, aiohttp_client, config_entry, socket_enabled):
     http_client = await aiohttp_client(hass_platform.http.app)
     response = await http_client.get(YandexSmartHomePingView.url)
     assert response.status == HTTPStatus.OK
@@ -36,7 +33,6 @@ async def test_ping(hass_platform, aiohttp_client, config_entry):
     assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
 
 
-@pytest.mark.enable_socket
 async def test_smart_home_view_unloaded(hass_platform, hass_client, config_entry):
     http_client = await hass_client()
 
@@ -45,15 +41,13 @@ async def test_smart_home_view_unloaded(hass_platform, hass_client, config_entry
     assert response.status == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.enable_socket
-async def test_smart_home_view_unauthorized(hass_platform, aiohttp_client):
+async def test_smart_home_view_unauthorized(hass_platform, aiohttp_client, socket_enabled):
     http_client = await aiohttp_client(hass_platform.http.app)
 
     response = await http_client.get(YandexSmartHomeView.url + '/user/unlink')
     assert response.status == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.enable_socket
 async def test_user_unlink(hass_platform, hass_client):
     http_client = await hass_client()
     response = await http_client.post(
@@ -64,7 +58,6 @@ async def test_user_unlink(hass_platform, hass_client):
     assert await response.json() == {'request_id': REQ_ID}
 
 
-@pytest.mark.enable_socket
 async def test_user_devices(hass_platform, hass_client, hass_admin_user):
     http_client = await hass_client()
     response = await http_client.get(
@@ -134,7 +127,6 @@ async def test_user_devices(hass_platform, hass_client, hass_admin_user):
     }
 
 
-@pytest.mark.enable_socket
 async def test_user_devices_query(hass_platform, hass_client):
     http_client = await hass_client()
     response = await http_client.post(
@@ -174,7 +166,6 @@ async def test_user_devices_query(hass_platform, hass_client):
     }
 
 
-@pytest.mark.enable_socket
 async def test_user_devices_action(hass_platform, hass_client):
     await async_setup_component(hass_platform, 'switch', {'switch': {'platform': 'demo'}})
     await hass_platform.async_block_till_done()

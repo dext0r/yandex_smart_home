@@ -61,7 +61,7 @@ from custom_components.yandex_smart_home.prop_custom import (
 from custom_components.yandex_smart_home.prop_event import ContactProperty
 from custom_components.yandex_smart_home.prop_float import TemperatureProperty, VoltageProperty
 
-from . import BASIC_CONFIG, BASIC_DATA, MockConfig
+from . import BASIC_CONFIG, BASIC_DATA, MockConfig, generate_entity_filter
 
 
 @pytest.fixture
@@ -298,12 +298,19 @@ async def test_yandex_entity_should_expose(hass):
     assert not entity.should_expose
 
     config = MockConfig(
-        should_expose=lambda s: s != 'switch.not_expose'
+        entity_filter=generate_entity_filter(exclude_entities=['switch.not_expose'])
     )
     entity = YandexEntity(hass, config, State('switch.test', STATE_ON))
     assert entity.should_expose
 
     entity = YandexEntity(hass, config, State('switch.not_expose', STATE_ON))
+    assert not entity.should_expose
+
+
+async def test_yandex_entity_should_expose_empty_filters(hass):
+    config = MockConfig(entity_filter=generate_entity_filter())
+
+    entity = YandexEntity(hass, config, State('switch.test', STATE_ON))
     assert not entity.should_expose
 
 
