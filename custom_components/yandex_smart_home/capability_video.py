@@ -13,7 +13,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
 from .cloud_stream import CloudStream
-from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE, VIDEO_STREAM_INSTANCE_GET_STREAM
 from .error import SmartHomeError
 from .helpers import Config, RequestData
 
@@ -26,7 +26,7 @@ CAPABILITIES_VIDEO_STREAM = PREFIX_CAPABILITIES + 'video_stream'
 class VideoStreamCapability(AbstractCapability):
 
     type = CAPABILITIES_VIDEO_STREAM
-    instance = 'get_stream'
+    instance = VIDEO_STREAM_INSTANCE_GET_STREAM
     retrievable = False
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
@@ -81,13 +81,7 @@ class VideoStreamCapability(AbstractCapability):
 
     async def _async_request_stream(self, entity_id: str) -> Stream:
         camera_entity = _get_camera_from_entity_id(self.hass, self.state.entity_id)
-
-        try:
-            # noinspection PyUnresolvedReferences
-            stream = await camera_entity.async_create_stream()
-        except AttributeError:  # < 2022.2
-            # noinspection PyUnresolvedReferences
-            stream = await camera_entity.create_stream()
+        stream = await camera_entity.async_create_stream()
 
         if not stream:
             raise SmartHomeError(

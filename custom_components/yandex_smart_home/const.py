@@ -243,6 +243,8 @@ MODE_INSTANCES = (
     MODE_INSTANCE_WORK_SPEED,
 )
 
+VIDEO_STREAM_INSTANCE_GET_STREAM = 'get_stream'
+
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html#discovery__discovery-parameters-color-setting-table__entry__75
 COLOR_SETTING_RGB = 'rgb'
 COLOR_SETTING_TEMPERATURE_K = 'temperature_k'
