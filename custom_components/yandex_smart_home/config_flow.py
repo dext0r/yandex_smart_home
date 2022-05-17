@@ -153,18 +153,21 @@ class OptionsFlowHandler(OptionsFlow):
 
     async def async_step_include_entities(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         errors = {}
+        entities = []
         yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
 
         if yaml_config and yaml_config.get(const.CONF_FILTER):
             return await self.async_step_filter_yaml()
 
-        entity_filter = FILTER_SCHEMA(self._options[const.CONF_FILTER])
-        entities = set(self._options[const.CONF_FILTER][CONF_INCLUDE_ENTITIES])
+        if const.CONF_FILTER in self._options:
+            entities = set(self._options[const.CONF_FILTER].get(CONF_INCLUDE_ENTITIES, []))
 
-        # migration from include_exclude filters
-        entities.update([
-            s.entity_id for s in self.hass.states.async_all() if entity_filter(s.entity_id)
-        ])
+            # migration from include_exclude filters
+            entity_filter = FILTER_SCHEMA(self._options[const.CONF_FILTER])
+            if not entity_filter.empty_filter:
+                entities.update([
+                    s.entity_id for s in self.hass.states.async_all() if entity_filter(s.entity_id)
+                ])
 
         if user_input is not None:
             if user_input[CONF_ENTITIES]:
