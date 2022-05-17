@@ -45,7 +45,7 @@ class VideoStreamCapability(AbstractCapability):
             return False
 
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-        return bool(features & camera.CameraEntityFeature.STREAM) and self._config.beta
+        return features & camera.CameraEntityFeature.STREAM
 
     def get_value(self) -> float | str | bool | None:
         return None

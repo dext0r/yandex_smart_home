@@ -25,12 +25,6 @@ from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 
-class ConfigNoBeta(MockConfig):
-    @property
-    def beta(self):
-        return False
-
-
 class MockStream(Stream):
     def __init__(self, hass: HomeAssistant):
         super().__init__(hass, 'test', {})
@@ -76,7 +70,6 @@ async def test_capability_video_stream_supported(hass):
     state = State('camera.test', camera.STATE_IDLE, {
         ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM
     })
-    assert_no_capabilities(hass, ConfigNoBeta(), state, CAPABILITIES_VIDEO_STREAM, VIDEO_STREAM_INSTANCE_GET_STREAM)
     cap = get_exact_one_capability(
         hass, BASIC_CONFIG, state, CAPABILITIES_VIDEO_STREAM, VIDEO_STREAM_INSTANCE_GET_STREAM
     )
@@ -86,7 +79,6 @@ async def test_capability_video_stream_supported(hass):
     assert not cap.reportable
 
     state = State('camera.no_stream', camera.STATE_IDLE)
-    assert_no_capabilities(hass, ConfigNoBeta(), state, CAPABILITIES_VIDEO_STREAM, VIDEO_STREAM_INSTANCE_GET_STREAM)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_VIDEO_STREAM, VIDEO_STREAM_INSTANCE_GET_STREAM)
 
 
