@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from abc import ABC
-from functools import wraps
 import logging
 from typing import Any
 
@@ -61,17 +60,6 @@ PROPERTY_EVENT_VALUES = {
         const.EVENT_WATER_LEAK_DRY,
     ],
 }
-
-
-def require_beta(method):
-    @wraps(method)
-    def wrapper(self, *args, **kwargs):
-        if self.config.beta:
-            return method(self, *args, **kwargs)
-
-        return False
-
-    return wrapper
 
 
 class EventProperty(AbstractProperty, ABC):
@@ -159,7 +147,6 @@ class EventProperty(AbstractProperty, ABC):
 class ContactProperty(EventProperty):
     instance = const.EVENT_INSTANCE_OPEN
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) in (
@@ -176,7 +163,6 @@ class ContactProperty(EventProperty):
 class MotionProperty(EventProperty):
     instance = const.EVENT_INSTANCE_MOTION
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) in (
@@ -192,7 +178,6 @@ class MotionProperty(EventProperty):
 class GasProperty(EventProperty):
     instance = const.EVENT_INSTANCE_GAS
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_GAS
@@ -204,7 +189,6 @@ class GasProperty(EventProperty):
 class SmokeProperty(EventProperty):
     instance = const.EVENT_INSTANCE_SMOKE
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_SMOKE
@@ -216,7 +200,6 @@ class SmokeProperty(EventProperty):
 class BatteryLevelLowProperty(EventProperty):
     instance = const.EVENT_INSTANCE_BATTERY_LEVEL
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_BATTERY
@@ -228,7 +211,6 @@ class BatteryLevelLowProperty(EventProperty):
 class WaterLevelLowProperty(EventProperty):
     instance = const.EVENT_INSTANCE_WATER_LEVEL
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) == 'water_level'
@@ -240,7 +222,6 @@ class WaterLevelLowProperty(EventProperty):
 class WaterLeakProperty(EventProperty):
     instance = const.EVENT_INSTANCE_WATER_LEAK
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
             return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_MOISTURE
@@ -253,7 +234,6 @@ class ButtonProperty(EventProperty):
     instance = const.EVENT_INSTANCE_BUTTON
     retrievable = False
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.attributes.get(ATTR_DEVICE_CLASS) == const.DEVICE_CLASS_BUTTON:
             return True
@@ -289,7 +269,6 @@ class VibrationBinarySensorProperty(EventProperty):
     instance = const.EVENT_INSTANCE_VIBRATION
     retrievable = False
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
             if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.DEVICE_CLASS_VIBRATION:
@@ -315,7 +294,6 @@ class VibrationSensorProperty(EventProperty):
     instance = const.EVENT_INSTANCE_VIBRATION
     retrievable = False
 
-    @require_beta
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
             return self.state.attributes.get('action') in [

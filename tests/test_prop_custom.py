@@ -86,14 +86,6 @@ async def test_property_custom(hass, domain, instance):
         assert prop.retrievable
 
 
-async def test_property_custom_no_beta(hass):
-    state = State('binary_sensor.test', STATE_ON)
-    prop = CustomEntityProperty.get(hass, ConfigNoBeta(), state, {
-        const.CONF_ENTITY_PROPERTY_TYPE: 'button'
-    })
-    assert prop.supported() is False
-
-
 async def test_property_custom_get_value_button_event(hass):
     state = State('sensor.button', '')
     prop = CustomEntityProperty.get(hass, BASIC_CONFIG, state, {

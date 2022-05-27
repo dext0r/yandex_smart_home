@@ -128,6 +128,3 @@ class CustomEventEntityProperty(CustomEntityProperty, EventProperty):
 
     def get_value(self) -> str | None:
         return self.event_value(super().get_value())
-
-    def supported(self) -> bool:
-        return bool(self.config.beta)

@@ -33,7 +33,7 @@ class MockConfig(Config):
 
     @property
     def beta(self):
-        return True
+        return False
 
 
 class MockStore:

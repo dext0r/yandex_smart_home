@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Type
-
 from homeassistant.components import binary_sensor, input_text, sensor
 from homeassistant.const import ATTR_DEVICE_CLASS, STATE_OFF, STATE_ON
 from homeassistant.core import State
@@ -9,18 +7,11 @@ import pytest
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.error import SmartHomeError
-from custom_components.yandex_smart_home.prop import PROPERTIES
 from custom_components.yandex_smart_home.prop_event import PROPERTY_EVENT, EventProperty
 from custom_components.yandex_smart_home.prop_float import PROPERTY_FLOAT
 
-from . import BASIC_CONFIG, MockConfig
+from . import BASIC_CONFIG
 from .test_prop import assert_no_properties, get_exact_one_property
-
-
-class ConfigNoBeta(MockConfig):
-    @property
-    def beta(self):
-        return False
 
 
 class MockEventProperty(EventProperty):
@@ -34,14 +25,6 @@ async def test_property_event(hass):
         prop.get_value()
     assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
     assert 'Failed to get' in e.value.message
-
-
-@pytest.mark.parametrize('prop', [p for p in PROPERTIES if issubclass(p, EventProperty)])
-async def test_property_event_no_beta(hass, prop: Type[EventProperty]):
-    state = State('binary_sensor.test', binary_sensor.STATE_ON, {
-        ATTR_DEVICE_CLASS: binary_sensor.DEVICE_CLASS_DOOR,
-    })
-    assert prop(hass, ConfigNoBeta(), state).supported() is False
 
 
 @pytest.mark.parametrize('device_class,supported', [
