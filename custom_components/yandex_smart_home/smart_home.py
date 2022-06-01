@@ -65,9 +65,9 @@ async def async_devices(hass: HomeAssistant, data: RequestData, message: dict[st
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
     """
     devices = []
-    ent_reg = await entity_registry.async_get_registry(hass)
-    dev_reg = await device_registry.async_get_registry(hass)
-    area_reg = await area_registry.async_get_registry(hass)
+    ent_reg = entity_registry.async_get(hass)
+    dev_reg = device_registry.async_get(hass)
+    area_reg = area_registry.async_get(hass)
 
     hass.bus.async_fire(EVENT_DEVICE_DISCOVERY, context=data.context)
 
