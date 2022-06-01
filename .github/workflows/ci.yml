@@ -43,6 +43,8 @@ jobs:
         include:
           - ha-version: '2022.5'
             pytest-component-version: 0.9.0
+          - ha-version: '2022.6'
+            pytest-component-version: 0.9.9
             latest: true
     steps:
       - uses: actions/checkout@v2
