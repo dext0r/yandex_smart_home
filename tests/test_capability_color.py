@@ -13,8 +13,18 @@ from custom_components.yandex_smart_home.const import (
 )
 from custom_components.yandex_smart_home.error import SmartHomeError
 
-from . import BASIC_CONFIG, BASIC_DATA, MockConfig
+from . import BASIC_CONFIG, BASIC_DATA, MockConfig, generate_entity_filter
 from .test_capability import assert_no_capabilities, get_exact_one_capability
+
+
+class ColorProfileMockConfig(MockConfig):
+    @property
+    def color_profiles(self) -> dict[str, dict[str, tuple[int, int, int]]]:
+        return {
+            'test': {
+                'red': (255, 191, 0)
+            }
+        }
 
 
 @pytest.mark.parametrize('color_modes', [
@@ -74,6 +84,56 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
     await cap.set_state(BASIC_DATA, {'value': 720711})
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (10, 255, 71)}
+
+
+@pytest.mark.parametrize('color_modes', [
+    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS]
+])
+@pytest.mark.parametrize('features', [
+    light.SUPPORT_COLOR
+])
+async def test_capability_color_setting_rgb_with_profile(hass, color_modes, features):
+    config = ColorProfileMockConfig(
+        entity_config={
+            'light.test': {
+                const.CONF_COLOR_PROFILE: 'test'
+            },
+            'light.invalid': {
+                const.CONF_COLOR_PROFILE: 'invalid'
+            }
+        },
+        entity_filter=generate_entity_filter(include_entity_globs=['*'])
+    )
+
+    attributes = {
+        ATTR_SUPPORTED_FEATURES: features,
+        light.ATTR_SUPPORTED_COLOR_MODES: color_modes
+    }
+    if light.ColorMode.HS in color_modes:
+        attributes[light.ATTR_HS_COLOR] = (45, 100)
+    else:
+        attributes[light.ATTR_RGB_COLOR] = (255, 191, 0)
+
+    state = State('light.test', STATE_OFF, attributes)
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_RGB)
+    assert cap.get_value() == 16714250  # red
+
+    calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
+    await cap.set_state(BASIC_DATA, {'value': 16714250})
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 191, 0)}
+
+    state = State('light.invalid', STATE_OFF, attributes)
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_RGB)
+    with pytest.raises(SmartHomeError) as e:
+        assert cap.get_value() == 16714250
+    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.message.startswith('Color profile')
+
+    with pytest.raises(SmartHomeError) as e:
+        await cap.set_state(BASIC_DATA, {'value': 16714250})
+    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.message.startswith('Color profile')
 
 
 @pytest.mark.parametrize('attributes,temp_range', [

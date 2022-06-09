@@ -6,6 +6,9 @@ yandex_smart_home:
   settings:
     pressure_unit: mmHg
     beta: true
+  color_profile:
+    test:
+      red: [255, 0, 0]
   filter:
     include_domains:
       - switch
@@ -32,6 +35,7 @@ yandex_smart_home:
             - Wake up
           alarm:
             - Blink
+      color_profile: natural
     media_player.tv_lg:
       custom_ranges:
         channel:

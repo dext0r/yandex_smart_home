@@ -118,6 +118,7 @@ ENTITY_SCHEMA = vol.All(
         vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
         vol.Optional(const.CONF_SUPPORT_SET_CHANNEL): cv.boolean,
         vol.Optional(const.CONF_STATE_UNKNOWN): cv.boolean,
+        vol.Optional(const.CONF_COLOR_PROFILE): cv.string,
         vol.Optional(const.CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
         vol.Optional(const.CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
         vol.Optional(const.CONF_ENTITY_CUSTOM_MODES, default={}): ENTITY_CUSTOM_MODE_SCHEMA,
@@ -151,6 +152,11 @@ YANDEX_SMART_HOME_SCHEMA = vol.All(
             lambda value: value or {},
             {cv.entity_id: ENTITY_SCHEMA}
         ),
+        vol.Optional(const.CONF_COLOR_PROFILE, default={}): vol.Schema({
+            cv.string: {vol.In(const.COLOR_NAMES): vol.All(
+                vol.Coerce(tuple), vol.ExactSequence((cv.byte,) * 3)
+            )}
+        })
     }, extra=vol.PREVENT_EXTRA))
 
 CONFIG_SCHEMA = vol.Schema({
@@ -256,10 +262,17 @@ def get_config_entry_data_from_yaml_config(data: dict, options: dict, yaml_confi
         if v in data:
             del data[v]
 
+    for v in [const.CONF_COLOR_PROFILE]:
+        if v in options:
+            del options[v]
+
     if yaml_config:
         data.update({
             const.CONF_NOTIFIER: yaml_config[const.CONF_NOTIFIER],
             const.YAML_CONFIG_HASH: _yaml_config_checksum(yaml_config)
+        })
+        options.update({
+            const.CONF_COLOR_PROFILE: yaml_config[const.CONF_COLOR_PROFILE],
         })
         options.update(yaml_config[const.CONF_SETTINGS])
     else:

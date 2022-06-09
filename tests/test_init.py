@@ -34,7 +34,7 @@ async def test_valid_config(hass):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
     assert DOMAIN in config
-    assert config[DOMAIN].keys() == {'notifier', 'settings', 'filter', 'entity_config'}
+    assert config[DOMAIN].keys() == {'notifier', 'settings', 'filter', 'entity_config', 'color_profile'}
 
 
 async def test_empty_dict_config(hass):
@@ -267,12 +267,13 @@ yandex_smart_home:
         'connection_type': 'direct',
         'devices_discovered': True,
         'notifier': [],
-        'yaml_config_hash': 'e43356ae879b7927d234724acc8f978c'
+        'yaml_config_hash': '93c51c44a1036f88197b32160df2ef38'
     }
     assert entry.options == {
         'beta': False,
         'cloud_stream': False,
         'pressure_unit': 'pa',
+        'color_profile': {}
     }
 
     with patch_yaml_files({YAML_CONFIG_FILE: """
@@ -291,4 +292,4 @@ yandex_smart_home:
             assert await async_setup_entry(hass, entry)
 
     assert entry.options[const.CONF_PRESSURE_UNIT] == 'mmHg'
-    assert entry.data[const.YAML_CONFIG_HASH] == 'dc49045a0e52e013db5c1d5587330461'
+    assert entry.data[const.YAML_CONFIG_HASH] == 'cbe26e947d35ed6222f97e493b32d94f'

@@ -208,12 +208,13 @@ yandex_smart_home:
             'connection_type': 'direct',
             'devices_discovered': False,
             'notifier': [],
-            'yaml_config_hash': '9b73ab2a58d8184f5856e4b4aef394cc'
+            'yaml_config_hash': 'ada8341a9ec9194c4091b8ac15867ff4'
         }
         assert result3['options'] == {
             'beta': True,
             'pressure_unit': 'mmHg',
             'cloud_stream': True,
+            'color_profile': {},
             'filter': {
                 'include_entities': ['foo.bar', 'script.test']
             },
@@ -254,12 +255,13 @@ yandex_smart_home:
                 'connection_type': 'direct',
                 'devices_discovered': False,
                 'notifier': [],
-                'yaml_config_hash': 'cd83c55ca776dece290c0463109cd60f'
+                'yaml_config_hash': '4ea38d1f0319e1e44a5321e2cb41d360'
             }
             assert result3['options'] == {
                 'beta': False,
                 'pressure_unit': 'mmHg',
                 'cloud_stream': False,
+                'color_profile': {}
             }
 
             mock_setup.assert_called_once()

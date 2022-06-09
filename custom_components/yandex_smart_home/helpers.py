@@ -80,6 +80,10 @@ class Config:
         return self._data.get(const.CONF_NOTIFIER, [])
 
     @property
+    def color_profiles(self) -> dict[str, dict[str, tuple[int, int, int]]]:
+        return self._options.get(const.CONF_COLOR_PROFILE, {})
+
+    @property
     def devices_discovered(self) -> bool:
         return self._data[const.CONF_DEVICES_DISCOVERED]
 

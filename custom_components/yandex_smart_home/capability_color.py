@@ -7,13 +7,14 @@ from typing import Any
 
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES
+from homeassistant.core import HomeAssistant, State
 from homeassistant.util import color as color_util
 
 from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
 from .const import CONF_ENTITY_MODE_MAP, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
-from .helpers import RequestData
+from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +24,23 @@ COLOR_MODES_TEMP_TO_WHITE = (
     light.ColorMode.RGB,
     light.ColorMode.HS
 )
+COLOR_PROFILES: dict[str, dict[str]: tuple[int, int, int]] = {
+    'natural': {
+        const.COLOR_NAME_RED: (255, 0, 0),
+        const.COLOR_NAME_YELLOW: (255, 191, 0),
+        const.COLOR_NAME_GREEN: (0, 255, 0),
+        const.COLOR_NAME_EMERALD: (36, 255, 36),
+        const.COLOR_NAME_TURQUOISE: (0, 255, 191),
+        const.COLOR_NAME_CYAN: (0, 255, 255),
+        const.COLOR_NAME_BLUE: (0, 0, 255),
+        const.COLOR_NAME_MOONLIGHT: (255, 200, 145),
+        const.COLOR_NAME_LAVENDER: (63, 0, 255),
+        const.COLOR_NAME_VIOLET: (127, 0, 255),
+        const.COLOR_NAME_PURPLE: (191, 0, 255),
+        const.COLOR_NAME_ORCHID: (255, 0, 85),
+        const.COLOR_NAME_RASPBERRY: (255, 0, 4),
+    }
+}
 
 
 class ColorSettingCapability(AbstractCapability, ABC):
@@ -172,6 +190,13 @@ class RgbCapability(ColorSettingCapability):
 
     instance = const.COLOR_SETTING_RGB
 
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        super().__init__(hass, config, state)
+
+        if self.state.domain == light.DOMAIN:
+            self._color_profiles = COLOR_PROFILES.copy()
+            self._color_profiles.update(config.color_profiles)
+
     def supported(self) -> bool:
         """Test if capability is supported."""
         return self.support_color
@@ -188,27 +213,33 @@ class RgbCapability(ColorSettingCapability):
             if rgb_color == (255, 255, 255):
                 return None
 
-            value = rgb_color[0]
-            value = (value << 8) + rgb_color[1]
-            value = (value << 8) + rgb_color[2]
-
-            return value
+            return self._color_converter.get_yandex_color(*rgb_color)
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        red = (state['value'] >> 16) & 0xFF
-        green = (state['value'] >> 8) & 0xFF
-        blue = state['value'] & 0xFF
-
         await self.hass.services.async_call(
             light.DOMAIN,
             light.SERVICE_TURN_ON, {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_RGB_COLOR: (red, green, blue)
+                light.ATTR_RGB_COLOR: self._color_converter.get_ha_rgb_color(int(state['value']))
             },
             blocking=True,
             context=data.context
         )
+
+    @property
+    def _color_converter(self) -> ColorConverter:
+        color_profile_name = self.entity_config.get(const.CONF_COLOR_PROFILE)
+        if color_profile_name:
+            try:
+                return ColorConverter(self._color_profiles[color_profile_name])
+            except KeyError:
+                raise SmartHomeError(
+                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                    f'Color profile {color_profile_name!r} not found for instance {self.instance} '
+                    f'of {self.state.entity_id}'
+                )
+
+        return ColorConverter()
 
 
 @register_capability
@@ -335,4 +366,64 @@ class ColorSceneCapability(ColorSettingCapability):
             },
             blocking=True,
             context=data.context
+        )
+
+
+class ColorConverter:
+    _palette = {
+        const.COLOR_NAME_RED: 16714250,
+        const.COLOR_NAME_CORAL: 16729907,
+        const.COLOR_NAME_ORANGE: 16727040,
+        const.COLOR_NAME_YELLOW: 16740362,
+        const.COLOR_NAME_LIME: 13303562,
+        const.COLOR_NAME_GREEN: 720711,
+        const.COLOR_NAME_EMERALD: 720813,
+        const.COLOR_NAME_TURQUOISE: 720883,
+        const.COLOR_NAME_CYAN: 710399,
+        const.COLOR_NAME_BLUE: 673791,
+        const.COLOR_NAME_MOONLIGHT: 15067647,
+        const.COLOR_NAME_LAVENDER: 8719103,
+        const.COLOR_NAME_VIOLET: 11340543,
+        const.COLOR_NAME_PURPLE: 16714471,
+        const.COLOR_NAME_ORCHID: 16714393,
+        const.COLOR_NAME_MAUVE: 16722742,
+        const.COLOR_NAME_RASPBERRY: 16711765,
+    }
+
+    def __init__(self, profile: dict[str, tuple[int, int, int]] | None = None):
+        self._yandex_color_to_ha: dict[int, int] = {}
+        self._ha_color_to_yandex: dict[int, int] = {}
+
+        if profile:
+            for color_name, yandex_color_value in self._palette.items():
+                if color_name not in profile:
+                    continue
+
+                ha_color_value = self._rgb_to_int(*profile[color_name])
+                self._yandex_color_to_ha[yandex_color_value] = ha_color_value
+                self._ha_color_to_yandex[ha_color_value] = yandex_color_value
+
+    def get_ha_rgb_color(self, yandex_color: int) -> tuple[int, int, int]:
+        return self._int_to_rgb(
+            self._yandex_color_to_ha.get(yandex_color, yandex_color)
+        )
+
+    def get_yandex_color(self, r: int, g: int, b: int) -> int:
+        color = self._rgb_to_int(r, g, b)
+        return self._ha_color_to_yandex.get(color, color)
+
+    @staticmethod
+    def _rgb_to_int(r: int, g: int, b: int) -> int:
+        rv = r
+        rv = (rv << 8) + g
+        rv = (rv << 8) + b
+
+        return rv
+
+    @staticmethod
+    def _int_to_rgb(i: int) -> tuple[int, int, int]:
+        return (
+            (i >> 16) & 0xFF,
+            (i >> 8) & 0xFF,
+            i & 0xFF
         )
