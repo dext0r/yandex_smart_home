@@ -47,7 +47,7 @@ yandex_smart_home:
 ```yaml
 yandex_smart_home:
   filter:
-    include_entity_globs: *
+    include_entity_globs: "*"
 ```
 
 ## Параметры устройств (entity_config)
