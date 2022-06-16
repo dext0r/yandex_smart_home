@@ -153,9 +153,7 @@ YANDEX_SMART_HOME_SCHEMA = vol.All(
             {cv.entity_id: ENTITY_SCHEMA}
         ),
         vol.Optional(const.CONF_COLOR_PROFILE, default={}): vol.Schema({
-            cv.string: {vol.In(const.COLOR_NAMES): vol.All(
-                vol.Coerce(tuple), vol.ExactSequence((cv.byte,) * 3)
-            )}
+            cv.string: {vol.In(const.COLOR_NAMES): vol.All(ycv.color_value)}
         })
     }, extra=vol.PREVENT_EXTRA))
 

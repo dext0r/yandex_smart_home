@@ -100,6 +100,37 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
 
+async def test_color_value(hass):
+    files = {YAML_CONFIG_FILE: """
+yandex_smart_home:
+  color_profile:
+    test:
+      red: [255, 255, 0]
+"""}
+    with patch_yaml_files(files):
+        config = await async_integration_yaml_config(hass, DOMAIN)
+        assert config[DOMAIN]['color_profile']['test']['red'] == 16776960
+
+    files = {YAML_CONFIG_FILE: """
+yandex_smart_home:
+  color_profile:
+    test:
+      red: 123456
+"""}
+    with patch_yaml_files(files):
+        config = await async_integration_yaml_config(hass, DOMAIN)
+        assert config[DOMAIN]['color_profile']['test']['red'] == 123456
+
+    files = {YAML_CONFIG_FILE: """
+yandex_smart_home:
+  color_profile:
+    test:
+      red: [1, 2]
+"""}
+    with patch_yaml_files(files):
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+
+
 async def test_property_type_button(hass, caplog):
     files = {YAML_CONFIG_FILE: """
 yandex_smart_home:

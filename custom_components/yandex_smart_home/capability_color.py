@@ -370,7 +370,23 @@ class ColorSceneCapability(ColorSettingCapability):
         )
 
 
-class ColorConverter:
+class ValueConverter:
+    _palette: dict[str, int] = {}
+
+    def __init__(self, profile: dict[str, int] | None = None):
+        profile = profile or {}
+
+        self._yandex_value_to_ha: dict[int, int] = {}
+        self._ha_value_to_yandex: dict[int, int] = {}
+
+        for name, yandex_value in self._palette.items():
+            ha_value = profile.get(name, yandex_value)
+
+            self._yandex_value_to_ha[yandex_value] = ha_value
+            self._ha_value_to_yandex[ha_value] = yandex_value
+
+
+class ColorConverter(ValueConverter):
     _palette = {
         const.COLOR_NAME_RED: 16714250,
         const.COLOR_NAME_CORAL: 16729907,
@@ -391,32 +407,20 @@ class ColorConverter:
         const.COLOR_NAME_RASPBERRY: 16711765,
     }
 
-    def __init__(self, profile: dict[str, tuple[int, int, int]] | None = None):
-        self._yandex_color_to_ha: dict[int, int] = {}
-        self._ha_color_to_yandex: dict[int, int] = {}
-
-        for color_name, yandex_color_value in self._palette.items():
-            ha_color_value = yandex_color_value
-            if profile and color_name in profile:
-                ha_color_value = self._rgb_to_int(*profile[color_name])
-
-            self._yandex_color_to_ha[yandex_color_value] = ha_color_value
-            self._ha_color_to_yandex[ha_color_value] = yandex_color_value
-
     def get_ha_rgb_color(self, yandex_color: int) -> tuple[int, int, int]:
         return self._int_to_rgb(
-            self._yandex_color_to_ha.get(yandex_color, yandex_color)
+            self._yandex_value_to_ha.get(yandex_color, yandex_color)
         )
 
     def get_yandex_color(self, ha_color: RGBColor) -> int:
-        for ha_color_value, yandex_color_value in self._ha_color_to_yandex.items():
+        for ha_color_value, yandex_color_value in self._ha_value_to_yandex.items():
             if self._distance(ha_color, RGBColor(*self._int_to_rgb(ha_color_value))) <= 2:
                 return yandex_color_value
 
-        return self._rgb_to_int(*ha_color)
+        return self.rgb_to_int(*ha_color)
 
     @staticmethod
-    def _rgb_to_int(r: int, g: int, b: int) -> int:
+    def rgb_to_int(r: int, g: int, b: int) -> int:
         rv = r
         rv = (rv << 8) + g
         rv = (rv << 8) + b

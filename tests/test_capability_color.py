@@ -19,10 +19,10 @@ from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 class ColorProfileMockConfig(MockConfig):
     @property
-    def color_profiles(self) -> dict[str, dict[str, tuple[int, int, int]]]:
+    def color_profiles(self) -> dict[str, dict[str, int]]:
         return {
             'test': {
-                'red': (255, 191, 0)
+                'red': ColorConverter.rgb_to_int(255, 191, 0)
             }
         }
 
