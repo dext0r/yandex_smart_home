@@ -5,7 +5,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability_color import CAPABILITIES_COLOR_SETTING
+from custom_components.yandex_smart_home.capability_color import CAPABILITIES_COLOR_SETTING, ColorConverter
 from custom_components.yandex_smart_home.const import (
     COLOR_SETTING_RGB,
     COLOR_SETTING_SCENE,
@@ -84,6 +84,44 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
     await cap.set_state(BASIC_DATA, {'value': 720711})
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (10, 255, 71)}
+
+
+@pytest.mark.parametrize('color_modes', [
+    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS]
+])
+async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
+    attributes = {
+        ATTR_SUPPORTED_FEATURES: light.SUPPORT_COLOR,
+        light.ATTR_SUPPORTED_COLOR_MODES: color_modes
+    }
+    moonlight_color = ColorConverter._palette[const.COLOR_NAME_MOONLIGHT]
+
+    if light.ColorMode.HS in color_modes:
+        attributes[light.ATTR_HS_COLOR] = (230.769, 10.196)
+    else:
+        attributes[light.ATTR_RGB_COLOR] = (229, 233, 255)
+
+    state = State('light.test', STATE_OFF, attributes)
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_RGB)
+    assert cap.get_value() == moonlight_color
+
+    if light.ColorMode.HS in color_modes:
+        attributes[light.ATTR_HS_COLOR] = (226.154, 10.236)
+    else:
+        attributes[light.ATTR_RGB_COLOR] = (228, 234, 254)
+
+    state = State('light.test', STATE_OFF, attributes)
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_RGB)
+    assert cap.get_value() == moonlight_color
+
+    if light.ColorMode.HS in color_modes:
+        attributes[light.ATTR_HS_COLOR] = (231.5, 9.1)
+    else:
+        attributes[light.ATTR_RGB_COLOR] = (226, 230, 250)
+
+    state = State('light.test', STATE_OFF, attributes)
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_RGB)
+    assert cap.get_value() != moonlight_color
 
 
 @pytest.mark.parametrize('color_modes', [

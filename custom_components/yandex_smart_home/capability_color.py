@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from abc import ABC
 import logging
+from math import sqrt
 from typing import Any
 
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, State
-from homeassistant.util import color as color_util
+from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_temperature_mired_to_kelvin
 
 from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
@@ -87,8 +88,8 @@ class ColorSettingCapability(AbstractCapability, ABC):
             min_temp = self.state.attributes.get(light.ATTR_MAX_MIREDS, 153)
             max_temp = self.state.attributes.get(light.ATTR_MIN_MIREDS, 500)
             result['temperature_k'] = {
-                'min': color_util.color_temperature_mired_to_kelvin(min_temp),
-                'max': color_util.color_temperature_mired_to_kelvin(max_temp)
+                'min': color_temperature_mired_to_kelvin(min_temp),
+                'max': color_temperature_mired_to_kelvin(max_temp)
             }
         else:
             min_temp = self.default_white_temperature_k
@@ -207,13 +208,13 @@ class RgbCapability(ColorSettingCapability):
         if rgb_color is None:
             hs_color = self.state.attributes.get(light.ATTR_HS_COLOR)
             if hs_color is not None:
-                rgb_color = color_util.color_hs_to_RGB(*hs_color)
+                rgb_color = color_hs_to_RGB(*hs_color)
 
         if rgb_color is not None:
             if rgb_color == (255, 255, 255):
                 return None
 
-            return self._color_converter.get_yandex_color(*rgb_color)
+            return self._color_converter.get_yandex_color(RGBColor(*rgb_color))
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         await self.hass.services.async_call(
@@ -270,7 +271,7 @@ class TemperatureKCapability(ColorSettingCapability):
         color_mode = self.state.attributes.get(light.ATTR_COLOR_MODE)
 
         if temperature_mired is not None:
-            return color_util.color_temperature_mired_to_kelvin(temperature_mired)
+            return color_temperature_mired_to_kelvin(temperature_mired)
 
         if color_mode == light.ColorMode.WHITE:
             return self.default_white_temperature_k
@@ -394,23 +395,25 @@ class ColorConverter:
         self._yandex_color_to_ha: dict[int, int] = {}
         self._ha_color_to_yandex: dict[int, int] = {}
 
-        if profile:
-            for color_name, yandex_color_value in self._palette.items():
-                if color_name not in profile:
-                    continue
-
+        for color_name, yandex_color_value in self._palette.items():
+            ha_color_value = yandex_color_value
+            if profile and color_name in profile:
                 ha_color_value = self._rgb_to_int(*profile[color_name])
-                self._yandex_color_to_ha[yandex_color_value] = ha_color_value
-                self._ha_color_to_yandex[ha_color_value] = yandex_color_value
+
+            self._yandex_color_to_ha[yandex_color_value] = ha_color_value
+            self._ha_color_to_yandex[ha_color_value] = yandex_color_value
 
     def get_ha_rgb_color(self, yandex_color: int) -> tuple[int, int, int]:
         return self._int_to_rgb(
             self._yandex_color_to_ha.get(yandex_color, yandex_color)
         )
 
-    def get_yandex_color(self, r: int, g: int, b: int) -> int:
-        color = self._rgb_to_int(r, g, b)
-        return self._ha_color_to_yandex.get(color, color)
+    def get_yandex_color(self, ha_color: RGBColor) -> int:
+        for ha_color_value, yandex_color_value in self._ha_color_to_yandex.items():
+            if self._distance(ha_color, RGBColor(*self._int_to_rgb(ha_color_value))) <= 2:
+                return yandex_color_value
+
+        return self._rgb_to_int(*ha_color)
 
     @staticmethod
     def _rgb_to_int(r: int, g: int, b: int) -> int:
@@ -427,3 +430,11 @@ class ColorConverter:
             (i >> 8) & 0xFF,
             i & 0xFF
         )
+
+    @staticmethod
+    def _distance(a: RGBColor, b: RGBColor) -> float:
+        return abs(sqrt(
+            (a.r - b.r) ** 2 +
+            (a.g - b.g) ** 2 +
+            (a.b - b.b) ** 2
+        ))
