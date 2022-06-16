@@ -1,6 +1,7 @@
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF
 from homeassistant.core import State
+from homeassistant.util.color import color_temperature_kelvin_to_mired
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
@@ -176,18 +177,18 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
 
 
 @pytest.mark.parametrize('attributes,temp_range', [
-    ({ATTR_SUPPORTED_FEATURES: light.SUPPORT_COLOR_TEMP}, (2000, 6535)),
+    ({ATTR_SUPPORTED_FEATURES: light.SUPPORT_COLOR_TEMP}, (1500, 6500)),
     ({
          light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP]
-     }, (2000, 6535)),
+     }, (1500, 6500)),
     ({
          light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.RGB]
-     }, (2000, 6535)),
+     }, (1500, 6500)),
     ({
         light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS],
-        light.ATTR_MAX_MIREDS: 200,
-        light.ATTR_MIN_MIREDS: 500,
-     }, (2000, 5000)),
+        light.ATTR_MIN_MIREDS: 200,
+        light.ATTR_MAX_MIREDS: 500,
+     }, (1500, 5600)),
 ])
 async def test_capability_color_setting_temperature_k(hass, attributes, temp_range):
     state = State('light.test', STATE_OFF)
@@ -197,8 +198,8 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
     assert cap.retrievable
     assert cap.parameters()['temperature_k'] == {
-        'max': temp_range[0],
-        'min': temp_range[1]
+        'min': temp_range[0],
+        'max': temp_range[1]
     }
     assert cap.get_value() is None
 
@@ -221,6 +222,84 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
     assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 
 
+async def test_capability_color_setting_temprature_k_extend(hass):
+    # 1:1
+    state = State('light.test', STATE_OFF, {
+        light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS],
+        light.ATTR_MIN_MIREDS: color_temperature_kelvin_to_mired(6500),
+        light.ATTR_MAX_MIREDS: color_temperature_kelvin_to_mired(2700),
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.parameters()['temperature_k'] == {
+        'min': 2700,
+        'max': 6500
+    }
+
+    # beyond range
+    state = State('light.test', STATE_OFF, {
+        light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS],
+        light.ATTR_MIN_MIREDS: color_temperature_kelvin_to_mired(12000),
+        light.ATTR_MAX_MIREDS: color_temperature_kelvin_to_mired(700),
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.parameters()['temperature_k'] == {
+        'min': 1500,
+        'max': 9000
+    }
+
+    # no extend
+    state = State('light.test', STATE_OFF, {
+        light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS],
+        light.ATTR_MIN_MIREDS: color_temperature_kelvin_to_mired(6700),
+        light.ATTR_MAX_MIREDS: color_temperature_kelvin_to_mired(2500),
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.parameters()['temperature_k'] == {
+        'min': 2700,
+        'max': 6500
+    }
+
+    # extend
+    attributes = {
+        light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS],
+        light.ATTR_MIN_MIREDS: color_temperature_kelvin_to_mired(6800),
+        light.ATTR_MAX_MIREDS: color_temperature_kelvin_to_mired(2300),
+    }
+    state = State('light.test', STATE_OFF, attributes)
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.parameters()['temperature_k'] == {
+        'min': 1500,
+        'max': 7500
+    }
+
+    state = State('light.test', STATE_OFF, dict({
+        light.ATTR_COLOR_TEMP: color_temperature_kelvin_to_mired(2300)
+    }, **attributes))
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.get_value() == 1500
+
+    state = State('light.test', STATE_OFF, dict({
+        light.ATTR_COLOR_TEMP: color_temperature_kelvin_to_mired(6800)
+    }, **attributes))
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.get_value() == 7500
+
+    state = State('light.test', STATE_OFF, dict({
+        light.ATTR_COLOR_TEMP: color_temperature_kelvin_to_mired(6700)
+    }, **attributes))
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.get_value() == 6700
+
+    calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
+    await cap.set_state(BASIC_DATA, {'value': 1500})
+    await cap.set_state(BASIC_DATA, {'value': 6700})
+    await cap.set_state(BASIC_DATA, {'value': 7500})
+    assert len(calls) == 3
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 2300}
+    assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 6700}
+    assert calls[2].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 6800}
+
+
 @pytest.mark.parametrize('attributes', [
     {ATTR_SUPPORTED_FEATURES: light.SUPPORT_COLOR_TEMP},
     {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP]},
@@ -240,16 +319,16 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
         entity_filter=generate_entity_filter(include_entity_globs=['*'])
     )
     attributes.update({
+        light.ATTR_MIN_MIREDS: 170,
         light.ATTR_MAX_MIREDS: 500,
-        light.ATTR_MIN_MIREDS: 200,
     })
 
     state = State('light.test', STATE_OFF, attributes)
     cap = get_exact_one_capability(hass, config, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
     assert cap.retrievable
     assert cap.parameters()['temperature_k'] == {
-        'max': 5000,
-        'min': 2000
+        'min': 1500,
+        'max': 6500,
     }
     assert cap.get_value() is None
 

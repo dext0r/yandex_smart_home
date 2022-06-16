@@ -97,7 +97,7 @@ async def test_user_devices(hass_platform, hass_client, hass_admin_user):
                     'reportable': False,
                     'parameters': {
                         'color_model': 'rgb',
-                        'temperature_k': {'min': 2000, 'max': 6535}
+                        'temperature_k': {'min': 1500, 'max': 6500}
                     }
                 }, {
                     'type': 'devices.capabilities.range',

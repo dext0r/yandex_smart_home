@@ -243,7 +243,7 @@ async def test_cloud_req_user_devices(hass_platform_cloud_connection, config, ai
                     'reportable': True,
                     'parameters': {
                         'color_model': 'rgb',
-                        'temperature_k': {'min': 2000, 'max': 6535}
+                        'temperature_k': {'min': 1500, 'max': 6500}
                     }
                 }, {
                     'type': 'devices.capabilities.range',
