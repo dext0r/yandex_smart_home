@@ -9,6 +9,7 @@ from homeassistant.auth.const import GROUP_ID_READ_ONLY
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import CONF_ENTITIES
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.data_entry_flow import FlowHandler
 from homeassistant.helpers import selector
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
 from homeassistant.helpers.typing import ConfigType
@@ -25,13 +26,29 @@ CONNECTION_TYPES = {
 }
 
 
-class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
+class BaseFlowHandler(FlowHandler):
+    def __init__(self):
+        self._data: dict[str, Any] = {}
+        self._options: dict[str, Any] = {}
+
+    def _populate_data_from_yaml_config(self):
+        yaml_config = None
+        if DOMAIN in self.hass.data:
+            yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
+
+        data, options = get_config_entry_data_from_yaml_config(self._data, self._options, yaml_config)
+        self._data.update(data)
+        self._options.update(options)
+
+
+class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
+        super().__init__()
+
         self._yaml_config: ConfigType | None = None
         self._data: dict[str, Any] = {
             const.CONF_DEVICES_DISCOVERED: False
         }
-        self._options: dict[str, Any] = {}
 
     async def async_step_user(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         if self._async_current_entries():
@@ -76,18 +93,31 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         errors = {}
         if user_input is not None:
             self._data.update(user_input)
+
+            entry_description = user_input[const.CONF_CONNECTION_TYPE]
+            entry_description_placeholders = {}
+
             if user_input[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
                 try:
-                    return await self.async_step_cloud()
+                    instance = await register_cloud_instance(self.hass)
+                    self._data[const.CONF_CLOUD_INSTANCE] = {
+                        const.CONF_CLOUD_INSTANCE_ID: instance.id,
+                        const.CONF_CLOUD_INSTANCE_PASSWORD: instance.password,
+                        const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: instance.connection_token
+                    }
                 except (ClientConnectorError, ClientResponseError):
                     errors['base'] = 'cannot_connect'
                     _LOGGER.exception('Failed to register instance in Yandex Smart Home cloud')
-            else:
+                else:
+                    entry_description_placeholders.update(self._data[const.CONF_CLOUD_INSTANCE])
+
+            if not errors:
                 self._populate_data_from_yaml_config()
 
                 return self.async_create_entry(
                     title=const.CONFIG_ENTRY_TITLE,
-                    description=const.CONNECTION_TYPE_DIRECT,
+                    description=entry_description,
+                    description_placeholders=entry_description_placeholders,
                     data=self._data,
                     options=self._options
                 )
@@ -101,50 +131,22 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             errors=errors
         )
 
-    async def async_step_cloud(self) -> data_entry_flow.FlowResult:
-        instance = await register_cloud_instance(self.hass)
-        self._data[const.CONF_CLOUD_INSTANCE] = {
-            const.CONF_CLOUD_INSTANCE_ID: instance.id,
-            const.CONF_CLOUD_INSTANCE_PASSWORD: instance.password,
-            const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: instance.connection_token
-        }
-
-        self._populate_data_from_yaml_config()
-
-        return self.async_create_entry(
-            title=const.CONFIG_ENTRY_TITLE,
-            data=self._data,
-            options=self._options,
-            description=const.CONNECTION_TYPE_CLOUD,
-            description_placeholders={
-                const.CONF_CLOUD_INSTANCE_ID: instance.id,
-                const.CONF_CLOUD_INSTANCE_PASSWORD: instance.password
-            }
-        )
-
     @staticmethod
     @callback
     def async_get_options_flow(entry: ConfigEntry) -> OptionsFlow:
         return OptionsFlowHandler(entry)
 
-    def _populate_data_from_yaml_config(self):
-        yaml_config = None
-        if DOMAIN in self.hass.data:
-            yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
 
-        data, options = get_config_entry_data_from_yaml_config(self._data, self._options, yaml_config)
-        self._data.update(data)
-        self._options.update(options)
-
-
-class OptionsFlowHandler(OptionsFlow):
+class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
     def __init__(self, entry: ConfigEntry):
+        super().__init__()
+
         self._entry = entry
         self._options = dict(entry.options)
         self._data = dict(entry.data)
 
     async def async_step_init(self, _: ConfigType | None = None) -> data_entry_flow.FlowResult:
-        options = ['include_entities']
+        options = ['include_entities', 'connection_type']
         if self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
             options += ['cloud_info', 'cloud_settings']
 
@@ -191,6 +193,38 @@ class OptionsFlowHandler(OptionsFlow):
                 vol.Required(CONF_ENTITIES, default=sorted(entities)): selector.EntitySelector(
                     selector.EntitySelectorConfig(multiple=True)
                 )
+            }),
+            errors=errors
+        )
+
+    async def async_step_connection_type(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+        errors = {}
+        if user_input is not None:
+            self._data.update(user_input)
+
+            if user_input[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD and \
+                    const.CONF_CLOUD_INSTANCE not in self._data:
+                try:
+                    instance = await register_cloud_instance(self.hass)
+                    self._data[const.CONF_CLOUD_INSTANCE] = {
+                        const.CONF_CLOUD_INSTANCE_ID: instance.id,
+                        const.CONF_CLOUD_INSTANCE_PASSWORD: instance.password,
+                        const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: instance.connection_token
+                    }
+                except (ClientConnectorError, ClientResponseError):
+                    errors['base'] = 'cannot_connect'
+                    _LOGGER.exception('Failed to register instance in Yandex Smart Home cloud')
+
+            if not errors:
+                self._populate_data_from_yaml_config()
+                self.hass.config_entries.async_update_entry(self._entry, data=self._data, options=self._options)
+                return self.async_create_entry(title='', data=self._options)
+
+        return self.async_show_form(
+            step_id='connection_type',
+            data_schema=vol.Schema({
+                vol.Required(const.CONF_CONNECTION_TYPE,
+                             default=self._data[const.CONF_CONNECTION_TYPE]): vol.In(CONNECTION_TYPES)
             }),
             errors=errors
         )
