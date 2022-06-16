@@ -22,7 +22,8 @@ class ColorProfileMockConfig(MockConfig):
     def color_profiles(self) -> dict[str, dict[str, int]]:
         return {
             'test': {
-                'red': ColorConverter.rgb_to_int(255, 191, 0)
+                'red': ColorConverter.rgb_to_int(255, 191, 0),
+                'white': 4120
             }
         }
 
@@ -203,7 +204,7 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
 
     state = State('light.test', STATE_OFF, dict({light.ATTR_COLOR_TEMP: 370}, **attributes))
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
-    assert cap.get_value() == 2702
+    assert cap.get_value() == 2700
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
     await cap.set_state(BASIC_DATA, {'value': 6500})
@@ -218,6 +219,77 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
     with pytest.raises(SmartHomeError) as e:
         await cap.set_state(BASIC_DATA, {'value': 6500})
     assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+
+
+@pytest.mark.parametrize('attributes', [
+    {ATTR_SUPPORTED_FEATURES: light.SUPPORT_COLOR_TEMP},
+    {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP]},
+    {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.RGB]},
+    {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS]},
+])
+async def test_capability_color_setting_temperature_k_with_profile(hass, attributes):
+    config = ColorProfileMockConfig(
+        entity_config={
+            'light.test': {
+                const.CONF_COLOR_PROFILE: 'test'
+            },
+            'light.invalid': {
+                const.CONF_COLOR_PROFILE: 'invalid'
+            }
+        },
+        entity_filter=generate_entity_filter(include_entity_globs=['*'])
+    )
+    attributes.update({
+        light.ATTR_MAX_MIREDS: 500,
+        light.ATTR_MIN_MIREDS: 200,
+    })
+
+    state = State('light.test', STATE_OFF, attributes)
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.retrievable
+    assert cap.parameters()['temperature_k'] == {
+        'max': 5000,
+        'min': 2000
+    }
+    assert cap.get_value() is None
+
+    state = State('light.test', STATE_OFF, dict({light.ATTR_COLOR_TEMP: 370}, **attributes))
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.get_value() == 2700
+
+    state = State('light.test', STATE_OFF, dict({light.ATTR_COLOR_TEMP: 238}, **attributes))
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.get_value() == 4200
+
+    state = State('light.test', STATE_OFF, dict({light.ATTR_COLOR_TEMP: 243}, **attributes))  # k: 4150
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.get_value() == 4500
+
+    calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
+    await cap.set_state(BASIC_DATA, {'value': 4500})
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 4100}
+
+    state = State('light.test', STATE_OFF, dict({light.ATTR_COLOR_TEMP: 243}, **attributes))  # k: 4150
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.get_value() == 4100
+
+    calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
+    await cap.set_state(BASIC_DATA, {'value': 4100})
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 4100}
+
+    state = State('light.invalid', STATE_OFF, dict({light.ATTR_COLOR_TEMP: 243}, **attributes))
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    with pytest.raises(SmartHomeError) as e:
+        cap.get_value()
+    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.message.startswith('Color profile')
+
+    with pytest.raises(SmartHomeError) as e:
+        await cap.set_state(BASIC_DATA, {'value': 4100})
+    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.message.startswith('Color profile')
 
 
 @pytest.mark.parametrize('color_modes', [

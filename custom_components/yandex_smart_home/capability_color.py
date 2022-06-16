@@ -74,6 +74,13 @@ class ColorSettingCapability(AbstractCapability, ABC):
     default_white_temperature_k = 4500
     cold_white_temperature_k = 6500
 
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        super().__init__(hass, config, state)
+
+        if self.state.domain == light.DOMAIN:
+            self._color_profiles = COLOR_PROFILES.copy()
+            self._color_profiles.update(config.color_profiles)
+
     def parameters(self) -> dict[str, Any]:
         """Return parameters for a devices request."""
         result = {}
@@ -184,19 +191,27 @@ class ColorSettingCapability(AbstractCapability, ABC):
                 if str(am) == ha_effect:
                     return ha_effect
 
+    @property
+    def _temperature_converter(self) -> TemperatureConverter:
+        color_profile_name = self.entity_config.get(const.CONF_COLOR_PROFILE)
+        if color_profile_name:
+            try:
+                return TemperatureConverter(self._color_profiles[color_profile_name])
+            except KeyError:
+                raise SmartHomeError(
+                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                    f'Color profile {color_profile_name!r} not found for instance {self.instance} '
+                    f'of {self.state.entity_id}'
+                )
+
+        return TemperatureConverter()
+
 
 @register_capability
 class RgbCapability(ColorSettingCapability):
     """RGB color functionality."""
 
     instance = const.COLOR_SETTING_RGB
-
-    def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        super().__init__(hass, config, state)
-
-        if self.state.domain == light.DOMAIN:
-            self._color_profiles = COLOR_PROFILES.copy()
-            self._color_profiles.update(config.color_profiles)
 
     def supported(self) -> bool:
         """Test if capability is supported."""
@@ -271,7 +286,7 @@ class TemperatureKCapability(ColorSettingCapability):
         color_mode = self.state.attributes.get(light.ATTR_COLOR_MODE)
 
         if temperature_mired is not None:
-            return color_temperature_mired_to_kelvin(temperature_mired)
+            return self._temperature_converter.get_yandex_temperature(temperature_mired)
 
         if color_mode == light.ColorMode.WHITE:
             return self.default_white_temperature_k
@@ -305,7 +320,7 @@ class TemperatureKCapability(ColorSettingCapability):
 
         if features & light.SUPPORT_COLOR_TEMP or \
                 light.color_temp_supported(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])):
-            service_data[light.ATTR_KELVIN] = value
+            service_data[light.ATTR_KELVIN] = self._temperature_converter.get_ha_temperature(value)
 
         elif light.ColorMode.WHITE in supported_color_modes and value == self.default_white_temperature_k:
             service_data[light.ATTR_WHITE] = self.state.attributes.get(light.ATTR_BRIGHTNESS, 255)
@@ -380,10 +395,16 @@ class ValueConverter:
         self._ha_value_to_yandex: dict[int, int] = {}
 
         for name, yandex_value in self._palette.items():
-            ha_value = profile.get(name, yandex_value)
+            ha_value = self._normalize_ha_value(
+                profile.get(name, yandex_value)
+            )
 
             self._yandex_value_to_ha[yandex_value] = ha_value
             self._ha_value_to_yandex[ha_value] = yandex_value
+
+    @staticmethod
+    def _normalize_ha_value(v: int) -> int:
+        return v
 
 
 class ColorConverter(ValueConverter):
@@ -442,3 +463,27 @@ class ColorConverter(ValueConverter):
             (a.g - b.g) ** 2 +
             (a.b - b.b) ** 2
         ))
+
+
+class TemperatureConverter(ValueConverter):
+    _palette = {
+        const.COLOR_TEMPERATURE_NAME_FIERY_WHITE: 1500,
+        const.COLOR_TEMPERATURE_NAME_SOFT_WHITE: 2700,
+        const.COLOR_TEMPERATURE_NAME_WARM_WHITE: 3400,
+        const.COLOR_TEMPERATURE_NAME_WHITE: 4500,
+        const.COLOR_TEMPERATURE_NAME_DAYLIGHT: 5600,
+        const.COLOR_TEMPERATURE_NAME_COLD_WHITE: 6500,
+        const.COLOR_TEMPERATURE_NAME_MISTY_WHITE: 7500,
+        const.COLOR_TEMPERATURE_NAME_HEAVENLY_WHITE: 9000
+    }
+
+    def get_ha_temperature(self, yandex_temperature: int) -> int:
+        return self._yandex_value_to_ha.get(yandex_temperature, yandex_temperature)
+
+    def get_yandex_temperature(self, ha_temperature_mired: int) -> int:
+        ha_temperature_k = self._normalize_ha_value(color_temperature_mired_to_kelvin(ha_temperature_mired))
+        return self._ha_value_to_yandex.get(ha_temperature_k, ha_temperature_k)
+
+    @staticmethod
+    def _normalize_ha_value(v: int) -> int:
+        return round(v, -2)
