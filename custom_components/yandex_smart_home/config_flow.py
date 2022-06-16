@@ -85,7 +85,12 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             else:
                 self._populate_data_from_yaml_config()
 
-                return self.async_create_entry(title=const.CONFIG_ENTRY_TITLE, data=self._data, options=self._options)
+                return self.async_create_entry(
+                    title=const.CONFIG_ENTRY_TITLE,
+                    description=const.CONNECTION_TYPE_DIRECT,
+                    data=self._data,
+                    options=self._options
+                )
 
         return self.async_show_form(
             step_id='connection_type',
@@ -110,7 +115,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             title=const.CONFIG_ENTRY_TITLE,
             data=self._data,
             options=self._options,
-            description='cloud',
+            description=const.CONNECTION_TYPE_CLOUD,
             description_placeholders={
                 const.CONF_CLOUD_INSTANCE_ID: instance.id,
                 const.CONF_CLOUD_INSTANCE_PASSWORD: instance.password
