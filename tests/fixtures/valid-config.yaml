@@ -9,6 +9,8 @@ yandex_smart_home:
   color_profile:
     test:
       red: [255, 0, 0]
+      green: ['0', '255', '0']
+      warm_white: 3000
   filter:
     include_domains:
       - switch

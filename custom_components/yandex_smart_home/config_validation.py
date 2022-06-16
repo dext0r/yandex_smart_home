@@ -104,10 +104,10 @@ def pressure_unit(value):
 
 
 def color_value(value: list | int) -> int:
-    if isinstance(value, int):
-        return value
+    if isinstance(value, (int, str)):
+        return int(value)
 
     if isinstance(value, list) and len(value) == 3:
-        return ColorConverter.rgb_to_int(*value)
+        return ColorConverter.rgb_to_int(*[int(v) for v in value])
 
     raise vol.Invalid(f'Invalid value: {value!r}')
