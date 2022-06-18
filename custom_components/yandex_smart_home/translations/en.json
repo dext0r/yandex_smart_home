@@ -58,7 +58,7 @@
       },
       "connection_type": {
         "title": "Выберите тип подключения к УДЯ",
-        "description": "* **Через облако**: лёгкое и быстрое подключение через навык [Yaha Cloud](https://dialogs.yandex.ru/store/skills/cef326b2-home-assistant), рекомендуется для всех пользователей\n* **Напрямую**: требуется доступ к Home Assistant по HTTPS через интернет, сложная многоступенчатая настройка, только Эдля продвинутых пользователей ([подробнее](https://github.com/dmitry-k/yandex_smart_home/blob/master/docs/direct-connection.md))\n\n**Внимание!** После изменении типа подключения потребуется отвязать старый навык с удалением всех устройств ([подробнее](https://github.com/dmitry-k/yandex_smart_home/blob/master/README.md#%D0%B2%D1%8B%D0%B1%D0%BE%D1%80-%D1%83%D1%81%D1%82%D1%80%D0%BE%D0%B9%D1%81%D1%82%D0%B2))",
+        "description": "* **Через облако**: лёгкое и быстрое подключение через навык [Yaha Cloud](https://dialogs.yandex.ru/store/skills/cef326b2-home-assistant), рекомендуется для всех пользователей\n* **Напрямую**: требуется доступ к Home Assistant по HTTPS через интернет, сложная многоступенчатая настройка, только для продвинутых пользователей ([подробнее](https://github.com/dmitry-k/yandex_smart_home/blob/master/docs/direct-connection.md))\n\n**Внимание!** После изменении типа подключения потребуется отвязать старый навык с удалением всех устройств ([подробнее](https://github.com/dmitry-k/yandex_smart_home/blob/master/README.md#%D0%B2%D1%8B%D0%B1%D0%BE%D1%80-%D1%83%D1%81%D1%82%D1%80%D0%BE%D0%B9%D1%81%D1%82%D0%B2))",
         "data": {
           "connection_type": "Тип подключения"
         }
