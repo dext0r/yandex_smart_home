@@ -9,7 +9,7 @@ from typing import Any
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, State
-from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_temperature_mired_to_kelvin
+from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_temperature_mired_to_kelvin, color_xy_to_RGB
 
 from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
@@ -23,7 +23,8 @@ CAPABILITIES_COLOR_SETTING = PREFIX_CAPABILITIES + 'color_setting'
 COLOR_MODES_TEMP_TO_WHITE = (
     light.ColorMode.RGBW,
     light.ColorMode.RGB,
-    light.ColorMode.HS
+    light.ColorMode.HS,
+    light.ColorMode.XY
 )
 COLOR_PROFILES: dict[str, dict[str]: tuple[int, int, int]] = {
     'natural': {
@@ -138,7 +139,8 @@ class ColorSettingCapability(AbstractCapability, ABC):
             return True
 
         for color_mode in supported_color_modes:
-            if color_mode in [light.ColorMode.RGB, light.ColorMode.RGBW, light.ColorMode.RGBWW, light.ColorMode.HS]:
+            if color_mode in [light.ColorMode.RGB, light.ColorMode.RGBW, light.ColorMode.RGBWW,
+                              light.ColorMode.HS, light.ColorMode.XY]:
                 return True
 
         return False
@@ -225,6 +227,10 @@ class RgbCapability(ColorSettingCapability):
             if hs_color is not None:
                 rgb_color = color_hs_to_RGB(*hs_color)
 
+            xy_color = self.state.attributes.get(light.ATTR_XY_COLOR)
+            if xy_color is not None:
+                rgb_color = color_xy_to_RGB(*xy_color)
+
         if rgb_color is not None:
             if rgb_color == (255, 255, 255):
                 return None
@@ -301,7 +307,7 @@ class TemperatureKCapability(ColorSettingCapability):
 
             return None
 
-        if color_mode in [light.ColorMode.RGB, light.ColorMode.HS]:
+        if color_mode in [light.ColorMode.RGB, light.ColorMode.HS, light.ColorMode.XY]:
             rgb_color = self.state.attributes.get(light.ATTR_RGB_COLOR)
             if rgb_color is not None and rgb_color == (255, 255, 255):
                 if light.ColorMode.WHITE in supported_color_modes:
@@ -331,7 +337,9 @@ class TemperatureKCapability(ColorSettingCapability):
             else:
                 service_data[light.ATTR_RGBW_COLOR] = (255, 255, 255, 0)
 
-        elif light.ColorMode.RGB in supported_color_modes or light.ColorMode.HS in supported_color_modes:
+        elif light.ColorMode.RGB in supported_color_modes or \
+                light.ColorMode.HS in supported_color_modes or \
+                light.ColorMode.XY in supported_color_modes:
             service_data[light.ATTR_RGB_COLOR] = (255, 255, 255)
 
         if service_data:

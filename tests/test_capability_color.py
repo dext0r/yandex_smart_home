@@ -30,7 +30,8 @@ class ColorProfileMockConfig(MockConfig):
 
 
 @pytest.mark.parametrize('color_modes', [
-    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS], []
+    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS],
+    [light.ColorMode.XY], []
 ])
 @pytest.mark.parametrize('features', [
     light.SUPPORT_COLOR, 0
@@ -67,6 +68,8 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
     }
     if light.ColorMode.HS in color_modes:
         attributes[light.ATTR_HS_COLOR] = (240, 100)
+    elif light.ColorMode.XY in color_modes:
+        attributes[light.ATTR_XY_COLOR] = (0.135, 0.039)
     else:
         attributes[light.ATTR_RGB_COLOR] = (0, 0, 255)
 
@@ -89,7 +92,7 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
 
 
 @pytest.mark.parametrize('color_modes', [
-    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS]
+    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS], [light.ColorMode.XY]
 ])
 async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
     attributes = {
@@ -100,6 +103,8 @@ async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
 
     if light.ColorMode.HS in color_modes:
         attributes[light.ATTR_HS_COLOR] = (230.769, 10.196)
+    elif light.ColorMode.XY in color_modes:
+        attributes[light.ATTR_XY_COLOR] = (0.303, 0.3055)
     else:
         attributes[light.ATTR_RGB_COLOR] = (229, 233, 255)
 
@@ -109,6 +114,8 @@ async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
 
     if light.ColorMode.HS in color_modes:
         attributes[light.ATTR_HS_COLOR] = (226.154, 10.236)
+    elif light.ColorMode.XY in color_modes:
+        attributes[light.ATTR_XY_COLOR] = (0.302, 0.3075)
     else:
         attributes[light.ATTR_RGB_COLOR] = (228, 234, 254)
 
@@ -118,6 +125,8 @@ async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
 
     if light.ColorMode.HS in color_modes:
         attributes[light.ATTR_HS_COLOR] = (231.5, 9.1)
+    elif light.ColorMode.XY in color_modes:
+        attributes[light.ATTR_XY_COLOR] = (0.301, 0.307)
     else:
         attributes[light.ATTR_RGB_COLOR] = (226, 230, 250)
 
@@ -127,7 +136,7 @@ async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
 
 
 @pytest.mark.parametrize('color_modes', [
-    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS]
+    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS], [light.ColorMode.XY]
 ])
 @pytest.mark.parametrize('features', [
     light.SUPPORT_COLOR
@@ -151,6 +160,8 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
     }
     if light.ColorMode.HS in color_modes:
         attributes[light.ATTR_HS_COLOR] = (45, 100)
+    elif light.ColorMode.XY in color_modes:
+        attributes[light.ATTR_XY_COLOR] = (0.527, 0.447)
     else:
         attributes[light.ATTR_RGB_COLOR] = (255, 191, 0)
 
@@ -183,6 +194,9 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
      }, (1500, 6500)),
     ({
          light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.RGB]
+     }, (1500, 6500)),
+    ({
+         light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.XY]
      }, (1500, 6500)),
     ({
         light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS],
@@ -305,6 +319,7 @@ async def test_capability_color_setting_temprature_k_extend(hass):
     {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP]},
     {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.RGB]},
     {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS]},
+    {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.XY]},
 ])
 async def test_capability_color_setting_temperature_k_with_profile(hass, attributes):
     config = ColorProfileMockConfig(
@@ -372,7 +387,7 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
 
 
 @pytest.mark.parametrize('color_modes', [
-    [light.ColorMode.RGB], [light.ColorMode.HS],
+    [light.ColorMode.RGB], [light.ColorMode.HS], [light.ColorMode.XY]
 ])
 async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
     attributes = {
@@ -405,7 +420,7 @@ async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
 
 
 @pytest.mark.parametrize('color_modes', [
-    [light.ColorMode.RGB], [light.ColorMode.HS],
+    [light.ColorMode.RGB], [light.ColorMode.HS], [light.ColorMode.XY]
 ])
 async def test_capability_color_setting_temperature_k_rgb_white(hass, color_modes):
     attributes = {
