@@ -28,19 +28,19 @@ COLOR_MODES_TEMP_TO_WHITE = (
 )
 COLOR_PROFILES: dict[str, dict[str]: tuple[int, int, int]] = {
     'natural': {
-        const.COLOR_NAME_RED: (255, 0, 0),
-        const.COLOR_NAME_YELLOW: (255, 191, 0),
-        const.COLOR_NAME_GREEN: (0, 255, 0),
-        const.COLOR_NAME_EMERALD: (36, 255, 36),
-        const.COLOR_NAME_TURQUOISE: (0, 255, 191),
-        const.COLOR_NAME_CYAN: (0, 255, 255),
-        const.COLOR_NAME_BLUE: (0, 0, 255),
-        const.COLOR_NAME_MOONLIGHT: (255, 200, 145),
-        const.COLOR_NAME_LAVENDER: (63, 0, 255),
-        const.COLOR_NAME_VIOLET: (127, 0, 255),
-        const.COLOR_NAME_PURPLE: (191, 0, 255),
-        const.COLOR_NAME_ORCHID: (255, 0, 85),
-        const.COLOR_NAME_RASPBERRY: (255, 0, 4),
+        const.COLOR_NAME_RED: 16711680,
+        const.COLOR_NAME_YELLOW: 16760576,
+        const.COLOR_NAME_GREEN: 65280,
+        const.COLOR_NAME_EMERALD: 2424612,
+        const.COLOR_NAME_TURQUOISE: 65471,
+        const.COLOR_NAME_CYAN: 65535,
+        const.COLOR_NAME_BLUE: 255,
+        const.COLOR_NAME_MOONLIGHT: 16763025,
+        const.COLOR_NAME_LAVENDER: 4129023,
+        const.COLOR_NAME_VIOLET: 8323327,
+        const.COLOR_NAME_PURPLE: 12517631,
+        const.COLOR_NAME_ORCHID: 16711765,
+        const.COLOR_NAME_RASPBERRY: 16711684
     }
 }
 

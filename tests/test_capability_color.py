@@ -187,6 +187,43 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
     assert e.value.message.startswith('Color profile')
 
 
+@pytest.mark.parametrize('color_modes', [
+    [light.ColorMode.RGB], [light.ColorMode.RGBW], [light.ColorMode.RGBWW], [light.ColorMode.HS], [light.ColorMode.XY]
+])
+@pytest.mark.parametrize('features', [
+    light.SUPPORT_COLOR
+])
+async def test_capability_color_setting_rgb_with_internal_profile(hass, color_modes, features):
+    config = ColorProfileMockConfig(
+        entity_config={
+            'light.test': {
+                const.CONF_COLOR_PROFILE: 'natural'
+            }
+        },
+        entity_filter=generate_entity_filter(include_entity_globs=['*'])
+    )
+
+    attributes = {
+        ATTR_SUPPORTED_FEATURES: features,
+        light.ATTR_SUPPORTED_COLOR_MODES: color_modes
+    }
+    if light.ColorMode.HS in color_modes:
+        attributes[light.ATTR_HS_COLOR] = (0, 100)
+    elif light.ColorMode.XY in color_modes:
+        attributes[light.ATTR_XY_COLOR] = (0.701, 0.299)
+    else:
+        attributes[light.ATTR_RGB_COLOR] = (255, 0, 0)
+
+    state = State('light.test', STATE_OFF, attributes)
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_RGB)
+    assert cap.get_value() == 16714250  # red
+
+    calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
+    await cap.set_state(BASIC_DATA, {'value': 16714250})
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 0, 0)}
+
+
 @pytest.mark.parametrize('attributes,temp_range', [
     ({ATTR_SUPPORTED_FEATURES: light.SUPPORT_COLOR_TEMP}, (1500, 6500)),
     ({
