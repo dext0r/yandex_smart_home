@@ -86,6 +86,29 @@ yandex_smart_home:
         assert hass.data[DOMAIN][CONFIG].get_entity_config('sensor.test').get('name') == 'Test'
 
 
+async def test_reload_invalid(hass, hass_admin_user, hass_read_only_user, config_entry, caplog):
+    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
+    config_entry.add_to_hass(hass)
+
+    assert await async_setup(hass, {})
+    assert await async_setup_entry(hass, config_entry)
+
+    files = {YAML_CONFIG_FILE: """
+yandex_smart_home:
+  invalid: true
+"""}
+    with patch('custom_components.yandex_smart_home.async_setup', return_value=True), patch_yaml_files(files):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_RELOAD,
+            blocking=True,
+            context=Context(user_id=hass_admin_user.id),
+        )
+        await hass.async_block_till_done()
+
+        assert 'Invalid config' in caplog.messages[-1]
+
+
 async def test_setup_component(hass):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 

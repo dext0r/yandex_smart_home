@@ -185,8 +185,10 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
     hass.bus.async_listen(EVENT_DEVICE_DISCOVERY, _device_discovery_listener)
 
     async def _handle_reload(*_):
-        hass.data[DOMAIN][YAML_CONFIG] = (await async_integration_yaml_config(hass, DOMAIN)).get(DOMAIN)
-        _update_config_entries(hass)
+        config = await async_integration_yaml_config(hass, DOMAIN)
+        if config:
+            hass.data[DOMAIN][YAML_CONFIG] = config.get(DOMAIN)
+            _update_config_entries(hass)
 
     hass.helpers.service.async_register_admin_service(DOMAIN, SERVICE_RELOAD, _handle_reload)
 
