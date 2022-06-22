@@ -6,6 +6,7 @@ from homeassistant.const import SERVICE_RELOAD
 from homeassistant.core import Context
 from homeassistant.exceptions import Unauthorized
 from homeassistant.helpers.reload import async_integration_yaml_config
+from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture, patch_yaml_files
@@ -34,7 +35,302 @@ async def test_valid_config(hass):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
     assert DOMAIN in config
-    assert config[DOMAIN].keys() == {'notifier', 'settings', 'filter', 'entity_config', 'color_profile'}
+
+    assert config[DOMAIN]['notifier'] == [{
+        'oauth_token': 'AgAAAAAEEo2aYYR7m-CEyS7SEiUJjnKez3v3GZe',
+        'skill_id': 'd38d4c39-5846-ba53-67acc27e08bc',
+        'user_id': 'e8701ad48ba05a91604e480dd60899a3'
+    }]
+    assert config[DOMAIN]['settings'] == {
+        'pressure_unit': 'mmHg',
+        'beta': True,
+        'cloud_stream': False
+    }
+    assert config[DOMAIN]['color_profile'] == {
+        'test': {
+            'red': 16711680,
+            'green': 65280,
+            'warm_white': 3000
+        }
+    }
+    assert config[DOMAIN]['filter'] == {
+        'include_domains': [
+            'switch',
+            'light',
+            'climate'
+        ],
+        'include_entities': [
+            'media_player.tv',
+            'media_player.tv_lg',
+            'media_player.receiver'
+        ],
+        'include_entity_globs': [
+            'sensor.temperature_*'
+        ],
+        'exclude_entities': [
+            'light.highlight'
+        ],
+        'exclude_entity_globs': [
+            'sensor.weather_*'
+        ],
+        'exclude_domains': []
+    }
+
+    entity_config = config[DOMAIN]['entity_config']
+    assert len(entity_config) == 10
+
+    assert entity_config['switch.kitchen'] == {
+        'name': 'Выключатель',
+        'custom_toggles': {},
+        'properties': [],
+        'custom_ranges': {},
+        'range': {},
+        'modes': {},
+        'custom_modes': {}
+    }
+    assert entity_config['light.living_room'] == {
+        'name': 'Люстра',
+        'modes': {
+            'scene': {
+                'sunrise': [
+                    'Wake up'
+                ],
+                'alarm': [
+                    'Blink'
+                ]
+            }
+        },
+        'color_profile': 'natural',
+        'custom_toggles': {},
+        'properties': [],
+        'custom_ranges': {},
+        'range': {},
+        'custom_modes': {}
+    }
+    assert entity_config['media_player.tv_lg'] == {
+        'custom_ranges': {
+            'channel': {
+                'set_value': {
+                    'service': 'media_player.play_media',
+                    'entity_id': [
+                        'media_player.stupid_tv'
+                    ],
+                    'data': {
+                        'media_content_type': 'channel',
+                        'media_content_id': Template('{{ value }}')
+                    }
+                },
+                'increase_value': {
+                    'service': 'script.next_channel_via_ir'
+                },
+                'decrease_value': {
+                    'service': 'script.prev_channel_via_ir'
+                },
+                'range': {
+                    'min': 0.0,
+                    'max': 999.0
+                }
+            },
+            'volume': {
+                'increase_value': {
+                    'service': 'script.increase_volume'
+                },
+                'decrease_value': {
+                    'service': 'script.decrease_volume'
+                }
+            }
+        },
+        'custom_toggles': {},
+        'properties': [],
+        'range': {},
+        'modes': {},
+        'custom_modes': {}
+    }
+
+    assert entity_config['fan.xiaomi_miio_device'] == {
+        'name': 'Увлажнитель',
+        'room': 'Гостиная',
+        'type': 'devices.types.humidifier',
+        'properties': [
+            {
+                'type': 'temperature',
+                'entity': 'sensor.temperature_158d000444c824'
+            },
+            {
+                'type': 'humidity',
+                'attribute': 'humidity'
+            },
+            {
+                'type': 'water_level',
+                'attribute': 'depth'
+            }
+        ],
+        'custom_toggles': {},
+        'custom_ranges': {},
+        'range': {},
+        'modes': {},
+        'custom_modes': {}
+    }
+
+    assert entity_config['climate.tion_breezer'] == {
+        'name': 'Проветриватель',
+        'modes': {
+            'fan_speed': {
+                'auto': [
+                    'auto'
+                ],
+                'min': [
+                    '1',
+                    '1.0'
+                ],
+                'low': [
+                    '2',
+                    '2.0'
+                ],
+                'medium': [
+                    '3',
+                    '3.0'
+                ],
+                'high': [
+                    '4',
+                    '4.0'
+                ],
+                'turbo': [
+                    '5',
+                    '5.0'
+                ],
+                'max': [
+                    '6',
+                    '6.0'
+                ]
+            }
+        },
+        'custom_toggles': {},
+        'properties': [],
+        'custom_ranges': {},
+        'range': {},
+        'custom_modes': {}
+    }
+
+    assert entity_config['media_player.receiver'] == {
+        'type': 'devices.types.media_device.receiver',
+        'range': {
+            'max': 95.0,
+            'min': 20.0,
+            'precision': 2.0
+        },
+        'custom_toggles': {},
+        'properties': [],
+        'custom_ranges': {},
+        'modes': {},
+        'custom_modes': {}
+    }
+
+    assert entity_config['media_player.cast'] == {
+        'support_set_channel': False,
+        'features': [
+            'volume_mute',
+            'volume_set',
+            'next_previous_track'
+        ],
+        'custom_toggles': {},
+        'properties': [],
+        'custom_ranges': {},
+        'range': {},
+        'modes': {},
+        'custom_modes': {}
+    }
+
+    assert entity_config['climate.ac_living_room'] == {
+        'name': 'Кондиционер',
+        'room': 'Гостиная',
+        'type': 'devices.types.thermostat.ac',
+        'custom_toggles': {
+            'ionization': {
+                'state_entity_id': 'switch.ac_ionizer',
+                'turn_on': {
+                    'service': 'switch.turn_on',
+                    'entity_id': [
+                        'switch.ac_ionizer'
+                    ]
+                },
+                'turn_off': {
+                    'service': 'switch.turn_off',
+                    'entity_id': [
+                        'switch.ac_ionizer'
+                    ]
+                }
+            },
+            'backlight': {
+                'state_entity_id': 'input_boolean.ac_lighting',
+                'turn_on': {
+                    'service': 'input_boolean.turn_on',
+                    'entity_id': [
+                        'input_boolean.ac_lighting'
+                    ]
+                },
+                'turn_off': {
+                    'service': 'input_boolean.turn_off',
+                    'entity_id': [
+                        'input_boolean.ac_lighting'
+                    ]
+                }
+            }
+        },
+        'properties': [],
+        'custom_ranges': {},
+        'range': {},
+        'modes': {},
+        'custom_modes': {}
+    }
+
+    assert entity_config['switch.r4s1_kettle_boil'] == {
+        'name': 'Чайник',
+        'room': 'Кухня',
+        'custom_ranges': {
+            'temperature': {
+                'state_attribute': 'temperature',
+                'set_value': {
+                    'service': 'climate.set_temperature',
+                    'data': {
+                        'temperature': Template('{{ value }}')
+                    },
+                    'target': {
+                        'entity_id': [
+                            'climate.r4s1_kettle_temp'
+                        ]
+                    }
+                },
+                'range': {
+                    'min': 40.0,
+                    'max': 90.0,
+                    'precision': 10.0
+                }
+            }
+        },
+        'properties': [
+            {
+                'type': 'temperature',
+                'entity': 'climate.r4s1_kettle_temp',
+                'attribute': 'current_temperature'
+            }
+        ],
+        'custom_toggles': {},
+        'range': {},
+        'modes': {},
+        'custom_modes': {}
+    }
+
+    assert entity_config['cover.ir_cover'] == {
+        'name': 'Глупые шторы',
+        'state_unknown': True,
+        'custom_toggles': {},
+        'properties': [],
+        'custom_ranges': {},
+        'range': {},
+        'modes': {},
+        'custom_modes': {}
+    }
 
 
 async def test_empty_dict_config(hass):
