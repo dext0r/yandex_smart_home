@@ -77,7 +77,7 @@ async def test_valid_config(hass):
     }
 
     entity_config = config[DOMAIN]['entity_config']
-    assert len(entity_config) == 10
+    assert len(entity_config) == 11
 
     assert entity_config['switch.kitchen'] == {
         'name': 'Выключатель',
@@ -324,6 +324,17 @@ async def test_valid_config(hass):
     assert entity_config['cover.ir_cover'] == {
         'name': 'Глупые шторы',
         'state_unknown': True,
+        'custom_toggles': {},
+        'properties': [],
+        'custom_ranges': {},
+        'range': {},
+        'modes': {},
+        'custom_modes': {}
+    }
+
+    assert entity_config['input_text.button'] == {
+        'name': 'Кнопка на автоматизации',
+        'device_class': 'button',
         'custom_toggles': {},
         'properties': [],
         'custom_ranges': {},

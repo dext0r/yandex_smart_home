@@ -36,6 +36,7 @@ class AbstractProperty(ABC):
         self.config = config
         self.state = state
 
+        self.entity_config = config.get_entity_config(state.entity_id)
         self.reportable = config.is_reporting_state
 
     @abstractmethod

@@ -137,3 +137,6 @@ yandex_smart_home:
     cover.ir_cover:
       name: Глупые шторы
       state_unknown: true
+    input_text.button:
+      name: Кнопка на автоматизации
+      device_class: button

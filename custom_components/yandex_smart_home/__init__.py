@@ -114,6 +114,7 @@ ENTITY_SCHEMA = vol.All(
         vol.Optional(const.CONF_TYPE): vol.All(cv.string, ycv.device_type),
         vol.Optional(const.CONF_TURN_ON): cv.SERVICE_SCHEMA,
         vol.Optional(const.CONF_TURN_OFF): cv.SERVICE_SCHEMA,
+        vol.Optional(const.CONF_DEVICE_CLASS): vol.In(const.DEVICE_CLASS_BUTTON),
         vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, ycv.entity_features),
         vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
         vol.Optional(const.CONF_SUPPORT_SET_CHANNEL): cv.boolean,

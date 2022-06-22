@@ -10,7 +10,7 @@ from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.prop_event import PROPERTY_EVENT, EventProperty
 from custom_components.yandex_smart_home.prop_float import PROPERTY_FLOAT
 
-from . import BASIC_CONFIG
+from . import BASIC_CONFIG, MockConfig
 from .test_prop import assert_no_properties, get_exact_one_property
 
 
@@ -196,12 +196,13 @@ async def test_property_event_water_leak(hass, device_class, supported):
 
 @pytest.mark.parametrize('domain,attribute,device_class,supported', [
     (binary_sensor.DOMAIN, 'last_action', None, True),
+    (binary_sensor.DOMAIN, 'none', None, False),
     (sensor.DOMAIN, 'action', None, True),
-    (input_text.DOMAIN, 'bar', 'button', True),
-    (binary_sensor.DOMAIN, 'bar', None, False),
 ])
-async def test_property_event_button_sensor(hass, domain, attribute, device_class, supported):
-    state = State(f'{domain}.test', STATE_ON, {
+async def test_property_event_button_sensor_attribute(hass, domain, attribute, device_class, supported):
+    entity_id = f'{domain}.test'
+
+    state = State(entity_id, STATE_ON, {
         attribute: 'single',
         ATTR_DEVICE_CLASS: device_class
     })
@@ -212,31 +213,73 @@ async def test_property_event_button_sensor(hass, domain, attribute, device_clas
         assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.EVENT_INSTANCE_BUTTON)
         return
 
-    if domain != input_text.DOMAIN:
-        assert not prop.retrievable
-        assert prop.parameters() == {
-            'events': [{'value': 'click'}, {'value': 'double_click'}, {'value': 'long_press'}],
-            'instance': 'button'
-        }
-        assert prop.get_value() == 'click'
-
-        prop.state = State(f'{domain}.test', STATE_ON, {
-            attribute: 'double'
-        })
-        assert prop.get_value() == 'double_click'
-
-        prop.state = State(f'{domain}.test', STATE_ON, {
-            attribute: 'hold'
-        })
-        assert prop.get_value() == 'long_press'
-
-        prop.state = State(f'{domain}.test', STATE_ON, {
-            attribute: 'invalid'
-        })
-        assert prop.get_value() is None
-
-    prop.state = State(f'{domain}.test', 'click')
+    assert not prop.retrievable
+    assert prop.parameters() == {
+        'events': [{'value': 'click'}, {'value': 'double_click'}, {'value': 'long_press'}],
+        'instance': 'button'
+    }
     assert prop.get_value() == 'click'
+
+    prop.state = State(entity_id, STATE_ON, {
+        attribute: 'double'
+    })
+    assert prop.get_value() == 'double_click'
+
+    prop.state = State(entity_id, STATE_ON, {
+        attribute: 'hold'
+    })
+    assert prop.get_value() == 'long_press'
+
+    prop.state = State(entity_id, STATE_ON, {
+        attribute: 'invalid'
+    })
+    assert prop.get_value() is None
+
+    prop.state = State(entity_id, 'click')
+    assert prop.get_value() == 'click'
+
+
+@pytest.mark.parametrize('domain', [sensor.DOMAIN, input_text.DOMAIN])
+@pytest.mark.parametrize('device_class,mock_config,supported', [
+    (None, False, False),
+    (None, True, True),
+    ('button', False, True),
+])
+async def test_property_event_button_sensor_state(hass, domain, device_class, mock_config, supported):
+    entity_id = f'{domain}.test'
+    config = BASIC_CONFIG
+    if mock_config:
+        config = MockConfig(entity_config={
+            entity_id: {
+                const.CONF_DEVICE_CLASS: const.DEVICE_CLASS_BUTTON
+            }
+        })
+
+    state = State(entity_id, 'click', {
+        ATTR_DEVICE_CLASS: device_class
+    })
+    assert_no_properties(hass, config, state, PROPERTY_EVENT, const.EVENT_INSTANCE_VIBRATION)
+    if supported:
+        prop = get_exact_one_property(hass, config, state, PROPERTY_EVENT, const.EVENT_INSTANCE_BUTTON)
+    else:
+        assert_no_properties(hass, config, state, PROPERTY_EVENT, const.EVENT_INSTANCE_BUTTON)
+        return
+
+    assert not prop.retrievable
+    assert prop.parameters() == {
+        'events': [{'value': 'click'}, {'value': 'double_click'}, {'value': 'long_press'}],
+        'instance': 'button'
+    }
+    assert prop.get_value() == 'click'
+
+    prop.state = State(entity_id, 'double')
+    assert prop.get_value() == 'double_click'
+
+    prop.state = State(entity_id, 'hold')
+    assert prop.get_value() == 'long_press'
+
+    prop.state = State(entity_id, 'invalid')
+    assert prop.get_value() is None
 
 
 @pytest.mark.parametrize('domain,attribute,device_class,supported', [

@@ -238,6 +238,9 @@ class ButtonProperty(EventProperty):
         if self.state.attributes.get(ATTR_DEVICE_CLASS) == const.DEVICE_CLASS_BUTTON:
             return True
 
+        if self.entity_config.get(const.CONF_DEVICE_CLASS) == const.DEVICE_CLASS_BUTTON:
+            return True
+
         if self.state.domain == binary_sensor.DOMAIN:
             return self.state.attributes.get('last_action') in [
                 'single', 'click', 'double', 'double_click',
