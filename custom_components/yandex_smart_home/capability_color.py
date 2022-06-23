@@ -40,7 +40,7 @@ COLOR_PROFILES: dict[str, dict[str]: tuple[int, int, int]] = {
         const.COLOR_NAME_VIOLET: 8323327,
         const.COLOR_NAME_PURPLE: 12517631,
         const.COLOR_NAME_ORCHID: 16711765,
-        const.COLOR_NAME_RASPBERRY: 16711684
+        const.COLOR_NAME_RASPBERRY: 16713260
     }
 }
 
