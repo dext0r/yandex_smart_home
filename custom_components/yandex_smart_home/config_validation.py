@@ -21,7 +21,7 @@ def property_type(value: str) -> str:
 
     if value == const.EVENT_INSTANCE_BUTTON:
         _LOGGER.warning('Property type "button" is not supported. See documentation '
-                        'at https://github.com/dmitry-k/yandex_smart_home/blob/master/docs/sensors.md')
+                        'at https://docs.yaha-cloud.ru/v0.6.x/devices/button/')
 
     return value
 

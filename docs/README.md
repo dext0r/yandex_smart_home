@@ -1,7 +1,0 @@
-* [Основная документация](../README.md)
-* [Прямое подключение](direct-connection.md)
-* [Расширенная настройка](advanced-settings.md)
-* [Режимы и пользовательские умения](capabilities.md)
-* [Датчики](sensors.md)
-* [Камеры](stream.md)
-* [Пример YAML конфигурации](config-example.yaml)

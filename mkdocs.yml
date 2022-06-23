@@ -1,0 +1,82 @@
+site_name: Yandex Smart Home
+site_url: https://docs.yaha-cloud.ru
+repo_url: https://github.com/dext0r/yandex_smart_home
+
+nav:
+  - О компоненте: index.md
+  - Особенности интеграции и УДЯ : quirks.md
+  - Установка компонента: install/component.md
+  - Добавлении интеграции: install/integration.md
+  - Настройка интеграции:
+      - Способы настройки: config/getting-started.md
+      - Выбор объектов для передачи: config/filter.md
+      - Параметры устройств: config/entity.md
+      - Режимы/функции: config/modes.md
+      - Тип подключения: config/connection-type.md
+  - Устройства:
+      - Датчики: devices/sensor.md
+      - Освещение: devices/light.md
+      - Камеры: devices/camera.md
+      - Кондиционеры: devices/climate.md
+      - Кнопки: devices/button.md
+  - Для продвинутых:
+      - Прямое подключение: advanced/direct-connection.md
+      - Пользовательские умения: advanced/capabilities.md
+      - Несколько интеграций: advanced/clone.md
+  - Проблемы и отладка:
+      - Устранение проблем: troubleshoot/index.md
+      - Отладка: troubleshoot/debug.md
+  - Квазар и "Дом с Алисой": quasar.md
+  - Поддерживаемые устройства: supported-devices.md
+  - Часто задаваемые вопросы: faq.md
+  - Рецепты: recipes.md
+
+theme:
+  name: material
+  custom_dir: docs/_overrides
+  language: ru
+  logo: assets/logo/logo.png
+  favicon: assets/logo/favicon.png
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: PT Sans
+    code: Fira Code
+  palette:
+    primary: light blue
+    accent: indigo
+  features:
+    - navigation.tracking
+    - navigation.top
+
+extra:
+  social:
+    - icon: fontawesome/brands/telegram
+      link: http://t.me/yandex_smart_home
+  version:
+    provider: mike
+
+extra_css:
+  - assets/extra.css
+
+plugins:
+  - search:
+      lang:
+        - en
+        - ru
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.smartsymbols
