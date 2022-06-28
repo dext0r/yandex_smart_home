@@ -2,7 +2,7 @@
   "domain": "yandex_smart_home",
   "name": "Yandex Smart Home",
   "config_flow": true,
-  "documentation": "https://docs.yaha-cloud/v0.6.x/",
+  "documentation": "https://docs.yaha-cloud.ru/v0.6.x/",
   "issue_tracker": "https://github.com/dext0r/yandex_smart_home/issues",
   "requirements": [],
   "iot_class": "cloud_polling",

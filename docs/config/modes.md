@@ -39,7 +39,7 @@
               stationary: ['OFF']
     ```
 
-* `scene`, `fan_speed`, `swing` - режим/функция со стороны УДЯ ([все фукнции](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html) + `scene` для светильников)
+* `scene`, `fan_speed`, `swing` - режим/функция со стороны УДЯ ([все функции](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html) + `scene` для светильников)
 * `auto`, `stationary`, `alarm` - значение режима со стороны УДЯ ([возможные значения режимов](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html), [возможные значения сцен](#scene))
 * Списки значений (`Wake Up`, `Swing` и т.п.) - значения атрибута объекта в Home Assistant, которое соответствует значению режима в УДЯ.
   Задавать лучше строками в кавычках.
