@@ -221,6 +221,9 @@ class RgbCapability(ColorSettingCapability):
 
     def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
+        if self.state.attributes.get(light.ATTR_COLOR_MODE) == light.COLOR_MODE_COLOR_TEMP:
+            return None
+
         rgb_color = self.state.attributes.get(light.ATTR_RGB_COLOR)
         if rgb_color is None:
             hs_color = self.state.attributes.get(light.ATTR_HS_COLOR)

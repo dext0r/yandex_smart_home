@@ -542,6 +542,32 @@ async def test_capability_color_setting_temperature_k_rgbw(hass):
     assert calls[2].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGBW_COLOR: (255, 255, 255, 0)}
 
 
+async def test_capability_color_mode_color_temp(hass):
+    attributes = {
+        light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.RGB],
+        light.ATTR_MIN_MIREDS: color_temperature_kelvin_to_mired(6500),
+        light.ATTR_MAX_MIREDS: color_temperature_kelvin_to_mired(2700),
+        light.ATTR_COLOR_TEMP: color_temperature_kelvin_to_mired(3200),
+        light.ATTR_RGB_COLOR: [255, 0, 0]
+    }
+
+    state = State('light.test', STATE_OFF, dict({
+        light.ATTR_COLOR_MODE: light.ColorMode.RGB
+    }, **attributes))
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.get_value() == 3200
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_RGB)
+    assert cap.get_value() == 16711680
+
+    state = State('light.test', STATE_OFF, dict({
+        light.ATTR_COLOR_MODE: light.ColorMode.COLOR_TEMP
+    }, **attributes))
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.get_value() == 3200
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_RGB)
+    assert cap.get_value() is None
+
+
 async def test_capability_color_setting_scene(hass):
     state = State('light.test', STATE_OFF)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_SCENE)
