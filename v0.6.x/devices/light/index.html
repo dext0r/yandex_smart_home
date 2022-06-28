@@ -72,6 +72,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#color-profile" class="md-skip">
+          Перейти к содержанию
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -436,9 +441,79 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Освещение
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Освещение
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Содержание раздела">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Содержание раздела
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#color-profile" class="md-nav__link">
+    Цветовые профили
+  </a>
+  
+    <nav class="md-nav" aria-label="Цветовые профили">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#color-profile-config" class="md-nav__link">
+    Описание профилей
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-color-profile" class="md-nav__link">
+    Встроенные профили
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#color-profile-selection" class="md-nav__link">
+    Назначение профилей
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#color-matching" class="md-nav__link">
+    Подбор цвета
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#temperature-matching" class="md-nav__link">
+    Подбор цветовой температуры
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -709,6 +784,62 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Содержание раздела
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#color-profile" class="md-nav__link">
+    Цветовые профили
+  </a>
+  
+    <nav class="md-nav" aria-label="Цветовые профили">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#color-profile-config" class="md-nav__link">
+    Описание профилей
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-color-profile" class="md-nav__link">
+    Встроенные профили
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#color-profile-selection" class="md-nav__link">
+    Назначение профилей
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#color-matching" class="md-nav__link">
+    Подбор цвета
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#temperature-matching" class="md-nav__link">
+    Подбор цветовой температуры
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -719,13 +850,223 @@
             <article class="md-content__inner md-typeset">
               
                 
+  <a href="https://github.com/dext0r/yandex_smart_home/edit/master/docs/devices/light.md" title="Редактировать страницу" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
 
 
   <h1>Освещение</h1>
 
-<div class="admonition todo">
-<p class="admonition-title">Здесь будет про color_profile</p>
+<h2 id="color-profile">Цветовые профили<a class="headerlink" href="#color-profile" title="Permanent link">&para;</a></h2>
+<p>В УДЯ крайне ограничена возможность выбора цветов и температур для светильников. 
+Нам доступны только предустановленные значения: например, режим "Мягкий белый" - это температура в 3400 кельвинов, а цвет "Красный" - это RGB значение <code>255, 10, 10</code></p>
+<p>Для переопределения значений цветов/температур можно использовать "цветовые профили". </p>
+<p>Вы можете создать несколько профилей и назначить их на разные светильники. Переопределяйте только те значения, которые вас не устраивают.</p>
+<h3 id="color-profile-config">Описание профилей<a class="headerlink" href="#color-profile-config" title="Permanent link">&para;</a></h3>
+<p>Профили настраиваются и назначаются на светильники через <a href="../../config/getting-started/">YAML конфигурацию</a>. Проще всего показать их определение на примере:</p>
+<div class="admonition example">
+<p class="admonition-title">configuration.yaml</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">profile_1</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="nt">green</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;255&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">]</span><span class="w"></span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">red</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;255&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">]</span><span class="w"></span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">warm_white</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3000</span><span class="w"></span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">profile_2</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="nt">daylight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5100</span><span class="w"></span>
+</code></pre></div>
 </div>
+<ul>
+<li><code>profile_1</code> и <code>profile_2</code>: названия цветовых профилей, могут быть любыми</li>
+<li><code>green</code>, <code>red</code>: коды цветов в УДЯ, в значении - <a href="#color-matching">желаемый цвет</a> в RGB</li>
+<li><code>warm_white</code>, <code>daylight</code>: коды режимов/цветовых температур в УДЯ, в значении - <a href="#temperature-matching">желаемая температура</a> в кельвинах</li>
+</ul>
+<p>Список цветов:</p>
+<table>
+<thead>
+<tr>
+<th>Цвет</th>
+<th>Код</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Красный</td>
+<td><code>red</code></td>
+</tr>
+<tr>
+<td>Коралловый</td>
+<td><code>coral</code></td>
+</tr>
+<tr>
+<td>Оранжевый</td>
+<td><code>orange</code></td>
+</tr>
+<tr>
+<td>Желтый</td>
+<td><code>yellow</code></td>
+</tr>
+<tr>
+<td>Салатовый</td>
+<td><code>lime</code></td>
+</tr>
+<tr>
+<td>Зелёный</td>
+<td><code>green</code></td>
+</tr>
+<tr>
+<td>Изумрудный</td>
+<td><code>emerald</code></td>
+</tr>
+<tr>
+<td>Бирюзовый</td>
+<td><code>turquoise</code></td>
+</tr>
+<tr>
+<td>Голубой</td>
+<td><code>cyan</code></td>
+</tr>
+<tr>
+<td>Синий</td>
+<td><code>blue</code></td>
+</tr>
+<tr>
+<td>Лунный</td>
+<td><code>moonlight</code></td>
+</tr>
+<tr>
+<td>Сиреневый</td>
+<td><code>lavender</code></td>
+</tr>
+<tr>
+<td>Фиолетовый</td>
+<td><code>violet</code></td>
+</tr>
+<tr>
+<td>Пурпурный</td>
+<td><code>purple</code></td>
+</tr>
+<tr>
+<td>Розовый</td>
+<td><code>orchid</code></td>
+</tr>
+<tr>
+<td>Малиновый</td>
+<td><code>raspberry</code></td>
+</tr>
+<tr>
+<td>Лиловый</td>
+<td><code>mauve</code></td>
+</tr>
+</tbody>
+</table>
+<p>Список температур:</p>
+<table>
+<thead>
+<tr>
+<th>Название</th>
+<th>Код</th>
+<th>По-умолчанию</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Огненный белый</td>
+<td><code>fiery_white</code></td>
+<td>1500</td>
+</tr>
+<tr>
+<td>Мягкий белый</td>
+<td><code>soft_white</code></td>
+<td>2700</td>
+</tr>
+<tr>
+<td>Теплый белый</td>
+<td><code>warm_white</code></td>
+<td>3400</td>
+</tr>
+<tr>
+<td>Белый</td>
+<td><code>white</code></td>
+<td>4500</td>
+</tr>
+<tr>
+<td>Дневной белый</td>
+<td><code>daylight</code></td>
+<td>5600</td>
+</tr>
+<tr>
+<td>Холодный белый</td>
+<td><code>cold_white</code></td>
+<td>6500</td>
+</tr>
+<tr>
+<td>Туманный белый</td>
+<td><code>misty_white</code></td>
+<td>7500</td>
+</tr>
+<tr>
+<td>Небесный белый</td>
+<td><code>heavenly_white</code></td>
+<td>9000</td>
+</tr>
+</tbody>
+</table>
+<h3 id="internal-color-profile">Встроенные профили<a class="headerlink" href="#internal-color-profile" title="Permanent link">&para;</a></h3>
+<p>В компонент уже встроены цветовые профили, которые можно сразу назначать на светильники без необходимости определения.</p>
+<table>
+<thead>
+<tr>
+<th>Профиль</th>
+<th>Описание</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>natural</code></td>
+<td>Коррекция цветов под RGB ленты ("реальные" RGB значения для красного, зелёного, синего и других цветов)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="color-profile-selection">Назначение профилей<a class="headerlink" href="#color-profile-selection" title="Permanent link">&para;</a></h3>
+<p>Профили назначаются на светильники через параметр <code>color_profile</code> в <a href="../../config/entity/"><code>entity_config</code></a>. Один и тот же профиль может использоваться для нескольких светильников.</p>
+<div class="admonition example">
+<p class="admonition-title">configuration.yaml</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">profile_1</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">green</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;255&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">]</span><span class="w"></span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">profile_2</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">daylight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5100</span><span class="w"></span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">light.lamp_1</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">      </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile_1</span><span class="w"></span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">light.lamp_2</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">      </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile_1</span><span class="w"></span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="nt">light.lamp_3</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">      </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile_2</span><span class="w"></span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="nt">light.lamp_4</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">      </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">natural</span><span class="w">  </span><span class="c1"># профиль, встроенный в компонент</span><span class="w"></span>
+</code></pre></div>
+</div>
+<h3 id="color-matching">Подбор цвета<a class="headerlink" href="#color-matching" title="Permanent link">&para;</a></h3>
+<p>Для получения RGB значения желаемого цвета:</p>
+<ol>
+<li>Включите светильник</li>
+<li>Выберите желаемый цвет через цветовой круг в карточке светильника</li>
+<li>Найдите светильник в <code>Панель разработчика</code> &rarr; <code>Состояния</code>, в атрибуте <code>rgb_color</code> будет указан выбранный цвет</li>
+<li>При переносе значения из атрибута в цветовой профиль, возьмите каждое число в кавычки: <code>[10, 20, 30]</code> &rarr; <code>['10', '20', '30]</code></li>
+</ol>
+<h3 id="temperature-matching">Подбор цветовой температуры<a class="headerlink" href="#temperature-matching" title="Permanent link">&para;</a></h3>
+<p>Для получения желаемой температуры в кельвинах:</p>
+<ol>
+<li>Включите светильник</li>
+<li>Выберите желаемую температуру в карточке светильника</li>
+<li>Найдите светильник в <code>Панель разработчика</code> &rarr; <code>Состояния</code>, в атрибуте <code>color_temp</code> будет указан температура в миредах</li>
+<li>Получите значение в кельвинах по формуле: <code>1000000/x</code>, где <code>x</code> - значение в миредах. Пример: <code>color_temp: 371</code> &rarr; <code>1000000/371</code> &rarr; <code>2695</code></li>
+<li>Округлите значение в кельвинах до ближайшей сотни. Примеры: <code>2695</code> &rarr; <code>2700</code> или <code>1125</code> &rarr; <code>1100</code></li>
+</ol>
 
               
             </article>

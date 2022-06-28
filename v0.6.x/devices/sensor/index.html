@@ -484,6 +484,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#device-class" class="md-nav__link">
+    Выбор класса бинарного датчика
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -812,6 +819,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#device-class" class="md-nav__link">
+    Выбор класса бинарного датчика
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -824,6 +838,10 @@
             <article class="md-content__inner md-typeset">
               
                 
+  <a href="https://github.com/dext0r/yandex_smart_home/edit/master/docs/devices/sensor.md" title="Редактировать страницу" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
 
 
   <h1>Датчики</h1>
@@ -967,6 +985,10 @@
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">           </span><span class="nt">unit_of_measurement</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ppb</span><span class="w">  </span><span class="c1"># для автоматической конвертации из миллиардных долей в мкг/м³</span><span class="w"></span>
 </code></pre></div>
 </div>
+<h2 id="device-class">Выбор класса бинарного датчика<a class="headerlink" href="#device-class" title="Permanent link">&para;</a></h2>
+<p>Некоторые интеграции создают бинарные датчики с пустым или неверным атрибутом <code>device_class</code>. Такие датчики автоматически обнаружены не будут.</p>
+<p>Вы можете самостоятельно задать атрибут <code>device_class</code> через параметр объекта <code>Отображать как</code> в <code>Настройки</code> &rarr; <code>Устройства и объекты</code> &rarr; <a href="https://my.home-assistant.io/redirect/entities/"><code>Объекты</code></a></p>
+<p><img alt="" src="../../assets/images/devices/sensor/binary-device-class.png" width="750" /></p>
 
               
             </article>
