@@ -1,6 +1,9 @@
 ## Где найти ID и пароль для облачного подключения? { id=cloud-creds }
 Откройте [настройки интеграции](./config/getting-started.md#gui) --> `ID и пароль (облачное подключение)`
 
+![](assets/images/config/gui-1.png){ width=750 }
+![](assets/images/config/gui-2.png){ width=750 }
+
 ## Где найти entity_id объекта? { id=get-entity-id }
 1. На странице `Настройки` --> `Устройства и службы` --> [`Объекты`](https://my.home-assistant.io/redirect/entities/):<br>
     ![](assets/images/faq/entity-id-1.png){ width=750 }
