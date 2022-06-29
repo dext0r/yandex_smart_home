@@ -1,4 +1,5 @@
 from homeassistant.components import (
+    automation,
     button,
     climate,
     cover,
@@ -46,6 +47,7 @@ from .test_capability import (
 
 @pytest.mark.parametrize(
     'state_domain,service_domain', [
+        (automation.DOMAIN, automation.DOMAIN),
         (input_boolean.DOMAIN, input_boolean.DOMAIN),
         (group.DOMAIN, HA_DOMAIN),
         (fan.DOMAIN, fan.DOMAIN),

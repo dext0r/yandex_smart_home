@@ -1,6 +1,7 @@
 """Constants for Yandex Smart Home."""
 from homeassistant.components import (
     air_quality,
+    automation,
     binary_sensor,
     button,
     camera,
@@ -148,6 +149,7 @@ TYPES = (
 
 DOMAIN_TO_YANDEX_TYPES = {
     air_quality.DOMAIN: TYPE_SENSOR,
+    automation.DOMAIN: TYPE_OTHER,
     binary_sensor.DOMAIN: TYPE_SENSOR,
     button.DOMAIN: TYPE_OTHER,
     camera.DOMAIN: TYPE_CAMERA,

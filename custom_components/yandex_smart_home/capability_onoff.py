@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from homeassistant.components import (
+    automation,
     button,
     climate,
     cover,
@@ -96,6 +97,30 @@ class OnOffCapabilityBasic(OnOffCapability):
 
         await self.hass.services.async_call(
             self.state.domain,
+            service, {
+                ATTR_ENTITY_ID: self.state.entity_id
+            },
+            blocking=True,
+            context=data.context
+        )
+
+
+@register_capability
+class OnOffCapabilityAutomation(OnOffCapability):
+    def get_value(self) -> bool:
+        return self.state.state == STATE_ON
+
+    def supported(self) -> bool:
+        return self.state.domain == automation.DOMAIN
+
+    async def _set_state(self, data: RequestData, state: dict[str, Any]):
+        if state['value']:
+            service = SERVICE_TURN_ON
+        else:
+            service = SERVICE_TURN_OFF
+
+        await self.hass.services.async_call(
+            automation.DOMAIN,
             service, {
                 ATTR_ENTITY_ID: self.state.entity_id
             },
