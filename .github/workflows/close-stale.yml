@@ -22,3 +22,4 @@ jobs:
           stale-issue-label: stale
           stale-pr-label: stale
           remove-issue-stale-when-updated: true
+          only-labels: question
