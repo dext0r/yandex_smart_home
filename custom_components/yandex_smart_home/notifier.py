@@ -39,6 +39,7 @@ _LOGGER = logging.getLogger(__name__)
 
 DISCOVERY_REQUEST_DELAY = 15
 DISCOVERY_REQUEST_DELAY_ON_CONFIG_RELOAD = 5
+INITIAL_REPORT_DELAY = 10
 REPORT_STATE_WINDOW = 1
 
 
@@ -218,6 +219,26 @@ class YandexNotifier(ABC):
                     delay = 0 if callback_state.should_report_immediately else REPORT_STATE_WINDOW
                     self._unsub_pending = async_call_later(self._hass, delay, self._report_states_job)
 
+    async def async_initial_report(self):
+        if not self._ready:
+            return
+
+        _LOGGER.debug('Reporting initial states')
+        for state in self._hass.states.async_all():
+            yandex_entity = YandexEntity(self._hass, self._config, state)
+            if not yandex_entity.should_expose:
+                continue
+
+            callback_state = YandexEntityCallbackState(
+                yandex_entity, event_entity_id=state.entity_id, initial_report=True
+            )
+
+            if callback_state.should_report:
+                self._pending.append(callback_state)
+
+                if self._unsub_pending is None:
+                    self._unsub_pending = async_call_later(self._hass, 0, self._report_states_job)
+
     async def async_unload(self):
         if self._unsub_send_discovery:
             self._unsub_send_discovery()
@@ -261,20 +282,35 @@ class YandexCloudNotifier(YandexNotifier):
 @callback
 def async_setup_notifier(hass: HomeAssistant):
     """Set up notifiers."""
+    unsub_initial_report: CALLBACK_TYPE | None = None
+
     async def _state_change_listener(event: Event):
         await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
 
     hass.bus.async_listen(EVENT_STATE_CHANGED, _state_change_listener)
 
-    async def _schedule_discovery_listener(event: Event):
+    async def _schedule_discovery(event: Event):
         delay = DISCOVERY_REQUEST_DELAY
         if event.event_type == EVENT_CONFIG_CHANGED:
             delay = DISCOVERY_REQUEST_DELAY_ON_CONFIG_RELOAD
 
         await asyncio.gather(*[n.async_schedule_discovery(delay) for n in hass.data[DOMAIN][NOTIFIERS]])
 
-    hass.bus.async_listen(EVENT_HOMEASSISTANT_STARTED, _schedule_discovery_listener)
-    hass.bus.async_listen(EVENT_CONFIG_CHANGED, _schedule_discovery_listener)
+    async def _schedule_initial_report(_: Event):
+        nonlocal unsub_initial_report
+
+        async def _initial_report(_: Event):
+            nonlocal unsub_initial_report
+            unsub_initial_report = None
+
+            await asyncio.gather(*[n.async_initial_report() for n in hass.data[DOMAIN][NOTIFIERS]])
+
+        if unsub_initial_report is None:
+            unsub_initial_report = async_call_later(hass, INITIAL_REPORT_DELAY, HassJob(_initial_report))
+
+    hass.bus.async_listen(EVENT_HOMEASSISTANT_STARTED, _schedule_discovery)
+    hass.bus.async_listen(EVENT_CONFIG_CHANGED, _schedule_discovery)
+    hass.bus.async_listen(const.EVENT_DEVICE_DISCOVERY, _schedule_initial_report)
 
 
 async def async_start_notifier(hass: HomeAssistant):

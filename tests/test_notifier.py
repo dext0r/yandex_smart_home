@@ -405,6 +405,56 @@ async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connect
         mock_send_cb.assert_called_once()
 
 
+async def test_notifier_schedule_initial_report(hass_platform_cloud_connection, mock_call_later):
+    hass = hass_platform_cloud_connection
+
+    hass.bus.async_fire(const.EVENT_DEVICE_DISCOVERY)
+    await hass.async_block_till_done()
+
+    assert len(mock_call_later.call_args_list) == 3
+
+    with patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_initial_report') as mock_ir:
+        await mock_call_later.call_args_list[0][0][2].target(None)
+        mock_ir.assert_called()
+
+
+async def test_notifier_send_initial_report(hass_platform_cloud_connection):
+    hass = hass_platform_cloud_connection
+    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
+    notifier = hass.data[DOMAIN][NOTIFIERS][0]
+    hass.data[DOMAIN][CONFIG]._entity_filter = generate_entity_filter(
+        include_entity_globs=['*'],
+        exclude_entities=['switch.test']
+    )
+
+    hass.states.async_set('switch.test', 'on')
+    await hass.async_block_till_done()
+
+    with patch('custom_components.yandex_smart_home.notifier.YandexNotifier._ready', new_callable=PropertyMock(
+            return_value=False
+    )):
+        await notifier.async_initial_report()
+        assert len(notifier._pending) == 0
+
+    with patch('custom_components.yandex_smart_home.notifier.YandexNotifier._ready', new_callable=PropertyMock(
+            return_value=True
+    )):
+        await notifier.async_initial_report()
+        assert len(notifier._pending) == 2
+        assert notifier._pending[0].capabilities == []
+        assert notifier._pending[0].properties == [{
+            'state': {'instance': 'temperature', 'value': 15.6},
+            'type': 'devices.properties.float'
+        }]
+        print(notifier._pending[1].device_id)
+        assert notifier._pending[1].capabilities == [
+            {'state': {'instance': 'temperature_k', 'value': 4200}, 'type': 'devices.capabilities.color_setting'},
+            {'state': {'instance': 'brightness', 'value': 70}, 'type': 'devices.capabilities.range'},
+            {'state': {'instance': 'on', 'value': True}, 'type': 'devices.capabilities.on_off'}
+        ]
+        assert notifier._pending[1].properties == []
+
+
 async def test_notifier_async_send_callback(hass_platform_cloud_connection, caplog):
     hass = hass_platform_cloud_connection
     assert len(hass.data[DOMAIN][NOTIFIERS]) == 1

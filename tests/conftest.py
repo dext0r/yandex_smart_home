@@ -2,6 +2,8 @@
 from unittest.mock import patch
 
 from homeassistant.components import http
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.demo.binary_sensor import DemoBinarySensor
 from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.demo.sensor import DemoSensor
 from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
@@ -118,9 +120,19 @@ def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
     demo_sensor.hass = hass
     demo_sensor.entity_id = 'sensor.outside_temp'
 
+    demo_binary_sensor = DemoBinarySensor(
+        unique_id='front_door',
+        name='Front Door',
+        state=True,
+        device_class=BinarySensorDeviceClass.DOOR,
+    )
+    demo_binary_sensor.hass = hass
+    demo_binary_sensor.entity_id = 'binary_sensor.front_Door'
+
     demo_light = DemoLight(
         unique_id='light_kitchen',
         name='Kitchen Light',
+        ct=240,
         available=True,
         state=True,
     )
@@ -129,6 +141,9 @@ def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
 
     loop.run_until_complete(
         demo_sensor.async_update_ha_state()
+    )
+    loop.run_until_complete(
+        demo_binary_sensor.async_update_ha_state()
     )
     loop.run_until_complete(
         demo_light.async_update_ha_state()

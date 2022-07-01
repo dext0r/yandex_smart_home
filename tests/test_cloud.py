@@ -234,6 +234,23 @@ async def test_cloud_req_user_devices(hass_platform_cloud_connection, config, ai
                     'model': 'sensor.outside_temp',
                 }
             }, {
+                'id': 'binary_sensor.front_door',
+                'name': 'Front Door',
+                'type': 'devices.types.sensor',
+                'capabilities': [],
+                'properties': [{
+                    'type': 'devices.properties.event',
+                    'retrievable': True,
+                    'reportable': True,
+                    'parameters': {
+                        'instance': 'open',
+                        'events': [{'value': 'opened'}, {'value': 'closed'}]
+                    }
+                }],
+                'device_info': {
+                    'model': 'binary_sensor.front_door'
+                },
+            }, {
                 'id': 'light.kitchen',
                 'name': 'Kitchen Light',
                 'type': 'devices.types.light',

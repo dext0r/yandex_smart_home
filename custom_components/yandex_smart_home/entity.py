@@ -25,6 +25,7 @@ from .error import SmartHomeError
 from .helpers import Config, RequestData
 from .prop import AbstractProperty
 from .prop_custom import CustomEntityProperty
+from .prop_event import EventProperty
 
 
 class YandexEntity:
@@ -253,7 +254,7 @@ class YandexEntity:
 
 
 class YandexEntityCallbackState:
-    def __init__(self, entity: YandexEntity, event_entity_id: str):
+    def __init__(self, entity: YandexEntity, event_entity_id: str, initial_report: bool = False):
         self.device_id: str = entity.entity_id
         self.old_state: YandexEntityCallbackState | None = None
 
@@ -275,6 +276,10 @@ class YandexEntityCallbackState:
                     continue
             elif item.state.entity_id != event_entity_id:
                 continue
+
+            if initial_report:
+                if isinstance(item, EventProperty):
+                    continue
 
             if item.report_immediately:
                 self.should_report_immediately = True
