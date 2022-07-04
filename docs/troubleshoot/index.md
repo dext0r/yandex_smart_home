@@ -44,3 +44,6 @@
     1. [Включите отладку](debug.md#debug-logger)
     2. [Обновите список устройств](../quasar.md#discovery) в УДЯ
     3. В `home-assistant.log` найдите запрос `/user/devices` и убедитесь, что `user_id` в нём совпадает с `user_id` в конфигурации [нотификатора](../advanced/direct-connection.md#notifier)
+
+## Failed to send state notification: [401] b'Unauthorized\n' { id=notifier-unathorized }
+Только для прямого подключения: обновите [oauth_token](../advanced/direct-connection.md#notifier-401)
