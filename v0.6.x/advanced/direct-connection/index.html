@@ -622,6 +622,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#notifier-401" class="md-nav__link">
+    Ошибка [401] Unauthorized
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -893,6 +900,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#notifier-401" class="md-nav__link">
+    Ошибка [401] Unauthorized
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1049,7 +1063,7 @@
 </ol>
 <p>Для настройки понадобятся:</p>
 <ul>
-<li><code>oauth_token</code>: Получить по <a href="https://oauth.yandex.ru/authorize?response_type=token&amp;client_id=c473ca268cd749d3a8371351a8f2bcbd">этой ссылке</a> с аккаунта владельца навыка</li>
+<li><code>oauth_token</code>: Получить по <a href="https://oauth.yandex.ru/authorize?response_type=token&amp;client_id=c473ca268cd749d3a8371351a8f2bcbd">этой ссылке</a>. Для получения правильного токена вы должны войти в Яндекс с аккаунта, на котором был создан навык</li>
 <li><code>skill_id</code>: <code>Идентификатор диалога</code> на вкладке <code>Общие сведения</code> в <a href="https://dialogs.yandex.ru/developer/skills">консоли</a> Яндекс.Диалогов</li>
 <li><code>user_id</code>: ID пользователя в Home Assistant под которым выполнялась авторизация при связке аккаунтов,
   посмотреть в <code>Настройки</code> &rarr; <code>Люди</code> &rarr; <code>Пользователи</code> &rarr; (выбрать пользователя) &rarr; <code>ID</code> (для видимости раздела включите <code>Расширенный режим</code> в профиле пользователя):</li>
@@ -1142,6 +1156,11 @@
 <h4 id="_1">Внутренная ошибка навыка<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h4>
 <p>Обычно возникает из-за проблем в разрешении IP-адреса из имени. 
 По состоянию на конец октября 2021 замечено, что без видимой причины могут не работать домены <code>*.tplinkdns.com</code> (попробуйте использовать другой динамический DNS).</p>
+<h3 id="notifier-401">Ошибка [401] Unauthorized<a class="headerlink" href="#notifier-401" title="Permanent link">&para;</a></h3>
+<p>Полный текст ошибки: <code>Failed to send state notification: [401] b'Unauthorized\n'</code></p>
+<p>Возникает из-за неверного OAuth токена в параметре <code>oauth_token</code> в настройках <a href="#notifier">нотификатора</a>. </p>
+<p>Для исправления: замените <code>oauth_token</code> на актуальный, получить его можно по <a href="https://oauth.yandex.ru/authorize?response_type=token&amp;client_id=c473ca268cd749d3a8371351a8f2bcbd">этой ссылке</a>. </p>
+<p>Для получения правильного токена вы должны войти в Яндекс с аккаунта, на котором был создан навык.</p>
 
               
             </article>
