@@ -710,7 +710,7 @@ class CleanupModeCapability(ModeCapability):
     instance = const.MODE_INSTANCE_CLEANUP_MODE
     modes_map_default = {
         const.MODE_INSTANCE_MODE_AUTO: ['auto', 'automatic', '102'],
-        const.MODE_INSTANCE_MODE_TURBO: ['turbo', 'high', 'performance', '104', 'full speed'],
+        const.MODE_INSTANCE_MODE_TURBO: ['turbo', 'high', 'performance', '104', 'full speed', 'max+'],
         const.MODE_INSTANCE_MODE_MIN: ['min', 'mop'],
         const.MODE_INSTANCE_MODE_LOW: ['gentle'],
         const.MODE_INSTANCE_MODE_MAX: ['max', 'strong'],
