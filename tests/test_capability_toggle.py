@@ -105,7 +105,7 @@ async def test_capability_pause_cover(hass):
             ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.STOP
         })
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
-        assert cap.retrievable
+        assert not cap.retrievable
         assert cap.parameters() == {'instance': TOGGLE_INSTANCE_PAUSE}
         assert cap.get_value() is False
 

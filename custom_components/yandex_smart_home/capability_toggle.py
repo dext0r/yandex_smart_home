@@ -117,6 +117,8 @@ class PauseCapabilityMediaPlayer(PauseCapability):
 
 @register_capability
 class PauseCapabilityCover(PauseCapability):
+    retrievable = False
+
     def supported(self) -> bool:
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
