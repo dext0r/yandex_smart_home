@@ -622,6 +622,9 @@ XIAOMI_FAN_PRESET_LEVEL_5 = 'Level 5'
 XIAOMI_FAN_PRESET_NATURE = 'Nature'
 XIAOMI_FAN_PRESET_NORMAL = 'Normal'
 
+# https://github.com/ollo69/ha-smartthinq-sensors/blob/2d6212c9e060dc1d4947e1fed195af154442b941/custom_components/smartthinq_sensors/wideq/ac.py#L141
+SMARTTHINQ_FAN_PRESET_NATURE = 'NATURE'
+
 # https://github.com/home-assistant/core/blob/6830eec549c372946b19035000c10afecd2f2da3/homeassistant/components/xiaomi_miio/fan.py#L275
 XIAOMI_AIRPURIFIER_PRESET_AUTO = 'Auto'
 XIAOMI_AIRPURIFIER_PRESET_SILENT = 'Silent'

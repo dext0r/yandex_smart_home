@@ -465,6 +465,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         const.MODE_INSTANCE_MODE_AUTO: [
             climate.const.FAN_AUTO,
             climate.const.FAN_ON,
+            const.SMARTTHINQ_FAN_PRESET_NATURE,
         ],
         const.MODE_INSTANCE_MODE_QUIET: [
             climate.const.FAN_OFF,
