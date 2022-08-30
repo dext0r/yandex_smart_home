@@ -412,8 +412,12 @@ class InputSourceCapability(ModeCapability):
         """Test if capability is supported."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
-        if self.state.domain == media_player.DOMAIN and features & media_player.MediaPlayerEntityFeature.SELECT_SOURCE:
-            return super().supported()
+        if self.state.domain == media_player.DOMAIN:
+            if const.MEDIA_PLAYER_FEATURE_SELECT_SOURCE in self.entity_config.get(const.CONF_FEATURES, []):
+                return True
+
+            if features & media_player.MediaPlayerEntityFeature.SELECT_SOURCE:
+                return super().supported()
 
         return False
 

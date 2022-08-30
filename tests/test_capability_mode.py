@@ -24,7 +24,7 @@ from custom_components.yandex_smart_home.const import (
 from custom_components.yandex_smart_home.error import SmartHomeError
 
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig
-from .test_capability import assert_no_capabilities, get_exact_one_capability
+from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
 
 
 class MockModeCapability(ModeCapability):
@@ -307,6 +307,16 @@ async def test_capability_mode_program_fan(hass):
 async def test_capability_mode_input_source(hass, caplog):
     state = State('media_player.test', STATE_OFF)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
+
+    state = State('media_player.test', STATE_ON)
+    config = MockConfig(entity_config={
+        state.entity_id: {
+            'features': [
+                'select_source'
+            ]
+        }
+    })
+    assert_exact_one_capability(hass, config, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
 
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,

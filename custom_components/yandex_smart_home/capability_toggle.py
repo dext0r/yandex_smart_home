@@ -89,8 +89,12 @@ class PauseCapabilityMediaPlayer(PauseCapability):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
 
         if self.state.domain == media_player.DOMAIN:
-            return features & media_player.MediaPlayerEntityFeature.PAUSE and \
-                   features & media_player.MediaPlayerEntityFeature.PLAY
+            if const.MEDIA_PLAYER_FEATURE_PLAY_PAUSE in self.entity_config.get(const.CONF_FEATURES, []):
+                return True
+
+            if features & media_player.MediaPlayerEntityFeature.PAUSE and \
+                    features & media_player.MediaPlayerEntityFeature.PLAY:
+                return True
 
         return False
 

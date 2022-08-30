@@ -68,6 +68,16 @@ async def test_capability_pause_media_player(hass):
     state = State('media_player.test', STATE_ON)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
 
+    state = State('media_player.test', STATE_ON)
+    config = MockConfig(entity_config={
+        state.entity_id: {
+            'features': [
+                'play_pause'
+            ]
+        }
+    })
+    assert_exact_one_capability(hass, config, state, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE)
+
     for s in [media_player.STATE_IDLE, media_player.STATE_OFF]:
         state = State('media_player.test', s, {
             ATTR_SUPPORTED_FEATURES:

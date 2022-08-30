@@ -154,6 +154,16 @@ async def test_capability_onoff_media_player(hass):
     state = State('media_player.simple', STATE_ON)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
 
+    state = State('media_player.test', STATE_ON)
+    config = MockConfig(entity_config={
+        state.entity_id: {
+            'features': [
+                'turn_on_off'
+            ]
+        }
+    })
+    assert_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+
     state = State('media_player.only_on', STATE_ON, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.TURN_OFF
     })

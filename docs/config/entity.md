@@ -69,10 +69,10 @@
 ## Поддерживаемые функции (media_player) { id=features }
 > Параметр: `features` (только для `media_player`)
 
-> Возможные значения: `volume_mute`, `volume_set`, `next_previous_track` (список, можно все сразу)
+> Возможные значения: `volume_mute`, `volume_set`, `next_previous_track`, `select_source`[^1], `turn_on_off`[^1], `play_pause`[^1] (список, можно все сразу)
 
 Используется для явного указания поддерживаемых устройством функций.
-Необходим для устройств, которые меняют набор функций в зависимости от своего состояния (например Chrome Cast).
+Необходим для устройств, которые меняют набор функций в зависимости от своего состояния (например Chrome Cast или Universal Mediaplayer).
 
 !!! example "Пример"
     ```yaml
@@ -83,7 +83,12 @@
             - volume_mute
             - volume_set
             - next_previous_track
-    ``` 
+            - select_source
+            - turn_on_off
+            - play_pause
+    ```
+
+[^1]: Начиная с версии 0.6.1
 
 ## Выбор каналов (media_player) { id=support_set_channel }
 > Параметр: `support_set_channel` (только для `media_player`)

@@ -288,6 +288,9 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
             if const.CONF_TURN_ON in self.entity_config or const.CONF_TURN_OFF in self.entity_config:
                 return True
 
+            if const.MEDIA_PLAYER_FEATURE_TURN_ON_OFF in self.entity_config.get(const.CONF_FEATURES, []):
+                return True
+
             return features & media_player.MediaPlayerEntityFeature.TURN_ON or \
                 features & media_player.MediaPlayerEntityFeature.TURN_OFF
 
