@@ -36,7 +36,7 @@ from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
 )
-from homeassistant.core import DOMAIN as HA_DOMAIN, HomeAssistant, State
+from homeassistant.core import DOMAIN as HA_DOMAIN
 from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.service import async_call_from_config
 
@@ -44,7 +44,7 @@ from . import const
 from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
 from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
-from .helpers import Config, RequestData
+from .helpers import RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,8 +60,18 @@ class OnOffCapability(AbstractCapability, ABC):
     type = CAPABILITIES_ONOFF
     instance = const.ON_OFF_INSTANCE_ON
 
+    @property
+    def retrievable(self) -> bool:
+        if self.entity_config.get(const.CONF_STATE_UNKNOWN):
+            return False
+
+        return True
+
     def parameters(self) -> dict[str, Any] | None:
         """Return parameters for a devices request."""
+        if not self.retrievable:
+            return {'split': True}
+
         return None
 
     def get_value(self) -> bool | None:
@@ -82,6 +92,15 @@ class OnOffCapability(AbstractCapability, ABC):
     @abstractmethod
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
         pass
+
+
+class OnlyOnCapability(OnOffCapability, ABC):
+    @property
+    def retrievable(self) -> bool:
+        return False
+
+    def parameters(self) -> dict[str, Any] | None:
+        return None
 
 
 @register_capability
@@ -151,9 +170,7 @@ class OnOffCapabilityGroup(OnOffCapability):
 
 
 @register_capability
-class OnOffCapabilityScript(OnOffCapability):
-    retrievable = False
-
+class OnOffCapabilityScript(OnlyOnCapability):
     def get_value(self) -> bool | None:
         return None
 
@@ -172,9 +189,7 @@ class OnOffCapabilityScript(OnOffCapability):
 
 
 @register_capability
-class OnOffCapabilityButton(OnOffCapability):
-    retrievable = False
-
+class OnOffCapabilityButton(OnlyOnCapability):
     def get_value(self) -> bool | None:
         return None
 
@@ -193,9 +208,7 @@ class OnOffCapabilityButton(OnOffCapability):
 
 
 @register_capability
-class OnOffCapabilityInputButton(OnOffCapability):
-    retrievable = False
-
+class OnOffCapabilityInputButton(OnlyOnCapability):
     def get_value(self) -> bool | None:
         return None
 
@@ -239,20 +252,8 @@ class OnOffCapabilityLock(OnOffCapability):
 
 @register_capability
 class OnOffCapabilityCover(OnOffCapability):
-    def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        super().__init__(hass, config, state)
-
-        if self.entity_config.get(const.CONF_STATE_UNKNOWN):
-            self.retrievable = False
-
     def get_value(self) -> bool:
         return self.state.state == cover.STATE_OPEN
-
-    def parameters(self) -> dict[str, Any] | None:
-        if not self.retrievable:
-            return {'split': True}
-
-        return None
 
     def supported(self) -> bool:
         return self.state.domain == cover.DOMAIN
@@ -275,12 +276,6 @@ class OnOffCapabilityCover(OnOffCapability):
 
 @register_capability
 class OnOffCapabilityMediaPlayer(OnOffCapability):
-    def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        super().__init__(hass, config, state)
-
-        if self.entity_config.get(const.CONF_STATE_UNKNOWN):
-            self.retrievable = False
-
     def supported(self) -> bool:
         if self.state.domain == media_player.DOMAIN:
             features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
@@ -295,10 +290,6 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
                 features & media_player.MediaPlayerEntityFeature.TURN_OFF
 
         return False
-
-    def parameters(self) -> dict[str, Any] | None:
-        if not self.retrievable:
-            return {'split': True}
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
         if state['value']:

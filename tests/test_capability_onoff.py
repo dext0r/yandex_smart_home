@@ -77,6 +77,18 @@ async def test_capability_onoff_simple(hass, state_domain, service_domain):
     cap_off = get_exact_one_capability(hass, BASIC_CONFIG, state_off, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert not cap_off.get_value()
 
+    config = MockConfig(
+        entity_config={
+            f'{state_domain}.test': {
+                const.CONF_STATE_UNKNOWN: True
+            }
+        }
+    )
+    state = State(f'{state_domain}.test', STATE_ON)
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert not cap.retrievable
+    assert cap.parameters() == {'split': True}
+
 
 @pytest.mark.parametrize('domain,initial_state,service', [
     (script.DOMAIN, STATE_OFF, SERVICE_TURN_ON),
@@ -237,6 +249,18 @@ async def test_capability_onoff_lock(hass):
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert not cap.get_value()
 
+    config = MockConfig(
+        entity_config={
+            'lock.test': {
+                const.CONF_STATE_UNKNOWN: True
+            }
+        }
+    )
+    state = State('lock.test', STATE_ON)
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert not cap.retrievable
+    assert cap.parameters() == {'split': True}
+
 
 async def test_capability_onoff_vacuum(hass):
     for s in [STATE_ON, vacuum.STATE_CLEANING]:
@@ -256,6 +280,20 @@ async def test_capability_onoff_vacuum(hass):
         })
         cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
         assert not cap.get_value()
+
+    config = MockConfig(
+        entity_config={
+            'vacuum.test': {
+                const.CONF_STATE_UNKNOWN: True
+            }
+        }
+    )
+    state = State('vacuum.test', STATE_ON, attributes={
+        ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.STOP
+    })
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert not cap.retrievable
+    assert cap.parameters() == {'split': True}
 
 
 @pytest.mark.parametrize(
@@ -338,6 +376,18 @@ async def test_capability_onoff_climate(hass):
     await cap.set_state(BASIC_DATA, {'value': False})
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
+
+    config = MockConfig(
+        entity_config={
+            'climate.test': {
+                const.CONF_STATE_UNKNOWN: True
+            }
+        }
+    )
+    state = State('climate.test', STATE_ON)
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert not cap.retrievable
+    assert cap.parameters() == {'split': True}
 
 
 @pytest.mark.parametrize(
@@ -460,6 +510,18 @@ async def test_capability_onoff_water_heater(hass):
     await cap.set_state(BASIC_DATA, {'value': False})
     assert len(off_calls) == 1
     assert off_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
+
+    config = MockConfig(
+        entity_config={
+            'water_heater.test': {
+                const.CONF_STATE_UNKNOWN: True
+            }
+        }
+    )
+    state = State('water_heater.test', STATE_ON)
+    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert not cap.retrievable
+    assert cap.parameters() == {'split': True}
 
 
 @pytest.mark.parametrize('op_on', ['on', 'On', 'ON', 'electric'])
