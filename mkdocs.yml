@@ -6,7 +6,7 @@ nav:
   - О компоненте: index.md
   - Особенности интеграции и УДЯ : quirks.md
   - Установка компонента: install/component.md
-  - Добавлении интеграции: install/integration.md
+  - Добавление интеграции: install/integration.md
   - Настройка интеграции:
       - Способы настройки: config/getting-started.md
       - Выбор объектов для передачи: config/filter.md
