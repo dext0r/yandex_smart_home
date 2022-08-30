@@ -73,7 +73,7 @@ class Config:
 
     @property
     def beta(self) -> bool:
-        return self._options[const.CONF_BETA]
+        return self._options[const.CONF_BETA]  # pragma: no cover
 
     @property
     def notifier(self) -> list[ConfigType]:
