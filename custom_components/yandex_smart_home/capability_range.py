@@ -472,7 +472,8 @@ class ChannelCapability(RangeCapability):
             if const.MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK in self.entity_config.get(const.CONF_FEATURES, []):
                 return True
 
-            if features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA:
+            if features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA or \
+                    const.MEDIA_PLAYER_FEATURE_PLAY_MEDIA in self.entity_config.get(const.CONF_FEATURES, []):
                 if self.entity_config.get(const.CONF_SUPPORT_SET_CHANNEL) is False:
                     return False
 
@@ -489,8 +490,12 @@ class ChannelCapability(RangeCapability):
         if self.entity_config.get(const.CONF_SUPPORT_SET_CHANNEL) is False:
             return False
 
-        return bool(features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA and
-                    device_class == media_player.DEVICE_CLASS_TV)
+        if device_class == media_player.DEVICE_CLASS_TV:
+            if features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA or \
+                    const.MEDIA_PLAYER_FEATURE_PLAY_MEDIA in self.entity_config.get(const.CONF_FEATURES, []):
+                return True
+
+        return False
 
     def get_value(self) -> float | None:
         """Return the state value of this capability for this entity."""
