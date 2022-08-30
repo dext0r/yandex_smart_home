@@ -50,6 +50,9 @@ jobs:
           - ha-version: '2022.7'
             pytest-component-version: '0.10.1'
             python-version: '3.10'
+          - ha-version: '2022.8'
+            pytest-component-version: '0.11.12'
+            python-version: '3.10'
             latest: true
     steps:
       - uses: actions/checkout@v2
