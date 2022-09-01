@@ -266,7 +266,7 @@
   
     <li class="md-nav__item">
       <a href="../../install/integration/" class="md-nav__link">
-        Добавлении интеграции
+        Добавление интеграции
       </a>
     </li>
   
@@ -402,7 +402,7 @@
       
         <li class="md-nav__item">
   <a href="#state_unknown" class="md-nav__link">
-    Устройство без состояния
+    Раздельные кнопки вкл/выкл
   </a>
   
 </li>
@@ -820,7 +820,7 @@
       
         <li class="md-nav__item">
   <a href="#state_unknown" class="md-nav__link">
-    Устройство без состояния
+    Раздельные кнопки вкл/выкл
   </a>
   
 </li>
@@ -919,10 +919,10 @@
 <h2 id="features">Поддерживаемые функции (media_player)<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p>Параметр: <code>features</code> (только для <code>media_player</code>)</p>
-<p>Возможные значения: <code>volume_mute</code>, <code>volume_set</code>, <code>next_previous_track</code> (список, можно все сразу)</p>
+<p>Возможные значения: <code>volume_mute</code>, <code>volume_set</code>, <code>next_previous_track</code>, <code>select_source</code><sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>, <code>turn_on_off</code><sup id="fnref2:1"><a class="footnote-ref" href="#fn:1">1</a></sup>, <code>play_pause</code><sup id="fnref3:1"><a class="footnote-ref" href="#fn:1">1</a></sup>, <code>play_media</code><sup id="fnref4:1"><a class="footnote-ref" href="#fn:1">1</a></sup> (список, можно все сразу)</p>
 </blockquote>
 <p>Используется для явного указания поддерживаемых устройством функций.
-Необходим для устройств, которые меняют набор функций в зависимости от своего состояния (например Chrome Cast).</p>
+Необходим для устройств, которые меняют набор функций в зависимости от своего состояния (например Chrome Cast или Universal Mediaplayer).</p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span><span class="w"></span>
@@ -932,6 +932,10 @@
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">volume_mute</span><span class="w"></span>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">volume_set</span><span class="w"></span>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">next_previous_track</span><span class="w"></span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">select_source</span><span class="w"></span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">turn_on_off</span><span class="w"></span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">play_pause</span><span class="w"></span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">play_media</span><span class="w"></span>
 </code></pre></div>
 </div>
 <h2 id="support_set_channel">Выбор каналов (media_player)<a class="headerlink" href="#support_set_channel" title="Permanent link">&para;</a></h2>
@@ -949,13 +953,13 @@
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="nt">support_set_channel</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"></span>
 </code></pre></div>
 </div>
-<h2 id="state_unknown">Устройство без состояния<a class="headerlink" href="#state_unknown" title="Permanent link">&para;</a></h2>
+<h2 id="state_unknown">Раздельные кнопки вкл/выкл<a class="headerlink" href="#state_unknown" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p>Параметр: <code>state_unknown</code> (только для <code>cover</code> и <code>media_player</code>)</p>
+<p>Параметр: <code>state_unknown</code></p>
 <p>Возможные значения: <code>true</code></p>
 </blockquote>
-<p>Необходимо включать для устройств, которые не возвращают своё актуальное состояние (например шторы, управляемые по IR каналу). </p>
-<p>При включении будут отображены раздельные кнопки для включения и выключения:       </p>
+<p>Включает раздельное отображение кнопок для включение и отключения устройства. </p>
+<p>Рекомендуется использовать для устройств, которые не возвращают своё актуальное состояние (например шторы или вентилятор, управляемые по IR каналу). </p>
 <p><img alt="" src="../../assets/images/config/state_unknown.png" /></p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>
@@ -965,6 +969,7 @@
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">      </span><span class="nt">state_unknown</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
 </code></pre></div>
 </div>
+<p>В версии 0.6.0 поддерживаются только домены <code>cover</code> и <code>media_player</code>.</p>
 <h2 id="range">Ограничение уровня громкости<a class="headerlink" href="#range" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p>Параметр: <code>range</code></p>
@@ -980,6 +985,14 @@
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span><span class="w"></span>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">  </span><span class="c1"># шаг регулировки</span><span class="w"></span>
 </code></pre></div>
+</div>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Начиная с версии 0.6.1&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref3:1" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref4:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
 </div>
 
               

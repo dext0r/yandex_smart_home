@@ -266,7 +266,7 @@
   
     <li class="md-nav__item">
       <a href="../install/integration/" class="md-nav__link">
-        Добавлении интеграции
+        Добавление интеграции
       </a>
     </li>
   
@@ -633,6 +633,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#blinking-features" class="md-nav__link">
+    Устройство в УДЯ поддерживает не все функции
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unlinked" class="md-nav__link">
+    Устройство отвязалось
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#unexposed-entity" class="md-nav__link">
     State requested for unexposed entity
   </a>
@@ -797,6 +811,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#blinking-features" class="md-nav__link">
+    Устройство в УДЯ поддерживает не все функции
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unlinked" class="md-nav__link">
+    Устройство отвязалось
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#unexposed-entity" class="md-nav__link">
     State requested for unexposed entity
   </a>
@@ -891,6 +919,12 @@
 </ul>
 </li>
 </ul>
+<h2 id="blinking-features">Устройство в УДЯ поддерживает не все функции<a class="headerlink" href="#blinking-features" title="Permanent link">&para;</a></h2>
+<p>Некоторые устройства изменяют список поддерживаемых фукнций в зависимости от своего состояния. Особенно часто это поведение замечено за <code>media_player</code>.</p>
+<p>Если в УДЯ у устройства отсутствует функция, которая точно должна быть - попробуйте <a href="../quasar/#discovery">Обновить список устройств</a> при включенном устройстве.</p>
+<p>Так же может помочь настройка <a href="../config/entity/#features"><code>features</code></a> для явного указания поддерживаемых устройством функций.</p>
+<h2 id="unlinked">Устройство отвязалось<a class="headerlink" href="#unlinked" title="Permanent link">&para;</a></h2>
+<p>Необходимо вручную <a href="../quasar/#discovery">Обновить список устройств</a>, но сделать это не из списка навыков, а <strong>зайти в навык</strong> и нажать там кнопку <code>Обновить список устройств</code> или <code>Привязать к Яндексу</code>.</p>
 <h2 id="unexposed-entity">State requested for unexposed entity<a class="headerlink" href="#unexposed-entity" title="Permanent link">&para;</a></h2>
 <p>В УДЯ присутствует устройство, но объект по которому оно создано не выбран в <a href="../config/filter/">объектах для передачи в УДЯ</a>. </p>
 <p>Для исправления: удалите устройство из УДЯ или добавьте <a href="../faq/#get-entity-id-quasar">объект</a> в список устройств для передачи.</p>
