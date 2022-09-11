@@ -43,7 +43,7 @@
               entity: sensor.room_humidity
             - type: co2_level
               entity: sensor.room_co2_level
-            - type: illuminance
+            - type: illumination
               entity: sensor.room_illumination_lux
             - type: battery_level
               entity: sensor.room_meteo_battery_level

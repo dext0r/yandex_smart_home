@@ -34,7 +34,7 @@
 | Температура           | `temperature`    | `°C`                                                          | Или из атрибутов `temperature`, `current_temperature`     |
 | Влажность             | `humidity`       | `%`                                                           | Или из атрибутов `humidity`, `current_humidity`           |
 | Давление              | `pressure`       | `pa`, `hPa`, `kPa`, `MPa`, `mmHg`, `atm`, `bar`, `mbar`       ||
-| Освещенность          | `illuminance`    |                                                               | Или из атрибута `illuminance`                             |
+| Освещенность          | `illumination`   |                                                               | Или из атрибута `illuminance`                             |
 | Уровень воды          |                  |                                                               | Из атрибута `water_level` для увлажнителей и вентиляторов |
 | Уровень CO2           | `carbon_dioxide` |                                                               | Или из атрибута `carbon_dioxide`                          |
 | Уровень частиц PM1    |                  || Из атрибута `particulate_matter_0_1`                          |
