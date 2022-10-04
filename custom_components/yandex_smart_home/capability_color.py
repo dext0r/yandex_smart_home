@@ -43,6 +43,7 @@ COLOR_PROFILES: dict[str, dict[str]: tuple[int, int, int]] = {
         const.COLOR_NAME_RASPBERRY: 16713260
     }
 }
+DEFAULT_WHITE_TEMPERATURE_K = 4500
 
 
 class ColorSettingCapability(AbstractCapability, ABC):
@@ -72,7 +73,7 @@ class ColorSettingCapability(AbstractCapability, ABC):
         const.COLOR_SCENE_SUNRISE: ['Рассвет', 'Sunrise'],
         const.COLOR_SCENE_SUNSET: ['Закат', 'Sunset']
     }
-    default_white_temperature_k = 4500
+    default_white_temperature_k = DEFAULT_WHITE_TEMPERATURE_K
     cold_white_temperature_k = 6500
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
@@ -495,13 +496,17 @@ class TemperatureConverter:
 
             self._map_values(yandex_temperature, ha_temperature)
 
-        if min_temp + range_extend_threshold < min(self._ha_value_to_yandex):
-            if yandex_temperature := self._first_available_temperature_step:
-                self._map_values(yandex_temperature, min_temp)
+        if self._ha_value_to_yandex and self._yandex_value_to_ha:
+            if min_temp + range_extend_threshold < min(self._ha_value_to_yandex):
+                if yandex_temperature := self._first_available_temperature_step:
+                    self._map_values(yandex_temperature, min_temp)
 
-        if max_temp - range_extend_threshold > max(self._ha_value_to_yandex):
-            if yandex_temperature := self._last_available_temperature_step:
-                self._map_values(yandex_temperature, max_temp)
+            if max_temp - range_extend_threshold > max(self._ha_value_to_yandex):
+                if yandex_temperature := self._last_available_temperature_step:
+                    self._map_values(yandex_temperature, max_temp)
+        else:
+            self._ha_value_to_yandex[min_temp] = DEFAULT_WHITE_TEMPERATURE_K
+            self._yandex_value_to_ha[DEFAULT_WHITE_TEMPERATURE_K] = min_temp
 
     def get_ha_temperature(self, yandex_temperature: int) -> int:
         return self._yandex_value_to_ha.get(yandex_temperature, yandex_temperature)

@@ -310,6 +310,25 @@ async def test_capability_color_setting_temprature_k_extend(hass):
         'max': 6500
     }
 
+    # narrow range
+    state = State('light.test', STATE_OFF, {
+        light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS],
+        light.ATTR_COLOR_TEMP: color_temperature_kelvin_to_mired(2000),
+        light.ATTR_MIN_MIREDS: color_temperature_kelvin_to_mired(2000),
+        light.ATTR_MAX_MIREDS: color_temperature_kelvin_to_mired(2008),
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_COLOR_SETTING, COLOR_SETTING_TEMPERATURE_K)
+    assert cap.parameters()['temperature_k'] == {
+        'min': 4500,
+        'max': 4500
+    }
+    assert cap.get_value() == 4500
+
+    calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
+    await cap.set_state(BASIC_DATA, {'value': 4500})
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 2000}
+
     # extend
     attributes = {
         light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.COLOR_TEMP, light.ColorMode.HS],
