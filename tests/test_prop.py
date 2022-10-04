@@ -104,10 +104,11 @@ async def test_property_demo_platform(hass):
         props = list((p.type, p.instance) for p in entity.properties())
         assert props == [('devices.properties.float', 'power')]
 
-        state = hass.states.get('sensor.today_energy')
-        entity = YandexEntity(hass, BASIC_CONFIG, state)
-        props = list((p.type, p.instance) for p in entity.properties())
-        assert props == []
+        if MINOR_VERSION < 9:
+            state = hass.states.get('sensor.today_energy')
+            entity = YandexEntity(hass, BASIC_CONFIG, state)
+            props = list((p.type, p.instance) for p in entity.properties())
+            assert props == []
 
     state = hass.states.get('binary_sensor.basement_floor_wet')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
