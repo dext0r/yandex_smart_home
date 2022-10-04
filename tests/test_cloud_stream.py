@@ -57,27 +57,48 @@ class MockSession:
         return self.ws
 
 
-class MockStream(Stream):
-    def __init__(self, hass: HomeAssistant):
-        if MAJOR_VERSION == 2022 and MINOR_VERSION >= 7:
-            super().__init__(hass, 'test', {}, StreamSettings(
-                ll_hls=True,
-                min_segment_duration=0,
-                part_target_duration=0,
-                hls_advance_part_limit=0,
-                hls_part_timeout=0,
-            ))
-        else:
+if MAJOR_VERSION == 2022 and MINOR_VERSION >= 7:
+    class MockStream(Stream):
+        def __init__(self, hass: HomeAssistant):
+            if MAJOR_VERSION == 2022 and MINOR_VERSION >= 10:
+                super().__init__(hass, 'test', {}, StreamSettings(
+                    ll_hls=True,
+                    min_segment_duration=0,
+                    part_target_duration=0,
+                    hls_advance_part_limit=0,
+                    hls_part_timeout=0,
+                    orientation=0
+                ))
+            else:
+                # noinspection PyArgumentList
+                super().__init__(hass, 'test', {}, StreamSettings(
+                    ll_hls=True,
+                    min_segment_duration=0,
+                    part_target_duration=0,
+                    hls_advance_part_limit=0,
+                    hls_part_timeout=0,
+                ))
+
+        def endpoint_url(self, fmt: str) -> str:
+            return '/foo'
+
+        def add_provider(
+                self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT
+        ) -> StreamOutput:
+            pass
+else:
+    class MockStream(Stream):
+        def __init__(self, hass: HomeAssistant):
             # noinspection PyArgumentList
             super().__init__(hass, 'test', {})
 
-    def endpoint_url(self, fmt: str) -> str:
-        return '/foo'
+        def endpoint_url(self, fmt: str) -> str:
+            return '/foo'
 
-    def add_provider(
-            self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT
-    ) -> StreamOutput:
-        pass
+        def add_provider(
+                self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT
+        ) -> StreamOutput:
+            pass
 
 
 @pytest.fixture(autouse=True, name='mock_call_later')
