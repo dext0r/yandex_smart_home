@@ -245,10 +245,11 @@ class IlluminanceProperty(FloatProperty):
         return False
 
     def get_value(self) -> float | None:
+        if const.ATTR_ILLUMINANCE in self.state.attributes:
+            return self.float_value(self.state.attributes.get(const.ATTR_ILLUMINANCE))
+
         if self.state.domain == sensor.DOMAIN:
             return self.float_value(self.state.state)
-
-        return self.float_value(self.state.attributes.get(const.ATTR_ILLUMINANCE))
 
 
 @register_property
