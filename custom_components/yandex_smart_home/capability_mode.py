@@ -425,7 +425,8 @@ class InputSourceCapability(ModeCapability):
     def supported_ha_modes(self) -> list[str]:
         """Returns list of supported HA modes for this entity."""
         modes = self.state.attributes.get(self.modes_list_attribute, []) or []
-        if modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
+        filtered_modes = list(filter(lambda m: m not in ['Live TV'], modes))  # #418
+        if filtered_modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
             self._cache.save_attr_value(self.state.entity_id, self.modes_list_attribute, modes)
             return modes
 

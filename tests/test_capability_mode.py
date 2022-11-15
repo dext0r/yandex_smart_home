@@ -378,6 +378,13 @@ async def test_capability_mode_input_source_cache(hass, off_state):
 
     state = State('media_player.test', off_state, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+        media_player.ATTR_INPUT_SOURCE_LIST: ['Live TV']
+    })
+    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
+    assert cap.supported_ha_modes == ['s1', 's2', 's3']
+
+    state = State('media_player.test', off_state, {
+        ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_INPUT_SOURCE)
     assert cap.supported_ha_modes == ['s1', 's2', 's3']
