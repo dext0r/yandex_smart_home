@@ -859,8 +859,8 @@
 <img alt="" src="../../assets/images/devices/sensor/simple-3.png" width="200" />
 <img alt="" src="../../assets/images/devices/sensor/simple-2.png" width="480" /></p>
 <h2 id="combine">Сборка несколько датчиков в одно устройство<a class="headerlink" href="#combine" title="Permanent link">&para;</a></h2>
-<p>В <a href="#simple">первом способе</a> одно физическое устройство (датчик температуры/влажности) передавалась в УДЯ как несколько независимых устройств, и это в большинстве случаев неудобно.</p>
-<p>Есть способ лучше! Мы можем объединить несколько независмых объектов в одно устройство через <a href="../../config/getting-started/#yaml">YAML конфигурацию</a>.</p>
+<p>В <a href="#simple">первом способе</a> одно физическое устройство (датчик температуры/влажности) передавалась в УДЯ как несколько независимых устройств, и это в большинстве случаев неудобно. </p>
+<p>Есть способ лучше! Мы можем объединить несколько независмых объектов в одно устройство через <a href="../../config/getting-started/#yaml">YAML конфигурацию</a>. </p>
 <p>В качестве примера возьмём этот же датчик температуры/влажности:</p>
 <p><img alt="" src="../../assets/images/devices/sensor/simple-1.png" width="750" /></p>
 <p>Он содержит несколько объектов, нам нужно <a href="../../faq/#get-entity-id">выяснить</a> их <code>entity_id</code>. В нашем примере это будут:</p>
@@ -872,9 +872,9 @@
 <p>Так же для примера добавим ещё несколько датчиков из других физических устройств:</p>
 <ul>
 <li>Уровень CO2: <code>sensor.room_co2_level</code></li>
-<li>Освещённость: <code>sensor.room_illumination_lux</code></li>
+<li>Освещённость: <code>sensor.room_illumination_lux</code> </li>
 </ul>
-<p>В Home Assistant нет объекта, на который мы могли бы добавить эти сенсоры.
+<p>В Home Assistant нет объекта, на который мы могли бы добавить эти сенсоры. 
 Поэтому в качестве объекта, из которого будут создано устройство в УДЯ, нужно выбрать <strong>любой</strong> существующий объект, возьмём для этих целей температуру (<code>sensor.room_temperature</code>).</p>
 <div class="admonition example">
 <p class="admonition-title">configuration.yaml</p>
@@ -895,7 +895,7 @@
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">          </span><span class="nt">entity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sensor.room_meteo_battery_level</span><span class="w"></span>
 </code></pre></div>
 </div>
-<p>Датчики, заданные в <code>properties</code>, обладают большим приоритетом над обнаруженными автоматически.
+<p>Датчики, заданные в <code>properties</code>, обладают большим приоритетом над обнаруженными автоматически. 
 По этой причине мы вручную добавил датчик <code>temperature</code> вверх списка. Если этого не сделать - он будет в конце (как автоматически обнаруженный для <code>sensor.room_temperature</code>).</p>
 <div class="admonition tip">
 <p class="admonition-title">Порядок датчиков в <code>properties</code> влияет на порядок отображения в УДЯ</p>
@@ -907,7 +907,7 @@
 <p><img alt="" src="../../assets/images/devices/sensor/combine-1.png" width="480" />
 <img alt="" src="../../assets/images/devices/sensor/combine-2.png" width="200" /></p>
 <h2 id="attach">Добавление датчиков к устройству<a class="headerlink" href="#attach" title="Permanent link">&para;</a></h2>
-<p>Некоторые устройства (термостат) уже содержат в своих атрибутах датчики, которые будет подхвачены автоматически.
+<p>Некоторые устройства (термостат) уже содержат в своих атрибутах датчики, которые будет подхвачены автоматически. 
 А некоторые, например, увлажнитель - наоборот, все датчики выносят в отдельные объекты.</p>
 <p>В качестве примера используем увлажнитель Xiaomi, он состоит из объектов:</p>
 <ul>
@@ -980,8 +980,8 @@
 </tbody>
 </table>
 <h2 id="unit-of-measurement">Конвертация значений<a class="headerlink" href="#unit-of-measurement" title="Permanent link">&para;</a></h2>
-<p>Компонент автоматически конвертирует значения сенсоров из одних единиц измерения в другие на основании атрибута/параметра <code>unit_of_measurement</code>.</p>
-<p>Атрибут содержит единицу измерения, в которой находится значение датчика в Home Assistant.</p>
+<p>Компонент автоматически конвертирует значения сенсоров из одних единиц измерения в другие на основании атрибута/параметра <code>unit_of_measurement</code>. </p>
+<p>Атрибут содержит единицу измерения, в которой находится значение датчика в Home Assistant. </p>
 <p>Если у объекта атрибут отсутствует (или неверный), его можно задать через параметр <code>unit_of_measurement</code> в <code>properties</code>.</p>
 <div class="admonition info">
 <p class="admonition-title">Возможные значения <code>unit_of_measurement</code> смотрите в <a href="../../supported-devices/#sensors">списке поддерживаемых датчиков</a></p>
@@ -1002,7 +1002,7 @@
 <p>Вы можете самостоятельно задать атрибут <code>device_class</code> через параметр объекта <code>Отображать как</code> в <code>Настройки</code> &rarr; <code>Устройства и объекты</code> &rarr; <a href="https://my.home-assistant.io/redirect/entities/"><code>Объекты</code></a></p>
 <p><img alt="" src="../../assets/images/devices/sensor/binary-device-class.png" width="750" /></p>
 <h2 id="quirks">Особенности бинарных датчиков в УДЯ<a class="headerlink" href="#quirks" title="Permanent link">&para;</a></h2>
-<p>В УДЯ не передаётся текущее состояние бинарного датчика, а передаются только события/изменения его состояния.</p>
+<p>В УДЯ не передаётся текущее состояние бинарного датчика, а передаются только события/изменения его состояния. </p>
 <p>Из этого следует несколько особенностей:</p>
 <ol>
 <li>Для отображения "статуса" в УДЯ датчик должен поменять своё состояние в Home Assistant (например открыть дверь или нажать кнопку)</li>
