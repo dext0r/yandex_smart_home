@@ -503,6 +503,26 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#scene" class="md-nav__link">
+    Режимы
+  </a>
+  
+    <nav class="md-nav" aria-label="Режимы">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scene-list" class="md-nav__link">
+    Доступные режимы
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -830,6 +850,26 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#scene" class="md-nav__link">
+    Режимы
+  </a>
+  
+    <nav class="md-nav" aria-label="Режимы">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scene-list" class="md-nav__link">
+    Доступные режимы
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1059,6 +1099,120 @@
 <li>Получите значение в кельвинах по формуле: <code>1000000/x</code>, где <code>x</code> - значение в миредах. Пример: <code>color_temp: 371</code> &rarr; <code>1000000/371</code> &rarr; <code>2695</code></li>
 <li>Округлите значение в кельвинах до ближайшей сотни. Примеры: <code>2695</code> &rarr; <code>2700</code> или <code>1125</code> &rarr; <code>1100</code></li>
 </ol>
+<h2 id="scene">Режимы<a class="headerlink" href="#scene" title="Permanent link">&para;</a></h2>
+<p>Для возможности выбора режима светильника в УДЯ должно выполняться два условия:</p>
+<ol>
+<li>Светильник в Home Assistant должен поддерживать режимы (эффекты) в атрибуте <code>effect_list</code></li>
+<li>Настроено соответствие режимов между УДЯ и Home Assistant. Компонент пытается сам связать режимы, но ему это не всегда удаётся из-за большой вариативности в названиях со стороны HA.</li>
+</ol>
+<p>Связывание режимов выполняется через <code>entity_config</code> в <a href="../../config/getting-started/#yaml">YAML конфигурации</a>.</p>
+<div class="admonition example">
+<p class="admonition-title">Пример</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">light.led_strip</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="nt">modes</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="nt">scene</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">          </span><span class="nt">sunrise</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Wake up</span><span class="w"></span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">          </span><span class="nt">alarm</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Blink</span><span class="w"></span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">          </span><span class="nt">fantasy</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Огоньки</span><span class="w"></span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="nt">light.kitchen_lamp</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="nt">modes</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">        </span><span class="nt">scene</span><span class="p">:</span><span class="w"></span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">          </span><span class="nt">ocean</span><span class="p">:</span><span class="w"> </span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Много воды</span><span class="w"></span>
+</code></pre></div>
+</div>
+<ul>
+<li><code>sunrise</code>, <code>alarm</code>, <code>fantasy</code> - значение режима со стороны УДЯ</li>
+<li><code>Wake up</code>, <code>Blink</code>, <code>Огоньки</code> - названия режимов (эффектов) светильника со стороны Home Assistant (атрибут <code>effect_list</code>)</li>
+</ul>
+<h3 id="scene-list">Доступные режимы<a class="headerlink" href="#scene-list" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Значение</th>
+<th>Название в УДЯ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>alarm</td>
+<td>Тревога</td>
+</tr>
+<tr>
+<td>alice</td>
+<td>Алиса</td>
+</tr>
+<tr>
+<td>candle</td>
+<td>Свеча</td>
+</tr>
+<tr>
+<td>dinner</td>
+<td>Ужин</td>
+</tr>
+<tr>
+<td>fantasy</td>
+<td>Фантазия</td>
+</tr>
+<tr>
+<td>garland</td>
+<td>Гирлянда</td>
+</tr>
+<tr>
+<td>jungle</td>
+<td>Джунгли</td>
+</tr>
+<tr>
+<td>movie</td>
+<td>Кино</td>
+</tr>
+<tr>
+<td>neon</td>
+<td>Неон</td>
+</tr>
+<tr>
+<td>night</td>
+<td>Ночь</td>
+</tr>
+<tr>
+<td>ocean</td>
+<td>Океан</td>
+</tr>
+<tr>
+<td>party</td>
+<td>Вечеринка</td>
+</tr>
+<tr>
+<td>reading</td>
+<td>Чтение</td>
+</tr>
+<tr>
+<td>rest</td>
+<td>Отдых</td>
+</tr>
+<tr>
+<td>romance</td>
+<td>Романтика</td>
+</tr>
+<tr>
+<td>siren</td>
+<td>Сирена</td>
+</tr>
+<tr>
+<td>sunrise</td>
+<td>Рассвет</td>
+</tr>
+<tr>
+<td>sunset</td>
+<td>Закат</td>
+</tr>
+</tbody>
+</table>
 
               
             </article>
