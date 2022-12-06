@@ -27,6 +27,8 @@
                 - Wake up
               alarm:
                 - Blink
+              fantasy:
+                - Огоньки
         climate.some_ac:
           modes:
             fan_speed:
