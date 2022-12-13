@@ -56,6 +56,8 @@
 
 !!! attention "В одном устройстве недопустимо использовать несколько датчиков с одним `type`"
 
+!!! attention "Значение `type` не всегда совпадает с `device_class` объекта. Возможные значения `type`: [цифровые датчики](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html), [бинарные датчики](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html)"
+
 В [объектах для передачи в УДЯ](../config/filter.md) нужно выбрать **только** `sensor.room_temperature`.
 
 ![](../assets/images/devices/sensor/combine-1.png){ width=480 }
@@ -97,6 +99,8 @@
 !!! tip "Порядок датчиков в `properties` влияет на порядок отображения в УДЯ"
 
 !!! attention "В одном устройстве недопустимо использовать несколько датчиков с одним `type`"
+
+!!! attention "Значение `type` не всегда совпадает с `device_class` объекта. Возможные значения `type`: [цифровые датчики](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html), [бинарные датчики](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html)"
 
 В объектах для передачи в УДЯ нужно выбрать **только** `humidifier.air_humidifier`.
 
