@@ -56,13 +56,14 @@ jobs:
           pip install pytest-homeassistant-custom-component==${{ matrix.pytest-component-version }} \
                       aiohttp-cors==0.7.0
 
+      # TODO: fix --forked (-n auto), some problems with mocking CloudManager.connect
       - name: Test with pytest
         run: |
           pytest \
             -qq \
             --timeout 9 \
             --durations 10 \
-            -n auto \
+            --forked \
             --cov custom_components.yandex_smart_home \
             --cov-report xml \
             -o console_output_style=count \
