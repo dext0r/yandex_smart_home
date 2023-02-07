@@ -6,7 +6,7 @@ from typing import Any
 from homeassistant.components import camera
 from homeassistant.components.camera import StreamType, _get_camera_from_entity_id
 from homeassistant.components.stream import Stream
-from homeassistant.const import ATTR_SUPPORTED_FEATURES, MAJOR_VERSION, MINOR_VERSION
+from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import network
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -91,11 +91,7 @@ class VideoStreamCapability(AbstractCapability):
 
         stream.add_provider(StreamType.HLS)
 
-        if MAJOR_VERSION == 2022 and MINOR_VERSION >= 7:
-            await stream.start()
-        else:
-            # noinspection PyAsyncCall
-            stream.start()  # pragma: no cover
+        await stream.start()
 
         stream.endpoint_url(StreamType.HLS)
 

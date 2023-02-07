@@ -6,3 +6,10 @@
 <meta property="og:url" content="{{ page.canonical_url }}">
 <meta property="og:image" content="{{ 'assets/logo/logo.png'|url }}">
 {% endblock %}
+
+{% block outdated %}
+Это неактуальная версия документации!
+<a href="{{ '../' ~ base_url }}">
+    <strong>Открыть актуальную версию.</strong>
+</a>
+{% endblock %}
