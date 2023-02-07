@@ -1,4 +1,5 @@
 """Global fixtures for yandex_smart_home integration."""
+import asyncio
 from unittest.mock import patch
 
 from homeassistant.components import http
@@ -62,7 +63,7 @@ def config_entry_cloud_connection():
 
 
 @pytest.fixture
-def hass_platform(loop, hass, config_entry):
+def hass_platform(event_loop: asyncio.AbstractEventLoop, hass, config_entry):
     demo_sensor = DemoSensor(
         unique_id='outside_temp',
         name='Outside Temperature',
@@ -84,30 +85,30 @@ def hass_platform(loop, hass, config_entry):
     demo_light.hass = hass
     demo_light.entity_id = 'light.kitchen'
 
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_sensor.async_update_ha_state()
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_light.async_update_ha_state()
     )
 
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         hass.async_block_till_done()
     )
 
     config_entry.add_to_hass(hass)
     with patch.object(hass.config_entries.flow, 'async_init', return_value=None):
-        loop.run_until_complete(async_setup(hass, {}))
-        loop.run_until_complete(async_setup_entry(hass, config_entry))
+        event_loop.run_until_complete(async_setup(hass, {}))
+        event_loop.run_until_complete(async_setup_entry(hass, config_entry))
 
     return hass
 
 
 @pytest.fixture
-def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
+def hass_platform_cloud_connection(event_loop: asyncio.AbstractEventLoop, hass, config_entry_cloud_connection):
     demo_sensor = DemoSensor(
         unique_id='outside_temp',
         name='Outside Temperature',
@@ -139,27 +140,27 @@ def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
     demo_light.hass = hass
     demo_light.entity_id = 'light.kitchen'
 
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_sensor.async_update_ha_state()
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_binary_sensor.async_update_ha_state()
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_light.async_update_ha_state()
     )
 
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         hass.async_block_till_done()
     )
 
     config_entry_cloud_connection.add_to_hass(hass)
-    loop.run_until_complete(async_setup(hass, {}))
+    event_loop.run_until_complete(async_setup(hass, {}))
     with patch('custom_components.yandex_smart_home.cloud.CloudManager.connect', return_value=None):
-        loop.run_until_complete(async_setup_entry(hass, config_entry_cloud_connection))
+        event_loop.run_until_complete(async_setup_entry(hass, config_entry_cloud_connection))
 
     return hass
 
