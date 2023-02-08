@@ -236,20 +236,22 @@ class IlluminanceProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_ILLUMINATION
 
     def supported(self) -> bool:
-        if self.state.domain in (sensor.DOMAIN, light.DOMAIN, fan.DOMAIN):
+        if self.state.domain == sensor.DOMAIN:
             if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ILLUMINANCE:
                 return True
 
+        if self.state.domain in (sensor.DOMAIN, light.DOMAIN, fan.DOMAIN):
             return const.ATTR_ILLUMINANCE in self.state.attributes
 
         return False
 
     def get_value(self) -> float | None:
+        if self.state.domain == sensor.DOMAIN:
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ILLUMINANCE:
+                return self.float_value(self.state.state)
+
         if const.ATTR_ILLUMINANCE in self.state.attributes:
             return self.float_value(self.state.attributes.get(const.ATTR_ILLUMINANCE))
-
-        if self.state.domain == sensor.DOMAIN:
-            return self.float_value(self.state.state)
 
 
 @register_property

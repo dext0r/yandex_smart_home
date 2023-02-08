@@ -207,6 +207,7 @@ def test_property_float_pressure(hass, yandex_pressure_unit, v):
 @pytest.mark.parametrize('domain,device_class,attribute,supported', [
     (sensor.DOMAIN, DEVICE_CLASS_ILLUMINANCE, None, True),
     (sensor.DOMAIN, None, None, False),
+    (sensor.DOMAIN, None, 'illuminance', True),
     (light.DOMAIN, None, 'illuminance', True),
     (light.DOMAIN, None, None, False),
     (fan.DOMAIN, None, 'illuminance', True),
