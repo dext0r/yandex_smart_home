@@ -14,9 +14,14 @@ from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components import yandex_smart_home
 from custom_components.yandex_smart_home import DOMAIN, async_setup, async_setup_entry, const
 
 pytest_plugins = 'pytest_homeassistant_custom_component'
+
+
+def pytest_configure(config):
+    yandex_smart_home._PYTEST = True
 
 
 @pytest.fixture(autouse=True)
@@ -161,6 +166,7 @@ def hass_platform_cloud_connection(event_loop: asyncio.AbstractEventLoop, hass, 
     event_loop.run_until_complete(async_setup(hass, {}))
     with patch('custom_components.yandex_smart_home.cloud.CloudManager.connect', return_value=None):
         event_loop.run_until_complete(async_setup_entry(hass, config_entry_cloud_connection))
+        event_loop.run_until_complete(hass.async_block_till_done())
 
     return hass
 

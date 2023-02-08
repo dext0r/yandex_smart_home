@@ -60,14 +60,13 @@ jobs:
         run: |
           pip install -r tests/requirements_${{ matrix.ha-version }}.txt 
 
-      # TODO: fix --forked (-n auto), some problems with mocking CloudManager.connect
       - name: Test with pytest
         run: |
           pytest \
             -qq \
             --timeout 9 \
             --durations 10 \
-            --forked \
+            -n auto \
             --cov custom_components.yandex_smart_home \
             --cov-report xml \
             -o console_output_style=count \
