@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import State
@@ -9,7 +9,7 @@ from homeassistant.util.decorator import Registry
 
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import ToggleCapability
-from custom_components.yandex_smart_home.const import ERR_INTERNAL_ERROR, ERR_INVALID_ACTION
+from custom_components.yandex_smart_home.const import ERR_INTERNAL_ERROR, ERR_INVALID_ACTION, EVENT_DEVICE_ACTION
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.helpers import RequestData
 from custom_components.yandex_smart_home.smart_home import (
@@ -111,6 +111,8 @@ async def test_async_devices_execute(hass):
     hass.states.async_set(switch_1.entity_id, switch_1.state, switch_1.attributes)
     hass.states.async_set(switch_2.entity_id, switch_2.state, switch_2.attributes)
     hass.states.async_set(switch_3.entity_id, switch_3.state, switch_3.attributes)
+    device_action_event = Mock()
+    hass.bus.async_listen(EVENT_DEVICE_ACTION, device_action_event)
 
     with patch('custom_components.yandex_smart_home.capability.CAPABILITIES',
                [MockCapabilityA, MockCapabilityB, MockCapabilityWithFail]):
@@ -230,6 +232,31 @@ async def test_async_devices_execute(hass):
                 'id': 'not_exist',
                 'error_code': 'DEVICE_UNREACHABLE'
             }]
+        }
+
+        await hass.async_block_till_done()
+
+        assert device_action_event.call_count == 2
+        args, _ = device_action_event.call_args_list[0]
+        assert args[0].as_dict()['data'] == {
+            'entity_id': 'switch.test_1',
+            'capability': {
+                'state': {
+                    'instance': 'on', 'value': True
+                },
+                'type': 'devices.capabilities.on_off'
+            }
+        }
+
+        args, _ = device_action_event.call_args_list[1]
+        assert args[0].as_dict()['data'] == {
+            'entity_id': 'switch.test_1',
+            'capability': {
+                'state': {
+                    'instance': 'b', 'value': True
+                },
+                'type': 'devices.capabilities.toggle'
+            }
         }
 
 

@@ -23,6 +23,7 @@ nav:
       - Прямое подключение: advanced/direct-connection.md
       - Пользовательские умения: advanced/capabilities.md
       - Несколько интеграций: advanced/clone.md
+      - События: advanced/events.md
   - Проблемы и отладка:
       - Устранение проблем: troubleshoot/index.md
       - Отладка: troubleshoot/debug.md

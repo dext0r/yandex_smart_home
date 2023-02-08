@@ -4,12 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import ATTR_ENTITY_ID, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
 
-from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR, EVENT_DEVICE_DISCOVERY
+from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR, EVENT_DEVICE_ACTION, EVENT_DEVICE_DISCOVERY
 from .entity import YandexEntity
 from .error import SmartHomeError
 from .helpers import RequestData
@@ -161,6 +161,11 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
                     }
                 })
                 continue
+
+            hass.bus.async_fire(
+                EVENT_DEVICE_ACTION, {ATTR_ENTITY_ID: entity_id, 'capability': capability},
+                context=data.context,
+            )
 
             result = {
                 'type': capability_type,

@@ -89,6 +89,7 @@ CONNECTION_TYPE_CLOUD = 'cloud'
 
 CLOUD_BASE_URL = 'https://yaha-cloud.ru'
 CLOUD_STREAM_BASE_URL = 'https://stream.yaha-cloud.ru'
+EVENT_DEVICE_ACTION = 'yandex_smart_home_device_action'
 EVENT_DEVICE_DISCOVERY = 'yandex_smart_home_device_discovery'
 EVENT_CONFIG_CHANGED = 'yandex_smart_home_config_changed'
 
