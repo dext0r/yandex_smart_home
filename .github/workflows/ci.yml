@@ -43,8 +43,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - ha-version: '2023.1'
-
           - ha-version: '2023.2'
             latest: true
     steps:
