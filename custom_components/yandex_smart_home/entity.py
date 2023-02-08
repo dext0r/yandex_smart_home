@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from homeassistant.const import ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES, CONF_NAME, STATE_UNAVAILABLE
@@ -26,6 +27,12 @@ from .helpers import Config, RequestData
 from .prop import AbstractProperty
 from .prop_custom import CustomEntityProperty
 from .prop_event import EventProperty
+
+
+def _alias_priority(text: str) -> (int, str):
+    if re.search('[а-яё]', text, flags=re.IGNORECASE):
+        return 0, text
+    return 1, text
 
 
 class YandexEntity:
@@ -131,13 +138,10 @@ class YandexEntity:
         if not self.capabilities() and not self.properties():
             return None
 
-        entity_config = self.config.get_entity_config(self.entity_id)
-        name = (entity_config.get(CONF_NAME) or self.state.name).strip() or self.entity_id
         entity_entry, device_entry = await self._get_entity_and_device(ent_reg, dev_reg)
-
         device = {
             'id': self.entity_id,
-            'name': name,
+            'name': self._get_name(entity_entry).strip(),
             'type': self.yandex_device_type,
             'capabilities': [],
             'properties': [],
@@ -146,13 +150,8 @@ class YandexEntity:
             },
         }
 
-        room = entity_config.get(CONF_ROOM)
-        if room:
-            device['room'] = room
-        else:
-            area = await self._get_area(entity_entry, device_entry, area_reg)
-            if area and area.name:
-                device['room'] = area.name
+        if room := self._get_room(entity_entry, device_entry, area_reg):
+            device['room'] = room.strip()
 
         if device_entry:
             if device_entry.manufacturer:
@@ -239,9 +238,34 @@ class YandexEntity:
         device_entry = dev_reg.devices.get(entity_entry.device_id)
         return entity_entry, device_entry
 
+    def _get_name(self, entity_entry: RegistryEntry | None) -> str:
+        entity_config = self.config.get_entity_config(self.entity_id)
+
+        if CONF_NAME in entity_config:
+            return entity_config[CONF_NAME]
+
+        if entity_entry and entity_entry.aliases:
+            return sorted(entity_entry.aliases, key=_alias_priority)[0]
+
+        return self.state.name or self.entity_id
+
+    def _get_room(self, entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None,
+                  area_reg: AreaRegistry) -> str | None:
+        entity_config = self.config.get_entity_config(self.entity_id)
+
+        if CONF_ROOM in entity_config:
+            return entity_config[CONF_ROOM]
+
+        area = self._get_area(entity_entry, device_entry, area_reg)
+        if area:
+            if area.aliases:
+                return sorted(area.aliases, key=_alias_priority)[0]
+
+            return area.name
+
     @staticmethod
-    async def _get_area(entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None,
-                        area_reg: AreaRegistry) -> AreaEntry | None:
+    def _get_area(entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None,
+                  area_reg: AreaRegistry) -> AreaEntry | None:
         """Calculate the area for an entity."""
         if entity_entry and entity_entry.area_id:
             area_id = entity_entry.area_id
