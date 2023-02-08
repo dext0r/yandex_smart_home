@@ -7,8 +7,8 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.demo.binary_sensor import DemoBinarySensor
 from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.demo.sensor import DemoSensor
-from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
-from homeassistant.const import DEVICE_CLASS_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers import entityfilter
 from homeassistant.setup import async_setup_component
 import pytest
@@ -68,9 +68,9 @@ def hass_platform(event_loop: asyncio.AbstractEventLoop, hass, config_entry):
         unique_id='outside_temp',
         name='Outside Temperature',
         state=15.6,
-        device_class=DEVICE_CLASS_TEMPERATURE,
-        state_class=STATE_CLASS_MEASUREMENT,
-        unit_of_measurement=TEMP_CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        unit_of_measurement=UnitOfTemperature.CELSIUS,
         battery=None
     )
     demo_sensor.hass = hass
@@ -113,9 +113,9 @@ def hass_platform_cloud_connection(event_loop: asyncio.AbstractEventLoop, hass, 
         unique_id='outside_temp',
         name='Outside Temperature',
         state=15.6,
-        device_class=DEVICE_CLASS_TEMPERATURE,
-        state_class=STATE_CLASS_MEASUREMENT,
-        unit_of_measurement=TEMP_CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        unit_of_measurement=UnitOfTemperature.CELSIUS,
         battery=None
     )
     demo_sensor.hass = hass

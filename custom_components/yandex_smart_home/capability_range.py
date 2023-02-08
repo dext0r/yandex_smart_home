@@ -490,7 +490,7 @@ class ChannelCapability(RangeCapability):
         if self.entity_config.get(const.CONF_SUPPORT_SET_CHANNEL) is False:
             return False
 
-        if device_class == media_player.DEVICE_CLASS_TV:
+        if device_class == media_player.MediaPlayerDeviceClass.TV:
             if features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA or \
                     const.MEDIA_PLAYER_FEATURE_PLAY_MEDIA in self.entity_config.get(const.CONF_FEATURES, []):
                 return True

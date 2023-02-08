@@ -195,9 +195,9 @@ DOMAIN_TO_YANDEX_TYPES = {
 }
 
 DEVICE_CLASS_TO_YANDEX_TYPES = {
-    (media_player.DOMAIN, media_player.DEVICE_CLASS_TV): TYPE_MEDIA_DEVICE_TV,
-    (media_player.DOMAIN, media_player.DEVICE_CLASS_RECEIVER): TYPE_MEDIA_DEVICE_RECIEVER,
-    (switch.DOMAIN, switch.DEVICE_CLASS_OUTLET): TYPE_SOCKET,
+    (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.TV): TYPE_MEDIA_DEVICE_TV,
+    (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.RECEIVER): TYPE_MEDIA_DEVICE_RECIEVER,
+    (switch.DOMAIN, switch.SwitchDeviceClass.OUTLET): TYPE_SOCKET,
 }
 
 ON_OFF_INSTANCE_ON = 'on'
