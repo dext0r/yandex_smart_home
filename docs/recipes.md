@@ -104,7 +104,7 @@ yandex_smart_home:
           normal: ['Const Humidity']
           turbo: ['Strong']
       custom_toggles:
-        controls_locked: # подогрев
+        keep_warm: # подогрев
           state_entity_id: switch.leshow_jsq1_ee06_warm_wind_turn
           turn_on:
             service: switch.turn_on
