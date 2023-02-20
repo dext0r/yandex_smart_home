@@ -284,6 +284,8 @@ async def test_valid_config(hass):
         'custom_modes': {}
     }
 
+    assert isinstance(entity_config['switch.r4s1_kettle_boil']['error_code_template'], Template)
+    del entity_config['switch.r4s1_kettle_boil']['error_code_template']
     assert entity_config['switch.r4s1_kettle_boil'] == {
         'name': 'Чайник',
         'room': 'Кухня',

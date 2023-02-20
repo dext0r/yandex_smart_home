@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import State
+from homeassistant.helpers.template import Template
 from homeassistant.util.decorator import Registry
 
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
@@ -257,6 +258,143 @@ async def test_async_devices_execute(hass):
                 },
                 'type': 'devices.capabilities.toggle'
             }
+        }
+
+
+async def test_async_devices_execute_error_template(hass, caplog):
+    class MockCapabilityA(OnOffCapability):
+        def supported(self) -> bool:
+            return True
+
+        def get_value(self) -> float | str | None:
+            return None
+
+        async def set_state(self, data, state):
+            pass
+
+        async def _set_state(self, data: RequestData, state: dict[str, Any]):
+            pass
+
+    class MockCapabilityB(ToggleCapability):
+        instance = 'b'
+
+        def supported(self) -> bool:
+            return True
+
+        def get_value(self) -> float | str | None:
+            return None
+
+        async def set_state(self, data, state):
+            pass
+
+    class MockCapabilityC(ToggleCapability):
+        instance = 'c'
+
+        def supported(self) -> bool:
+            return True
+
+        def get_value(self) -> float | str | None:
+            return None
+
+        async def set_state(self, data, state):
+            pass
+
+    config = MockConfig(
+        entity_config={
+            'switch.test': {
+                'error_code_template': Template("""
+                    {% if capability.type == "devices.capabilities.on_off" and capability.state.instance == "on" and
+                          capability.state.value %}
+                        NOT_ENOUGH_WATER
+                    {% elif capability.state.instance == 'b' %}
+                        {% if is_state('sensor.foo', 'bar') %}
+                            CONTAINER_FULL
+                        {% endif %}
+                    {% elif capability.state.instance == 'c' and capability.state.value %}
+                        WAT?
+                    {% endif %}
+                """)
+            }
+        }
+    )
+    data = RequestData(config, 'test', REQ_ID)
+
+    switch = State('switch.test', STATE_OFF)
+    hass.states.async_set(switch.entity_id, switch.state, switch.attributes)
+
+    with patch('custom_components.yandex_smart_home.capability.CAPABILITIES',
+               [MockCapabilityA, MockCapabilityB, MockCapabilityC]):
+        message = {
+            'payload': {
+                'devices': [{
+                    'id': switch.entity_id,
+                    'capabilities': [{
+                        'type': MockCapabilityA.type,
+                        'state': {
+                            'instance': MockCapabilityA.instance,
+                            'value': True
+                        }
+                    }, {
+                        'type': MockCapabilityB.type,
+                        'state': {
+                            'instance': MockCapabilityB.instance,
+                            'value': True
+                        }
+                    }, {
+                        'type': MockCapabilityC.type,
+                        'state': {
+                            'instance': MockCapabilityC.instance,
+                            'value': True
+                        }
+                    }]
+                }]
+            }
+        }
+
+        caplog.clear()
+        assert await async_devices_execute(hass, data, message) == {
+            'devices': [{
+                'id': 'switch.test',
+                'capabilities': [{
+                    'type': 'devices.capabilities.on_off',
+                    'state': {'instance': 'on', 'action_result': {'status': 'ERROR', 'error_code': 'NOT_ENOUGH_WATER'}}
+                }, {
+                    'type': 'devices.capabilities.toggle',
+                    'state': {'instance': 'b', 'action_result': {'status': 'DONE'}}
+                }, {
+                    'type': 'devices.capabilities.toggle',
+                    'state': {'instance': 'c', 'action_result': {'status': 'ERROR', 'error_code': 'INTERNAL_ERROR'}}
+                }]
+            }]
+        }
+
+        assert len(caplog.records) == 2
+        assert 'Invalid error code' in caplog.records[-1].message
+
+        hass.states.async_set('sensor.foo', 'bar')
+        message = {
+            'payload': {
+                'devices': [{
+                    'id': switch.entity_id,
+                    'capabilities': [{
+                        'type': MockCapabilityB.type,
+                        'state': {
+                            'instance': MockCapabilityB.instance,
+                            'value': True
+                        }
+                    }]
+                }]
+            }
+        }
+
+        assert await async_devices_execute(hass, data, message) == {
+            'devices': [{
+                'id': 'switch.test',
+                'capabilities': [{
+                    'type': 'devices.capabilities.toggle',
+                    'state': {'instance': 'b', 'action_result': {'status': 'ERROR', 'error_code': 'CONTAINER_FULL'}}
+                }]
+            }]
         }
 
 

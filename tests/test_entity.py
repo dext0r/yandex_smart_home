@@ -548,12 +548,24 @@ async def test_yandex_entity_execute(hass):
     state = State('switch.test', STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     with pytest.raises(SmartHomeError) as e:
-        await entity.execute(BASIC_DATA, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE, {'value': True})
+        await entity.execute(BASIC_DATA, {
+            'type': CAPABILITIES_TOGGLE,
+            'state': {
+                'instance': TOGGLE_INSTANCE_PAUSE,
+                'value': True
+            }
+        })
 
     assert e.value.code == ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 
     off_calls = async_mock_service(hass, state.domain, SERVICE_TURN_OFF)
-    await entity.execute(BASIC_DATA, CAPABILITIES_ONOFF, 'on', {'value': False})
+    await entity.execute(BASIC_DATA, {
+        'type': CAPABILITIES_ONOFF,
+        'state': {
+            'instance': 'on',
+            'value': False
+        }
+    })
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
@@ -574,15 +586,26 @@ async def test_yandex_entity_execute_exception(hass):
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockOnOffCapability]):
         with pytest.raises(SmartHomeError) as e:
-            await entity.execute(BASIC_DATA, MockOnOffCapability.type, MockOnOffCapability.instance, {'value': True})
+            await entity.execute(BASIC_DATA, {
+                'type': MockOnOffCapability.type,
+                'state': {
+                    'instance': MockOnOffCapability.instance,
+                    'value': True
+                }
+            })
 
     assert e.value.code == ERR_INTERNAL_ERROR
 
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockBrightnessCapability]):
         with pytest.raises(SmartHomeError) as e:
-            await entity.execute(BASIC_DATA, MockBrightnessCapability.type,
-                                 MockBrightnessCapability.instance, {'value': True})
+            await entity.execute(BASIC_DATA, {
+                'type': MockBrightnessCapability.type,
+                'state': {
+                    'instance': MockBrightnessCapability.instance,
+                    'value': True
+                }
+            })
 
     assert e.value.code == ERR_INVALID_ACTION
 

@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant, State, callback
 from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
+from homeassistant.helpers.template import Template
 
 from . import capability as caps, const, prop
 from .capability import AbstractCapability
@@ -22,8 +23,8 @@ from .const import (
     ERR_INTERNAL_ERROR,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
-from .error import SmartHomeError
-from .helpers import Config, RequestData
+from .error import SmartHomeError, SmartHomeUserError
+from .helpers import Config, DeviceActionCapability, RequestData
 from .prop import AbstractProperty
 from .prop_custom import CustomEntityProperty
 from .prop_event import EventProperty
@@ -199,15 +200,14 @@ class YandexEntity:
 
         return device
 
-    async def execute(self,
-                      data: RequestData,
-                      capability_type: str,
-                      instance: str,
-                      state: dict[str, str | int | bool]) -> dict[str, Any] | None:
+    async def execute(self, data: RequestData, capability: DeviceActionCapability) -> dict[str, Any] | None:
         """Execute action.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
         """
+        capability_type = capability['type']
+        instance = capability['state']['instance']
+
         target_capabilities = [c for c in self.capabilities() if c.type == capability_type and c.instance == instance]
         if not target_capabilities:
             raise SmartHomeError(
@@ -215,9 +215,19 @@ class YandexEntity:
                 f'Capability not found for instance {instance} ({capability_type}) of {self.state.entity_id}'
             )
 
-        for capability in target_capabilities:
+        for target_capability in target_capabilities:
+            if error_code_template := self._error_code_template:
+                if error_code := error_code_template.async_render(capability=capability, parse_result=False):
+                    if error_code not in const.ERROR_CODES:
+                        raise SmartHomeError(
+                            ERR_INTERNAL_ERROR,
+                            f'Invalid error code for {self.state.entity_id}: {error_code!r}'
+                        )
+
+                    raise SmartHomeUserError(error_code)
+
             try:
-                return await capability.set_state(data, state)
+                return await target_capability.set_state(data, capability['state'])
             except SmartHomeError:
                 raise
             except Exception as e:
@@ -270,6 +280,14 @@ class YandexEntity:
             return None
 
         return area_reg.areas.get(area_id)
+
+    @property
+    def _error_code_template(self) -> Template | None:
+        template = self._config.get(const.CONF_ERROR_CODE_TEMPLATE)
+        if template:
+            template.hass = self.hass
+
+        return template
 
 
 class YandexEntityCallbackState:

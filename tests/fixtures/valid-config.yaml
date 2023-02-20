@@ -117,6 +117,12 @@ yandex_smart_home:
     switch.r4s1_kettle_boil:
       name: Чайник
       room: Кухня
+      error_code_template: |
+        {% if capability.type == 'devices.capabilities.on_off' and capability.state.instance == 'on' and capability.state.value %}
+          {% if states('sensor.r4s1_kettle_water_level')|int(0) < 10 %}
+            NOT_ENOUGH_WATER
+          {% endif %}
+        {% endif %}
       custom_ranges:
         temperature:
           state_attribute: temperature

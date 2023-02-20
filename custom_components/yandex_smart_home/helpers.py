@@ -1,7 +1,7 @@
 """Helper classes for Yandex Smart Home integration."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypedDict
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, HomeAssistant, callback
@@ -146,3 +146,26 @@ class RequestData:
         self.context = Context(user_id=user_id)
         self.request_user_id = request_user_id
         self.request_id = request_id
+
+
+class DeviceActionRequest(TypedDict):
+    payload: DeviceActionRequestPayload
+
+
+class DeviceActionRequestPayload(TypedDict):
+    devices: list[DeviceActionRequestDevice]
+
+
+class DeviceActionRequestDevice(TypedDict):
+    id: str
+    capabilities: list[DeviceActionCapability]
+
+
+class DeviceActionCapability(TypedDict):
+    type: str
+    state: DeviceActionCapabilityState
+
+
+class DeviceActionCapabilityState(TypedDict):
+    instance: str
+    value: str | int | bool

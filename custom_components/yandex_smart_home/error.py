@@ -8,7 +8,12 @@ class SmartHomeError(Exception):
     """
 
     def __init__(self, code, msg):
-        """Log error code."""
         super().__init__(msg)
         self.code = code
         self.message = msg
+
+
+class SmartHomeUserError(Exception):
+    """Error producted by user's template, no logging"""
+    def __init__(self, code):
+        self.code = code

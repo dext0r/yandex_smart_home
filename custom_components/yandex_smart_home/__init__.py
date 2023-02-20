@@ -120,6 +120,7 @@ ENTITY_SCHEMA = vol.All(
         vol.Optional(const.CONF_SUPPORT_SET_CHANNEL): cv.boolean,
         vol.Optional(const.CONF_STATE_UNKNOWN): cv.boolean,
         vol.Optional(const.CONF_COLOR_PROFILE): cv.string,
+        vol.Optional(const.CONF_ERROR_CODE_TEMPLATE): cv.template,
         vol.Optional(const.CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
         vol.Optional(const.CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
         vol.Optional(const.CONF_ENTITY_CUSTOM_MODES, default={}): ENTITY_CUSTOM_MODE_SCHEMA,
