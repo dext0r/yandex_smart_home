@@ -37,7 +37,7 @@ class VideoStreamCapability(AbstractCapability):
 
     def parameters(self) -> dict[str, Any]:
         return {
-            'protocol': StreamType.HLS
+            'protocols': [str(StreamType.HLS)]
         }
 
     def supported(self) -> bool:
