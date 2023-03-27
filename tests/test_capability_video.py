@@ -106,7 +106,7 @@ async def test_capability_video_stream_supported(hass):
     cap = get_exact_one_capability(
         hass, BASIC_CONFIG, state, CAPABILITIES_VIDEO_STREAM, VIDEO_STREAM_INSTANCE_GET_STREAM
     )
-    assert cap.parameters() == {'protocol': 'hls'}
+    assert cap.parameters() == {'protocols': ['hls']}
     assert cap.get_value() is None
     assert not cap.retrievable
     assert not cap.reportable
