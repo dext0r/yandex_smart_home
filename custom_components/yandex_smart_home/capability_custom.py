@@ -165,12 +165,8 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
 
         return self.set_value is not None
 
-    def get_value(self) -> float | None:
-        """Return the state value of this capability for this entity."""
-        if not self.retrievable:
-            return None
-
-        return self.float_value(super().get_value())
+    def get_value(self) -> float | str | None:
+        return RangeCapability.get_value(self)
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
@@ -201,3 +197,10 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
             blocking=True,
             context=data.context
         )
+
+    @property
+    def _value(self) -> float | None:
+        if not self.retrievable:
+            return None
+
+        return self._convert_to_float(CustomCapability.get_value(self))

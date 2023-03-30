@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import climate, cover, humidifier, light, media_player, water_heater
 from homeassistant.const import (
@@ -47,7 +47,8 @@ async def test_capability_range(hass):
         async def set_state(self, *args, **kwargs):
             pass
 
-        def get_value(self):
+        @property
+        def _value(self) -> float | None:
             return None
 
     class MockCapabilityRandomAccess(MockCapability):
@@ -99,20 +100,24 @@ async def test_capability_range(hass):
                 }
 
     for v in [STATE_UNAVAILABLE, STATE_UNKNOWN, 'None']:
-        assert cap.float_value(v) is None
+        assert cap._convert_to_float(v) is None
 
     for v in ['4', '5.5']:
-        assert cap.float_value(v) == float(v)
+        assert cap._convert_to_float(v) == float(v)
 
     with pytest.raises(SmartHomeError) as e:
-        assert cap.float_value('foo')
+        assert cap._convert_to_float('foo')
     assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 
-    with patch.object(cap, 'get_value', return_value=20):
+    with patch.object(MockCapability, '_value', new_callable=PropertyMock, return_value=20):
         assert cap.get_absolute_value(10) == 30
         assert cap.get_absolute_value(-5) == 15
         assert cap.get_absolute_value(99) == 100
         assert cap.get_absolute_value(-50) == 0
+
+    for v in [-1, 101]:
+        with patch.object(MockCapability, '_value', new_callable=PropertyMock, return_value=v):
+            assert cap.get_value() is None
 
     with pytest.raises(SmartHomeError) as e:
         cap.get_absolute_value(0)

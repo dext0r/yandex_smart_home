@@ -94,23 +94,21 @@ class RangeCapability(AbstractCapability, ABC):
             'random_access': False,
         }
 
-    def float_value(self, value: Any, strict: bool = True) -> float | None:
-        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
-            return None
+    def get_value(self) -> float | str | bool | None:
+        value = self._value
 
-        try:
-            return float(value)
-        except (ValueError, TypeError):
-            if strict:
-                raise SmartHomeError(
-                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
-                )
+        if self.support_random_access and value is not None:
+            range_min, range_max, _ = self.range
+            if not (range_min <= value <= range_max):
+                _LOGGER.debug(f'Value {value} is not in range ({range_min}, {range_max}) for instance {self.instance} '
+                              f'of {self.state.entity_id}')
+                return None
+
+        return value
 
     def get_absolute_value(self, relative_value: float) -> float:
         """Return absolute value for relative value."""
-        value = self.get_value()
-        if value is None:
+        if self._value is None:
             if self.state.state == STATE_OFF:
                 raise SmartHomeError(
                     ERR_DEVICE_OFF,
@@ -122,7 +120,26 @@ class RangeCapability(AbstractCapability, ABC):
                 f'Unable to get current value or {self.instance} instance of {self.state.entity_id}'
             )
 
-        return max(min(value + relative_value, self.range[1]), self.range[0])
+        return max(min(self._value + relative_value, self.range[1]), self.range[0])
+
+    @property
+    @abstractmethod
+    def _value(self) -> float | None:
+        """Return the current capability value (unguarded)."""
+
+    def _convert_to_float(self, value: Any, strict: bool = True) -> float | None:
+        """Return float of value, ignore some states, catch errors."""
+        if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+            return None
+
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            if strict:
+                raise SmartHomeError(
+                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                    f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
+                )
 
 
 @register_capability
@@ -142,10 +159,6 @@ class CoverLevelCapability(RangeCapability):
         """Test if capability supports random access."""
         return True
 
-    def get_value(self) -> float | None:
-        """Return the state value of this capability for this entity."""
-        return self.float_value(self.state.attributes.get(cover.ATTR_CURRENT_POSITION))
-
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
@@ -159,6 +172,10 @@ class CoverLevelCapability(RangeCapability):
             blocking=True,
             context=data.context
         )
+
+    @property
+    def _value(self) -> float | None:
+        return self._convert_to_float(self.state.attributes.get(cover.ATTR_CURRENT_POSITION))
 
 
 class TemperatureCapability(RangeCapability, ABC):
@@ -191,10 +208,6 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
         return self.state.domain == water_heater.DOMAIN and \
             features & water_heater.WaterHeaterEntityFeature.TARGET_TEMPERATURE
 
-    def get_value(self) -> float | None:
-        """Return the state value of this capability for this entity."""
-        return self.float_value(self.state.attributes.get(water_heater.ATTR_TEMPERATURE))
-
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
@@ -208,6 +221,10 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
             blocking=True,
             context=data.context
         )
+
+    @property
+    def _value(self) -> float | None:
+        return self._convert_to_float(self.state.attributes.get(water_heater.ATTR_TEMPERATURE))
 
 
 @register_capability
@@ -227,10 +244,6 @@ class TemperatureCapabilityClimate(TemperatureCapability):
 
         return self.state.domain == climate.DOMAIN and features & climate.ClimateEntityFeature.TARGET_TEMPERATURE
 
-    def get_value(self) -> float | None:
-        """Return the state value of this capability for this entity."""
-        return self.float_value(self.state.attributes.get(climate.ATTR_TEMPERATURE))
-
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
@@ -244,6 +257,10 @@ class TemperatureCapabilityClimate(TemperatureCapability):
             blocking=True,
             context=data.context
         )
+
+    @property
+    def _value(self) -> float | None:
+        return self._convert_to_float(self.state.attributes.get(climate.ATTR_TEMPERATURE))
 
 
 class HumidityCapability(RangeCapability, ABC):
@@ -275,10 +292,6 @@ class HumidityCapabilityHumidifier(HumidityCapability):
         """Test if capability is supported."""
         return self.state.domain == humidifier.DOMAIN
 
-    def get_value(self) -> float | None:
-        """Return the state value of this capability for this entity."""
-        return self.float_value(self.state.attributes.get(humidifier.ATTR_HUMIDITY))
-
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
@@ -292,6 +305,10 @@ class HumidityCapabilityHumidifier(HumidityCapability):
             blocking=True,
             context=data.context
         )
+
+    @property
+    def _value(self) -> float | None:
+        return self._convert_to_float(self.state.attributes.get(humidifier.ATTR_HUMIDITY))
 
 
 @register_capability
@@ -307,10 +324,6 @@ class HumidityCapabilityHumidiferXiaomi(HumidityCapability):
 
         return False
 
-    def get_value(self) -> float | None:
-        """Return the state value of this capability for this entity."""
-        return self.float_value(self.state.attributes.get(ATTR_TARGET_HUMIDITY))
-
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
@@ -324,6 +337,10 @@ class HumidityCapabilityHumidiferXiaomi(HumidityCapability):
             blocking=True,
             context=data.context
         )
+
+    @property
+    def _value(self) -> float | None:
+        return self._convert_to_float(self.state.attributes.get(ATTR_TARGET_HUMIDITY))
 
 
 @register_capability
@@ -351,12 +368,6 @@ class BrightnessCapability(RangeCapability):
         """Test if capability supports random access."""
         return True
 
-    def get_value(self) -> float | None:
-        """Return the state value of this capability for this entity."""
-        brightness = self.state.attributes.get(light.ATTR_BRIGHTNESS)
-        if brightness is not None:
-            return int(100 * (self.float_value(brightness) / 255))
-
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         if state.get('relative'):
@@ -373,6 +384,12 @@ class BrightnessCapability(RangeCapability):
             blocking=True,
             context=data.context
         )
+
+    @property
+    def _value(self) -> float | None:
+        brightness = self._convert_to_float(self.state.attributes.get(light.ATTR_BRIGHTNESS))
+        if brightness is not None:
+            return int(100 * (brightness / 255))
 
 
 @register_capability
@@ -407,13 +424,6 @@ class VolumeCapability(RangeCapability):
 
         return not (features & media_player.MediaPlayerEntityFeature.VOLUME_STEP and
                     not features & media_player.MediaPlayerEntityFeature.VOLUME_SET)
-
-    def get_value(self) -> float | None:
-        """Return the state value of this capability for this entity."""
-        level = self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_LEVEL)
-
-        if level is not None:
-            return int(self.float_value(level) * 100)
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
@@ -451,6 +461,12 @@ class VolumeCapability(RangeCapability):
             blocking=True,
             context=data.context
         )
+
+    @property
+    def _value(self) -> float | None:
+        level = self._convert_to_float(self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_LEVEL))
+        if level is not None:
+            return int(level * 100)
 
 
 @register_capability
@@ -496,13 +512,6 @@ class ChannelCapability(RangeCapability):
                 return True
 
         return False
-
-    def get_value(self) -> float | None:
-        """Return the state value of this capability for this entity."""
-        media_content_type = self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_TYPE)
-
-        if media_content_type == media_player.const.MEDIA_TYPE_CHANNEL:
-            return self.float_value(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID), strict=False)
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
@@ -553,3 +562,10 @@ class ChannelCapability(RangeCapability):
                 f'Please change setting "support_set_channel" to "false" in entity_config '
                 f'if the device does not support channel selection. Error: {e!r}'
             )
+
+    @property
+    def _value(self) -> float | None:
+        media_content_type = self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_TYPE)
+
+        if media_content_type == media_player.const.MEDIA_TYPE_CHANNEL:
+            return self._convert_to_float(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID), strict=False)

@@ -196,6 +196,12 @@ async def test_capability_custom_range_random_access(hass):
     assert cap.support_random_access
     assert cap.get_value() == 30
 
+    for v in ['55', '5']:
+        hass.states.async_set(state.entity_id, v)
+        assert cap.get_value() is None
+
+    hass.states.async_set(state.entity_id, '30')
+
     calls = async_mock_service(hass, 'test', 'set_value')
     await cap.set_state(BASIC_DATA, {'value': 40})
     await cap.set_state(BASIC_DATA, {'value': 100})
