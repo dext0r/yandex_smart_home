@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import climate, cover, humidifier, light, media_player, water_heater
