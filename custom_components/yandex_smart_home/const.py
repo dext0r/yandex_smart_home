@@ -94,6 +94,9 @@ EVENT_DEVICE_ACTION = 'yandex_smart_home_device_action'
 EVENT_DEVICE_DISCOVERY = 'yandex_smart_home_device_discovery'
 EVENT_CONFIG_CHANGED = 'yandex_smart_home_config_changed'
 
+# Fake device class
+DEVICE_CLASS_BUTTON = 'button'
+
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html
 PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'
@@ -211,6 +214,7 @@ DEVICE_CLASS_TO_YANDEX_TYPES = {
     (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.WINDOW): TYPE_SENSOR_OPEN,
     (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.RECEIVER): TYPE_MEDIA_DEVICE_RECIEVER,
     (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.TV): TYPE_MEDIA_DEVICE_TV,
+    (sensor.DOMAIN, DEVICE_CLASS_BUTTON): TYPE_SENSOR_BUTTON,
     (sensor.DOMAIN, sensor.SensorDeviceClass.CO): TYPE_SENSOR_CLIMATE,
     (sensor.DOMAIN, sensor.SensorDeviceClass.CO2): TYPE_SENSOR_CLIMATE,
     (sensor.DOMAIN, sensor.SensorDeviceClass.HUMIDITY): TYPE_SENSOR_CLIMATE,
@@ -735,8 +739,6 @@ FAN_SPEED_MID = 'mid'
 # SmartIR
 FAN_SPEED_HIGHEST = 'highest'
 
-# Fake device class
-DEVICE_CLASS_BUTTON = 'button'
 
 MEDIA_PLAYER_FEATURE_VOLUME_MUTE = 'volume_mute'
 MEDIA_PLAYER_FEATURE_VOLUME_SET = 'volume_set'

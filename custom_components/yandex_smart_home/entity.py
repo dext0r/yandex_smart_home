@@ -14,6 +14,7 @@ from . import capability as caps, const, prop
 from .capability import AbstractCapability
 from .capability_custom import CustomModeCapability, CustomRangeCapability, CustomToggleCapability
 from .const import (
+    CONF_DEVICE_CLASS,
     CONF_ENTITY_PROPERTIES,
     CONF_ROOM,
     CONF_TYPE,
@@ -122,8 +123,8 @@ class YandexEntity:
         if CONF_TYPE in self._config:
             return self._config[CONF_TYPE]
 
-        device_class = self.state.attributes.get(ATTR_DEVICE_CLASS)
         domain = self.state.domain
+        device_class = self._config.get(CONF_DEVICE_CLASS, self.state.attributes.get(ATTR_DEVICE_CLASS))
         return DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class), DOMAIN_TO_YANDEX_TYPES.get(domain))
 
     async def devices_serialize(self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry,
