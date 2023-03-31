@@ -219,7 +219,7 @@ async def test_cloud_req_user_devices(hass_platform_cloud_connection, config, ai
             'devices': [{
                 'id': 'sensor.outside_temp',
                 'name': 'Outside Temperature',
-                'type': 'devices.types.sensor',
+                'type': 'devices.types.sensor.climate',
                 'capabilities': [],
                 'properties': [{
                     'type': 'devices.properties.float',
@@ -236,7 +236,7 @@ async def test_cloud_req_user_devices(hass_platform_cloud_connection, config, ai
             }, {
                 'id': 'binary_sensor.front_door',
                 'name': 'Front Door',
-                'type': 'devices.types.sensor',
+                'type': 'devices.types.sensor.open',
                 'capabilities': [],
                 'properties': [{
                     'type': 'devices.properties.event',

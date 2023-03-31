@@ -73,7 +73,7 @@ async def test_user_devices(hass_platform, hass_client, hass_admin_user):
             'devices': [{
                 'id': 'sensor.outside_temp',
                 'name': 'Outside Temperature',
-                'type': 'devices.types.sensor',
+                'type': 'devices.types.sensor.climate',
                 'capabilities': [],
                 'properties': [{
                     'type': 'devices.properties.float',

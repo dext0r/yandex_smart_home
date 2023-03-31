@@ -197,8 +197,30 @@ DOMAIN_TO_YANDEX_TYPES = {
 }
 
 DEVICE_CLASS_TO_YANDEX_TYPES = {
-    (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.TV): TYPE_MEDIA_DEVICE_TV,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.DOOR): TYPE_SENSOR_OPEN,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.GARAGE_DOOR): TYPE_SENSOR_OPEN,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.GAS): TYPE_SENSOR_GAS,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.MOISTURE): TYPE_SENSOR_WATER_LEAK,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.MOTION): TYPE_SENSOR_MOTION,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.MOVING): TYPE_SENSOR_MOTION,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.OCCUPANCY): TYPE_SENSOR_MOTION,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.OPENING): TYPE_SENSOR_OPEN,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.PRESENCE): TYPE_SENSOR_MOTION,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.SMOKE): TYPE_SENSOR_SMOKE,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.VIBRATION): TYPE_SENSOR_VIBRATION,
+    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.WINDOW): TYPE_SENSOR_OPEN,
     (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.RECEIVER): TYPE_MEDIA_DEVICE_RECIEVER,
+    (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.TV): TYPE_MEDIA_DEVICE_TV,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.CO): TYPE_SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.CO2): TYPE_SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.HUMIDITY): TYPE_SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.ILLUMINANCE): TYPE_SENSOR_ILLUMINATION,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.PM1): TYPE_SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.PM10): TYPE_SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.PM25): TYPE_SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.PRESSURE): TYPE_SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.TEMPERATURE): TYPE_SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS): TYPE_SENSOR_CLIMATE,
     (switch.DOMAIN, switch.SwitchDeviceClass.OUTLET): TYPE_SOCKET,
 }
 
