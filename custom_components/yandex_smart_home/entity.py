@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from homeassistant.const import ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES, CONF_NAME, STATE_UNAVAILABLE
@@ -7,6 +8,7 @@ from homeassistant.core import HomeAssistant, State, callback
 from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
+from homeassistant.helpers.template import Template
 
 from . import capability as caps, const, prop
 from .capability import AbstractCapability
@@ -21,11 +23,17 @@ from .const import (
     ERR_INTERNAL_ERROR,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
-from .error import SmartHomeError
-from .helpers import Config, RequestData
+from .error import SmartHomeError, SmartHomeUserError
+from .helpers import Config, DeviceActionCapability, RequestData
 from .prop import AbstractProperty
 from .prop_custom import CustomEntityProperty
 from .prop_event import EventProperty
+
+
+def _alias_priority(text: str) -> (int, str):
+    if re.search('[а-яё]', text, flags=re.IGNORECASE):
+        return 0, text
+    return 1, text
 
 
 class YandexEntity:
@@ -34,8 +42,10 @@ class YandexEntity:
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a Yandex Smart Home entity."""
         self.hass = hass
-        self.config = config
         self.state = state
+
+        self._component_config = config
+        self._config = config.get_entity_config(self.entity_id)
         self._capabilities: list[AbstractCapability] | None = None
         self._properties: list[AbstractProperty] | None = None
 
@@ -52,23 +62,22 @@ class YandexEntity:
 
         self._capabilities = []
         state = self.state
-        entity_config = self.config.get_entity_config(state.entity_id)
 
         for capability_class, config_key in (
                 (CustomModeCapability, const.CONF_ENTITY_CUSTOM_MODES),
                 (CustomToggleCapability, const.CONF_ENTITY_CUSTOM_TOGGLES),
                 (CustomRangeCapability, const.CONF_ENTITY_CUSTOM_RANGES)):
-            if config_key in entity_config:
-                for instance in entity_config[config_key]:
+            if config_key in self._config:
+                for instance in self._config[config_key]:
                     capability = capability_class(
-                        self.hass, self.config, state, instance, entity_config[config_key][instance]
+                        self.hass, self._component_config, state, instance, self._config[config_key][instance]
                     )
 
                     if capability.supported():
                         self._capabilities.append(capability)
 
         for Capability in caps.CAPABILITIES:
-            capability = Capability(self.hass, self.config, state)
+            capability = Capability(self.hass, self._component_config, state)
             if capability.supported() and capability.instance not in [c.instance for c in self._capabilities]:
                 self._capabilities.append(capability)
 
@@ -82,15 +91,14 @@ class YandexEntity:
 
         self._properties = []
         state = self.state
-        entity_config = self.config.get_entity_config(state.entity_id)
 
-        for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
+        for property_config in self._config.get(CONF_ENTITY_PROPERTIES, []):
             self._properties.append(
-                CustomEntityProperty.get(self.hass, self.config, state, property_config)
+                CustomEntityProperty.get(self.hass, self._component_config, state, property_config)
             )
 
         for Property in prop.PROPERTIES:
-            entity_property = Property(self.hass, self.config, state)
+            entity_property = Property(self.hass, self._component_config, state)
             if entity_property.supported():
                 if entity_property.instance not in [p.instance for p in self._properties]:
                     self._properties.append(entity_property)
@@ -106,14 +114,13 @@ class YandexEntity:
         if not self.yandex_device_type:
             return False
 
-        return self.config.should_expose(self.entity_id)
+        return self._component_config.should_expose(self.entity_id)
 
     @property
     def yandex_device_type(self) -> str | None:
         """Yandex type based on domain and device class."""
-        entity_config = self.config.get_entity_config(self.entity_id)
-        if CONF_TYPE in entity_config:
-            return entity_config[CONF_TYPE]
+        if CONF_TYPE in self._config:
+            return self._config[CONF_TYPE]
 
         device_class = self.state.attributes.get(ATTR_DEVICE_CLASS)
         domain = self.state.domain
@@ -131,13 +138,10 @@ class YandexEntity:
         if not self.capabilities() and not self.properties():
             return None
 
-        entity_config = self.config.get_entity_config(self.entity_id)
-        name = (entity_config.get(CONF_NAME) or self.state.name).strip() or self.entity_id
         entity_entry, device_entry = await self._get_entity_and_device(ent_reg, dev_reg)
-
         device = {
             'id': self.entity_id,
-            'name': name,
+            'name': self._get_name(entity_entry).strip(),
             'type': self.yandex_device_type,
             'capabilities': [],
             'properties': [],
@@ -146,13 +150,8 @@ class YandexEntity:
             },
         }
 
-        room = entity_config.get(CONF_ROOM)
-        if room:
-            device['room'] = room
-        else:
-            area = await self._get_area(entity_entry, device_entry, area_reg)
-            if area and area.name:
-                device['room'] = area.name
+        if room := self._get_room(entity_entry, device_entry, area_reg):
+            device['room'] = room.strip()
 
         if device_entry:
             if device_entry.manufacturer:
@@ -201,15 +200,14 @@ class YandexEntity:
 
         return device
 
-    async def execute(self,
-                      data: RequestData,
-                      capability_type: str,
-                      instance: str,
-                      state: dict[str, str | int | bool]) -> dict[str, Any] | None:
+    async def execute(self, data: RequestData, capability: DeviceActionCapability) -> dict[str, Any] | None:
         """Execute action.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
         """
+        capability_type = capability['type']
+        instance = capability['state']['instance']
+
         target_capabilities = [c for c in self.capabilities() if c.type == capability_type and c.instance == instance]
         if not target_capabilities:
             raise SmartHomeError(
@@ -217,9 +215,19 @@ class YandexEntity:
                 f'Capability not found for instance {instance} ({capability_type}) of {self.state.entity_id}'
             )
 
-        for capability in target_capabilities:
+        for target_capability in target_capabilities:
+            if error_code_template := self._error_code_template:
+                if error_code := error_code_template.async_render(capability=capability, parse_result=False):
+                    if error_code not in const.ERROR_CODES:
+                        raise SmartHomeError(
+                            ERR_INTERNAL_ERROR,
+                            f'Invalid error code for {self.state.entity_id}: {error_code!r}'
+                        )
+
+                    raise SmartHomeUserError(error_code)
+
             try:
-                return await capability.set_state(data, state)
+                return await target_capability.set_state(data, capability['state'])
             except SmartHomeError:
                 raise
             except Exception as e:
@@ -239,9 +247,30 @@ class YandexEntity:
         device_entry = dev_reg.devices.get(entity_entry.device_id)
         return entity_entry, device_entry
 
+    def _get_name(self, entity_entry: RegistryEntry | None) -> str:
+        if CONF_NAME in self._config:
+            return self._config[CONF_NAME]
+
+        if entity_entry and entity_entry.aliases:
+            return sorted(entity_entry.aliases, key=_alias_priority)[0]
+
+        return self.state.name or self.entity_id
+
+    def _get_room(self, entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None,
+                  area_reg: AreaRegistry) -> str | None:
+        if CONF_ROOM in self._config:
+            return self._config[CONF_ROOM]
+
+        area = self._get_area(entity_entry, device_entry, area_reg)
+        if area:
+            if area.aliases:
+                return sorted(area.aliases, key=_alias_priority)[0]
+
+            return area.name
+
     @staticmethod
-    async def _get_area(entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None,
-                        area_reg: AreaRegistry) -> AreaEntry | None:
+    def _get_area(entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None,
+                  area_reg: AreaRegistry) -> AreaEntry | None:
         """Calculate the area for an entity."""
         if entity_entry and entity_entry.area_id:
             area_id = entity_entry.area_id
@@ -251,6 +280,14 @@ class YandexEntity:
             return None
 
         return area_reg.areas.get(area_id)
+
+    @property
+    def _error_code_template(self) -> Template | None:
+        template = self._config.get(const.CONF_ERROR_CODE_TEMPLATE)
+        if template:
+            template.hass = self.hass
+
+        return template
 
 
 class YandexEntityCallbackState:

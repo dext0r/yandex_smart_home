@@ -1,4 +1,5 @@
 """Global fixtures for yandex_smart_home integration."""
+import asyncio
 from unittest.mock import patch
 
 from homeassistant.components import http
@@ -6,16 +7,21 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.demo.binary_sensor import DemoBinarySensor
 from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.demo.sensor import DemoSensor
-from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
-from homeassistant.const import DEVICE_CLASS_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers import entityfilter
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components import yandex_smart_home
 from custom_components.yandex_smart_home import DOMAIN, async_setup, async_setup_entry, const
 
 pytest_plugins = 'pytest_homeassistant_custom_component'
+
+
+def pytest_configure(config):
+    yandex_smart_home._PYTEST = True
 
 
 @pytest.fixture(autouse=True)
@@ -62,14 +68,14 @@ def config_entry_cloud_connection():
 
 
 @pytest.fixture
-def hass_platform(loop, hass, config_entry):
+def hass_platform(event_loop: asyncio.AbstractEventLoop, hass, config_entry):
     demo_sensor = DemoSensor(
         unique_id='outside_temp',
         name='Outside Temperature',
         state=15.6,
-        device_class=DEVICE_CLASS_TEMPERATURE,
-        state_class=STATE_CLASS_MEASUREMENT,
-        unit_of_measurement=TEMP_CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        unit_of_measurement=UnitOfTemperature.CELSIUS,
         battery=None
     )
     demo_sensor.hass = hass
@@ -84,37 +90,37 @@ def hass_platform(loop, hass, config_entry):
     demo_light.hass = hass
     demo_light.entity_id = 'light.kitchen'
 
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_sensor.async_update_ha_state()
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_light.async_update_ha_state()
     )
 
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         hass.async_block_till_done()
     )
 
     config_entry.add_to_hass(hass)
     with patch.object(hass.config_entries.flow, 'async_init', return_value=None):
-        loop.run_until_complete(async_setup(hass, {}))
-        loop.run_until_complete(async_setup_entry(hass, config_entry))
+        event_loop.run_until_complete(async_setup(hass, {}))
+        event_loop.run_until_complete(async_setup_entry(hass, config_entry))
 
     return hass
 
 
 @pytest.fixture
-def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
+def hass_platform_cloud_connection(event_loop: asyncio.AbstractEventLoop, hass, config_entry_cloud_connection):
     demo_sensor = DemoSensor(
         unique_id='outside_temp',
         name='Outside Temperature',
         state=15.6,
-        device_class=DEVICE_CLASS_TEMPERATURE,
-        state_class=STATE_CLASS_MEASUREMENT,
-        unit_of_measurement=TEMP_CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        unit_of_measurement=UnitOfTemperature.CELSIUS,
         battery=None
     )
     demo_sensor.hass = hass
@@ -139,27 +145,28 @@ def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
     demo_light.hass = hass
     demo_light.entity_id = 'light.kitchen'
 
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_sensor.async_update_ha_state()
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_binary_sensor.async_update_ha_state()
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         demo_light.async_update_ha_state()
     )
 
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
     )
-    loop.run_until_complete(
+    event_loop.run_until_complete(
         hass.async_block_till_done()
     )
 
     config_entry_cloud_connection.add_to_hass(hass)
-    loop.run_until_complete(async_setup(hass, {}))
+    event_loop.run_until_complete(async_setup(hass, {}))
     with patch('custom_components.yandex_smart_home.cloud.CloudManager.connect', return_value=None):
-        loop.run_until_complete(async_setup_entry(hass, config_entry_cloud_connection))
+        event_loop.run_until_complete(async_setup_entry(hass, config_entry_cloud_connection))
+        event_loop.run_until_complete(hass.async_block_till_done())
 
     return hass
 

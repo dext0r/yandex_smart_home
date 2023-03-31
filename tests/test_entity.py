@@ -3,21 +3,19 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from homeassistant.components import media_player, switch
-from homeassistant.components.binary_sensor import DEVICE_CLASS_DOOR
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.demo.light import DemoLight
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
     ATTR_UNIT_OF_MEASUREMENT,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_TEMPERATURE,
-    DEVICE_CLASS_VOLTAGE,
     PERCENTAGE,
     SERVICE_TURN_OFF,
     STATE_OFF,
     STATE_ON,
     STATE_UNAVAILABLE,
-    TEMP_CELSIUS,
+    UnitOfTemperature,
 )
 from homeassistant.core import State
 import pytest
@@ -153,8 +151,8 @@ async def test_yandex_entity_duplicate_properties(hass):
 
 async def test_yandex_entity_properties(hass):
     state = State('sensor.temp', '5', attributes={
-        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
     })
     config = MockConfig(
         entity_config={
@@ -173,7 +171,7 @@ async def test_yandex_entity_properties(hass):
     ]
 
     state = State('binary_sensor.door', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_DEVICE_CLASS: BinarySensorDeviceClass.DOOR,
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert [type(c) for c in entity.properties()] == [
@@ -181,7 +179,7 @@ async def test_yandex_entity_properties(hass):
     ]
 
 
-async def test_yandex_entity_devices_serialize_state(hass, registries):
+async def test_yandex_entity_serialize_state_type(hass, registries):
     ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
 
     entity_unavailable = YandexEntity(hass, BASIC_CONFIG, State('switch.test', STATE_UNAVAILABLE))
@@ -200,23 +198,17 @@ async def test_yandex_entity_devices_serialize_state(hass, registries):
 
     config = MockConfig(entity_config={
         'switch.test_1': {
-            CONF_NAME: 'Тест',
             CONF_TYPE: const.TYPE_OPENABLE,
-            CONF_ROOM: 'Кухня'
         }
     })
     entity = YandexEntity(hass, config, State('switch.test_1', STATE_ON))
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
     assert s['id'] == 'switch.test_1'
-    assert s['name'] == 'Тест'
-    assert s['room'] == 'Кухня'
     assert s['type'] == const.TYPE_OPENABLE
 
 
-async def test_yandex_entity_devices_serialize_device(hass, registries):
+async def test_yandex_entity_serialize_device_info(hass, registries):
     ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
-    area_kitchen = area_reg.async_get_or_create('Кухня')
-    area_closet = area_reg.async_get_or_create('Кладовка')
 
     state = State('switch.test_1', STATE_ON)
     device = dev_reg.async_get_or_create(
@@ -224,12 +216,7 @@ async def test_yandex_entity_devices_serialize_device(hass, registries):
         identifiers={'test_1'},
         config_entry_id='test_1',
     )
-    ent_reg.async_get_or_create(
-        'switch',
-        'test',
-        '1',
-        device_id=device.id,
-    )
+    ent_reg.async_get_or_create('switch', 'test', '1', device_id=device.id)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
     assert s['id'] == 'switch.test_1'
@@ -243,7 +230,6 @@ async def test_yandex_entity_devices_serialize_device(hass, registries):
         identifiers={'test_2'},
         config_entry_id='test_2',
     )
-    dev_reg.async_update_device(device.id, area_id=area_closet.id)
     ent_reg.async_get_or_create(
         'switch',
         'test',
@@ -253,41 +239,54 @@ async def test_yandex_entity_devices_serialize_device(hass, registries):
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
     assert s['id'] == 'switch.test_2'
-    assert s['room'] == 'Кладовка'
     assert s['device_info'] == {
         'manufacturer': 'Acme Inc.',
         'model': 'Ultra Switch | switch.test_2',
         'sw_version': '57'
     }
 
+
+async def test_yandex_entity_serialize_name_room(hass, registries):
+    ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
+    area_room = area_reg.async_create('Room')
+    area_kitchen = area_reg.async_create('Kitchen')
+    area_closet = area_reg.async_create('Closet', aliases=['Test', '1', 'Кладовка', 'ббб'])
+
+    state = State('switch.test_1', STATE_ON)
+    device = dev_reg.async_get_or_create(identifiers={'test_1'}, config_entry_id='test_1')
+    entry = ent_reg.async_get_or_create('switch', 'test', '1', device_id=device.id)
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
+    assert s['id'] == 'switch.test_1'
+    assert s['name'] == 'test 1'
+    assert 'room' not in s
+
+    dev_reg.async_update_device(device.id, area_id=area_room.id)
+    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
+    assert s['room'] == 'Room'
+
+    ent_reg.async_update_entity(entry.entity_id, area_id=area_kitchen.id)
+    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
+    assert s['name'] == 'test 1'
+    assert s['room'] == 'Kitchen'
+
+    ent_reg.async_update_entity(entry.entity_id,
+                                area_id=area_closet.id,
+                                aliases=['2', 'foo', 'Устройство', 'апельсин'])
+    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
+    assert s['name'] == 'Устройство'
+    assert s['room'] == 'Кладовка'
+
     config = MockConfig(entity_config={
-        'switch.test_2': {
+        'switch.test_1': {
+            CONF_NAME: 'Имя',
             CONF_ROOM: 'Комната'
         }
     })
     entity = YandexEntity(hass, config, state)
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['id'] == 'switch.test_2'
+    assert s['name'] == 'Имя'
     assert s['room'] == 'Комната'
-
-    state = State('switch.test_3', STATE_ON)
-    device = dev_reg.async_get_or_create(
-        identifiers={'test_3'},
-        config_entry_id='test_3',
-    )
-    entry = ent_reg.async_get_or_create(
-        'switch',
-        'test',
-        '3',
-        device_id=device.id,
-    )
-    ent_reg.async_update_entity(entry.entity_id, area_id=area_kitchen.id)
-
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['id'] == 'switch.test_3'
-    assert s['room'] == 'Кухня'
-    assert s['device_info'] == {'model': 'switch.test_3'}
 
 
 async def test_yandex_entity_should_expose(hass):
@@ -320,19 +319,19 @@ async def test_yandex_entity_device_type_media_player(hass):
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE
 
     state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE_TV
 
     state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_RECEIVER
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.RECEIVER
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE_RECIEVER
 
     state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_SPEAKER
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.SPEAKER
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE
@@ -344,7 +343,7 @@ async def test_yandex_entity_device_type_switch(hass):
     assert entity.yandex_device_type == const.TYPE_SWITCH
 
     state = State('switch.test', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: switch.DEVICE_CLASS_OUTLET
+        ATTR_DEVICE_CLASS: switch.SwitchDeviceClass.OUTLET
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_SOCKET
@@ -392,18 +391,18 @@ async def test_yandex_entity_serialize(hass):
     cap_pause = PauseCapability(hass, BASIC_CONFIG, state_pause)
 
     state_temp = State('sensor.temp', '5', attributes={
-        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
     })
     state_humidity = State('sensor.humidity', '95', attributes={
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
     })
     hass.states.async_set(state_humidity.entity_id, state_humidity.state, state_humidity.attributes)
 
     state_voltage = State('sensor.voltage', '220', attributes={
         ATTR_UNIT_OF_MEASUREMENT: 'V',
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_VOLTAGE,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.VOLTAGE,
     })
 
     prop_temp = TemperatureProperty(hass, BASIC_CONFIG, state_temp)
@@ -549,12 +548,24 @@ async def test_yandex_entity_execute(hass):
     state = State('switch.test', STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     with pytest.raises(SmartHomeError) as e:
-        await entity.execute(BASIC_DATA, CAPABILITIES_TOGGLE, TOGGLE_INSTANCE_PAUSE, {'value': True})
+        await entity.execute(BASIC_DATA, {
+            'type': CAPABILITIES_TOGGLE,
+            'state': {
+                'instance': TOGGLE_INSTANCE_PAUSE,
+                'value': True
+            }
+        })
 
     assert e.value.code == ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 
     off_calls = async_mock_service(hass, state.domain, SERVICE_TURN_OFF)
-    await entity.execute(BASIC_DATA, CAPABILITIES_ONOFF, 'on', {'value': False})
+    await entity.execute(BASIC_DATA, {
+        'type': CAPABILITIES_ONOFF,
+        'state': {
+            'instance': 'on',
+            'value': False
+        }
+    })
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
@@ -575,15 +586,26 @@ async def test_yandex_entity_execute_exception(hass):
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockOnOffCapability]):
         with pytest.raises(SmartHomeError) as e:
-            await entity.execute(BASIC_DATA, MockOnOffCapability.type, MockOnOffCapability.instance, {'value': True})
+            await entity.execute(BASIC_DATA, {
+                'type': MockOnOffCapability.type,
+                'state': {
+                    'instance': MockOnOffCapability.instance,
+                    'value': True
+                }
+            })
 
     assert e.value.code == ERR_INTERNAL_ERROR
 
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockBrightnessCapability]):
         with pytest.raises(SmartHomeError) as e:
-            await entity.execute(BASIC_DATA, MockBrightnessCapability.type,
-                                 MockBrightnessCapability.instance, {'value': True})
+            await entity.execute(BASIC_DATA, {
+                'type': MockBrightnessCapability.type,
+                'state': {
+                    'instance': MockBrightnessCapability.instance,
+                    'value': True
+                }
+            })
 
     assert e.value.code == ERR_INVALID_ACTION
 

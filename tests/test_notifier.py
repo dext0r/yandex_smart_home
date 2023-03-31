@@ -4,12 +4,11 @@ import time
 from unittest.mock import PropertyMock, patch
 
 from aiohttp.client_exceptions import ClientConnectionError
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_UNIT_OF_MEASUREMENT,
     ATTR_VOLTAGE,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_TEMPERATURE,
     EVENT_HOMEASSISTANT_STARTED,
     EVENT_STATE_CHANGED,
     PERCENTAGE,
@@ -318,15 +317,15 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
     })
     state_temp = State('sensor.temp', '5', attributes={
         ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
     })
     state_humidity = State('sensor.humidity', '95', attributes={
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
     })
     state_not_expose = State('sensor.not_expose', '3', attributes={
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
     })
     for s in state_switch, state_temp, state_humidity, state_not_expose:
         hass.states.async_set(s.entity_id, s.state, s.attributes)

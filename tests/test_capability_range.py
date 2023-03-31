@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import climate, cover, humidifier, light, media_player, water_heater
 from homeassistant.const import (
@@ -47,7 +47,8 @@ async def test_capability_range(hass):
         async def set_state(self, *args, **kwargs):
             pass
 
-        def get_value(self):
+        @property
+        def _value(self) -> float | None:
             return None
 
     class MockCapabilityRandomAccess(MockCapability):
@@ -99,20 +100,24 @@ async def test_capability_range(hass):
                 }
 
     for v in [STATE_UNAVAILABLE, STATE_UNKNOWN, 'None']:
-        assert cap.float_value(v) is None
+        assert cap._convert_to_float(v) is None
 
     for v in ['4', '5.5']:
-        assert cap.float_value(v) == float(v)
+        assert cap._convert_to_float(v) == float(v)
 
     with pytest.raises(SmartHomeError) as e:
-        assert cap.float_value('foo')
+        assert cap._convert_to_float('foo')
     assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 
-    with patch.object(cap, 'get_value', return_value=20):
+    with patch.object(MockCapability, '_value', new_callable=PropertyMock, return_value=20):
         assert cap.get_absolute_value(10) == 30
         assert cap.get_absolute_value(-5) == 15
         assert cap.get_absolute_value(99) == 100
         assert cap.get_absolute_value(-50) == 0
+
+    for v in [-1, 101]:
+        with patch.object(MockCapability, '_value', new_callable=PropertyMock, return_value=v):
+            assert cap.get_value() is None
 
     with pytest.raises(SmartHomeError) as e:
         cap.get_absolute_value(0)
@@ -588,7 +593,7 @@ async def test_capability_range_channel_via_features(hass):
 async def test_capability_range_channel_set_via_config(hass):
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV
     })
     config = MockConfig(
         entity_config={
@@ -604,7 +609,7 @@ async def test_capability_range_channel_set_via_config(hass):
             media_player.MediaPlayerEntityFeature.PLAY_MEDIA |
             media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK |
             media_player.MediaPlayerEntityFeature.NEXT_TRACK,
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV
     })
 
     cap = get_exact_one_capability(hass, config, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
@@ -622,7 +627,7 @@ async def test_capability_range_channel_set_random(hass, caplog):
 
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_RECEIVER
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.RECEIVER
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
     assert cap.retrievable is False
@@ -630,7 +635,7 @@ async def test_capability_range_channel_set_random(hass, caplog):
 
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
     assert cap.retrievable
@@ -668,7 +673,7 @@ async def test_capability_range_channel_set_random(hass, caplog):
 async def test_capability_range_channel_set_not_supported(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
     assert cap.retrievable is True
@@ -684,7 +689,7 @@ async def test_capability_range_channel_set_not_supported(hass, caplog):
 async def test_capability_range_channel_set_random_with_value(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV,
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV,
         media_player.ATTR_MEDIA_CONTENT_ID: 15,
         media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
     })
@@ -752,7 +757,9 @@ async def test_capability_range_channel_value(hass, caplog):
     media_player.MediaPlayerEntityFeature.NEXT_TRACK |
     media_player.MediaPlayerEntityFeature.PLAY_MEDIA
 ])
-@pytest.mark.parametrize('device_class', [media_player.DEVICE_CLASS_TV, media_player.DEVICE_CLASS_RECEIVER])
+@pytest.mark.parametrize('device_class', [
+    media_player.MediaPlayerDeviceClass.TV, media_player.MediaPlayerDeviceClass.RECEIVER
+])
 async def test_capability_range_channel_set_relative(hass, features, device_class):
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK
@@ -764,7 +771,7 @@ async def test_capability_range_channel_set_relative(hass, features, device_clas
         ATTR_DEVICE_CLASS: device_class
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
-    if device_class == media_player.DEVICE_CLASS_TV:
+    if device_class == media_player.MediaPlayerDeviceClass.TV:
         assert cap.retrievable is bool(features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA)
         assert cap.support_random_access is bool(features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA)
     else:

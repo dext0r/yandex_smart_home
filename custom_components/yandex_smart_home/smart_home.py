@@ -4,15 +4,15 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import ATTR_ENTITY_ID, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
 
-from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR, EVENT_DEVICE_DISCOVERY
+from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR, EVENT_DEVICE_ACTION, EVENT_DEVICE_DISCOVERY
 from .entity import YandexEntity
-from .error import SmartHomeError
-from .helpers import RequestData
+from .error import SmartHomeError, SmartHomeUserError
+from .helpers import DeviceActionRequest, RequestData
 
 HANDLERS = Registry()
 _LOGGER = logging.getLogger(__name__)
@@ -120,7 +120,7 @@ async def async_devices_query(hass, data, message):
 
 
 @HANDLERS.register('/user/devices/action')
-async def async_devices_execute(hass: HomeAssistant, data: RequestData, message: dict[str, Any]) -> dict[str, Any]:
+async def async_devices_execute(hass: HomeAssistant, data: RequestData, message: DeviceActionRequest) -> dict[str, Any]:
     """Handle /user/devices/action request.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
@@ -142,18 +142,16 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
 
         capabilities_result = []
         for capability in device['capabilities']:
-            capability_type = capability['type']
-            instance = capability['state']['instance']
-
             try:
-                value = await entity.execute(data, capability_type, instance, capability['state'])
-            except SmartHomeError as e:
-                _LOGGER.error(f'{e.code}: {e.message}')
+                value = await entity.execute(data, capability)
+            except (SmartHomeError, SmartHomeUserError) as e:
+                if isinstance(e, SmartHomeError):
+                    _LOGGER.error(f'{e.code}: {e.message}')
 
                 capabilities_result.append({
-                    'type': capability_type,
+                    'type': capability['type'],
                     'state': {
-                        'instance': instance,
+                        'instance': capability['state']['instance'],
                         'action_result': {
                             'status': 'ERROR',
                             'error_code': e.code
@@ -162,10 +160,15 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
                 })
                 continue
 
+            hass.bus.async_fire(
+                EVENT_DEVICE_ACTION, {ATTR_ENTITY_ID: entity_id, 'capability': capability},
+                context=data.context,
+            )
+
             result = {
-                'type': capability_type,
+                'type': capability['type'],
                 'state': {
-                    'instance': instance,
+                    'instance': capability['state']['instance'],
                     'action_result': {
                         'status': 'DONE',
                     }

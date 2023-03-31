@@ -23,6 +23,8 @@ nav:
       - Прямое подключение: advanced/direct-connection.md
       - Пользовательские умения: advanced/capabilities.md
       - Несколько интеграций: advanced/clone.md
+      - События: advanced/events.md
+      - Коды ошибок: advanced/error-codes.md
   - Проблемы и отладка:
       - Устранение проблем: troubleshoot/index.md
       - Отладка: troubleshoot/debug.md
@@ -80,3 +82,4 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.superfences
   - pymdownx.smartsymbols
+  - pymdownx.critic
