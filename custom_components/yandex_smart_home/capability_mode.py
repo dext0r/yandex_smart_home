@@ -483,6 +483,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         ],
         const.MODE_INSTANCE_MODE_MIN: [
             const.TION_FAN_SPEED_1,
+            const.FAN_SPEED_LOW_MID,
         ],
         const.MODE_INSTANCE_MODE_LOW: [
             climate.const.FAN_LOW,
@@ -507,6 +508,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         ],
         const.MODE_INSTANCE_MODE_MAX: [
             const.TION_FAN_SPEED_6,
+            const.FAN_SPEED_MID_HIGH,
         ],
     }
 

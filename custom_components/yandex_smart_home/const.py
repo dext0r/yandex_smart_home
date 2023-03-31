@@ -711,6 +711,10 @@ FAN_SPEED_MAX = 'max'
 # https://github.com/dmitry-k/yandex_smart_home/issues/347
 FAN_SPEED_MID = 'mid'
 
+# https://github.com/dext0r/yandex_smart_home/issues/440
+FAN_SPEED_LOW_MID = 'low_mid'
+FAN_SPEED_MID_HIGH = 'mid_high'
+
 # SmartIR
 FAN_SPEED_HIGHEST = 'highest'
 
