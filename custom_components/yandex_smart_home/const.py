@@ -743,6 +743,14 @@ FAN_SPEED_MID_HIGH = 'mid_high'
 # SmartIR
 FAN_SPEED_HIGHEST = 'highest'
 
+# https://github.com/humbertogontijo/python-roborock/blob/1616217a06e20d51921de984134555bcc0775a92/roborock/code_mappings.py#L61
+CLEANUP_MODE_OFF = 'off'
+CLEANUP_MODE_SILENT = 'silent'
+CLEANUP_MODE_BALANCED = 'balanced'
+CLEANUP_MODE_TURBO = 'turbo'
+CLEANUP_MODE_MAX = 'max'
+CLEANUP_MODE_MAX_PLUS = 'max_plus'
+CLEANUP_MODE_CUSTOM = 'custom'
 
 MEDIA_PLAYER_FEATURE_VOLUME_MUTE = 'volume_mute'
 MEDIA_PLAYER_FEATURE_VOLUME_SET = 'volume_set'
