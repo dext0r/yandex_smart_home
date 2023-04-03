@@ -1,0 +1,569 @@
+media_player:
+  - platform: demo
+
+climate:
+  - platform: demo
+  # +customize:
+  # climate.hvac:
+  #   swing_modes: ['auto', '1', '2', '3', 'Off']
+
+light:
+  - platform: demo
+
+switch:
+  - platform: demo
+
+sensor:
+  - platform: demo
+
+template:
+  sensor:
+    - name: ysh_float_sensor_debug
+      state: >
+        {{ states('input_number.ysh_float_debug') }}
+
+  binary_sensor:
+    - name: ysh_event_sensor_debug
+      state: >
+        {{ states('input_boolean.ysh_event_debug') }}
+
+input_text:
+  ysh_mode_debug:
+    initial: Test
+  ysh_event_debug:
+    initial: 'off'
+
+input_boolean:
+  ysh_tv_debug:
+    initial: 'off'
+  ysh_toggle_debug:
+    initial: 'off'
+
+input_number:
+  ysh_float_debug:
+    initial: 42.5
+    min: 0
+    max: 100
+    step: 1.5
+
+yandex_smart_home:
+  filter:
+    include_entities:
+      - light.office_rgbw_lights
+      - climate.hvac
+      - media_player.lounge_room
+      - switch.ac
+      - sensor.outside_temperature
+  entity_config:
+    light.office_rgbw_lights:
+      name: Офис РГБВ
+      room: Комната
+      modes:
+        cleanup_mode: &modes_1
+          auto: [Test]
+          smart: [Value 1]
+          high: [Value 2]
+        coffee_mode:  &modes_2
+          fowl: [Test]
+          pasta: [Value 1]
+          pre_rinse: [Value 2]
+        dishwashing:
+          << : *modes_2
+        fan_speed:
+          << : *modes_2
+        heat:
+          << : *modes_2
+        input_source:
+          << : *modes_2
+        program:
+          << : *modes_2
+        swing:
+          << : *modes_2
+        tea_mode:
+          << : *modes_1
+        thermostat:
+          << : *modes_1
+        work_speed:
+          << : *modes_1
+      custom_toggles: &custom_toggles
+        backlight: &custom_toggle
+          state_entity_id: input_boolean.ysh_toggle_debug
+          turn_on:
+            service: input_boolean.turn_on
+            entity_id: input_boolean.ysh_toggle_debug
+          turn_off:
+            service: input_boolean.turn_on
+            entity_id: input_boolean.ysh_toggle_debug
+        controls_locked:
+          << : *custom_toggle
+        ionization:
+          << : *custom_toggle
+        keep_warm:
+          << : *custom_toggle
+        mute:
+          << : *custom_toggle
+        oscillation:
+          << : *custom_toggle
+        pause:
+          << : *custom_toggle
+      custom_ranges:
+        channel: &custom_range_random_access
+          state_entity_id: input_number.ysh_float_debug
+          set_value:
+            service: input_number.set_value
+            entity_id: input_number.ysh_float_debug
+            data:
+              value: '{{ value }}'
+          range:
+            min: 0
+            max: 100
+            precision: 1
+        volume:
+          increase_value:
+            service: input_number.increment
+            entity_id: input_number.ysh_float_debug
+          decrease_value:
+            service: input_number.decrement
+            entity_id: input_number.ysh_float_debug
+        humidity:
+          << : *custom_range_random_access
+        open:
+          << : *custom_range_random_access
+        temperature:
+          << : *custom_range_random_access
+      custom_modes:
+        cleanup_mode:  &custom_mode
+          state_entity_id: input_text.ysh_mode_debug
+          set_mode:
+            service: input_text.set_value
+            entity_id: input_text.ysh_mode_debug
+            data:
+              value: '{{ mode }}'
+        coffee_mode:
+          << : *custom_mode
+        dishwashing:
+          << : *custom_mode
+        fan_speed:
+          << : *custom_mode
+        heat:
+          << : *custom_mode
+        input_source:
+          << : *custom_mode
+        program:
+          << : *custom_mode
+        swing:
+          << : *custom_mode
+        tea_mode:
+          << : *custom_mode
+        thermostat:
+          << : *custom_mode
+        work_speed:
+          << : *custom_mode
+      properties:
+        - type: amperage
+          entity: sensor.ysh_float_sensor_debug
+        - type: battery_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: co2_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: humidity
+          entity: sensor.ysh_float_sensor_debug
+        - type: illumination
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm1_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm2.5_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm10_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: power
+          entity: sensor.ysh_float_sensor_debug
+        - type: pressure
+          entity: sensor.ysh_float_sensor_debug
+          unit_of_measurement: pa
+        - type: temperature
+          entity: sensor.ysh_float_sensor_debug
+        - type: tvoc
+          entity: sensor.ysh_float_sensor_debug
+        - type: voltage
+          entity: sensor.ysh_float_sensor_debug
+        - type: water_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: vibration
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: open
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: motion
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: smoke
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: gas
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: water_leak
+          entity: binary_sensor.ysh_event_sensor_debug
+    climate.hvac:
+      name: Климат Хвак
+      room: Комната
+      modes:
+        cleanup_mode:
+          << : *modes_1
+        coffee_mode:
+          << : *modes_1
+        dishwashing:
+          << : *modes_2
+        fan_speed:
+          smart: ['off']
+          auto: [auto_low]
+          low: [on_low]
+          medium: [on_high]
+          high: [on_high]
+          turbo: [auto_hight]
+        input_source:
+          << : *modes_2
+        program:
+          << : *modes_2
+        swing:
+          auto: ['off']
+          horizontal: ['1']
+          stationary: ['2']
+          vertical: ['3']
+        tea_mode:
+          << : *modes_1
+        work_speed:
+          << : *modes_1
+        thermostat:
+          fowl: [auto]
+          heat: [heat]
+          cool: [cool]
+          dry: [dry]
+          fan_only: [fan_only]
+      custom_toggles:
+        << : *custom_toggles
+      custom_ranges:
+        channel:
+          << : *custom_range_random_access
+        volume:
+          << : *custom_range_random_access
+        humidity:
+          << : *custom_range_random_access
+        open:
+          << : *custom_range_random_access
+      custom_modes:
+        cleanup_mode:
+          << : *custom_mode
+        coffee_mode:
+          << : *custom_mode
+        dishwashing:
+          << : *custom_mode
+        input_source:
+          << : *custom_mode
+        program:
+          << : *custom_mode
+        tea_mode:
+          << : *custom_mode
+        work_speed:
+          << : *custom_mode
+      properties:
+        - type: amperage
+          entity: sensor.ysh_float_sensor_debug
+        - type: battery_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: co2_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: illumination
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm1_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm2.5_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm10_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: power
+          entity: sensor.ysh_float_sensor_debug
+        - type: pressure
+          entity: sensor.ysh_float_sensor_debug
+          unit_of_measurement: pa
+        - type: tvoc
+          entity: sensor.ysh_float_sensor_debug
+        - type: voltage
+          entity: sensor.ysh_float_sensor_debug
+        - type: water_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: vibration
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: open
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: motion
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: smoke
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: gas
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: water_leak
+          entity: binary_sensor.ysh_event_sensor_debug
+    media_player.lounge_room:
+      name: Плеер лаунж
+      room: Комната
+      modes:
+        cleanup_mode:
+          << : *modes_1
+        coffee_mode:
+          << : *modes_1
+        dishwashing:
+          << : *modes_2
+        fan_speed:
+          << : *modes_2
+        heat:
+          << : *modes_2
+        program:
+          << : *modes_2
+        swing:
+          << : *modes_2
+        tea_mode:
+          << : *modes_1
+        thermostat:
+          << : *modes_1
+        work_speed:
+          << : *modes_1
+      custom_toggles:
+        backlight:
+          << : *custom_toggle
+        controls_locked:
+          << : *custom_toggle
+        ionization:
+          << : *custom_toggle
+        keep_warm:
+          << : *custom_toggle
+        oscillation:
+          << : *custom_toggle
+      custom_ranges:
+        humidity:
+          << : *custom_range_random_access
+        open:
+          << : *custom_range_random_access
+        volume:
+          << : *custom_range_random_access
+        temperature:
+          << : *custom_range_random_access
+      custom_modes:
+        cleanup_mode:
+          << : *custom_mode
+        coffee_mode:
+          << : *custom_mode
+        dishwashing:
+          << : *custom_mode
+        fan_speed:
+          << : *custom_mode
+        heat:
+          << : *custom_mode
+        program:
+          << : *custom_mode
+        swing:
+          << : *custom_mode
+        tea_mode:
+          << : *custom_mode
+        thermostat:
+          << : *custom_mode
+        work_speed:
+          << : *custom_mode
+      properties:
+        - type: amperage
+          entity: sensor.ysh_float_sensor_debug
+        - type: battery_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: co2_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: humidity
+          entity: sensor.ysh_float_sensor_debug
+        - type: illumination
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm1_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm2.5_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm10_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: power
+          entity: sensor.ysh_float_sensor_debug
+        - type: pressure
+          entity: sensor.ysh_float_sensor_debug
+          unit_of_measurement: pa
+        - type: temperature
+          entity: sensor.ysh_float_sensor_debug
+        - type: tvoc
+          entity: sensor.ysh_float_sensor_debug
+        - type: voltage
+          entity: sensor.ysh_float_sensor_debug
+        - type: water_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: vibration
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: open
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: motion
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: smoke
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: gas
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: water_leak
+          entity: binary_sensor.ysh_event_sensor_debug
+    switch.ac:
+      name: Выключатель АЦ
+      room: Комната
+      modes:
+        cleanup_mode:
+          << : *modes_1
+        coffee_mode:
+          << : *modes_1
+        dishwashing:
+          << : *modes_2
+        fan_speed:
+          << : *modes_2
+        heat:
+          << : *modes_2
+        program:
+          << : *modes_2
+        swing:
+          << : *modes_2
+        tea_mode:
+          << : *modes_1
+        thermostat:
+          << : *modes_1
+        work_speed:
+          << : *modes_1
+      custom_toggles:
+        backlight:
+          << : *custom_toggle
+        controls_locked:
+          << : *custom_toggle
+        ionization:
+          << : *custom_toggle
+        keep_warm:
+          << : *custom_toggle
+        oscillation:
+          << : *custom_toggle
+      custom_ranges:
+        humidity:
+          << : *custom_range_random_access
+        open:
+          << : *custom_range_random_access
+        volume:
+          << : *custom_range_random_access
+        temperature:
+          state_entity_id: input_number.ysh_float_debug
+          set_value:
+            service: input_number.set_value
+            entity_id: input_number.ysh_float_debug
+            data:
+              value: '{{ value }}'
+          range:
+            min: -100
+            max: 200
+            precision: 0.1
+      custom_modes:
+        cleanup_mode:
+          << : *custom_mode
+        coffee_mode:
+          << : *custom_mode
+        dishwashing:
+          << : *custom_mode
+        fan_speed:
+          << : *custom_mode
+        heat:
+          << : *custom_mode
+        program:
+          << : *custom_mode
+        swing:
+          << : *custom_mode
+        tea_mode:
+          << : *custom_mode
+        thermostat:
+          << : *custom_mode
+        work_speed:
+          << : *custom_mode
+      properties:
+        - type: amperage
+          entity: sensor.ysh_float_sensor_debug
+        - type: battery_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: co2_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: humidity
+          entity: sensor.ysh_float_sensor_debug
+        - type: illumination
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm1_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm2.5_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm10_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: power
+          entity: sensor.ysh_float_sensor_debug
+        - type: pressure
+          entity: sensor.ysh_float_sensor_debug
+          unit_of_measurement: pa
+        - type: temperature
+          entity: sensor.ysh_float_sensor_debug
+        - type: tvoc
+          entity: sensor.ysh_float_sensor_debug
+        - type: voltage
+          entity: sensor.ysh_float_sensor_debug
+        - type: water_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: vibration
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: open
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: motion
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: smoke
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: gas
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: water_leak
+          entity: binary_sensor.ysh_event_sensor_debug
+    sensor.outside_temperature:
+      name: Уличная температура
+      room: Комната
+      properties:
+        - type: amperage
+          entity: sensor.ysh_float_sensor_debug
+        - type: battery_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: co2_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: humidity
+          entity: sensor.ysh_float_sensor_debug
+        - type: illumination
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm1_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm2.5_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: pm10_density
+          entity: sensor.ysh_float_sensor_debug
+        - type: power
+          entity: sensor.ysh_float_sensor_debug
+        - type: pressure
+          entity: sensor.ysh_float_sensor_debug
+          unit_of_measurement: pa
+        - type: tvoc
+          entity: sensor.ysh_float_sensor_debug
+        - type: voltage
+          entity: sensor.ysh_float_sensor_debug
+        - type: water_level
+          entity: sensor.ysh_float_sensor_debug
+        - type: vibration
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: open
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: motion
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: smoke
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: gas
+          entity: binary_sensor.ysh_event_sensor_debug
+        - type: water_leak
+          entity: binary_sensor.ysh_event_sensor_debug
