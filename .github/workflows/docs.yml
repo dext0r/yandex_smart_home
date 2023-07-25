@@ -1,0 +1,38 @@
+name: Deploy docs
+
+on:
+  push:
+    branches:
+      - v*
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: requirements_dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements_dev.txt
+
+      - name: Prepare environment
+        run: |
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct docs mkdocs.yml)" >> "${GITHUB_ENV}"
+
+      - name: Deploy docs
+        run: |
+          mike deploy --push --branch gh-pages ${GITHUB_REF_NAME}
