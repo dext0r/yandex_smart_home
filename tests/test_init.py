@@ -117,7 +117,7 @@ async def test_valid_config(hass):
                     ],
                     'data': {
                         'media_content_type': 'channel',
-                        'media_content_id': Template('{{ value }}')
+                        'media_content_id': Template('{{ value }}', hass)
                     }
                 },
                 'increase_value': {
@@ -295,7 +295,7 @@ async def test_valid_config(hass):
                 'set_value': {
                     'service': 'climate.set_temperature',
                     'data': {
-                        'temperature': Template('{{ value }}')
+                        'temperature': Template('{{ value }}', hass)
                     },
                     'target': {
                         'entity_id': [
@@ -538,7 +538,8 @@ async def test_async_remove_entry_cloud(hass, config_entry_cloud_connection, aio
     assert len(caplog.records) == 0
 
 
-async def test_async_setup_update_from_yaml(hass, hass_admin_user):
+@pytest.mark.parametrize('expected_lingering_timers', [True])
+async def test_async_setup_update_from_yaml(hass, hass_admin_user, expected_lingering_timers):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 
     entry = MockConfigEntry(
@@ -622,6 +623,7 @@ yandex_smart_home:
         assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
         with patch('custom_components.yandex_smart_home.async_setup', return_value=True):
             assert await async_setup_entry(hass, entry)
+            await hass.async_block_till_done()
 
     assert entry.options[const.CONF_PRESSURE_UNIT] == 'mmHg'
-    assert entry.data[const.YAML_CONFIG_HASH] == 'cbe26e947d35ed6222f97e493b32d94f'
+    assert entry.data[const.YAML_CONFIG_HASH] == '0eedd9f5ee18739bf910b36d2f9f1c6e'

@@ -88,14 +88,15 @@ async def test_yandex_entity_duplicate_capabilities(hass):
 
 async def test_yandex_entity_capabilities(hass):
     light = DemoLight(
-        unique_id='test_light',
-        name='Light',
+        'test_light',
+        'Light',
         available=True,
         state=True,
     )
     light.hass = hass
     light.entity_id = 'light.test'
-    await light.async_update_ha_state()
+    light._attr_name = 'Light'
+    light.async_write_ha_state()
 
     state = hass.states.get('light.test')
     state_sensor = State('sensor.test', '33')

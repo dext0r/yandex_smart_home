@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from typing import Any, Optional
+from unittest.mock import patch
 
+from homeassistant import core
 from homeassistant.components import button, climate, cover, fan, humidifier, light, lock, media_player, switch
-from homeassistant.const import STATE_ON
+from homeassistant.const import STATE_ON, Platform
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
@@ -111,13 +113,19 @@ def test_capability(hass):
 
 
 async def test_capability_demo_platform(hass):
-    components = [button, switch, light, cover, media_player, fan, climate, humidifier, lock]
-
-    for component in components:
-        await async_setup_component(
-            hass, component.DOMAIN, {component.DOMAIN: [{'platform': 'demo'}]}
-        )
-    await hass.async_block_till_done()
+    with patch(
+        'homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM',
+        [
+            Platform.BUTTON, Platform.SWITCH, Platform.LIGHT, Platform.COVER, Platform.MEDIA_PLAYER, Platform.FAN,
+            Platform.CLIMATE, Platform.HUMIDIFIER, Platform.LOCK
+        ],
+    ):
+        await async_setup_component(hass, core.DOMAIN, {})
+        for component in [button, switch, light, cover, media_player, fan, climate, humidifier, lock]:
+            await async_setup_component(
+                hass, component.DOMAIN, {component.DOMAIN: [{'platform': 'demo'}]}
+            )
+        await hass.async_block_till_done()
 
     # for x in sorted(hass.states.async_all(), key=lambda e: e.entity_id):
     #     e = YandexEntity(hass, BASIC_CONFIG, x)

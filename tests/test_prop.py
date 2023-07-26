@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
+from homeassistant import core
 from homeassistant.components import binary_sensor, climate, sensor
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
@@ -47,11 +51,16 @@ def assert_no_properties(hass: HomeAssistant, config: Config, state: State,
 
 
 async def test_property_demo_platform(hass):
-    for component in climate, sensor, binary_sensor:
-        await async_setup_component(
-            hass, component.DOMAIN, {component.DOMAIN: [{'platform': 'demo'}]}
-        )
-    await hass.async_block_till_done()
+    with patch(
+        'homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM',
+        [Platform.CLIMATE, Platform.SENSOR, Platform.BINARY_SENSOR],
+    ):
+        await async_setup_component(hass, core.DOMAIN, {})
+        for component in climate, sensor, binary_sensor:
+            await async_setup_component(
+                hass, component.DOMAIN, {component.DOMAIN: [{'platform': 'demo'}]}
+            )
+        await hass.async_block_till_done()
 
     # for x in hass.states.async_all():
     #     e = YandexEntity(hass, BASIC_CONFIG, x)

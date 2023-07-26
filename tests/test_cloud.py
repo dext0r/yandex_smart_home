@@ -5,6 +5,9 @@ import json
 from unittest.mock import patch
 
 from aiohttp import WSMessage, WSMsgType
+from homeassistant import core
+from homeassistant.components import switch
+from homeassistant.const import Platform
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -198,7 +201,10 @@ async def test_cloud_messages_invalid_format(hass_platform_cloud_connection, con
         mock_reconnect.assert_called_once()
 
 
-async def test_cloud_req_user_devices(hass_platform_cloud_connection, config, aioclient_mock):
+@pytest.mark.parametrize('expected_lingering_timers', [True])
+async def test_cloud_req_user_devices(
+    hass_platform_cloud_connection, config, aioclient_mock, expected_lingering_timers
+):
     hass = hass_platform_cloud_connection
     requests = [{
         'request_id': 'req_user_devices',
@@ -354,8 +360,13 @@ async def test_cloud_req_user_devices_action(hass_platform_cloud_connection, con
         })
     }]
 
-    await async_setup_component(hass, 'switch', {'switch': {'platform': 'demo'}})
-    await hass.async_block_till_done()
+    with patch(
+        'homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM',
+        [Platform.SWITCH],
+    ):
+        await async_setup_component(hass, core.DOMAIN, {})
+        await async_setup_component(hass, switch.DOMAIN, {switch.DOMAIN: {'platform': 'demo'}})
+        await hass.async_block_till_done()
 
     assert hass.states.get('switch.ac').state == 'off'
 

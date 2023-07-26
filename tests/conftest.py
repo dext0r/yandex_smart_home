@@ -12,7 +12,7 @@ from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers import entityfilter
 from homeassistant.setup import async_setup_component
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 
 from custom_components import yandex_smart_home
 from custom_components.yandex_smart_home import DOMAIN, async_setup, async_setup_entry, const
@@ -20,13 +20,22 @@ from custom_components.yandex_smart_home import DOMAIN, async_setup, async_setup
 pytest_plugins = 'pytest_homeassistant_custom_component'
 
 
-def pytest_configure(config):
+def pytest_configure(*_):
     yandex_smart_home._PYTEST = True
 
 
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations):
     yield
+
+
+@pytest.fixture(name='skip_notifications', autouse=True)
+def skip_notifications_fixture():
+    """Skip notification calls."""
+    with patch('homeassistant.components.persistent_notification.async_create'), patch(
+            'homeassistant.components.persistent_notification.async_dismiss'
+    ):
+        yield
 
 
 @pytest.fixture
@@ -42,7 +51,7 @@ def config_entry():
 
 
 @pytest.fixture
-def config_entry_with_notifier(hass_admin_user):
+def config_entry_with_notifier(hass_admin_user: MockUser):
     return MockConfigEntry(domain=DOMAIN, data={const.CONF_NOTIFIER: [{
         const.CONF_NOTIFIER_OAUTH_TOKEN: '',
         const.CONF_NOTIFIER_SKILL_ID: '',
@@ -70,8 +79,8 @@ def config_entry_cloud_connection():
 @pytest.fixture
 def hass_platform(event_loop: asyncio.AbstractEventLoop, hass, config_entry):
     demo_sensor = DemoSensor(
-        unique_id='outside_temp',
-        name='Outside Temperature',
+        'outside_temp',
+        'Outside Temperature',
         state=15.6,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -80,28 +89,23 @@ def hass_platform(event_loop: asyncio.AbstractEventLoop, hass, config_entry):
     )
     demo_sensor.hass = hass
     demo_sensor.entity_id = 'sensor.outside_temp'
+    demo_sensor._attr_name = 'Outside Temperature'
 
     demo_light = DemoLight(
-        unique_id='light_kitchen',
-        name='Kitchen Light',
+        'light_kitchen',
+        'Kitchen Light',
         available=True,
         state=True,
     )
     demo_light.hass = hass
     demo_light.entity_id = 'light.kitchen'
+    demo_light._attr_name = 'Kitchen Light'
 
-    event_loop.run_until_complete(
-        demo_sensor.async_update_ha_state()
-    )
-    event_loop.run_until_complete(
-        demo_light.async_update_ha_state()
-    )
+    demo_sensor.async_write_ha_state()
+    demo_light.async_write_ha_state()
 
     event_loop.run_until_complete(
         async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-    )
-    event_loop.run_until_complete(
-        hass.async_block_till_done()
     )
 
     config_entry.add_to_hass(hass)
@@ -115,8 +119,8 @@ def hass_platform(event_loop: asyncio.AbstractEventLoop, hass, config_entry):
 @pytest.fixture
 def hass_platform_cloud_connection(event_loop: asyncio.AbstractEventLoop, hass, config_entry_cloud_connection):
     demo_sensor = DemoSensor(
-        unique_id='outside_temp',
-        name='Outside Temperature',
+        'outside_temp',
+        'Outside Temperature',
         state=15.6,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -125,41 +129,35 @@ def hass_platform_cloud_connection(event_loop: asyncio.AbstractEventLoop, hass, 
     )
     demo_sensor.hass = hass
     demo_sensor.entity_id = 'sensor.outside_temp'
+    demo_sensor._attr_name = 'Outside Temperature'
 
     demo_binary_sensor = DemoBinarySensor(
-        unique_id='front_door',
-        name='Front Door',
+        'front_door',
+        'Front Door',
         state=True,
         device_class=BinarySensorDeviceClass.DOOR,
     )
     demo_binary_sensor.hass = hass
     demo_binary_sensor.entity_id = 'binary_sensor.front_Door'
+    demo_binary_sensor._attr_name = 'Front Door'
 
     demo_light = DemoLight(
-        unique_id='light_kitchen',
-        name='Kitchen Light',
+        'light_kitchen',
+        'Kitchen Light',
         ct=240,
         available=True,
         state=True,
     )
     demo_light.hass = hass
     demo_light.entity_id = 'light.kitchen'
+    demo_light._attr_name = 'Kitchen Light'
 
-    event_loop.run_until_complete(
-        demo_sensor.async_update_ha_state()
-    )
-    event_loop.run_until_complete(
-        demo_binary_sensor.async_update_ha_state()
-    )
-    event_loop.run_until_complete(
-        demo_light.async_update_ha_state()
-    )
+    demo_sensor.async_write_ha_state()
+    demo_binary_sensor.async_write_ha_state()
+    demo_light.async_write_ha_state()
 
     event_loop.run_until_complete(
         async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-    )
-    event_loop.run_until_complete(
-        hass.async_block_till_done()
     )
 
     config_entry_cloud_connection.add_to_hass(hass)
@@ -169,12 +167,3 @@ def hass_platform_cloud_connection(event_loop: asyncio.AbstractEventLoop, hass, 
         event_loop.run_until_complete(hass.async_block_till_done())
 
     return hass
-
-
-@pytest.fixture(name='skip_notifications', autouse=True)
-def skip_notifications_fixture():
-    """Skip notification calls."""
-    with patch('homeassistant.components.persistent_notification.async_create'), patch(
-        'homeassistant.components.persistent_notification.async_dismiss'
-    ):
-        yield

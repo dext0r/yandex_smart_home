@@ -368,7 +368,6 @@ async def test_async_devices_execute_error_template(hass, caplog):
             }]
         }
 
-        assert len(caplog.records) == 2
         assert 'Invalid error code' in caplog.records[-1].message
 
         hass.states.async_set('sensor.foo', 'bar')

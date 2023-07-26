@@ -1,5 +1,0 @@
-[report]
-exclude_lines =
-    raise NotImplementedError
-    @abstract
-    pragma: no cover

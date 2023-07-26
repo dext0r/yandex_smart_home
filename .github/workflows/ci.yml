@@ -43,7 +43,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - ha-version: '2023.2'
+          - ha-version: '2023.7'
             latest: true
     steps:
       - uses: actions/checkout@v3

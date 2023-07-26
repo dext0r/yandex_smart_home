@@ -1,0 +1,5 @@
+[tool.coverage.report]
+exclude_also = [
+    "raise NotImplementedError",
+    "@abstractmethod"
+]
