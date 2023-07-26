@@ -19,12 +19,11 @@ from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
-CAPABILITIES_VIDEO_STREAM = PREFIX_CAPABILITIES + 'video_stream'
+CAPABILITIES_VIDEO_STREAM = PREFIX_CAPABILITIES + "video_stream"
 
 
 @register_capability
 class VideoStreamCapability(AbstractCapability):
-
     type = CAPABILITIES_VIDEO_STREAM
     instance = VIDEO_STREAM_INSTANCE_GET_STREAM
     retrievable = False
@@ -36,9 +35,7 @@ class VideoStreamCapability(AbstractCapability):
         self.reportable = False
 
     def parameters(self) -> dict[str, Any]:
-        return {
-            'protocols': [str(StreamType.HLS)]
-        }
+        return {"protocols": [str(StreamType.HLS)]}
 
     def supported(self) -> bool:
         if self.state.domain != camera.DOMAIN:
@@ -68,26 +65,21 @@ class VideoStreamCapability(AbstractCapability):
             except network.NoURLAvailableError:
                 raise SmartHomeError(
                     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                    'Unable to get Home Assistant external URL. Have you set external URLs in Configuration -> General?'
+                    "Unable to get Home Assistant external URL. "
+                    "Have you set external URLs in Configuration -> General?",
                 )
 
             endpoint_url = stream.endpoint_url(StreamType.HLS)
-            stream_url = f'{external_url}{endpoint_url}'
+            stream_url = f"{external_url}{endpoint_url}"
 
-        return {
-            'stream_url': stream_url,
-            'protocol': 'hls'
-        }
+        return {"stream_url": stream_url, "protocol": "hls"}
 
     async def _async_request_stream(self, entity_id: str) -> Stream:
         camera_entity = _get_camera_from_entity_id(self.hass, self.state.entity_id)
         stream = await camera_entity.async_create_stream()
 
         if not stream:
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'{entity_id} does not support play stream service'
-            )
+            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, f"{entity_id} does not support play stream service")
 
         stream.add_provider(StreamType.HLS)
 

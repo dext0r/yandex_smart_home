@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 from datetime import timedelta
 import json
 import logging
-from typing import Any, cast
+from typing import Any, AsyncIterable, cast
 
 from aiohttp import (
     ClientConnectionError,
@@ -54,7 +54,7 @@ class ResponseMeta:
 
 class WebRequest:
     def __init__(self, hass: HomeAssistant, url: yarl.URL):
-        self.app = {'hass': hass}
+        self.app = {"hass": hass}
         self._url = url
 
     @property
@@ -77,7 +77,7 @@ class CloudStream:
         if not self._running_stream_id:
             return None
 
-        return f'{CLOUD_STREAM_BASE_URL}/{self._running_stream_id}/master_playlist.m3u8'
+        return f"{CLOUD_STREAM_BASE_URL}/{self._running_stream_id}/master_playlist.m3u8"
 
     async def start(self):
         if self._ws or not self._stream.access_token:
@@ -99,28 +99,28 @@ class CloudStream:
         if not self._running_stream_id:
             return
 
-        ws_url = f'{CLOUD_STREAM_BASE_URL}/{self._running_stream_id}/connect'
+        ws_url = f"{CLOUD_STREAM_BASE_URL}/{self._running_stream_id}/connect"
 
         # noinspection PyBroadException
         try:
-            _LOGGER.debug(f'Connecting to {ws_url}')
+            _LOGGER.debug(f"Connecting to {ws_url}")
             self._ws = await self._session.ws_connect(ws_url, heartbeat=30)
 
-            _LOGGER.debug('Connection to Yandex Smart Home cloud established')
+            _LOGGER.debug("Connection to Yandex Smart Home cloud established")
             self._connected.set()
 
-            async for msg in self._ws:  # type: WSMessage
+            async for msg in cast(AsyncIterable[WSMessage], self._ws):
                 if msg.type == WSMsgType.TEXT:
                     await self._handle_request(msg.json())
 
-            _LOGGER.debug(f'Disconnected: {self._ws.close_code}')
+            _LOGGER.debug(f"Disconnected: {self._ws.close_code}")
             if self._ws.close_code is not None:
                 self._try_reconnect()
         except (ClientConnectionError, ClientResponseError, TimeoutError):
-            _LOGGER.exception('Failed to connect to Yandex Smart Home cloud')
+            _LOGGER.exception("Failed to connect to Yandex Smart Home cloud")
             self._try_reconnect()
         except Exception:
-            _LOGGER.exception('Unexpected exception')
+            _LOGGER.exception("Unexpected exception")
             self._try_reconnect()
 
     async def _disconnect(self, *_):
@@ -136,27 +136,27 @@ class CloudStream:
             self._ws = None
 
     async def _handle_request(self, payload: dict):
-        _LOGGER.debug(f'Request: {payload}')
+        _LOGGER.debug(f"Request: {payload}")
 
         request = Request(**payload)
-        request_url = yarl.URL.build(path=f'{request.view}', query=request.url_query)
+        request_url = yarl.URL.build(path=f"{request.view}", query=request.url_query)
         web_request = cast(AIOWebRequest, WebRequest(self._hass, request_url))
 
         views = {
-            'master_playlist': HlsMasterPlaylistView,
-            'playlist': HlsPlaylistView,
-            'init': HlsInitView,
-            'part': HlsPartView,
-            'segment': HlsSegmentView
+            "master_playlist": HlsMasterPlaylistView,
+            "playlist": HlsPlaylistView,
+            "init": HlsInitView,
+            "part": HlsPartView,
+            "segment": HlsSegmentView,
         }
 
         view = views[request.view]()
 
         r = await view.get(web_request, self._stream.access_token, request.sequence, request.part_num)
         meta = ResponseMeta(status_code=r.status, headers=dict(r.headers))
-        response = bytes(json.dumps(asdict(meta)), 'utf-8') + b'\r\n' + r.body
+        response = bytes(json.dumps(asdict(meta)), "utf-8") + b"\r\n" + r.body
         await self._ws.send_bytes(response, compress=False)
 
     def _try_reconnect(self):
-        _LOGGER.debug(f'Trying to reconnect in {RECONNECTION_DELAY} seconds')
+        _LOGGER.debug(f"Trying to reconnect in {RECONNECTION_DELAY} seconds")
         self._unsub_reconnect = async_call_later(self._hass, RECONNECTION_DELAY, HassJob(self._connect))

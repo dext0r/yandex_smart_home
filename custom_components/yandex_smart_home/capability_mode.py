@@ -18,7 +18,7 @@ from .helpers import RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
-CAPABILITIES_MODE = PREFIX_CAPABILITIES + 'mode'
+CAPABILITIES_MODE = PREFIX_CAPABILITIES + "mode"
 
 
 class ModeCapability(AbstractCapability, ABC):
@@ -39,8 +39,8 @@ class ModeCapability(AbstractCapability, ABC):
     def parameters(self) -> dict[str, Any]:
         """Return parameters for a devices request."""
         return {
-            'instance': self.instance,
-            'modes': [{'value': v} for v in self.supported_yandex_modes],
+            "instance": self.instance,
+            "modes": [{"value": v} for v in self.supported_yandex_modes],
         }
 
     @property
@@ -101,7 +101,7 @@ class ModeCapability(AbstractCapability, ABC):
         if rv is not None and ha_mode not in self.supported_ha_modes:
             err = f'Unsupported HA mode "{ha_mode}" for {self.instance} instance of {self.state.entity_id}.'
             if self.modes_list_attribute:
-                err += f' Maybe it missing in entity attribute {self.modes_list_attribute}?'
+                err += f" Maybe it missing in entity attribute {self.modes_list_attribute}?"
 
             raise SmartHomeError(ERR_INVALID_VALUE, err)
 
@@ -110,8 +110,8 @@ class ModeCapability(AbstractCapability, ABC):
                 if str(ha_mode).lower() in [str(m).lower() for m in self.supported_ha_modes]:
                     _LOGGER.warning(
                         f'Unable to get Yandex mode for "{ha_mode}" for {self.instance} instance '
-                        f'of {self.state.entity_id}. It may cause inconsistencies between Yandex and HA. '
-                        f'Check \"modes\" setting for this entity'
+                        f"of {self.state.entity_id}. It may cause inconsistencies between Yandex and HA. "
+                        f'Check "modes" setting for this entity'
                     )
 
         return rv
@@ -131,7 +131,7 @@ class ModeCapability(AbstractCapability, ABC):
         raise SmartHomeError(
             ERR_INVALID_VALUE,
             f'Unsupported mode "{yandex_mode}" for {self.instance} instance of {self.state.entity_id}. '
-            f'Check \"modes\" setting for this entity'
+            f'Check "modes" setting for this entity',
         )
 
     def get_value(self) -> str | None:
@@ -176,12 +176,13 @@ class ThermostatCapability(ModeCapability):
         """Set device state."""
         await self.hass.services.async_call(
             climate.DOMAIN,
-            climate.SERVICE_SET_HVAC_MODE, {
+            climate.SERVICE_SET_HVAC_MODE,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                climate.ATTR_HVAC_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
+                climate.ATTR_HVAC_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -191,10 +192,10 @@ class SwingCapability(ModeCapability):
 
     instance = const.MODE_INSTANCE_SWING
     modes_map_default = {
-        const.MODE_INSTANCE_MODE_VERTICAL: [climate.const.SWING_VERTICAL, 'ud'],
-        const.MODE_INSTANCE_MODE_HORIZONTAL: [climate.const.SWING_HORIZONTAL, 'lr'],
+        const.MODE_INSTANCE_MODE_VERTICAL: [climate.const.SWING_VERTICAL, "ud"],
+        const.MODE_INSTANCE_MODE_HORIZONTAL: [climate.const.SWING_HORIZONTAL, "lr"],
         const.MODE_INSTANCE_MODE_STATIONARY: [climate.const.SWING_OFF],
-        const.MODE_INSTANCE_MODE_AUTO: [climate.const.SWING_BOTH, 'all']
+        const.MODE_INSTANCE_MODE_AUTO: [climate.const.SWING_BOTH, "all"],
     }
 
     def supported(self) -> bool:
@@ -220,12 +221,13 @@ class SwingCapability(ModeCapability):
         """Set device state."""
         await self.hass.services.async_call(
             climate.DOMAIN,
-            climate.SERVICE_SET_SWING_MODE, {
+            climate.SERVICE_SET_SWING_MODE,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                climate.ATTR_SWING_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
+                climate.ATTR_SWING_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -250,6 +252,7 @@ class ProgramCapability(ModeCapability, ABC):
 @register_capability
 class ProgramCapabilityHumidifier(ProgramCapability):
     """Program functionality"""
+
     modes_map_default = {
         const.MODE_INSTANCE_MODE_FAN_ONLY: [
             const.XIAOMI_AIRPURIFIER_PRESET_FAN,
@@ -268,9 +271,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
         const.MODE_INSTANCE_MODE_LOW: [
             const.XIAOMI_AIRPURIFIER_PRESET_LOW,
         ],
-        const.MODE_INSTANCE_MODE_MIN: [
-            humidifier.const.MODE_AWAY
-        ],
+        const.MODE_INSTANCE_MODE_MIN: [humidifier.const.MODE_AWAY],
         const.MODE_INSTANCE_MODE_MEDIUM: [
             humidifier.const.MODE_COMFORT,
             const.XIAOMI_AIRPURIFIER_PRESET_MEDIUM,
@@ -317,12 +318,13 @@ class ProgramCapabilityHumidifier(ProgramCapability):
         """Set device state."""
         await self.hass.services.async_call(
             humidifier.DOMAIN,
-            humidifier.SERVICE_SET_MODE, {
+            humidifier.SERVICE_SET_MODE,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                humidifier.ATTR_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
+                humidifier.ATTR_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -386,12 +388,13 @@ class ProgramCapabilityFan(ProgramCapability):
         """Set device state."""
         await self.hass.services.async_call(
             fan.DOMAIN,
-            fan.SERVICE_SET_PRESET_MODE, {
+            fan.SERVICE_SET_PRESET_MODE,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
+                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -430,7 +433,7 @@ class InputSourceCapability(ModeCapability):
     def supported_ha_modes(self) -> list[str]:
         """Returns list of supported HA modes for this entity."""
         modes = self.state.attributes.get(self.modes_list_attribute, []) or []
-        filtered_modes = list(filter(lambda m: m not in ['Live TV'], modes))  # #418
+        filtered_modes = list(filter(lambda m: m not in ["Live TV"], modes))  # #418
         if filtered_modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
             self._cache.save_attr_value(self.state.entity_id, self.modes_list_attribute, modes)
             return modes
@@ -454,12 +457,13 @@ class InputSourceCapability(ModeCapability):
         """Set device state."""
         await self.hass.services.async_call(
             media_player.DOMAIN,
-            media_player.SERVICE_SELECT_SOURCE, {
+            media_player.SERVICE_SELECT_SOURCE,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                media_player.ATTR_INPUT_SOURCE: self.get_ha_mode_by_yandex_mode(state['value']),
+                media_player.ATTR_INPUT_SOURCE: self.get_ha_mode_by_yandex_mode(state["value"]),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -545,12 +549,13 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         """Set device state."""
         await self.hass.services.async_call(
             climate.DOMAIN,
-            climate.SERVICE_SET_FAN_MODE, {
+            climate.SERVICE_SET_FAN_MODE,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                climate.ATTR_FAN_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
+                climate.ATTR_FAN_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -620,12 +625,13 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
         """Set device state."""
         await self.hass.services.async_call(
             fan.DOMAIN,
-            fan.SERVICE_SET_PRESET_MODE, {
+            fan.SERVICE_SET_PRESET_MODE,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state['value'])
+                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -690,7 +696,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        yandex_mode = state['value']
+        yandex_mode = state["value"]
 
         if self.modes_map:
             ha_modes = self.modes_map.get(yandex_mode)
@@ -698,7 +704,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
                 raise SmartHomeError(
                     ERR_INVALID_VALUE,
                     f'Unsupported mode "{yandex_mode}" for {self.instance} instance of {self.state.entity_id}. '
-                    f'Check \"modes\" setting for this entity'
+                    f'Check "modes" setting for this entity',
                 )
 
             ha_mode = self._convert_mapping_speed_value(ha_modes[0])
@@ -707,22 +713,19 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
 
         await self.hass.services.async_call(
             fan.DOMAIN,
-            fan.SERVICE_SET_PERCENTAGE, {
-                ATTR_ENTITY_ID: self.state.entity_id,
-                fan.ATTR_PERCENTAGE: ha_mode
-            },
+            fan.SERVICE_SET_PERCENTAGE,
+            {ATTR_ENTITY_ID: self.state.entity_id, fan.ATTR_PERCENTAGE: ha_mode},
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
     def _convert_mapping_speed_value(self, value: str) -> int:
         try:
-            return int(value.replace('%', ''))
+            return int(value.replace("%", ""))
         except ValueError:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
-                f'Unsupported speed value {value!r} for {self.instance} '
-                f'instance of {self.state.entity_id}.'
+                f"Unsupported speed value {value!r} for {self.instance} " f"instance of {self.state.entity_id}.",
             )
 
 
@@ -733,16 +736,16 @@ class CleanupModeCapability(ModeCapability):
     instance = const.MODE_INSTANCE_CLEANUP_MODE
     modes_map_default = {
         const.MODE_INSTANCE_MODE_ECO: [const.CLEANUP_MODE_OFF],
-        const.MODE_INSTANCE_MODE_AUTO: ['auto', 'automatic', '102', const.CLEANUP_MODE_BALANCED],
-        const.MODE_INSTANCE_MODE_TURBO: [const.CLEANUP_MODE_TURBO, 'high', 'performance', '104', 'full speed', 'max+'],
-        const.MODE_INSTANCE_MODE_MIN: ['min', 'mop'],
-        const.MODE_INSTANCE_MODE_LOW: ['gentle'],
-        const.MODE_INSTANCE_MODE_MAX: [const.CLEANUP_MODE_MAX, 'strong'],
+        const.MODE_INSTANCE_MODE_AUTO: ["auto", "automatic", "102", const.CLEANUP_MODE_BALANCED],
+        const.MODE_INSTANCE_MODE_TURBO: [const.CLEANUP_MODE_TURBO, "high", "performance", "104", "full speed", "max+"],
+        const.MODE_INSTANCE_MODE_MIN: ["min", "mop"],
+        const.MODE_INSTANCE_MODE_LOW: ["gentle"],
+        const.MODE_INSTANCE_MODE_MAX: [const.CLEANUP_MODE_MAX, "strong"],
         const.MODE_INSTANCE_MODE_FAST: [const.CLEANUP_MODE_MAX_PLUS],
-        const.MODE_INSTANCE_MODE_EXPRESS: ['express', '105'],
-        const.MODE_INSTANCE_MODE_MEDIUM: ['medium', 'middle'],
-        const.MODE_INSTANCE_MODE_NORMAL: ['normal', 'standard', 'basic', '103'],
-        const.MODE_INSTANCE_MODE_QUIET: ['quiet', 'low', 'min', const.CLEANUP_MODE_SILENT, 'eco', '101'],
+        const.MODE_INSTANCE_MODE_EXPRESS: ["express", "105"],
+        const.MODE_INSTANCE_MODE_MEDIUM: ["medium", "middle"],
+        const.MODE_INSTANCE_MODE_NORMAL: ["normal", "standard", "basic", "103"],
+        const.MODE_INSTANCE_MODE_QUIET: ["quiet", "low", "min", const.CLEANUP_MODE_SILENT, "eco", "101"],
         const.MODE_INSTANCE_MODE_SMART: [const.CLEANUP_MODE_MAX_PLUS],
     }
 
@@ -769,10 +772,11 @@ class CleanupModeCapability(ModeCapability):
         """Set device state."""
         await self.hass.services.async_call(
             vacuum.DOMAIN,
-            vacuum.SERVICE_SET_FAN_SPEED, {
+            vacuum.SERVICE_SET_FAN_SPEED,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                vacuum.ATTR_FAN_SPEED: self.get_ha_mode_by_yandex_mode(state['value'])
+                vacuum.ATTR_FAN_SPEED: self.get_ha_mode_by_yandex_mode(state["value"]),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )

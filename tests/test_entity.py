@@ -78,36 +78,32 @@ async def test_yandex_entity_duplicate_capabilities(hass):
         def supported(self) -> bool:
             return True
 
-    state = State('switch.test', STATE_ON)
+    state = State("switch.test", STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
 
-    with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockCapability, MockCapability]):
+    with patch("custom_components.yandex_smart_home.capability.CAPABILITIES", [MockCapability, MockCapability]):
         assert len(entity.capabilities()) == 1
         assert isinstance(entity.capabilities()[0], MockCapability)
 
 
 async def test_yandex_entity_capabilities(hass):
     light = DemoLight(
-        'test_light',
-        'Light',
+        "test_light",
+        "Light",
         available=True,
         state=True,
     )
     light.hass = hass
-    light.entity_id = 'light.test'
-    light._attr_name = 'Light'
+    light.entity_id = "light.test"
+    light._attr_name = "Light"
     light.async_write_ha_state()
 
-    state = hass.states.get('light.test')
-    state_sensor = State('sensor.test', '33')
+    state = hass.states.get("light.test")
+    state_sensor = State("sensor.test", "33")
     config = MockConfig(
         entity_config={
             light.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {
-                    const.MODE_INSTANCE_DISHWASHING: {
-                        const.MODE_INSTANCE_MODE_ECO: ['']
-                    }
-                },
+                const.CONF_ENTITY_MODE_MAP: {const.MODE_INSTANCE_DISHWASHING: {const.MODE_INSTANCE_MODE_ECO: [""]}},
                 const.CONF_ENTITY_CUSTOM_RANGES: {
                     const.RANGE_INSTANCE_HUMIDITY: {
                         const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
@@ -126,14 +122,19 @@ async def test_yandex_entity_capabilities(hass):
                         const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
                         const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {},
                     }
-                }
+                },
             }
         }
     )
     entity = YandexEntity(hass, config, state)
     assert [type(c) for c in entity.capabilities()] == [
-        CustomModeCapability, CustomToggleCapability, CustomRangeCapability,
-        RgbCapability, TemperatureKCapability, BrightnessCapability, OnOffCapabilityBasic
+        CustomModeCapability,
+        CustomToggleCapability,
+        CustomRangeCapability,
+        RgbCapability,
+        TemperatureKCapability,
+        BrightnessCapability,
+        OnOffCapabilityBasic,
     ]
 
 
@@ -142,228 +143,218 @@ async def test_yandex_entity_duplicate_properties(hass):
         def supported(self) -> bool:
             return True
 
-    state = State('sensor.test', '33')
+    state = State("sensor.test", "33")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
 
-    with patch('custom_components.yandex_smart_home.prop.PROPERTIES', [MockProperty, MockProperty]):
+    with patch("custom_components.yandex_smart_home.prop.PROPERTIES", [MockProperty, MockProperty]):
         assert len(entity.properties()) == 1
         assert isinstance(entity.properties()[0], MockProperty)
 
 
 async def test_yandex_entity_properties(hass):
-    state = State('sensor.temp', '5', attributes={
-        ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
-        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
-    })
+    state = State(
+        "sensor.temp",
+        "5",
+        attributes={
+            ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
+            ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
+        },
+    )
     config = MockConfig(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_PROPERTIES: [{
-                    const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_VOLTAGE
-                }, {
-                    const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON
-                }]
+                const.CONF_ENTITY_PROPERTIES: [
+                    {const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_VOLTAGE},
+                    {const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON},
+                ]
             }
         }
     )
     entity = YandexEntity(hass, config, state)
     assert [type(c) for c in entity.properties()] == [
-        CustomFloatEntityProperty, CustomEventEntityProperty, TemperatureProperty
+        CustomFloatEntityProperty,
+        CustomEventEntityProperty,
+        TemperatureProperty,
     ]
 
-    state = State('binary_sensor.door', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: BinarySensorDeviceClass.DOOR,
-    })
+    state = State(
+        "binary_sensor.door",
+        STATE_ON,
+        attributes={
+            ATTR_DEVICE_CLASS: BinarySensorDeviceClass.DOOR,
+        },
+    )
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert [type(c) for c in entity.properties()] == [
-        ContactProperty
-    ]
+    assert [type(c) for c in entity.properties()] == [ContactProperty]
 
 
 async def test_yandex_entity_serialize_state_type(hass, registries):
     ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
 
-    entity_unavailable = YandexEntity(hass, BASIC_CONFIG, State('switch.test', STATE_UNAVAILABLE))
+    entity_unavailable = YandexEntity(hass, BASIC_CONFIG, State("switch.test", STATE_UNAVAILABLE))
     assert await entity_unavailable.devices_serialize(ent_reg, dev_reg, area_reg) is None
 
-    entity_no_caps = YandexEntity(hass, BASIC_CONFIG, State('sensor.test', '13'))
+    entity_no_caps = YandexEntity(hass, BASIC_CONFIG, State("sensor.test", "13"))
     assert await entity_no_caps.devices_serialize(ent_reg, dev_reg, area_reg) is None
 
-    entity = YandexEntity(hass, BASIC_CONFIG, State('switch.test_1', STATE_ON))
+    entity = YandexEntity(hass, BASIC_CONFIG, State("switch.test_1", STATE_ON))
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['id'] == 'switch.test_1'
-    assert s['name'] == 'test 1'
-    assert s['type'] == const.TYPE_SWITCH
-    assert 'room' not in s
-    assert s['device_info'] == {'model': 'switch.test_1'}
+    assert s["id"] == "switch.test_1"
+    assert s["name"] == "test 1"
+    assert s["type"] == const.TYPE_SWITCH
+    assert "room" not in s
+    assert s["device_info"] == {"model": "switch.test_1"}
 
-    config = MockConfig(entity_config={
-        'switch.test_1': {
-            CONF_TYPE: const.TYPE_OPENABLE,
+    config = MockConfig(
+        entity_config={
+            "switch.test_1": {
+                CONF_TYPE: const.TYPE_OPENABLE,
+            }
         }
-    })
-    entity = YandexEntity(hass, config, State('switch.test_1', STATE_ON))
+    )
+    entity = YandexEntity(hass, config, State("switch.test_1", STATE_ON))
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['id'] == 'switch.test_1'
-    assert s['type'] == const.TYPE_OPENABLE
+    assert s["id"] == "switch.test_1"
+    assert s["type"] == const.TYPE_OPENABLE
 
 
 async def test_yandex_entity_serialize_device_info(hass, registries):
     ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
 
-    state = State('switch.test_1', STATE_ON)
+    state = State("switch.test_1", STATE_ON)
     device = dev_reg.async_get_or_create(
-        manufacturer='Acme Inc.',
-        identifiers={'test_1'},
-        config_entry_id='test_1',
+        manufacturer="Acme Inc.",
+        identifiers={"test_1"},
+        config_entry_id="test_1",
     )
-    ent_reg.async_get_or_create('switch', 'test', '1', device_id=device.id)
+    ent_reg.async_get_or_create("switch", "test", "1", device_id=device.id)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['id'] == 'switch.test_1'
-    assert s['device_info'] == {'model': 'switch.test_1', 'manufacturer': 'Acme Inc.'}
+    assert s["id"] == "switch.test_1"
+    assert s["device_info"] == {"model": "switch.test_1", "manufacturer": "Acme Inc."}
 
-    state = State('switch.test_2', STATE_ON)
+    state = State("switch.test_2", STATE_ON)
     device = dev_reg.async_get_or_create(
-        manufacturer='Acme Inc.',
-        model='Ultra Switch',
+        manufacturer="Acme Inc.",
+        model="Ultra Switch",
         sw_version=57,
-        identifiers={'test_2'},
-        config_entry_id='test_2',
+        identifiers={"test_2"},
+        config_entry_id="test_2",
     )
     ent_reg.async_get_or_create(
-        'switch',
-        'test',
-        '2',
+        "switch",
+        "test",
+        "2",
         device_id=device.id,
     )
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['id'] == 'switch.test_2'
-    assert s['device_info'] == {
-        'manufacturer': 'Acme Inc.',
-        'model': 'Ultra Switch | switch.test_2',
-        'sw_version': '57'
+    assert s["id"] == "switch.test_2"
+    assert s["device_info"] == {
+        "manufacturer": "Acme Inc.",
+        "model": "Ultra Switch | switch.test_2",
+        "sw_version": "57",
     }
 
 
 async def test_yandex_entity_serialize_name_room(hass, registries):
     ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
-    area_room = area_reg.async_create('Room')
-    area_kitchen = area_reg.async_create('Kitchen')
-    area_closet = area_reg.async_create('Closet', aliases=['Test', '1', 'Кладовка', 'ббб'])
+    area_room = area_reg.async_create("Room")
+    area_kitchen = area_reg.async_create("Kitchen")
+    area_closet = area_reg.async_create("Closet", aliases=["Test", "1", "Кладовка", "ббб"])
 
-    state = State('switch.test_1', STATE_ON)
-    device = dev_reg.async_get_or_create(identifiers={'test_1'}, config_entry_id='test_1')
-    entry = ent_reg.async_get_or_create('switch', 'test', '1', device_id=device.id)
+    state = State("switch.test_1", STATE_ON)
+    device = dev_reg.async_get_or_create(identifiers={"test_1"}, config_entry_id="test_1")
+    entry = ent_reg.async_get_or_create("switch", "test", "1", device_id=device.id)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['id'] == 'switch.test_1'
-    assert s['name'] == 'test 1'
-    assert 'room' not in s
+    assert s["id"] == "switch.test_1"
+    assert s["name"] == "test 1"
+    assert "room" not in s
 
     dev_reg.async_update_device(device.id, area_id=area_room.id)
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['room'] == 'Room'
+    assert s["room"] == "Room"
 
     ent_reg.async_update_entity(entry.entity_id, area_id=area_kitchen.id)
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['name'] == 'test 1'
-    assert s['room'] == 'Kitchen'
+    assert s["name"] == "test 1"
+    assert s["room"] == "Kitchen"
 
-    ent_reg.async_update_entity(entry.entity_id,
-                                area_id=area_closet.id,
-                                aliases=['2', 'foo', 'Устройство', 'апельсин'])
+    ent_reg.async_update_entity(entry.entity_id, area_id=area_closet.id, aliases=["2", "foo", "Устройство", "апельсин"])
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['name'] == 'Устройство'
-    assert s['room'] == 'Кладовка'
+    assert s["name"] == "Устройство"
+    assert s["room"] == "Кладовка"
 
-    config = MockConfig(entity_config={
-        'switch.test_1': {
-            CONF_NAME: 'Имя',
-            CONF_ROOM: 'Комната'
-        }
-    })
+    config = MockConfig(entity_config={"switch.test_1": {CONF_NAME: "Имя", CONF_ROOM: "Комната"}})
     entity = YandexEntity(hass, config, state)
     s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s['name'] == 'Имя'
-    assert s['room'] == 'Комната'
+    assert s["name"] == "Имя"
+    assert s["room"] == "Комната"
 
 
 async def test_yandex_entity_should_expose(hass):
-    entity = YandexEntity(hass, BASIC_CONFIG, State('group.all_locks', STATE_ON))
+    entity = YandexEntity(hass, BASIC_CONFIG, State("group.all_locks", STATE_ON))
     assert not entity.should_expose
 
-    entity = YandexEntity(hass, BASIC_CONFIG, State('fake.unsupported', STATE_ON))
+    entity = YandexEntity(hass, BASIC_CONFIG, State("fake.unsupported", STATE_ON))
     assert not entity.should_expose
 
-    config = MockConfig(
-        entity_filter=generate_entity_filter(exclude_entities=['switch.not_expose'])
-    )
-    entity = YandexEntity(hass, config, State('switch.test', STATE_ON))
+    config = MockConfig(entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]))
+    entity = YandexEntity(hass, config, State("switch.test", STATE_ON))
     assert entity.should_expose
 
-    entity = YandexEntity(hass, config, State('switch.not_expose', STATE_ON))
+    entity = YandexEntity(hass, config, State("switch.not_expose", STATE_ON))
     assert not entity.should_expose
 
 
 async def test_yandex_entity_should_expose_empty_filters(hass):
     config = MockConfig(entity_filter=generate_entity_filter())
 
-    entity = YandexEntity(hass, config, State('switch.test', STATE_ON))
+    entity = YandexEntity(hass, config, State("switch.test", STATE_ON))
     assert not entity.should_expose
 
 
 async def test_yandex_entity_device_type_media_player(hass):
-    state = State('media_player.tv', STATE_ON)
+    state = State("media_player.tv", STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE
 
-    state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV
-    })
+    state = State("media_player.tv", STATE_ON, attributes={ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV})
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE_TV
 
-    state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.RECEIVER
-    })
+    state = State(
+        "media_player.tv", STATE_ON, attributes={ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.RECEIVER}
+    )
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE_RECIEVER
 
-    state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.SPEAKER
-    })
+    state = State(
+        "media_player.tv", STATE_ON, attributes={ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.SPEAKER}
+    )
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE
 
 
 async def test_yandex_entity_device_type_switch(hass):
-    state = State('switch.test', STATE_ON)
+    state = State("switch.test", STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_SWITCH
 
-    state = State('switch.test', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: switch.SwitchDeviceClass.OUTLET
-    })
+    state = State("switch.test", STATE_ON, attributes={ATTR_DEVICE_CLASS: switch.SwitchDeviceClass.OUTLET})
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_SOCKET
 
 
 async def test_yandex_entity_device_type(hass):
-    state = State('input_number.test', '40')
+    state = State("input_number.test", "40")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type is None
 
-    config = MockConfig(
-        entity_config={
-            state.entity_id: {
-                CONF_TYPE: 'other'
-            }
-        }
-    )
+    config = MockConfig(entity_config={state.entity_id: {CONF_TYPE: "other"}})
     entity = YandexEntity(hass, config, state)
-    assert entity.yandex_device_type == 'other'
+    assert entity.yandex_device_type == "other"
 
 
 async def test_yandex_entity_serialize(hass):
@@ -382,149 +373,135 @@ async def test_yandex_entity_serialize(hass):
         async def set_state(self, *args, **kwargs):
             pass
 
-    state = State('switch.unavailable', STATE_UNAVAILABLE)
+    state = State("switch.unavailable", STATE_UNAVAILABLE)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.query_serialize() == {'id': state.entity_id, 'error_code': ERR_DEVICE_UNREACHABLE}
+    assert entity.query_serialize() == {"id": state.entity_id, "error_code": ERR_DEVICE_UNREACHABLE}
 
-    state = State('switch.test', STATE_ON)
-    state_pause = State('input_boolean.pause', STATE_OFF)
+    state = State("switch.test", STATE_ON)
+    state_pause = State("input_boolean.pause", STATE_OFF)
     cap_onoff = OnOffCapabilityBasic(hass, BASIC_CONFIG, state)
     cap_pause = PauseCapability(hass, BASIC_CONFIG, state_pause)
 
-    state_temp = State('sensor.temp', '5', attributes={
-        ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
-        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
-    })
-    state_humidity = State('sensor.humidity', '95', attributes={
-        ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
-        ATTR_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
-    })
+    state_temp = State(
+        "sensor.temp",
+        "5",
+        attributes={
+            ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
+            ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
+        },
+    )
+    state_humidity = State(
+        "sensor.humidity",
+        "95",
+        attributes={
+            ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
+            ATTR_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
+        },
+    )
     hass.states.async_set(state_humidity.entity_id, state_humidity.state, state_humidity.attributes)
 
-    state_voltage = State('sensor.voltage', '220', attributes={
-        ATTR_UNIT_OF_MEASUREMENT: 'V',
-        ATTR_DEVICE_CLASS: SensorDeviceClass.VOLTAGE,
-    })
+    state_voltage = State(
+        "sensor.voltage",
+        "220",
+        attributes={
+            ATTR_UNIT_OF_MEASUREMENT: "V",
+            ATTR_DEVICE_CLASS: SensorDeviceClass.VOLTAGE,
+        },
+    )
 
     prop_temp = TemperatureProperty(hass, BASIC_CONFIG, state_temp)
-    prop_humidity_custom = CustomEntityProperty.get(hass, BASIC_CONFIG, state, {
-        CONF_ENTITY_PROPERTY_ENTITY: state_humidity.entity_id,
-        CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
-    })
+    prop_humidity_custom = CustomEntityProperty.get(
+        hass,
+        BASIC_CONFIG,
+        state,
+        {
+            CONF_ENTITY_PROPERTY_ENTITY: state_humidity.entity_id,
+            CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
+        },
+    )
     prop_voltage = VoltageProperty(hass, BASIC_CONFIG, state_voltage)
 
-    state_button = State('binary_sensor.button', '', attributes={
-        'action': 'click'
-    })
-    prop_button = CustomEventEntityProperty(hass, BASIC_CONFIG, state, state_button, {
-        CONF_ENTITY_PROPERTY_ATTRIBUTE: 'action',
-        CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON
-    })
+    state_button = State("binary_sensor.button", "", attributes={"action": "click"})
+    prop_button = CustomEventEntityProperty(
+        hass,
+        BASIC_CONFIG,
+        state,
+        state_button,
+        {CONF_ENTITY_PROPERTY_ATTRIBUTE: "action", CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON},
+    )
 
     entity = YandexEntity(hass, BASIC_CONFIG, state)
 
-    with patch.object(entity, 'capabilities', return_value=[cap_onoff, cap_pause]), patch.object(
-        entity, 'properties', return_value=[prop_temp, prop_voltage, prop_humidity_custom, prop_button]
+    with patch.object(entity, "capabilities", return_value=[cap_onoff, cap_pause]), patch.object(
+        entity, "properties", return_value=[prop_temp, prop_voltage, prop_humidity_custom, prop_button]
     ):
         assert entity.query_serialize() == {
-            'id': 'switch.test',
-            'capabilities': [{
-                'type': 'devices.capabilities.on_off',
-                'state': {'instance': 'on', 'value': True}
-            }, {
-                'type': 'devices.capabilities.toggle',
-                'state': {'instance': 'pause', 'value': False}
-            }],
-            'properties': [{
-                'type': 'devices.properties.float',
-                'state': {'instance': 'temperature', 'value': 5.0}
-            }, {
-                'type': 'devices.properties.float',
-                'state': {'instance': 'voltage', 'value': 220.0}
-            }, {
-                'type': 'devices.properties.float',
-                'state': {'instance': 'humidity', 'value': 95.0}
-            }]
+            "id": "switch.test",
+            "capabilities": [
+                {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
+                {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
+            ],
+            "properties": [
+                {"type": "devices.properties.float", "state": {"instance": "temperature", "value": 5.0}},
+                {"type": "devices.properties.float", "state": {"instance": "voltage", "value": 220.0}},
+                {"type": "devices.properties.float", "state": {"instance": "humidity", "value": 95.0}},
+            ],
         }
 
         # TODO: move to dedicated test
-        callback_state = YandexEntityCallbackState(entity, 'switch.test')
+        callback_state = YandexEntityCallbackState(entity, "switch.test")
         assert callback_state.properties == []
-        assert callback_state.capabilities == [{
-            'type': 'devices.capabilities.on_off',
-            'state': {'instance': 'on', 'value': True}
-        }, {
-            'type': 'devices.capabilities.toggle',
-            'state': {'instance': 'pause', 'value': False}
-        }]
+        assert callback_state.capabilities == [
+            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
+            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
+        ]
 
-        callback_state = YandexEntityCallbackState(entity, 'sensor.voltage')
-        assert callback_state.properties == [{
-            'type': 'devices.properties.float',
-            'state': {'instance': 'voltage', 'value': 220.0}
-        }]
-        assert callback_state.capabilities == [{
-            'type': 'devices.capabilities.on_off',
-            'state': {'instance': 'on', 'value': True}
-        }, {
-            'type': 'devices.capabilities.toggle',
-            'state': {'instance': 'pause', 'value': False}
-        }]
+        callback_state = YandexEntityCallbackState(entity, "sensor.voltage")
+        assert callback_state.properties == [
+            {"type": "devices.properties.float", "state": {"instance": "voltage", "value": 220.0}}
+        ]
+        assert callback_state.capabilities == [
+            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
+            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
+        ]
 
-        callback_state = YandexEntityCallbackState(entity, 'sensor.humidity')
-        assert callback_state.properties == [{
-            'type': 'devices.properties.float',
-            'state': {'instance': 'humidity', 'value': 95.0}
-        }]
-        assert callback_state.capabilities == [{
-            'type': 'devices.capabilities.on_off',
-            'state': {'instance': 'on', 'value': True}
-        }, {
-            'type': 'devices.capabilities.toggle',
-            'state': {'instance': 'pause', 'value': False}
-        }]
+        callback_state = YandexEntityCallbackState(entity, "sensor.humidity")
+        assert callback_state.properties == [
+            {"type": "devices.properties.float", "state": {"instance": "humidity", "value": 95.0}}
+        ]
+        assert callback_state.capabilities == [
+            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
+            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
+        ]
 
         prop_voltage.reportable = False
-        callback_state = YandexEntityCallbackState(entity, 'sensor.voltage')
+        callback_state = YandexEntityCallbackState(entity, "sensor.voltage")
         assert callback_state.properties == []
-        assert callback_state.capabilities == [{
-            'type': 'devices.capabilities.on_off',
-            'state': {'instance': 'on', 'value': True}
-        }, {
-            'type': 'devices.capabilities.toggle',
-            'state': {'instance': 'pause', 'value': False}
-        }]
+        assert callback_state.capabilities == [
+            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
+            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
+        ]
 
         prop_voltage.reportable = True
 
-        callback_state = YandexEntityCallbackState(entity, 'binary_sensor.button')
-        assert callback_state.properties == [{
-            'type': 'devices.properties.event',
-            'state': {'instance': 'button', 'value': 'click'}
-        }]
-        assert callback_state.capabilities == [{
-            'type': 'devices.capabilities.on_off',
-            'state': {'instance': 'on', 'value': True}
-        }, {
-            'type': 'devices.capabilities.toggle',
-            'state': {'instance': 'pause', 'value': False}
-        }]
+        callback_state = YandexEntityCallbackState(entity, "binary_sensor.button")
+        assert callback_state.properties == [
+            {"type": "devices.properties.event", "state": {"instance": "button", "value": "click"}}
+        ]
+        assert callback_state.capabilities == [
+            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
+            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
+        ]
 
         cap_pause.retrievable = False
         prop_temp.retrievable = False
         assert entity.query_serialize() == {
-            'id': 'switch.test',
-            'capabilities': [{
-                'type': 'devices.capabilities.on_off',
-                'state': {'instance': 'on', 'value': True}
-            }],
-            'properties': [{
-                'type': 'devices.properties.float',
-                'state': {'instance': 'voltage', 'value': 220.0}
-            }, {
-                'type': 'devices.properties.float',
-                'state': {'instance': 'humidity', 'value': 95.0}
-            }]
+            "id": "switch.test",
+            "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
+            "properties": [
+                {"type": "devices.properties.float", "state": {"instance": "voltage", "value": 220.0}},
+                {"type": "devices.properties.float", "state": {"instance": "humidity", "value": 95.0}},
+            ],
         }
         cap_pause.retrievable = True
         prop_temp.retrievable = True
@@ -533,40 +510,24 @@ async def test_yandex_entity_serialize(hass):
         state_voltage.state = STATE_UNAVAILABLE
         prop_humidity_custom.property_state.state = STATE_UNAVAILABLE
         assert entity.query_serialize() == {
-            'id': 'switch.test',
-            'capabilities': [{
-                'type': 'devices.capabilities.on_off',
-                'state': {'instance': 'on', 'value': True}
-            }],
-            'properties': [{
-                'type': 'devices.properties.float',
-                'state': {'instance': 'temperature', 'value': 5.0}
-            }]
+            "id": "switch.test",
+            "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
+            "properties": [{"type": "devices.properties.float", "state": {"instance": "temperature", "value": 5.0}}],
         }
 
 
 async def test_yandex_entity_execute(hass):
-    state = State('switch.test', STATE_ON)
+    state = State("switch.test", STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     with pytest.raises(SmartHomeError) as e:
-        await entity.execute(BASIC_DATA, {
-            'type': CAPABILITIES_TOGGLE,
-            'state': {
-                'instance': TOGGLE_INSTANCE_PAUSE,
-                'value': True
-            }
-        })
+        await entity.execute(
+            BASIC_DATA, {"type": CAPABILITIES_TOGGLE, "state": {"instance": TOGGLE_INSTANCE_PAUSE, "value": True}}
+        )
 
     assert e.value.code == ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 
     off_calls = async_mock_service(hass, state.domain, SERVICE_TURN_OFF)
-    await entity.execute(BASIC_DATA, {
-        'type': CAPABILITIES_ONOFF,
-        'state': {
-            'instance': 'on',
-            'value': False
-        }
-    })
+    await entity.execute(BASIC_DATA, {"type": CAPABILITIES_ONOFF, "state": {"instance": "on", "value": False}})
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
@@ -574,45 +535,42 @@ async def test_yandex_entity_execute(hass):
 async def test_yandex_entity_execute_exception(hass):
     class MockOnOffCapability(OnOffCapabilityBasic):
         async def set_state(self, *args, **kwargs):
-            raise Exception('fail set_state')
+            raise Exception("fail set_state")
 
     class MockBrightnessCapability(BrightnessCapability):
         def supported(self) -> bool:
             return True
 
         async def set_state(self, *args, **kwargs):
-            raise SmartHomeError(ERR_INVALID_ACTION, '')
+            raise SmartHomeError(ERR_INVALID_ACTION, "")
 
-    state = State('switch.test', STATE_ON)
+    state = State("switch.test", STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockOnOffCapability]):
+    with patch("custom_components.yandex_smart_home.capability.CAPABILITIES", [MockOnOffCapability]):
         with pytest.raises(SmartHomeError) as e:
-            await entity.execute(BASIC_DATA, {
-                'type': MockOnOffCapability.type,
-                'state': {
-                    'instance': MockOnOffCapability.instance,
-                    'value': True
-                }
-            })
+            await entity.execute(
+                BASIC_DATA,
+                {"type": MockOnOffCapability.type, "state": {"instance": MockOnOffCapability.instance, "value": True}},
+            )
 
     assert e.value.code == ERR_INTERNAL_ERROR
 
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    with patch('custom_components.yandex_smart_home.capability.CAPABILITIES', [MockBrightnessCapability]):
+    with patch("custom_components.yandex_smart_home.capability.CAPABILITIES", [MockBrightnessCapability]):
         with pytest.raises(SmartHomeError) as e:
-            await entity.execute(BASIC_DATA, {
-                'type': MockBrightnessCapability.type,
-                'state': {
-                    'instance': MockBrightnessCapability.instance,
-                    'value': True
-                }
-            })
+            await entity.execute(
+                BASIC_DATA,
+                {
+                    "type": MockBrightnessCapability.type,
+                    "state": {"instance": MockBrightnessCapability.instance, "value": True},
+                },
+            )
 
     assert e.value.code == ERR_INVALID_ACTION
 
 
 async def test_yandex_entity_callback_state_unavailable(hass):
-    state = State('switch.unavailable', STATE_UNAVAILABLE)
+    state = State("switch.unavailable", STATE_UNAVAILABLE)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     callback_state = YandexEntityCallbackState(entity, state.entity_id)
     assert callback_state.capabilities == []

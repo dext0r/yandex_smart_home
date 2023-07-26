@@ -19,15 +19,10 @@ from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
-CAPABILITIES_COLOR_SETTING = PREFIX_CAPABILITIES + 'color_setting'
-COLOR_MODES_TEMP_TO_WHITE = (
-    light.ColorMode.RGBW,
-    light.ColorMode.RGB,
-    light.ColorMode.HS,
-    light.ColorMode.XY
-)
-COLOR_PROFILES: dict[str, dict[str]: tuple[int, int, int]] = {
-    'natural': {
+CAPABILITIES_COLOR_SETTING = PREFIX_CAPABILITIES + "color_setting"
+COLOR_MODES_TEMP_TO_WHITE = (light.ColorMode.RGBW, light.ColorMode.RGB, light.ColorMode.HS, light.ColorMode.XY)
+COLOR_PROFILES: dict[str, dict[str] : tuple[int, int, int]] = {
+    "natural": {
         const.COLOR_NAME_RED: 16711680,
         const.COLOR_NAME_YELLOW: 16760576,
         const.COLOR_NAME_GREEN: 65280,
@@ -40,7 +35,7 @@ COLOR_PROFILES: dict[str, dict[str]: tuple[int, int, int]] = {
         const.COLOR_NAME_VIOLET: 8323327,
         const.COLOR_NAME_PURPLE: 12517631,
         const.COLOR_NAME_ORCHID: 16711765,
-        const.COLOR_NAME_RASPBERRY: 16713260
+        const.COLOR_NAME_RASPBERRY: 16713260,
     }
 }
 DEFAULT_WHITE_TEMPERATURE_K = 4500
@@ -54,24 +49,24 @@ class ColorSettingCapability(AbstractCapability, ABC):
 
     type = CAPABILITIES_COLOR_SETTING
     scenes_map_default = {
-        const.COLOR_SCENE_ALARM: ['Тревога', 'Alarm', 'Shine', 'Strobe Mega'],
-        const.COLOR_SCENE_ALICE: ['Алиса', 'Alice', 'Meeting'],
-        const.COLOR_SCENE_CANDLE: ['Свеча', 'Огонь', 'Candle', 'Fire'],
-        const.COLOR_SCENE_DINNER: ['Ужин', 'Dinner'],
-        const.COLOR_SCENE_FANTASY: ['Фантазия', 'Fantasy', 'Random', 'Beautiful', 'Sinelon Rainbow'],
-        const.COLOR_SCENE_GARLAND: ['Гирлянда', 'Garland', 'Dynamic'],
-        const.COLOR_SCENE_JUNGLE: ['Джунгли', 'Jungle'],
-        const.COLOR_SCENE_MOVIE: ['Кино', 'Movie'],
-        const.COLOR_SCENE_NEON: ['Неон', 'Neon', 'Breath'],
-        const.COLOR_SCENE_NIGHT: ['Ночь', 'Night', 'Aurora'],
-        const.COLOR_SCENE_OCEAN: ['Океан', 'Ocean', 'Pacifica'],
-        const.COLOR_SCENE_PARTY: ['Вечеринка', 'Party', 'Juggle'],
-        const.COLOR_SCENE_READING: ['Чтение', 'Reading', 'Read'],
-        const.COLOR_SCENE_REST: ['Отдых', 'Rest', 'Soft'],
-        const.COLOR_SCENE_ROMANCE: ['Романтика', 'Romance', 'Leasure', 'Lake'],
-        const.COLOR_SCENE_SIREN: ['Сирена', 'Siren', 'Police', 'Rainbow'],
-        const.COLOR_SCENE_SUNRISE: ['Рассвет', 'Sunrise'],
-        const.COLOR_SCENE_SUNSET: ['Закат', 'Sunset']
+        const.COLOR_SCENE_ALARM: ["Тревога", "Alarm", "Shine", "Strobe Mega"],
+        const.COLOR_SCENE_ALICE: ["Алиса", "Alice", "Meeting"],
+        const.COLOR_SCENE_CANDLE: ["Свеча", "Огонь", "Candle", "Fire"],
+        const.COLOR_SCENE_DINNER: ["Ужин", "Dinner"],
+        const.COLOR_SCENE_FANTASY: ["Фантазия", "Fantasy", "Random", "Beautiful", "Sinelon Rainbow"],
+        const.COLOR_SCENE_GARLAND: ["Гирлянда", "Garland", "Dynamic"],
+        const.COLOR_SCENE_JUNGLE: ["Джунгли", "Jungle"],
+        const.COLOR_SCENE_MOVIE: ["Кино", "Movie"],
+        const.COLOR_SCENE_NEON: ["Неон", "Neon", "Breath"],
+        const.COLOR_SCENE_NIGHT: ["Ночь", "Night", "Aurora"],
+        const.COLOR_SCENE_OCEAN: ["Океан", "Ocean", "Pacifica"],
+        const.COLOR_SCENE_PARTY: ["Вечеринка", "Party", "Juggle"],
+        const.COLOR_SCENE_READING: ["Чтение", "Reading", "Read"],
+        const.COLOR_SCENE_REST: ["Отдых", "Rest", "Soft"],
+        const.COLOR_SCENE_ROMANCE: ["Романтика", "Romance", "Leasure", "Lake"],
+        const.COLOR_SCENE_SIREN: ["Сирена", "Siren", "Police", "Rainbow"],
+        const.COLOR_SCENE_SUNRISE: ["Рассвет", "Sunrise"],
+        const.COLOR_SCENE_SUNSET: ["Закат", "Sunset"],
     }
     default_white_temperature_k = DEFAULT_WHITE_TEMPERATURE_K
     cold_white_temperature_k = 6500
@@ -91,14 +86,11 @@ class ColorSettingCapability(AbstractCapability, ABC):
         supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
 
         if self.support_color:
-            result['color_model'] = 'rgb'
+            result["color_model"] = "rgb"
 
         if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
             min_temp, max_temp = self._temperature_converter.supported_temperature_range
-            result['temperature_k'] = {
-                'min': min_temp,
-                'max': max_temp
-            }
+            result["temperature_k"] = {"min": min_temp, "max": max_temp}
         else:
             min_temp = self.default_white_temperature_k
             max_temp = self.default_white_temperature_k
@@ -107,24 +99,16 @@ class ColorSettingCapability(AbstractCapability, ABC):
 
             for color_mode in COLOR_MODES_TEMP_TO_WHITE:
                 if color_mode in supported_color_modes:
-                    result['temperature_k'] = {
-                        'min': min_temp,
-                        'max': max_temp
-                    }
+                    result["temperature_k"] = {"min": min_temp, "max": max_temp}
                     break
 
         if features & light.LightEntityFeature.EFFECT:
             supported_scenes = self.get_supported_scenes(
                 self.get_scenes_map_from_config(self.entity_config),
-                self.state.attributes.get(light.ATTR_EFFECT_LIST) or []
+                self.state.attributes.get(light.ATTR_EFFECT_LIST) or [],
             )
             if supported_scenes:
-                result['color_scene'] = {
-                    'scenes': [
-                        {'id': s}
-                        for s in supported_scenes
-                    ]
-                }
+                result["color_scene"] = {"scenes": [{"id": s} for s in supported_scenes]}
 
         return result
 
@@ -140,15 +124,19 @@ class ColorSettingCapability(AbstractCapability, ABC):
             return True
 
         for color_mode in supported_color_modes:
-            if color_mode in [light.ColorMode.RGB, light.ColorMode.RGBW, light.ColorMode.RGBWW,
-                              light.ColorMode.HS, light.ColorMode.XY]:
+            if color_mode in [
+                light.ColorMode.RGB,
+                light.ColorMode.RGBW,
+                light.ColorMode.RGBWW,
+                light.ColorMode.HS,
+                light.ColorMode.XY,
+            ]:
                 return True
 
         return False
 
     @staticmethod
-    def get_supported_scenes(scenes_map: dict[str, list[str]],
-                             entity_effect_list: list[str]) -> list[str]:
+    def get_supported_scenes(scenes_map: dict[str, list[str]], entity_effect_list: list[str]) -> list[str]:
         yandex_scenes = set()
         for effect in entity_effect_list:
             for yandex_scene, ha_effects in scenes_map.items():
@@ -203,8 +191,8 @@ class ColorSettingCapability(AbstractCapability, ABC):
             except KeyError:
                 raise SmartHomeError(
                     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f'Color profile {color_profile_name!r} not found for instance {self.instance} '
-                    f'of {self.state.entity_id}'
+                    f"Color profile {color_profile_name!r} not found for instance {self.instance} "
+                    f"of {self.state.entity_id}",
                 )
 
         return TemperatureConverter(color_profile, self.state)
@@ -244,12 +232,13 @@ class RgbCapability(ColorSettingCapability):
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         await self.hass.services.async_call(
             light.DOMAIN,
-            light.SERVICE_TURN_ON, {
+            light.SERVICE_TURN_ON,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_RGB_COLOR: self._color_converter.get_ha_rgb_color(int(state['value']))
+                light.ATTR_RGB_COLOR: self._color_converter.get_ha_rgb_color(int(state["value"])),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
     @property
@@ -261,8 +250,8 @@ class RgbCapability(ColorSettingCapability):
             except KeyError:
                 raise SmartHomeError(
                     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f'Color profile {color_profile_name!r} not found for instance {self.instance} '
-                    f'of {self.state.entity_id}'
+                    f"Color profile {color_profile_name!r} not found for instance {self.instance} "
+                    f"of {self.state.entity_id}",
                 )
 
         return ColorConverter()
@@ -325,11 +314,12 @@ class TemperatureKCapability(ColorSettingCapability):
         """Set device state."""
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
         supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
-        value = state['value']
+        value = state["value"]
         service_data = {}
 
-        if features & light.SUPPORT_COLOR_TEMP or \
-                light.color_temp_supported(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])):
+        if features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(
+            self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+        ):
             service_data[light.ATTR_KELVIN] = self._temperature_converter.get_ha_temperature(value)
 
         elif light.ColorMode.WHITE in supported_color_modes and value == self.default_white_temperature_k:
@@ -341,24 +331,22 @@ class TemperatureKCapability(ColorSettingCapability):
             else:
                 service_data[light.ATTR_RGBW_COLOR] = (255, 255, 255, 0)
 
-        elif light.ColorMode.RGB in supported_color_modes or \
-                light.ColorMode.HS in supported_color_modes or \
-                light.ColorMode.XY in supported_color_modes:
+        elif (
+            light.ColorMode.RGB in supported_color_modes
+            or light.ColorMode.HS in supported_color_modes
+            or light.ColorMode.XY in supported_color_modes
+        ):
             service_data[light.ATTR_RGB_COLOR] = (255, 255, 255)
 
         if service_data:
             service_data[ATTR_ENTITY_ID] = self.state.entity_id
             await self.hass.services.async_call(
-                light.DOMAIN,
-                light.SERVICE_TURN_ON,
-                service_data,
-                blocking=True,
-                context=data.context
+                light.DOMAIN, light.SERVICE_TURN_ON, service_data, blocking=True, context=data.context
             )
         else:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}'
+                f"Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}",
             )
 
 
@@ -376,7 +364,7 @@ class ColorSceneCapability(ColorSettingCapability):
             return bool(
                 self.get_supported_scenes(
                     self.get_scenes_map_from_config(self.entity_config),
-                    self.state.attributes.get(light.ATTR_EFFECT_LIST) or []
+                    self.state.attributes.get(light.ATTR_EFFECT_LIST) or [],
                 )
             )
 
@@ -388,12 +376,13 @@ class ColorSceneCapability(ColorSettingCapability):
         """Set device state."""
         await self.hass.services.async_call(
             light.DOMAIN,
-            light.SERVICE_TURN_ON, {
+            light.SERVICE_TURN_ON,
+            {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_EFFECT: self.get_ha_effect_by_yandex_scene(state['value']),
+                light.ATTR_EFFECT: self.get_ha_effect_by_yandex_scene(state["value"]),
             },
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -431,9 +420,7 @@ class ColorConverter:
             self._ha_value_to_yandex[ha_value] = yandex_value
 
     def get_ha_rgb_color(self, yandex_color: int) -> tuple[int, int, int]:
-        return self._int_to_rgb(
-            self._yandex_value_to_ha.get(yandex_color, yandex_color)
-        )
+        return self._int_to_rgb(self._yandex_value_to_ha.get(yandex_color, yandex_color))
 
     def get_yandex_color(self, ha_color: RGBColor) -> int:
         for ha_color_value, yandex_color_value in self._ha_value_to_yandex.items():
@@ -452,19 +439,11 @@ class ColorConverter:
 
     @staticmethod
     def _int_to_rgb(i: int) -> tuple[int, int, int]:
-        return (
-            (i >> 16) & 0xFF,
-            (i >> 8) & 0xFF,
-            i & 0xFF
-        )
+        return ((i >> 16) & 0xFF, (i >> 8) & 0xFF, i & 0xFF)
 
     @staticmethod
     def _distance(a: RGBColor, b: RGBColor) -> float:
-        return abs(sqrt(
-            (a.r - b.r) ** 2 +
-            (a.g - b.g) ** 2 +
-            (a.b - b.b) ** 2
-        ))
+        return abs(sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2))
 
 
 class TemperatureConverter:
@@ -476,7 +455,7 @@ class TemperatureConverter:
         const.COLOR_TEMPERATURE_NAME_DAYLIGHT: 5600,
         const.COLOR_TEMPERATURE_NAME_COLD_WHITE: 6500,
         const.COLOR_TEMPERATURE_NAME_MISTY_WHITE: 7500,
-        const.COLOR_TEMPERATURE_NAME_HEAVENLY_WHITE: 9000
+        const.COLOR_TEMPERATURE_NAME_HEAVENLY_WHITE: 9000,
     }
     _temperature_steps = sorted(_palette.values())
 

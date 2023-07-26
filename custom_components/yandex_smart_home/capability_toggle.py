@@ -15,7 +15,7 @@ from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
-CAPABILITIES_TOGGLE = PREFIX_CAPABILITIES + 'toggle'
+CAPABILITIES_TOGGLE = PREFIX_CAPABILITIES + "toggle"
 
 
 class ToggleCapability(AbstractCapability, ABC):
@@ -28,9 +28,7 @@ class ToggleCapability(AbstractCapability, ABC):
 
     def parameters(self) -> dict[str, Any]:
         """Return parameters for a devices request."""
-        return {
-            'instance': self.instance
-        }
+        return {"instance": self.instance}
 
 
 @register_capability
@@ -67,12 +65,10 @@ class MuteCapability(ToggleCapability):
         """Set device state."""
         await self.hass.services.async_call(
             media_player.DOMAIN,
-            media_player.SERVICE_VOLUME_MUTE, {
-                ATTR_ENTITY_ID: self.state.entity_id,
-                media_player.ATTR_MEDIA_VOLUME_MUTED: state['value']
-            },
+            media_player.SERVICE_VOLUME_MUTE,
+            {ATTR_ENTITY_ID: self.state.entity_id, media_player.ATTR_MEDIA_VOLUME_MUTED: state["value"]},
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -92,8 +88,10 @@ class PauseCapabilityMediaPlayer(PauseCapability):
             if const.MEDIA_PLAYER_FEATURE_PLAY_PAUSE in self.entity_config.get(const.CONF_FEATURES, []):
                 return True
 
-            if features & media_player.MediaPlayerEntityFeature.PAUSE and \
-                    features & media_player.MediaPlayerEntityFeature.PLAY:
+            if (
+                features & media_player.MediaPlayerEntityFeature.PAUSE
+                and features & media_player.MediaPlayerEntityFeature.PLAY
+            ):
                 return True
 
         return False
@@ -104,18 +102,13 @@ class PauseCapabilityMediaPlayer(PauseCapability):
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        if state['value']:
+        if state["value"]:
             service = media_player.SERVICE_MEDIA_PAUSE
         else:
             service = media_player.SERVICE_MEDIA_PLAY
 
         await self.hass.services.async_call(
-            media_player.DOMAIN,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
-            blocking=True,
-            context=data.context
+            media_player.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
         )
 
 
@@ -137,11 +130,10 @@ class PauseCapabilityCover(PauseCapability):
         """Set device state."""
         await self.hass.services.async_call(
             cover.DOMAIN,
-            cover.SERVICE_STOP_COVER, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
+            cover.SERVICE_STOP_COVER,
+            {ATTR_ENTITY_ID: self.state.entity_id},
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -161,18 +153,13 @@ class PauseCapabilityVacuum(PauseCapability):
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        if state['value']:
+        if state["value"]:
             service = vacuum.SERVICE_PAUSE
         else:
             service = vacuum.SERVICE_START
 
         await self.hass.services.async_call(
-            vacuum.DOMAIN,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
-            blocking=True,
-            context=data.context
+            vacuum.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
         )
 
 
@@ -196,10 +183,8 @@ class OscillationCapability(ToggleCapability):
         """Set device state."""
         await self.hass.services.async_call(
             fan.DOMAIN,
-            fan.SERVICE_OSCILLATE, {
-                ATTR_ENTITY_ID: self.state.entity_id,
-                fan.ATTR_OSCILLATING: state['value']
-            },
+            fan.SERVICE_OSCILLATE,
+            {ATTR_ENTITY_ID: self.state.entity_id, fan.ATTR_OSCILLATING: state["value"]},
             blocking=True,
-            context=data.context
+            context=data.context,
         )

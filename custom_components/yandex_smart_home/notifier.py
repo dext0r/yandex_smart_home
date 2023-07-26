@@ -81,7 +81,7 @@ class YandexNotifier(ABC):
     @staticmethod
     def _log_request(url: str, data: dict[str, Any]):
         request_json = json.dumps(data)
-        _LOGGER.debug(f'Request: {url} (POST data: {request_json})')
+        _LOGGER.debug(f"Request: {url} (POST data: {request_json})")
 
     def _get_property_entities(self) -> dict[str, list[str]]:
         rv = {}
@@ -94,9 +94,11 @@ class YandexNotifier(ABC):
                     if entity_id not in rv[property_entity_id]:
                         rv[property_entity_id].append(entity_id)
 
-            for custom_capabilities_config in [entity_config.get(const.CONF_ENTITY_CUSTOM_MODES),
-                                               entity_config.get(const.CONF_ENTITY_CUSTOM_TOGGLES),
-                                               entity_config.get(const.CONF_ENTITY_CUSTOM_RANGES)]:
+            for custom_capabilities_config in [
+                entity_config.get(const.CONF_ENTITY_CUSTOM_MODES),
+                entity_config.get(const.CONF_ENTITY_CUSTOM_TOGGLES),
+                entity_config.get(const.CONF_ENTITY_CUSTOM_RANGES),
+            ]:
                 for custom_capability in custom_capabilities_config.values():
                     state_entity_id = custom_capability.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
                     if state_entity_id:
@@ -107,15 +109,12 @@ class YandexNotifier(ABC):
 
     async def _report_states(self, *_):
         devices = {}
-        attrs = ['properties', 'capabilities']
+        attrs = ["properties", "capabilities"]
 
         while len(self._pending):
             state = self._pending.popleft()
 
-            devices.setdefault(
-                state.device_id,
-                dict({attr: [] for attr in attrs}, **{'id': state.device_id})
-            )
+            devices.setdefault(state.device_id, dict({attr: [] for attr in attrs}, **{"id": state.device_id}))
             for attr in attrs:
                 devices[state.device_id][attr][:0] = getattr(state, attr)
 
@@ -127,14 +126,14 @@ class YandexNotifier(ABC):
             self._unsub_pending = None
 
     async def async_send_state(self, devices: list):
-        await self._async_send_callback(f'{self._base_url}/state', {'devices': devices})
+        await self._async_send_callback(f"{self._base_url}/state", {"devices": devices})
 
     async def async_send_discovery(self, _=None):
         if not self._ready:
             return
 
-        _LOGGER.debug(self._format_log_message('Device list update initiated'))
-        await self._async_send_callback(f'{self._base_url}/discovery', {})
+        _LOGGER.debug(self._format_log_message("Device list update initiated"))
+        await self._async_send_callback(f"{self._base_url}/discovery", {})
 
     async def async_schedule_discovery(self, delay: int):
         self._unsub_send_discovery = async_call_later(self._hass, delay, HassJob(self.async_send_discovery))
@@ -145,38 +144,38 @@ class YandexNotifier(ABC):
             return
 
         try:
-            payload['user_id'] = self._user_id
-            request_data = {'ts': time.time(), 'payload': payload}
+            payload["user_id"] = self._user_id
+            request_data = {"ts": time.time(), "payload": payload}
 
             self._log_request(url, request_data)
             r = await self._session.post(url, headers=self._request_headers, json=request_data, timeout=5)
 
-            response_body, error_message = await r.read(), ''
+            response_body, error_message = await r.read(), ""
             try:
                 response_data = await r.json()
-                error_message = response_data['error_message']
+                error_message = response_data["error_message"]
             except (AttributeError, ValueError, KeyError, ContentTypeError):
                 if r.status != 202:
                     error_message = response_body[:100]
 
             if r.status != 202 or error_message:
                 _LOGGER.warning(
-                    self._format_log_message(f'Failed to send state notification: [{r.status}] {error_message}')
+                    self._format_log_message(f"Failed to send state notification: [{r.status}] {error_message}")
                 )
         except ClientConnectionError as e:
-            _LOGGER.warning(self._format_log_message(f'Failed to send state notification: {e!r}'))
+            _LOGGER.warning(self._format_log_message(f"Failed to send state notification: {e!r}"))
         except asyncio.TimeoutError as e:
-            _LOGGER.debug(self._format_log_message(f'Failed to send state notification: {e!r}'))
+            _LOGGER.debug(self._format_log_message(f"Failed to send state notification: {e!r}"))
         except Exception:
-            _LOGGER.exception(self._format_log_message('Failed to send state notification'))
+            _LOGGER.exception(self._format_log_message("Failed to send state notification"))
 
     async def async_event_handler(self, event: Event):
         if not self._ready:
             return
 
         event_entity_id = event.data.get(ATTR_ENTITY_ID)
-        old_state = event.data.get('old_state')
-        new_state = event.data.get('new_state')
+        old_state = event.data.get("old_state")
+        new_state = event.data.get("new_state")
 
         if not old_state or old_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
             return
@@ -201,18 +200,17 @@ class YandexNotifier(ABC):
             callback_state = YandexEntityCallbackState(yandex_entity, event_entity_id)
             if entity_id == event_entity_id and entity_id not in self._property_entities.keys():
                 callback_state.old_state = YandexEntityCallbackState(
-                    YandexEntity(self._hass, self._config, old_state),
-                    event_entity_id
+                    YandexEntity(self._hass, self._config, old_state), event_entity_id
                 )
 
             if callback_state.should_report:
                 entity_text = entity_id
                 if entity_id != event_entity_id:
-                    entity_text = f'{entity_text} => {event_entity_id}'
+                    entity_text = f"{entity_text} => {event_entity_id}"
 
-                _LOGGER.debug(self._format_log_message(
-                    f'Scheduling report state to Yandex for {entity_text}: {new_state.state}'
-                ))
+                _LOGGER.debug(
+                    self._format_log_message(f"Scheduling report state to Yandex for {entity_text}: {new_state.state}")
+                )
                 self._pending.append(callback_state)
 
                 if self._unsub_pending is None:
@@ -223,7 +221,7 @@ class YandexNotifier(ABC):
         if not self._ready:
             return
 
-        _LOGGER.debug('Reporting initial states')
+        _LOGGER.debug("Reporting initial states")
         for state in self._hass.states.async_all():
             yandex_entity = YandexEntity(self._hass, self._config, state)
             if not yandex_entity.should_expose:
@@ -252,31 +250,31 @@ class YandexDirectNotifier(YandexNotifier):
 
     @property
     def _base_url(self) -> str:
-        return f'https://dialogs.yandex.net/api/v1/skills/{self._skill_id}/callback'
+        return f"https://dialogs.yandex.net/api/v1/skills/{self._skill_id}/callback"
 
     @property
     def _request_headers(self) -> dict[str, str]:
-        return {'Authorization': f'OAuth {self._token}'}
+        return {"Authorization": f"OAuth {self._token}"}
 
     def _format_log_message(self, message: str) -> str:
         if len(self._hass.data[DOMAIN][NOTIFIERS]) > 1:
-            return f'[{self._skill_id} | {self._user_id}] {message}'
+            return f"[{self._skill_id} | {self._user_id}] {message}"
 
         return message
 
     async def async_validate_config(self):
         if await self._hass.auth.async_get_user(self._user_id) is None:
-            raise ValueError(f'User {self._user_id} does not exist')
+            raise ValueError(f"User {self._user_id} does not exist")
 
 
 class YandexCloudNotifier(YandexNotifier):
     @property
     def _base_url(self) -> str:
-        return 'https://yaha-cloud.ru/api/home_assistant/v1/callback'
+        return "https://yaha-cloud.ru/api/home_assistant/v1/callback"
 
     @property
     def _request_headers(self) -> dict[str, str]:
-        return {'Authorization': f'Bearer {self._token}'}
+        return {"Authorization": f"Bearer {self._token}"}
 
 
 @callback
@@ -317,7 +315,7 @@ async def async_start_notifier(hass: HomeAssistant):
     config = hass.data[DOMAIN][CONFIG]
     if config.is_direct_connection:
         if not hass.data[DOMAIN][CONFIG].notifier:
-            _LOGGER.debug('Notifier disabled: no config')
+            _LOGGER.debug("Notifier disabled: no config")
 
         for conf in hass.data[DOMAIN][CONFIG].notifier:
             try:

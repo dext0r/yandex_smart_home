@@ -28,12 +28,12 @@ async def test_unauthorized_view(hass_platform, aiohttp_client, config_entry, so
     assert response.status == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.parametrize('expected_lingering_timers', [True])
+@pytest.mark.parametrize("expected_lingering_timers", [True])
 async def test_ping(hass_platform, aiohttp_client, config_entry, socket_enabled, expected_lingering_timers):
     http_client = await aiohttp_client(hass_platform.http.app)
     response = await http_client.get(YandexSmartHomePingView.url)
     assert response.status == HTTPStatus.OK
-    assert await response.text() == 'OK: 2'
+    assert await response.text() == "OK: 2"
 
     await async_unload_entry(hass_platform, config_entry)
     response = await http_client.get(YandexSmartHomePingView.url)
@@ -44,133 +44,118 @@ async def test_smart_home_view_unloaded(hass_platform, hass_client, config_entry
     http_client = await hass_client()
 
     await async_unload_entry(hass_platform, config_entry)
-    response = await http_client.get(YandexSmartHomeView.url + '/user/unlink')
+    response = await http_client.get(YandexSmartHomeView.url + "/user/unlink")
     assert response.status == HTTPStatus.NOT_FOUND
 
 
 async def test_smart_home_view_unauthorized(hass_platform, aiohttp_client, socket_enabled):
     http_client = await aiohttp_client(hass_platform.http.app)
 
-    response = await http_client.get(YandexSmartHomeView.url + '/user/unlink')
+    response = await http_client.get(YandexSmartHomeView.url + "/user/unlink")
     assert response.status == HTTPStatus.UNAUTHORIZED
 
 
 async def test_user_unlink(hass_platform, hass_client):
     http_client = await hass_client()
-    response = await http_client.post(
-        YandexSmartHomeView.url + '/user/unlink',
-        headers={'X-Request-Id': REQ_ID}
-    )
+    response = await http_client.post(YandexSmartHomeView.url + "/user/unlink", headers={"X-Request-Id": REQ_ID})
     assert response.status == HTTPStatus.OK
-    assert await response.json() == {'request_id': REQ_ID}
+    assert await response.json() == {"request_id": REQ_ID}
 
 
-@pytest.mark.parametrize('expected_lingering_timers', [True])
+@pytest.mark.parametrize("expected_lingering_timers", [True])
 async def test_user_devices(hass_platform, hass_client, hass_admin_user: MockUser, expected_lingering_timers):
     http_client = await hass_client()
-    response = await http_client.get(
-        YandexSmartHomeView.url + '/user/devices',
-        headers={'X-Request-Id': REQ_ID}
-    )
+    response = await http_client.get(YandexSmartHomeView.url + "/user/devices", headers={"X-Request-Id": REQ_ID})
 
     assert response.status == HTTPStatus.OK
     assert await response.json() == {
-        'request_id': REQ_ID,
-        'payload': {
-            'user_id': hass_admin_user.id,
-            'devices': [{
-                'id': 'sensor.outside_temp',
-                'name': 'Outside Temperature',
-                'type': 'devices.types.sensor.climate',
-                'capabilities': [],
-                'properties': [{
-                    'type': 'devices.properties.float',
-                    'retrievable': True,
-                    'reportable': False,
-                    'parameters': {
-                        'instance': 'temperature',
-                        'unit': 'unit.temperature.celsius'
-                    }
-                }],
-                'device_info': {
-                    'model': 'sensor.outside_temp',
-                }
-            }, {
-                'id': 'light.kitchen',
-                'name': 'Kitchen Light',
-                'type': 'devices.types.light',
-                'capabilities': [{
-                    'type': 'devices.capabilities.color_setting',
-                    'retrievable': True,
-                    'reportable': False,
-                    'parameters': {
-                        'color_model': 'rgb',
-                        'temperature_k': {'min': 1500, 'max': 6500}
-                    }
-                }, {
-                    'type': 'devices.capabilities.range',
-                    'retrievable': True,
-                    'reportable': False,
-                    'parameters': {
-                        'instance': 'brightness',
-                        'random_access': True,
-                        'range': {
-                            'min': 1,
-                            'max': 100,
-                            'precision': 1
+        "request_id": REQ_ID,
+        "payload": {
+            "user_id": hass_admin_user.id,
+            "devices": [
+                {
+                    "id": "sensor.outside_temp",
+                    "name": "Outside Temperature",
+                    "type": "devices.types.sensor.climate",
+                    "capabilities": [],
+                    "properties": [
+                        {
+                            "type": "devices.properties.float",
+                            "retrievable": True,
+                            "reportable": False,
+                            "parameters": {"instance": "temperature", "unit": "unit.temperature.celsius"},
+                        }
+                    ],
+                    "device_info": {
+                        "model": "sensor.outside_temp",
+                    },
+                },
+                {
+                    "id": "light.kitchen",
+                    "name": "Kitchen Light",
+                    "type": "devices.types.light",
+                    "capabilities": [
+                        {
+                            "type": "devices.capabilities.color_setting",
+                            "retrievable": True,
+                            "reportable": False,
+                            "parameters": {"color_model": "rgb", "temperature_k": {"min": 1500, "max": 6500}},
                         },
-                        'unit': 'unit.percent'
-                    }
-                }, {
-                    'type': 'devices.capabilities.on_off',
-                    'retrievable': True,
-                    'reportable': False
-                }],
-                'properties': [],
-                'device_info': {
-                    'model': 'light.kitchen',
-                }
-            }]
-        }
+                        {
+                            "type": "devices.capabilities.range",
+                            "retrievable": True,
+                            "reportable": False,
+                            "parameters": {
+                                "instance": "brightness",
+                                "random_access": True,
+                                "range": {"min": 1, "max": 100, "precision": 1},
+                                "unit": "unit.percent",
+                            },
+                        },
+                        {"type": "devices.capabilities.on_off", "retrievable": True, "reportable": False},
+                    ],
+                    "properties": [],
+                    "device_info": {
+                        "model": "light.kitchen",
+                    },
+                },
+            ],
+        },
     }
 
 
 async def test_user_devices_query(hass_platform, hass_client):
     http_client = await hass_client()
     response = await http_client.post(
-        YandexSmartHomeView.url + '/user/devices/query',
-        json={'devices': [{'id': 'sensor.outside_temp'}]},
-        headers={'X-Request-Id': REQ_ID}
+        YandexSmartHomeView.url + "/user/devices/query",
+        json={"devices": [{"id": "sensor.outside_temp"}]},
+        headers={"X-Request-Id": REQ_ID},
     )
     assert response.status == HTTPStatus.OK
     assert await response.json() == {
-        'request_id': REQ_ID,
-        'payload': {
-            'devices': [{
-                'id': 'sensor.outside_temp',
-                'capabilities': [],
-                'properties': [{
-                    'type': 'devices.properties.float',
-                    'state': {'instance': 'temperature', 'value': 15.6}
-                }]
-            }]
-        }
+        "request_id": REQ_ID,
+        "payload": {
+            "devices": [
+                {
+                    "id": "sensor.outside_temp",
+                    "capabilities": [],
+                    "properties": [
+                        {"type": "devices.properties.float", "state": {"instance": "temperature", "value": 15.6}}
+                    ],
+                }
+            ]
+        },
     }
 
     response = await http_client.post(
-        YandexSmartHomeView.url + '/user/devices/query',
-        json={'devices': [{'id': 'sensor.not_existed'}]},
-        headers={'X-Request-Id': REQ_ID}
+        YandexSmartHomeView.url + "/user/devices/query",
+        json={"devices": [{"id": "sensor.not_existed"}]},
+        headers={"X-Request-Id": REQ_ID},
     )
     assert response.status == HTTPStatus.OK
     assert await response.json() == {
-        'request_id': REQ_ID,
-        'payload': {
-            'devices': [{
-                'id': 'sensor.not_existed',
-                'error_code': 'DEVICE_UNREACHABLE'
-            }]
-        }
+        "request_id": REQ_ID,
+        "payload": {"devices": [{"id": "sensor.not_existed", "error_code": "DEVICE_UNREACHABLE"}]},
     }
 
 
@@ -178,52 +163,49 @@ async def test_user_devices_action(hass_platform, hass_client):
     hass = hass_platform
 
     with patch(
-        'homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM',
+        "homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM",
         [Platform.SWITCH],
     ):
         await async_setup_component(hass, core.DOMAIN, {})
-        await async_setup_component(hass, switch.DOMAIN, {switch.DOMAIN: {'platform': 'demo'}})
+        await async_setup_component(hass, switch.DOMAIN, {switch.DOMAIN: {"platform": "demo"}})
         await hass.async_block_till_done()
 
-    assert hass.states.get('switch.ac').state == 'off'
+    assert hass.states.get("switch.ac").state == "off"
 
     http_client = await hass_client()
 
     payload = {
-        'payload': {
-            'devices': [{
-                'id': 'switch.ac',
-                'capabilities': [{
-                    'type': 'devices.capabilities.on_off',
-                    'state': {
-                        'instance': 'on',
-                        'value': True
-                    }
-                }]
-            }]
+        "payload": {
+            "devices": [
+                {
+                    "id": "switch.ac",
+                    "capabilities": [
+                        {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}
+                    ],
+                }
+            ]
         }
     }
     response = await http_client.post(
-        YandexSmartHomeView.url + '/user/devices/action',
-        json=payload,
-        headers={'X-Request-Id': REQ_ID}
+        YandexSmartHomeView.url + "/user/devices/action", json=payload, headers={"X-Request-Id": REQ_ID}
     )
     assert response.status == HTTPStatus.OK
     assert await response.json() == {
-        'request_id': REQ_ID,
-        'payload': {
-            'devices': [{
-                'id': 'switch.ac',
-                'capabilities': [{
-                    'type': 'devices.capabilities.on_off',
-                    'state': {
-                        'instance': 'on',
-                        'action_result': {'status': 'DONE'}
-                    }
-                }]
-            }]
-        }
+        "request_id": REQ_ID,
+        "payload": {
+            "devices": [
+                {
+                    "id": "switch.ac",
+                    "capabilities": [
+                        {
+                            "type": "devices.capabilities.on_off",
+                            "state": {"instance": "on", "action_result": {"status": "DONE"}},
+                        }
+                    ],
+                }
+            ]
+        },
     }
 
     await hass.async_block_till_done()
-    assert hass.states.get('switch.ac').state == 'on'
+    assert hass.states.get("switch.ac").state == "on"

@@ -31,8 +31,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class CustomCapability(AbstractCapability, ABC):
-    def __init__(self, hass: HomeAssistant, config: Config, state: State,
-                 instance: str, capability_config: dict[str, Any]):
+    def __init__(
+        self, hass: HomeAssistant, config: Config, state: State, instance: str, capability_config: dict[str, Any]
+    ):
         super().__init__(hass, config, state)
         self.instance = instance
         self.capability_config = capability_config
@@ -56,7 +57,7 @@ class CustomCapability(AbstractCapability, ABC):
             if not entity_state:
                 raise SmartHomeError(
                     ERR_DEVICE_UNREACHABLE,
-                    f'Entity {self.state_entity_id} not found for {self.instance} instance of {self.state.entity_id}'
+                    f"Entity {self.state_entity_id} not found for {self.instance} instance of {self.state.entity_id}",
                 )
 
         if self.state_value_attribute:
@@ -68,8 +69,9 @@ class CustomCapability(AbstractCapability, ABC):
 
 
 class CustomModeCapability(CustomCapability, ModeCapability):
-    def __init__(self, hass: HomeAssistant, config: Config, state: State,
-                 instance: str, capability_config: dict[str, Any]):
+    def __init__(
+        self, hass: HomeAssistant, config: Config, state: State, instance: str, capability_config: dict[str, Any]
+    ):
         super().__init__(hass, config, state, instance, capability_config)
 
         self.set_mode_config = self.capability_config[const.CONF_ENTITY_CUSTOM_MODE_SET_MODE]
@@ -99,15 +101,16 @@ class CustomModeCapability(CustomCapability, ModeCapability):
             self.hass,
             self.set_mode_config,
             validate_config=False,
-            variables={'mode': self.get_ha_mode_by_yandex_mode(state['value'])},
+            variables={"mode": self.get_ha_mode_by_yandex_mode(state["value"])},
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
 class CustomToggleCapability(CustomCapability, ToggleCapability):
-    def __init__(self, hass: HomeAssistant, config: Config, state: State,
-                 instance: str, capability_config: dict[str, Any]):
+    def __init__(
+        self, hass: HomeAssistant, config: Config, state: State, instance: str, capability_config: dict[str, Any]
+    ):
         super().__init__(hass, config, state, instance, capability_config)
 
         self.turn_on_config = self.capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON]
@@ -122,22 +125,23 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
         if not self.retrievable:
             return None
 
-        return not super().get_value() in [STATE_OFF, False]
+        return super().get_value() not in [STATE_OFF, False]
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
         await async_call_from_config(
             self.hass,
-            self.turn_on_config if state['value'] else self.turn_off_config,
+            self.turn_on_config if state["value"] else self.turn_off_config,
             validate_config=False,
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
 class CustomRangeCapability(CustomCapability, RangeCapability):
-    def __init__(self, hass: HomeAssistant, config: Config, state: State,
-                 instance: str, capability_config: dict[str, Any]):
+    def __init__(
+        self, hass: HomeAssistant, config: Config, state: State, instance: str, capability_config: dict[str, Any]
+    ):
         self.capability_config = capability_config
 
         self.set_value = self.capability_config.get(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE)
@@ -149,7 +153,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
         self.default_range = (
             self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, self.default_range[0]),
             self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, self.default_range[1]),
-            self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, self.default_range[2])
+            self.capability_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, self.default_range[2]),
         )
 
     def supported(self) -> bool:
@@ -170,10 +174,10 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
-        value = state['value']
+        value = state["value"]
         service = self.set_value
 
-        if state.get('relative'):
+        if state.get("relative"):
             if self.increase_value or self.decrease_value:
                 if value >= 0:
                     service = self.increase_value
@@ -183,19 +187,14 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                 if not self.retrievable:
                     raise SmartHomeError(
                         ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                        f'Failed to set relative value for {self.instance} instance of {self.state.entity_id}. '
-                        f'No state or service found.'
+                        f"Failed to set relative value for {self.instance} instance of {self.state.entity_id}. "
+                        f"No state or service found.",
                     )
 
-                value = self.get_absolute_value(state['value'])
+                value = self.get_absolute_value(state["value"])
 
         await async_call_from_config(
-            self.hass,
-            service,
-            validate_config=False,
-            variables={'value': value},
-            blocking=True,
-            context=data.context
+            self.hass, service, validate_config=False, variables={"value": value}, blocking=True, context=data.context
         )
 
     @property

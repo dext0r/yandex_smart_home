@@ -29,8 +29,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class CustomEntityProperty(AbstractProperty, ABC):
-    def __init__(self, hass: HomeAssistant, config: Config, state: State,
-                 property_state: State, property_config: dict[str, Any]):
+    def __init__(
+        self, hass: HomeAssistant, config: Config, state: State, property_state: State, property_config: dict[str, Any]
+    ):
         self.instance = property_config[CONF_ENTITY_PROPERTY_TYPE]
         self.property_config = property_config
         self.property_state = property_state
@@ -38,8 +39,9 @@ class CustomEntityProperty(AbstractProperty, ABC):
         super().__init__(hass, config, state)
 
     @classmethod
-    def get(cls, hass: HomeAssistant, config: Config, state: State,
-            property_config: dict[str, Any]) -> CustomEventEntityProperty | CustomFloatEntityProperty:
+    def get(
+        cls, hass: HomeAssistant, config: Config, state: State, property_config: dict[str, Any]
+    ) -> CustomEventEntityProperty | CustomFloatEntityProperty:
         property_state = state
         property_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY)
         instance = property_config[CONF_ENTITY_PROPERTY_TYPE]
@@ -49,15 +51,14 @@ class CustomEntityProperty(AbstractProperty, ABC):
             if property_state is None:
                 raise SmartHomeError(
                     ERR_DEVICE_UNREACHABLE,
-                    f'Entity {property_entity_id} not found for {instance} instance of {state.entity_id}'
+                    f"Entity {property_entity_id} not found for {instance} instance of {state.entity_id}",
                 )
 
         if property_state.domain == binary_sensor.DOMAIN:
             if instance not in EVENT_INSTANCES:
                 raise SmartHomeError(
                     ERR_DEVICE_UNREACHABLE,
-                    f'Unsupported entity {property_state.entity_id} for {instance} instance '
-                    f'of {state.entity_id}'
+                    f"Unsupported entity {property_state.entity_id} for {instance} instance " f"of {state.entity_id}",
                 )
 
             return CustomEventEntityProperty(hass, config, state, property_state, property_config)
@@ -78,8 +79,8 @@ class CustomEntityProperty(AbstractProperty, ABC):
             if value_attribute not in self.property_state.attributes:
                 raise SmartHomeError(
                     ERR_DEVICE_UNREACHABLE,
-                    f'Attribute {value_attribute} not found in entity {self.property_state.entity_id} '
-                    f'for {self.instance} instance of {self.state.entity_id}'
+                    f"Attribute {value_attribute} not found in entity {self.property_state.entity_id} "
+                    f"for {self.instance} instance of {self.state.entity_id}",
                 )
 
             value = self.property_state.attributes[value_attribute]
@@ -94,8 +95,9 @@ class CustomEntityProperty(AbstractProperty, ABC):
 
 
 class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):
-    def __init__(self, hass: HomeAssistant, config: Config, state: State,
-                 property_state: State, property_config: dict[str, str]):
+    def __init__(
+        self, hass: HomeAssistant, config: Config, state: State, property_state: State, property_config: dict[str, str]
+    ):
         super().__init__(hass, config, state, property_state, property_config)
 
     @property
@@ -109,8 +111,9 @@ class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):
         value = super().get_value()
 
         if self.instance in [const.FLOAT_INSTANCE_PRESSURE, const.FLOAT_INSTANCE_TVOC, const.FLOAT_INSTANCE_AMPERAGE]:
-            value_unit = self.property_config.get(CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
-                                                  self.property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+            value_unit = self.property_config.get(
+                CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT, self.property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+            )
             return self.convert_value(value, value_unit)
 
         return self.float_value(value)
@@ -119,8 +122,9 @@ class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):
 class CustomEventEntityProperty(CustomEntityProperty, EventProperty):
     report_immediately = True
 
-    def __init__(self, hass: HomeAssistant, config: Config, state: State,
-                 property_state: State, property_config: dict[str, str]):
+    def __init__(
+        self, hass: HomeAssistant, config: Config, state: State, property_state: State, property_config: dict[str, str]
+    ):
         super().__init__(hass, config, state, property_state, property_config)
 
         if self.instance in [const.EVENT_INSTANCE_BUTTON, const.EVENT_INSTANCE_VIBRATION]:

@@ -11,7 +11,7 @@ from .helpers import Config
 
 _LOGGER = logging.getLogger(__name__)
 
-PREFIX_PROPERTIES = 'devices.properties.'
+PREFIX_PROPERTIES = "devices.properties."
 PROPERTIES: list[Type[AbstractProperty]] = []
 
 
@@ -24,8 +24,8 @@ def register_property(prop):
 class AbstractProperty(ABC):
     """Represents a Property."""
 
-    type = ''
-    instance = ''
+    type = ""
+    instance = ""
     values = []
     retrievable = True
     report_immediately = False
@@ -46,26 +46,20 @@ class AbstractProperty(ABC):
     def description(self) -> dict[str, Any]:
         """Return description for a devices request."""
         response = {
-            'type': self.type,
-            'retrievable': self.retrievable,
-            'reportable': self.reportable,
+            "type": self.type,
+            "retrievable": self.retrievable,
+            "reportable": self.reportable,
         }
         parameters = self.parameters()
         if parameters is not None:
-            response['parameters'] = parameters
+            response["parameters"] = parameters
 
         return response
 
     def get_state(self) -> dict[str, Any]:
         """Return the state of this property for this entity."""
         value = self.get_value()
-        return {
-            'type': self.type,
-            'state': {
-                'instance': self.instance,
-                'value': value
-            }
-        } if value is not None else None
+        return {"type": self.type, "state": {"instance": self.instance, "value": value}} if value is not None else None
 
     @abstractmethod
     def parameters(self) -> dict[str, Any] | None:

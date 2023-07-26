@@ -49,119 +49,143 @@ _PYTEST = False
 
 ENTITY_PROPERTY_SCHEMA = vol.All(
     cv.has_at_least_one_key(const.CONF_ENTITY_PROPERTY_ENTITY, const.CONF_ENTITY_PROPERTY_ATTRIBUTE),
-    vol.Schema({
-        vol.Required(const.CONF_ENTITY_PROPERTY_TYPE): vol.Schema(vol.All(str, ycv.property_type)),
-        vol.Optional(const.CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT): cv.string,
-        vol.Optional(const.CONF_ENTITY_PROPERTY_ENTITY): cv.entity_id,
-        vol.Optional(const.CONF_ENTITY_PROPERTY_ATTRIBUTE): cv.string,
-    }, extra=vol.PREVENT_EXTRA)
+    vol.Schema(
+        {
+            vol.Required(const.CONF_ENTITY_PROPERTY_TYPE): vol.Schema(vol.All(str, ycv.property_type)),
+            vol.Optional(const.CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT): cv.string,
+            vol.Optional(const.CONF_ENTITY_PROPERTY_ENTITY): cv.entity_id,
+            vol.Optional(const.CONF_ENTITY_PROPERTY_ATTRIBUTE): cv.string,
+        },
+        extra=vol.PREVENT_EXTRA,
+    ),
 )
 
 
-ENTITY_MODE_MAP_SCHEMA = vol.Schema({
-    vol.All(cv.string, ycv.mode_instance): vol.Schema({
-        vol.All(cv.string, ycv.mode): [cv.string]
-    })
-})
+ENTITY_MODE_MAP_SCHEMA = vol.Schema(
+    {vol.All(cv.string, ycv.mode_instance): vol.Schema({vol.All(cv.string, ycv.mode): [cv.string]})}
+)
 
-ENTITY_RANGE_SCHEMA = vol.Schema({
-    vol.Optional(const.CONF_ENTITY_RANGE_MAX): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
-    vol.Optional(const.CONF_ENTITY_RANGE_MIN): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
-    vol.Optional(const.CONF_ENTITY_RANGE_PRECISION): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
-}, extra=vol.PREVENT_EXTRA)
+ENTITY_RANGE_SCHEMA = vol.Schema(
+    {
+        vol.Optional(const.CONF_ENTITY_RANGE_MAX): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
+        vol.Optional(const.CONF_ENTITY_RANGE_MIN): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
+        vol.Optional(const.CONF_ENTITY_RANGE_PRECISION): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
+    },
+    extra=vol.PREVENT_EXTRA,
+)
 
-ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema({
-    vol.All(cv.string, ycv.mode_instance): vol.Schema({
-        vol.Required(const.CONF_ENTITY_CUSTOM_MODE_SET_MODE): cv.SERVICE_SCHEMA,
-        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
-        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-    })
-})
+ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema(
+    {
+        vol.All(cv.string, ycv.mode_instance): vol.Schema(
+            {
+                vol.Required(const.CONF_ENTITY_CUSTOM_MODE_SET_MODE): cv.SERVICE_SCHEMA,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
+            }
+        )
+    }
+)
 
-ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema({
-    vol.All(cv.string, ycv.range_instance): vol.All(
-        cv.has_at_least_one_key(
-            const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE,
-            const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE,
-            const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
-        ),
-        vol.Schema({
-            vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE): vol.Any(cv.SERVICE_SCHEMA),
-            vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
-            vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
-            vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
-            vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-            vol.Optional(const.CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
-        })
-    )
-})
+ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema(
+    {
+        vol.All(cv.string, ycv.range_instance): vol.All(
+            cv.has_at_least_one_key(
+                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE,
+                const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE,
+                const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
+            ),
+            vol.Schema(
+                {
+                    vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE): vol.Any(cv.SERVICE_SCHEMA),
+                    vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
+                    vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
+                    vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
+                    vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
+                    vol.Optional(const.CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
+                }
+            ),
+        )
+    }
+)
 
 
-ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema({
-    vol.All(cv.string, ycv.toggle_instance): vol.Schema({
-        vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON): cv.SERVICE_SCHEMA,
-        vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF): cv.SERVICE_SCHEMA,
-        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
-        vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-    })
-})
+ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema(
+    {
+        vol.All(cv.string, ycv.toggle_instance): vol.Schema(
+            {
+                vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON): cv.SERVICE_SCHEMA,
+                vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF): cv.SERVICE_SCHEMA,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
+            }
+        )
+    }
+)
 
 
 ENTITY_SCHEMA = vol.All(
-    vol.Schema({
-        vol.Optional(const.CONF_NAME): cv.string,
-        vol.Optional(const.CONF_ROOM): cv.string,
-        vol.Optional(const.CONF_TYPE): vol.All(cv.string, ycv.device_type),
-        vol.Optional(const.CONF_TURN_ON): cv.SERVICE_SCHEMA,
-        vol.Optional(const.CONF_TURN_OFF): cv.SERVICE_SCHEMA,
-        vol.Optional(const.CONF_DEVICE_CLASS): vol.In(const.DEVICE_CLASS_BUTTON),
-        vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, ycv.entity_features),
-        vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
-        vol.Optional(const.CONF_SUPPORT_SET_CHANNEL): cv.boolean,
-        vol.Optional(const.CONF_STATE_UNKNOWN): cv.boolean,
-        vol.Optional(const.CONF_COLOR_PROFILE): cv.string,
-        vol.Optional(const.CONF_ERROR_CODE_TEMPLATE): cv.template,
-        vol.Optional(const.CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
-        vol.Optional(const.CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
-        vol.Optional(const.CONF_ENTITY_CUSTOM_MODES, default={}): ENTITY_CUSTOM_MODE_SCHEMA,
-        vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLES, default={}): ENTITY_CUSTOM_TOGGLE_SCHEMA,
-        vol.Optional(const.CONF_ENTITY_CUSTOM_RANGES, default={}): ENTITY_CUSTOM_RANGE_SCHEMA,
-    })
+    vol.Schema(
+        {
+            vol.Optional(const.CONF_NAME): cv.string,
+            vol.Optional(const.CONF_ROOM): cv.string,
+            vol.Optional(const.CONF_TYPE): vol.All(cv.string, ycv.device_type),
+            vol.Optional(const.CONF_TURN_ON): cv.SERVICE_SCHEMA,
+            vol.Optional(const.CONF_TURN_OFF): cv.SERVICE_SCHEMA,
+            vol.Optional(const.CONF_DEVICE_CLASS): vol.In(const.DEVICE_CLASS_BUTTON),
+            vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, ycv.entity_features),
+            vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
+            vol.Optional(const.CONF_SUPPORT_SET_CHANNEL): cv.boolean,
+            vol.Optional(const.CONF_STATE_UNKNOWN): cv.boolean,
+            vol.Optional(const.CONF_COLOR_PROFILE): cv.string,
+            vol.Optional(const.CONF_ERROR_CODE_TEMPLATE): cv.template,
+            vol.Optional(const.CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_CUSTOM_MODES, default={}): ENTITY_CUSTOM_MODE_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLES, default={}): ENTITY_CUSTOM_TOGGLE_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_CUSTOM_RANGES, default={}): ENTITY_CUSTOM_RANGE_SCHEMA,
+        }
+    )
 )
 
-NOTIFIER_SCHEMA = vol.Schema({
-    vol.Required(const.CONF_NOTIFIER_OAUTH_TOKEN): cv.string,
-    vol.Required(const.CONF_NOTIFIER_SKILL_ID): cv.string,
-    vol.Required(const.CONF_NOTIFIER_USER_ID): cv.string,
-}, extra=vol.PREVENT_EXTRA)
+NOTIFIER_SCHEMA = vol.Schema(
+    {
+        vol.Required(const.CONF_NOTIFIER_OAUTH_TOKEN): cv.string,
+        vol.Required(const.CONF_NOTIFIER_SKILL_ID): cv.string,
+        vol.Required(const.CONF_NOTIFIER_USER_ID): cv.string,
+    },
+    extra=vol.PREVENT_EXTRA,
+)
 
 
-SETTINGS_SCHEMA = vol.Schema({
-    vol.Optional(const.CONF_PRESSURE_UNIT, default=const.PRESSURE_UNIT_MMHG): vol.Schema(
-        vol.All(str, ycv.pressure_unit)
-    ),
-    vol.Optional(const.CONF_BETA, default=False): cv.boolean,
-    vol.Optional(const.CONF_CLOUD_STREAM, default=False): cv.boolean
-})
+SETTINGS_SCHEMA = vol.Schema(
+    {
+        vol.Optional(const.CONF_PRESSURE_UNIT, default=const.PRESSURE_UNIT_MMHG): vol.Schema(
+            vol.All(str, ycv.pressure_unit)
+        ),
+        vol.Optional(const.CONF_BETA, default=False): cv.boolean,
+        vol.Optional(const.CONF_CLOUD_STREAM, default=False): cv.boolean,
+    }
+)
 
 
 YANDEX_SMART_HOME_SCHEMA = vol.All(
-    vol.Schema({
-        vol.Optional(const.CONF_NOTIFIER, default=[]): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
-        vol.Optional(const.CONF_SETTINGS, default={}): vol.All(lambda value: value or {}, SETTINGS_SCHEMA),
-        vol.Optional(const.CONF_FILTER): BASE_FILTER_SCHEMA,
-        vol.Optional(const.CONF_ENTITY_CONFIG, default={}): vol.All(
-            lambda value: value or {},
-            {cv.entity_id: ENTITY_SCHEMA}
-        ),
-        vol.Optional(const.CONF_COLOR_PROFILE, default={}): vol.Schema({
-            cv.string: {vol.In(const.COLOR_NAMES): vol.All(ycv.color_value)}
-        })
-    }, extra=vol.PREVENT_EXTRA))
+    vol.Schema(
+        {
+            vol.Optional(const.CONF_NOTIFIER, default=[]): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
+            vol.Optional(const.CONF_SETTINGS, default={}): vol.All(lambda value: value or {}, SETTINGS_SCHEMA),
+            vol.Optional(const.CONF_FILTER): BASE_FILTER_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_CONFIG, default={}): vol.All(
+                lambda value: value or {}, {cv.entity_id: ENTITY_SCHEMA}
+            ),
+            vol.Optional(const.CONF_COLOR_PROFILE, default={}): vol.Schema(
+                {cv.string: {vol.In(const.COLOR_NAMES): vol.All(ycv.color_value)}}
+            ),
+        },
+        extra=vol.PREVENT_EXTRA,
+    )
+)
 
-CONFIG_SCHEMA = vol.Schema({
-    DOMAIN: YANDEX_SMART_HOME_SCHEMA
-}, extra=vol.ALLOW_EXTRA)
+CONFIG_SCHEMA = vol.Schema({DOMAIN: YANDEX_SMART_HOME_SCHEMA}, extra=vol.ALLOW_EXTRA)
 
 
 async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
@@ -211,7 +235,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass=hass,
         entry=entry,
         entity_config=entity_config,
-        entity_filter=FILTER_SCHEMA(entity_filter_config) if entity_filter_config else None
+        entity_filter=FILTER_SCHEMA(entity_filter_config) if entity_filter_config else None,
     )
     await config.async_init()
     hass.data[DOMAIN][CONFIG] = config
@@ -224,11 +248,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         if not _PYTEST:
             hass.loop.create_task(cloud_manager.connect())  # pragma: no cover
 
-        entry.async_on_unload(
-            hass.bus.async_listen_once(
-                EVENT_HOMEASSISTANT_STOP, cloud_manager.disconnect
-            )
-        )
+        entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, cloud_manager.disconnect))
 
     await async_start_notifier(hass)
 
@@ -262,8 +282,13 @@ def get_config_entry_data_from_yaml_config(data: dict, options: dict, yaml_confi
     data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
     data.setdefault(const.CONF_DEVICES_DISCOVERED, True)  # <0.3 migration
 
-    for v in [const.PRESSURE_UNIT_MMHG, const.CONF_BETA, const.CONF_CLOUD_STREAM,
-              const.CONF_NOTIFIER, const.YAML_CONFIG_HASH]:
+    for v in [
+        const.PRESSURE_UNIT_MMHG,
+        const.CONF_BETA,
+        const.CONF_CLOUD_STREAM,
+        const.CONF_NOTIFIER,
+        const.YAML_CONFIG_HASH,
+    ]:
         if v in data:
             del data[v]
 
@@ -272,13 +297,17 @@ def get_config_entry_data_from_yaml_config(data: dict, options: dict, yaml_confi
             del options[v]
 
     if yaml_config:
-        data.update({
-            const.CONF_NOTIFIER: yaml_config[const.CONF_NOTIFIER],
-            const.YAML_CONFIG_HASH: _yaml_config_checksum(yaml_config)
-        })
-        options.update({
-            const.CONF_COLOR_PROFILE: yaml_config[const.CONF_COLOR_PROFILE],
-        })
+        data.update(
+            {
+                const.CONF_NOTIFIER: yaml_config[const.CONF_NOTIFIER],
+                const.YAML_CONFIG_HASH: _yaml_config_checksum(yaml_config),
+            }
+        )
+        options.update(
+            {
+                const.CONF_COLOR_PROFILE: yaml_config[const.CONF_COLOR_PROFILE],
+            }
+        )
         options.update(yaml_config[const.CONF_SETTINGS])
     else:
         options.update(SETTINGS_SCHEMA(data={}))
@@ -303,4 +332,4 @@ def _yaml_config_checksum(yaml_config: ConfigType) -> str:
     def _order_dict(d):
         return {k: _order_dict(v) if isinstance(v, dict) else v for k, v in sorted(d.items())}
 
-    return hashlib.md5(repr(_order_dict(yaml_config)).encode('utf8')).hexdigest()
+    return hashlib.md5(repr(_order_dict(yaml_config)).encode("utf8")).hexdigest()

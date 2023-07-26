@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from http import HTTPStatus
 import json
 import logging
-from typing import Any
+from typing import Any, AsyncIterable, cast
 
 from aiohttp import (
     ClientConnectorError,
@@ -35,7 +35,7 @@ DEFAULT_RECONNECTION_DELAY = 2
 MAX_RECONNECTION_DELAY = 180
 FAST_RECONNECTION_TIME = timedelta(seconds=6)
 FAST_RECONNECTION_THRESHOLD = 5
-BASE_API_URL = f'{CLOUD_BASE_URL}/api/home_assistant/v1'
+BASE_API_URL = f"{CLOUD_BASE_URL}/api/home_assistant/v1"
 
 
 @dataclass
@@ -53,11 +53,11 @@ class CloudRequest:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]):
-        if 'message' in data:
-            if isinstance(data['message'], str):
-                data['message'] = json.loads(data['message'])
+        if "message" in data:
+            if isinstance(data["message"], str):
+                data["message"] = json.loads(data["message"])
         else:
-            data['message'] = {}
+            data["message"] = {}
 
         return cls(**data)
 
@@ -75,7 +75,7 @@ class CloudManager:
         self._ws_reconnect_delay = DEFAULT_RECONNECTION_DELAY
         self._ws_active = True
 
-        self._url = f'{BASE_API_URL}/connect'
+        self._url = f"{BASE_API_URL}/connect"
 
     async def connect(self, *_):
         if not self._ws_active:
@@ -83,27 +83,27 @@ class CloudManager:
 
         # noinspection PyBroadException
         try:
-            _LOGGER.debug(f'Connecting to {self._url}')
-            self._ws = await self._session.ws_connect(self._url, heartbeat=45, compress=15, headers={
-                'Authorization': f'Bearer {self._token}'
-            })
+            _LOGGER.debug(f"Connecting to {self._url}")
+            self._ws = await self._session.ws_connect(
+                self._url, heartbeat=45, compress=15, headers={"Authorization": f"Bearer {self._token}"}
+            )
 
-            _LOGGER.debug('Connection to Yandex Smart Home cloud established')
+            _LOGGER.debug("Connection to Yandex Smart Home cloud established")
             self._ws_reconnect_delay = DEFAULT_RECONNECTION_DELAY
             self._last_connection_at = dt.utcnow()
 
-            async for msg in self._ws:  # type: WSMessage
+            async for msg in cast(AsyncIterable[WSMessage], self._ws):
                 if msg.type == WSMsgType.TEXT:
                     await self._on_message(msg.json())
 
-            _LOGGER.debug(f'Disconnected: {self._ws.close_code}')
+            _LOGGER.debug(f"Disconnected: {self._ws.close_code}")
             if self._ws.close_code is not None:
                 self._try_reconnect()
         except (ClientConnectorError, ClientResponseError, TimeoutError):
-            _LOGGER.exception('Failed to connect to Yandex Smart Home cloud')
+            _LOGGER.exception("Failed to connect to Yandex Smart Home cloud")
             self._try_reconnect()
         except Exception:
-            _LOGGER.exception('Unexpected exception')
+            _LOGGER.exception("Unexpected exception")
             self._try_reconnect()
 
     async def disconnect(self, *_):
@@ -114,18 +114,18 @@ class CloudManager:
 
     async def _on_message(self, payload: dict[Any, Any]):
         request = CloudRequest.from_dict(payload)
-        _LOGGER.debug('Request: %s (message: %s)' % (request.action, request.message))
+        _LOGGER.debug("Request: %s (message: %s)" % (request.action, request.message))
 
         data = RequestData(
             config=self._hass.data[DOMAIN][CONFIG],
             request_user_id=self._instance_id,
             request_id=request.request_id,
-            user_id=self._user_id
+            user_id=self._user_id,
         )
 
         result = await async_handle_message(self._hass, data, request.action, request.message)
         response = json.dumps(result, cls=JSONEncoder)
-        _LOGGER.debug(f'Response: {response}')
+        _LOGGER.debug(f"Response: {response}")
 
         await self._ws.send_str(response)
 
@@ -139,16 +139,16 @@ class CloudManager:
 
         if self._fast_reconnection_count >= FAST_RECONNECTION_THRESHOLD:
             self._ws_reconnect_delay = MAX_RECONNECTION_DELAY
-            _LOGGER.warning(f'Reconnecting too fast, next reconnection in {self._ws_reconnect_delay} seconds')
+            _LOGGER.warning(f"Reconnecting too fast, next reconnection in {self._ws_reconnect_delay} seconds")
 
-        _LOGGER.debug(f'Trying to reconnect in {self._ws_reconnect_delay} seconds')
+        _LOGGER.debug(f"Trying to reconnect in {self._ws_reconnect_delay} seconds")
         async_call_later(self._hass, self._ws_reconnect_delay, HassJob(self.connect))
 
 
 async def register_cloud_instance(hass: HomeAssistant) -> CloudInstanceData:
     session = async_create_clientsession(hass)
 
-    response = await session.post(f'{BASE_API_URL}/instance/register')
+    response = await session.post(f"{BASE_API_URL}/instance/register")
     response.raise_for_status()
 
     return CloudInstanceData(**await response.json())
@@ -160,8 +160,8 @@ async def delete_cloud_instance(hass: HomeAssistant, entry: ConfigEntry):
     instance_id = entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_ID]
     token = entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN]
 
-    response = await session.delete(f'{BASE_API_URL}/instance/{instance_id}', headers={
-        'Authorization': f'Bearer {token}'
-    })
+    response = await session.delete(
+        f"{BASE_API_URL}/instance/{instance_id}", headers={"Authorization": f"Bearer {token}"}
+    )
     if response.status != HTTPStatus.OK:
-        _LOGGER.error(f'Failed to delete cloud instance, status code: {response.status}')
+        _LOGGER.error(f"Failed to delete cloud instance, status code: {response.status}")

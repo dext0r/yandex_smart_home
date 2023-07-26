@@ -17,7 +17,7 @@ from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 
 _LOGGER = logging.getLogger(__name__)
 
-PROPERTY_EVENT = PREFIX_PROPERTIES + 'event'
+PROPERTY_EVENT = PREFIX_PROPERTIES + "event"
 PROPERTY_EVENT_VALUES = {
     const.EVENT_INSTANCE_VIBRATION: [
         const.EVENT_VIBRATION_VIBRATION,
@@ -71,18 +71,12 @@ class EventProperty(AbstractProperty, ABC):
         self.values = PROPERTY_EVENT_VALUES.get(self.instance)
 
     def parameters(self) -> dict[str, Any]:
-        return {
-            'instance': self.instance,
-            'events': [
-                {'value': v}
-                for v in self.values
-            ]
-        } if self.values else {}
+        return {"instance": self.instance, "events": [{"value": v} for v in self.values]} if self.values else {}
 
     @staticmethod
     def bool_value(value) -> bool:
         """Return the bool value according to any type of value."""
-        return value in [1, STATE_ON, STATE_OPEN, 'high', True]
+        return value in [1, STATE_ON, STATE_OPEN, "high", True]
 
     def event_value(self, value) -> str | None:
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
@@ -95,13 +89,13 @@ class EventProperty(AbstractProperty, ABC):
             return const.EVENT_MOTION_DETECTED if self.bool_value(value) else const.EVENT_MOTION_NOT_DETECTED
 
         elif self.instance == const.EVENT_INSTANCE_SMOKE:
-            if value == 'high':
+            if value == "high":
                 return const.EVENT_SMOKE_HIGH
 
             return const.EVENT_SMOKE_DETECTED if self.bool_value(value) else const.EVENT_SMOKE_NOT_DETECTED
 
         elif self.instance == const.EVENT_INSTANCE_GAS:
-            if value == 'high':
+            if value == "high":
                 return const.EVENT_GAS_HIGH
 
             return const.EVENT_GAS_DETECTED if self.bool_value(value) else const.EVENT_GAS_NOT_DETECTED
@@ -116,21 +110,21 @@ class EventProperty(AbstractProperty, ABC):
             return const.EVENT_WATER_LEAK_LEAK if self.bool_value(value) else const.EVENT_WATER_LEAK_DRY
 
         elif self.instance in const.EVENT_INSTANCE_BUTTON:
-            if value in ['single', 'click']:
+            if value in ["single", "click"]:
                 return const.EVENT_BUTTON_CLICK
-            elif value in ['double', 'double_click']:
+            elif value in ["double", "double_click"]:
                 return const.EVENT_BUTTON_DOUBLE_CLICK
-            elif value in ['long', 'long_click', 'long_click_press', 'hold']:
+            elif value in ["long", "long_click", "long_click_press", "hold"]:
                 return const.EVENT_BUTTON_LONG_PRESS
 
         elif self.instance in const.EVENT_INSTANCE_VIBRATION:
-            if value in ['vibrate', 'vibration', 'actively', 'move', 'tap_twice', 'shake_air', 'swing']:
+            if value in ["vibrate", "vibration", "actively", "move", "tap_twice", "shake_air", "swing"]:
                 return const.EVENT_VIBRATION_VIBRATION
             elif self.bool_value(value):
                 return const.EVENT_VIBRATION_VIBRATION
-            elif value in ['tilt', 'flip90', 'flip180', 'rotate']:
+            elif value in ["tilt", "flip90", "flip180", "rotate"]:
                 return const.EVENT_VIBRATION_TILT
-            elif value in ['free_fall', 'drop']:
+            elif value in ["free_fall", "drop"]:
                 return const.EVENT_VIBRATION_FALL
 
     def get_value(self) -> str | None:
@@ -139,7 +133,7 @@ class EventProperty(AbstractProperty, ABC):
 
         raise SmartHomeError(
             ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-            f'Failed to get value for instance {self.instance} of {self.state.entity_id}'
+            f"Failed to get value for instance {self.instance} of {self.state.entity_id}",
         )
 
 
@@ -153,7 +147,7 @@ class ContactProperty(EventProperty):
                 binary_sensor.BinarySensorDeviceClass.DOOR,
                 binary_sensor.BinarySensorDeviceClass.GARAGE_DOOR,
                 binary_sensor.BinarySensorDeviceClass.WINDOW,
-                binary_sensor.BinarySensorDeviceClass.OPENING
+                binary_sensor.BinarySensorDeviceClass.OPENING,
             )
 
         return False
@@ -168,7 +162,7 @@ class MotionProperty(EventProperty):
             return self.state.attributes.get(ATTR_DEVICE_CLASS) in (
                 binary_sensor.BinarySensorDeviceClass.MOTION,
                 binary_sensor.BinarySensorDeviceClass.OCCUPANCY,
-                binary_sensor.BinarySensorDeviceClass.PRESENCE
+                binary_sensor.BinarySensorDeviceClass.PRESENCE,
             )
 
         return False
@@ -213,7 +207,7 @@ class WaterLevelLowProperty(EventProperty):
 
     def supported(self) -> bool:
         if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == 'water_level'
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == "water_level"
 
         return False
 
@@ -242,25 +236,43 @@ class ButtonProperty(EventProperty):
             return True
 
         if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get('last_action') in [
-                'single', 'click', 'double', 'double_click',
-                'long', 'long_click', 'long_click_press',
-                'long_click_release', 'hold', 'release',
-                'triple', 'quadruple', 'many'
+            return self.state.attributes.get("last_action") in [
+                "single",
+                "click",
+                "double",
+                "double_click",
+                "long",
+                "long_click",
+                "long_click_press",
+                "long_click_release",
+                "hold",
+                "release",
+                "triple",
+                "quadruple",
+                "many",
             ]
 
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get('action') in [
-                'single', 'click', 'double', 'double_click',
-                'long', 'long_click', 'long_click_press',
-                'long_click_release', 'hold', 'release',
-                'triple', 'quadruple', 'many'
+            return self.state.attributes.get("action") in [
+                "single",
+                "click",
+                "double",
+                "double_click",
+                "long",
+                "long_click",
+                "long_click_press",
+                "long_click_release",
+                "hold",
+                "release",
+                "triple",
+                "quadruple",
+                "many",
             ]
 
         return False
 
     def get_value(self) -> str | None:
-        for value in [self.state.attributes.get('last_action'), self.state.attributes.get('action'), self.state.state]:
+        for value in [self.state.attributes.get("last_action"), self.state.attributes.get("action"), self.state.state]:
             event_value = self.event_value(value)
 
             if event_value:
@@ -277,10 +289,19 @@ class VibrationBinarySensorProperty(EventProperty):
             if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.VIBRATION:
                 return True
 
-            return self.state.attributes.get('last_action') in [
-                'vibrate', 'tilt', 'free_fall', 'actively',
-                'move', 'tap_twice', 'shake_air', 'swing',
-                'flip90', 'flip180', 'rotate', 'drop'
+            return self.state.attributes.get("last_action") in [
+                "vibrate",
+                "tilt",
+                "free_fall",
+                "actively",
+                "move",
+                "tap_twice",
+                "shake_air",
+                "swing",
+                "flip90",
+                "flip180",
+                "rotate",
+                "drop",
             ]
 
         return False
@@ -289,7 +310,7 @@ class VibrationBinarySensorProperty(EventProperty):
         if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.VIBRATION:
             return self.event_value(self.state.state)
 
-        return self.event_value(self.state.attributes.get('last_action'))
+        return self.event_value(self.state.attributes.get("last_action"))
 
 
 @register_property
@@ -299,13 +320,22 @@ class VibrationSensorProperty(EventProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get('action') in [
-                'vibrate', 'tilt', 'free_fall', 'actively',
-                'move', 'tap_twice', 'shake_air', 'swing',
-                'flip90', 'flip180', 'rotate', 'drop'
+            return self.state.attributes.get("action") in [
+                "vibrate",
+                "tilt",
+                "free_fall",
+                "actively",
+                "move",
+                "tap_twice",
+                "shake_air",
+                "swing",
+                "flip90",
+                "flip180",
+                "rotate",
+                "drop",
             ]
 
         return False
 
     def get_value(self) -> str | None:
-        return self.event_value(self.state.attributes.get('action'))
+        return self.event_value(self.state.attributes.get("action"))

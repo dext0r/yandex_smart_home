@@ -11,7 +11,7 @@ from .helpers import Config, RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
-PREFIX_CAPABILITIES = 'devices.capabilities.'
+PREFIX_CAPABILITIES = "devices.capabilities."
 
 CAPABILITIES: list[Type[AbstractCapability]] = []
 
@@ -25,8 +25,8 @@ def register_capability(capability):
 class AbstractCapability(ABC):
     """Represents a Capability."""
 
-    type = ''
-    instance = ''
+    type = ""
+    instance = ""
     retrievable = True
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
@@ -47,26 +47,20 @@ class AbstractCapability(ABC):
     def description(self) -> dict[str, Any]:
         """Return description for a devices request."""
         response = {
-            'type': self.type,
-            'retrievable': self.retrievable,
-            'reportable': self.reportable,
+            "type": self.type,
+            "retrievable": self.retrievable,
+            "reportable": self.reportable,
         }
         parameters = self.parameters()
         if parameters is not None:
-            response['parameters'] = parameters
+            response["parameters"] = parameters
 
         return response
 
     def get_state(self) -> dict[str, Any]:
         """Return the state of this capability for this entity."""
         value = self.get_value()
-        return {
-            'type': self.type,
-            'state':  {
-                'instance': self.instance,
-                'value': value
-            }
-        } if value is not None else None
+        return {"type": self.type, "state": {"instance": self.instance, "value": value}} if value is not None else None
 
     @abstractmethod
     def parameters(self) -> dict[str, Any] | None:

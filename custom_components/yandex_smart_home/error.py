@@ -15,5 +15,6 @@ class SmartHomeError(Exception):
 
 class SmartHomeUserError(Exception):
     """Error producted by user's template, no logging"""
+
     def __init__(self, code):
         self.code = code

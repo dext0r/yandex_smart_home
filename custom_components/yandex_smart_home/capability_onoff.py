@@ -48,7 +48,7 @@ from .helpers import RequestData
 
 _LOGGER = logging.getLogger(__name__)
 
-CAPABILITIES_ONOFF = PREFIX_CAPABILITIES + 'on_off'
+CAPABILITIES_ONOFF = PREFIX_CAPABILITIES + "on_off"
 
 
 class OnOffCapability(AbstractCapability, ABC):
@@ -70,7 +70,7 @@ class OnOffCapability(AbstractCapability, ABC):
     def parameters(self) -> dict[str, Any] | None:
         """Return parameters for a devices request."""
         if not self.retrievable:
-            return {'split': True}
+            return {"split": True}
 
         return None
 
@@ -78,13 +78,10 @@ class OnOffCapability(AbstractCapability, ABC):
         return self.state.state != STATE_OFF
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
-        for key, call in ((const.CONF_TURN_ON, state['value']), (const.CONF_TURN_OFF, not state['value'])):
+        for key, call in ((const.CONF_TURN_ON, state["value"]), (const.CONF_TURN_OFF, not state["value"])):
             if key in self.entity_config and call:
                 return await async_call_from_config(
-                    self.hass,
-                    self.entity_config[key],
-                    blocking=True,
-                    context=data.context
+                    self.hass, self.entity_config[key], blocking=True, context=data.context
                 )
 
         await self._set_state(data, state)
@@ -109,18 +106,13 @@ class OnOffCapabilityBasic(OnOffCapability):
         return self.state.domain in (light.DOMAIN, fan.DOMAIN, switch.DOMAIN, humidifier.DOMAIN, input_boolean.DOMAIN)
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state['value']:
+        if state["value"]:
             service = SERVICE_TURN_ON
         else:
             service = SERVICE_TURN_OFF
 
         await self.hass.services.async_call(
-            self.state.domain,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
-            blocking=True,
-            context=data.context
+            self.state.domain, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
         )
 
 
@@ -133,18 +125,13 @@ class OnOffCapabilityAutomation(OnOffCapability):
         return self.state.domain == automation.DOMAIN
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state['value']:
+        if state["value"]:
             service = SERVICE_TURN_ON
         else:
             service = SERVICE_TURN_OFF
 
         await self.hass.services.async_call(
-            automation.DOMAIN,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
-            blocking=True,
-            context=data.context
+            automation.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
         )
 
 
@@ -154,18 +141,13 @@ class OnOffCapabilityGroup(OnOffCapability):
         return self.state.domain in group.DOMAIN
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state['value']:
+        if state["value"]:
             service = SERVICE_TURN_ON
         else:
             service = SERVICE_TURN_OFF
 
         await self.hass.services.async_call(
-            HA_DOMAIN,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
-            blocking=True,
-            context=data.context
+            HA_DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
         )
 
 
@@ -180,11 +162,10 @@ class OnOffCapabilityScript(OnlyOnCapability):
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
         await self.hass.services.async_call(
             self.state.domain,
-            SERVICE_TURN_ON, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
+            SERVICE_TURN_ON,
+            {ATTR_ENTITY_ID: self.state.entity_id},
             blocking=self.state.domain != script.DOMAIN,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -199,11 +180,10 @@ class OnOffCapabilityButton(OnlyOnCapability):
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
         await self.hass.services.async_call(
             self.state.domain,
-            button.SERVICE_PRESS, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
+            button.SERVICE_PRESS,
+            {ATTR_ENTITY_ID: self.state.entity_id},
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -218,11 +198,10 @@ class OnOffCapabilityInputButton(OnlyOnCapability):
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
         await self.hass.services.async_call(
             self.state.domain,
-            input_button.SERVICE_PRESS, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
+            input_button.SERVICE_PRESS,
+            {ATTR_ENTITY_ID: self.state.entity_id},
             blocking=True,
-            context=data.context
+            context=data.context,
         )
 
 
@@ -235,18 +214,13 @@ class OnOffCapabilityLock(OnOffCapability):
         return self.state.domain == lock.DOMAIN
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state['value']:
+        if state["value"]:
             service = SERVICE_UNLOCK
         else:
             service = SERVICE_LOCK
 
         await self.hass.services.async_call(
-            lock.DOMAIN,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
-            blocking=True,
-            context=data.context
+            lock.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
         )
 
 
@@ -259,18 +233,13 @@ class OnOffCapabilityCover(OnOffCapability):
         return self.state.domain == cover.DOMAIN
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state['value']:
+        if state["value"]:
             service = SERVICE_OPEN_COVER
         else:
             service = SERVICE_CLOSE_COVER
 
         await self.hass.services.async_call(
-            cover.DOMAIN,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
-            blocking=True,
-            context=data.context
+            cover.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
         )
 
 
@@ -286,24 +255,21 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
             if const.MEDIA_PLAYER_FEATURE_TURN_ON_OFF in self.entity_config.get(const.CONF_FEATURES, []):
                 return True
 
-            return features & media_player.MediaPlayerEntityFeature.TURN_ON or \
-                features & media_player.MediaPlayerEntityFeature.TURN_OFF
+            return (
+                features & media_player.MediaPlayerEntityFeature.TURN_ON
+                or features & media_player.MediaPlayerEntityFeature.TURN_OFF
+            )
 
         return False
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state['value']:
+        if state["value"]:
             service = SERVICE_TURN_ON
         else:
             service = SERVICE_TURN_OFF
 
         await self.hass.services.async_call(
-            media_player.DOMAIN,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
-            blocking=True,
-            context=data.context
+            media_player.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
         )
 
 
@@ -333,7 +299,7 @@ class OnOffCapabilityVacuum(OnOffCapability):
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
         features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
 
-        if state['value']:
+        if state["value"]:
             if features & vacuum.VacuumEntityFeature.START:
                 service = vacuum.SERVICE_START
             else:
@@ -347,12 +313,7 @@ class OnOffCapabilityVacuum(OnOffCapability):
                 service = SERVICE_TURN_OFF
 
         await self.hass.services.async_call(
-            vacuum.DOMAIN,
-            service, {
-                ATTR_ENTITY_ID: self.state.entity_id
-            },
-            blocking=True,
-            context=data.context
+            vacuum.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
         )
 
 
@@ -365,16 +326,13 @@ class OnOffCapabilityClimate(OnOffCapability):
         return self.state.domain == climate.DOMAIN
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        service_data = {
-            ATTR_ENTITY_ID: self.state.entity_id
-        }
+        service_data = {ATTR_ENTITY_ID: self.state.entity_id}
 
-        if state['value']:
+        if state["value"]:
             service = SERVICE_TURN_ON
 
             hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES)
-            for mode in (climate.HVACMode.HEAT_COOL,
-                         climate.HVACMode.AUTO):
+            for mode in (climate.HVACMode.HEAT_COOL, climate.HVACMode.AUTO):
                 if mode not in hvac_modes:
                     continue
 
@@ -384,20 +342,14 @@ class OnOffCapabilityClimate(OnOffCapability):
         else:
             service = SERVICE_TURN_OFF
 
-        await self.hass.services.async_call(
-            climate.DOMAIN,
-            service,
-            service_data,
-            blocking=True,
-            context=data.context
-        )
+        await self.hass.services.async_call(climate.DOMAIN, service, service_data, blocking=True, context=data.context)
 
 
 @register_capability
 class OnOffCapabilityWaterHeater(OnOffCapability):
     water_heater_operations = {
-        STATE_ON: [STATE_ON, 'On', 'ON', water_heater.STATE_ELECTRIC],
-        STATE_OFF: [STATE_OFF, 'Off', 'OFF'],
+        STATE_ON: [STATE_ON, "On", "ON", water_heater.STATE_ELECTRIC],
+        STATE_OFF: [STATE_OFF, "Off", "OFF"],
     }
 
     def get_value(self) -> bool | None:
@@ -414,7 +366,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
         return self.state.domain == water_heater.DOMAIN
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state['value']:
+        if state["value"]:
             service = water_heater.SERVICE_TURN_ON
         else:
             service = water_heater.SERVICE_TURN_OFF
@@ -422,11 +374,12 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
         try:
             await self.hass.services.async_call(
                 water_heater.DOMAIN,
-                service, {
+                service,
+                {
                     ATTR_ENTITY_ID: self.state.entity_id,
                 },
                 blocking=True,
-                context=data.context
+                context=data.context,
             )
 
             return
@@ -436,24 +389,21 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
 
         operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST)
 
-        if state['value']:
+        if state["value"]:
             mode = self.get_water_heater_operation(STATE_ON, operation_list)
         else:
             mode = self.get_water_heater_operation(STATE_OFF, operation_list)
 
         if not mode:
-            target_state_text = 'on' if state['value'] else 'off'
+            target_state_text = "on" if state["value"] else "off"
             raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f'Unable to determine operation mode for {target_state_text} state'
+                ERR_NOT_SUPPORTED_IN_CURRENT_MODE, f"Unable to determine operation mode for {target_state_text} state"
             )
 
         await self.hass.services.async_call(
             water_heater.DOMAIN,
-            water_heater.SERVICE_SET_OPERATION_MODE, {
-                ATTR_ENTITY_ID: self.state.entity_id,
-                water_heater.ATTR_OPERATION_MODE: mode
-            },
+            water_heater.SERVICE_SET_OPERATION_MODE,
+            {ATTR_ENTITY_ID: self.state.entity_id, water_heater.ATTR_OPERATION_MODE: mode},
             blocking=True,
-            context=data.context
+            context=data.context,
         )

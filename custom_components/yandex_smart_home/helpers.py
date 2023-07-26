@@ -16,11 +16,13 @@ from .const import DOMAIN, NOTIFIERS, STORE_CACHE_ATTRS
 class Config:
     """Hold the configuration for Yandex Smart Home."""
 
-    def __init__(self,
-                 hass: HomeAssistant,
-                 entry: ConfigEntry,
-                 entity_config: dict[str, Any] | None = None,
-                 entity_filter: EntityFilter | None = None):
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        entity_config: dict[str, Any] | None = None,
+        entity_filter: EntityFilter | None = None,
+    ):
         """Initialize the configuration."""
         self._hass = hass
         self._data = entry.data
@@ -99,7 +101,7 @@ class Config:
 
 class CacheStore:
     _STORAGE_VERSION = 1
-    _STORAGE_KEY = f'{DOMAIN}.cache'
+    _STORAGE_KEY = f"{DOMAIN}.cache"
 
     def __init__(self, hass):
         self._hass = hass
@@ -136,11 +138,9 @@ class CacheStore:
 class RequestData:
     """Hold data associated with a particular request."""
 
-    def __init__(self,
-                 config: Config,
-                 request_user_id: str | None,
-                 request_id: str | None = None,
-                 user_id: str | None = None):
+    def __init__(
+        self, config: Config, request_user_id: str | None, request_id: str | None = None, user_id: str | None = None
+    ):
         """Initialize the request data."""
         self.config = config
         self.context = Context(user_id=user_id)

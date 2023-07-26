@@ -14,11 +14,13 @@ from custom_components.yandex_smart_home.helpers import CacheStore, Config, Requ
 
 
 class MockConfig(Config):
-    def __init__(self,
-                 hass: HomeAssistant | None = None,
-                 entry: ConfigEntry | None = None,
-                 entity_config: dict[str, Any] | None = None,
-                 entity_filter: entityfilter.EntityFilter | None = None):
+    def __init__(
+        self,
+        hass: HomeAssistant | None = None,
+        entry: ConfigEntry | None = None,
+        entity_config: dict[str, Any] | None = None,
+        entity_filter: entityfilter.EntityFilter | None = None,
+    ):
         if not entry:
             data, options = get_config_entry_data_from_yaml_config({}, {}, None)
             entry = MockConfigEntry(domain=DOMAIN, data=data, options=options)
@@ -53,20 +55,20 @@ class MockCacheStore(CacheStore):
 
 
 def generate_entity_filter(include_entity_globs=None, exclude_entities=None) -> entityfilter.EntityFilter:
-    return entityfilter.EntityFilter({
-        entityfilter.CONF_INCLUDE_DOMAINS: [],
-        entityfilter.CONF_INCLUDE_ENTITY_GLOBS: include_entity_globs or [],
-        entityfilter.CONF_INCLUDE_ENTITIES: [],
-        entityfilter.CONF_EXCLUDE_DOMAINS: [],
-        entityfilter.CONF_EXCLUDE_ENTITY_GLOBS: [],
-        entityfilter.CONF_EXCLUDE_ENTITIES: exclude_entities or [],
-    })
+    return entityfilter.EntityFilter(
+        {
+            entityfilter.CONF_INCLUDE_DOMAINS: [],
+            entityfilter.CONF_INCLUDE_ENTITY_GLOBS: include_entity_globs or [],
+            entityfilter.CONF_INCLUDE_ENTITIES: [],
+            entityfilter.CONF_EXCLUDE_DOMAINS: [],
+            entityfilter.CONF_EXCLUDE_ENTITY_GLOBS: [],
+            entityfilter.CONF_EXCLUDE_ENTITIES: exclude_entities or [],
+        }
+    )
 
 
-REQ_ID = '5ca6622d-97b5-465c-a494-fd9954f7599a'
+REQ_ID = "5ca6622d-97b5-465c-a494-fd9954f7599a"
 
-BASIC_CONFIG = MockConfig(
-    entity_filter=generate_entity_filter(include_entity_globs=['*'])
-)
+BASIC_CONFIG = MockConfig(entity_filter=generate_entity_filter(include_entity_globs=["*"]))
 
-BASIC_DATA = RequestData(BASIC_CONFIG, 'test', REQ_ID)
+BASIC_DATA = RequestData(BASIC_CONFIG, "test", REQ_ID)

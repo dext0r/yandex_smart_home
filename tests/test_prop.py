@@ -17,8 +17,9 @@ from custom_components.yandex_smart_home.prop_float import FloatProperty
 from . import BASIC_CONFIG
 
 
-def get_properties(hass: HomeAssistant, config: Config, state: State,
-                   property_type: str, instance: str) -> list[AbstractProperty]:
+def get_properties(
+    hass: HomeAssistant, config: Config, state: State, property_type: str, instance: str
+) -> list[AbstractProperty]:
     props = []
 
     for Property in PROPERTIES:
@@ -33,33 +34,30 @@ def get_properties(hass: HomeAssistant, config: Config, state: State,
     return props
 
 
-def get_exact_one_property(hass: HomeAssistant, config: Config, state: State,
-                           property_type: str, instance: str) -> AbstractProperty | EventProperty | FloatProperty:
+def get_exact_one_property(
+    hass: HomeAssistant, config: Config, state: State, property_type: str, instance: str
+) -> AbstractProperty | EventProperty | FloatProperty:
     props = get_properties(hass, config, state, property_type, instance)
     assert len(props) == 1
     return props[0]
 
 
-def assert_exact_one_property(hass: HomeAssistant, config: Config, state: State,
-                              property_type: str, instance: str):
+def assert_exact_one_property(hass: HomeAssistant, config: Config, state: State, property_type: str, instance: str):
     assert len(get_properties(hass, config, state, property_type, instance)) == 1
 
 
-def assert_no_properties(hass: HomeAssistant, config: Config, state: State,
-                         property_type: str, instance: str):
+def assert_no_properties(hass: HomeAssistant, config: Config, state: State, property_type: str, instance: str):
     assert len(get_properties(hass, config, state, property_type, instance)) == 0
 
 
 async def test_property_demo_platform(hass):
     with patch(
-        'homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM',
+        "homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM",
         [Platform.CLIMATE, Platform.SENSOR, Platform.BINARY_SENSOR],
     ):
         await async_setup_component(hass, core.DOMAIN, {})
         for component in climate, sensor, binary_sensor:
-            await async_setup_component(
-                hass, component.DOMAIN, {component.DOMAIN: [{'platform': 'demo'}]}
-            )
+            await async_setup_component(hass, component.DOMAIN, {component.DOMAIN: [{"platform": "demo"}]})
         await hass.async_block_till_done()
 
     # for x in hass.states.async_all():
@@ -71,52 +69,52 @@ async def test_property_demo_platform(hass):
     #     print(f'assert props == {l}')
     #     print()
 
-    state = hass.states.get('climate.heatpump')
+    state = hass.states.get("climate.heatpump")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.float', 'temperature')]
+    assert props == [("devices.properties.float", "temperature")]
 
-    state = hass.states.get('climate.hvac')
+    state = hass.states.get("climate.hvac")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.float', 'temperature'), ('devices.properties.float', 'humidity')]
+    assert props == [("devices.properties.float", "temperature"), ("devices.properties.float", "humidity")]
 
-    state = hass.states.get('climate.ecobee')
+    state = hass.states.get("climate.ecobee")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.float', 'temperature')]
+    assert props == [("devices.properties.float", "temperature")]
 
-    state = hass.states.get('sensor.outside_temperature')
+    state = hass.states.get("sensor.outside_temperature")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.float', 'temperature'), ('devices.properties.float', 'battery_level')]
+    assert props == [("devices.properties.float", "temperature"), ("devices.properties.float", "battery_level")]
 
-    state = hass.states.get('sensor.outside_humidity')
+    state = hass.states.get("sensor.outside_humidity")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.float', 'humidity')]
+    assert props == [("devices.properties.float", "humidity")]
 
-    state = hass.states.get('sensor.carbon_monoxide')
+    state = hass.states.get("sensor.carbon_monoxide")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
     assert props == []
 
-    state = hass.states.get('sensor.carbon_dioxide')
+    state = hass.states.get("sensor.carbon_dioxide")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.float', 'co2_level'), ('devices.properties.float', 'battery_level')]
+    assert props == [("devices.properties.float", "co2_level"), ("devices.properties.float", "battery_level")]
 
-    state = hass.states.get('sensor.power_consumption')
+    state = hass.states.get("sensor.power_consumption")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.float', 'power')]
+    assert props == [("devices.properties.float", "power")]
 
-    state = hass.states.get('binary_sensor.basement_floor_wet')
+    state = hass.states.get("binary_sensor.basement_floor_wet")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.event', 'water_leak')]
+    assert props == [("devices.properties.event", "water_leak")]
 
-    state = hass.states.get('binary_sensor.movement_backyard')
+    state = hass.states.get("binary_sensor.movement_backyard")
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     props = list((p.type, p.instance) for p in entity.properties())
-    assert props == [('devices.properties.event', 'motion')]
+    assert props == [("devices.properties.event", "motion")]

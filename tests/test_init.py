@@ -26,338 +26,222 @@ from custom_components.yandex_smart_home import (
 
 
 async def test_bad_config(hass):
-    with patch_yaml_files({YAML_CONFIG_FILE: 'yandex_smart_home:\n  bad: true'}):
+    with patch_yaml_files({YAML_CONFIG_FILE: "yandex_smart_home:\n  bad: true"}):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
 
 async def test_valid_config(hass):
-    with patch_yaml_files({YAML_CONFIG_FILE: load_fixture('valid-config.yaml')}):
+    with patch_yaml_files({YAML_CONFIG_FILE: load_fixture("valid-config.yaml")}):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
     assert DOMAIN in config
 
-    assert config[DOMAIN]['notifier'] == [{
-        'oauth_token': 'AgAAAAAEEo2aYYR7m-CEyS7SEiUJjnKez3v3GZe',
-        'skill_id': 'd38d4c39-5846-ba53-67acc27e08bc',
-        'user_id': 'e8701ad48ba05a91604e480dd60899a3'
-    }]
-    assert config[DOMAIN]['settings'] == {
-        'pressure_unit': 'mmHg',
-        'beta': True,
-        'cloud_stream': False
-    }
-    assert config[DOMAIN]['color_profile'] == {
-        'test': {
-            'red': 16711680,
-            'green': 65280,
-            'warm_white': 3000
+    assert config[DOMAIN]["notifier"] == [
+        {
+            "oauth_token": "AgAAAAAEEo2aYYR7m-CEyS7SEiUJjnKez3v3GZe",
+            "skill_id": "d38d4c39-5846-ba53-67acc27e08bc",
+            "user_id": "e8701ad48ba05a91604e480dd60899a3",
         }
-    }
-    assert config[DOMAIN]['filter'] == {
-        'include_domains': [
-            'switch',
-            'light',
-            'climate'
-        ],
-        'include_entities': [
-            'media_player.tv',
-            'media_player.tv_lg',
-            'media_player.receiver'
-        ],
-        'include_entity_globs': [
-            'sensor.temperature_*'
-        ],
-        'exclude_entities': [
-            'light.highlight'
-        ],
-        'exclude_entity_globs': [
-            'sensor.weather_*'
-        ],
-        'exclude_domains': []
+    ]
+    assert config[DOMAIN]["settings"] == {"pressure_unit": "mmHg", "beta": True, "cloud_stream": False}
+    assert config[DOMAIN]["color_profile"] == {"test": {"red": 16711680, "green": 65280, "warm_white": 3000}}
+    assert config[DOMAIN]["filter"] == {
+        "include_domains": ["switch", "light", "climate"],
+        "include_entities": ["media_player.tv", "media_player.tv_lg", "media_player.receiver"],
+        "include_entity_globs": ["sensor.temperature_*"],
+        "exclude_entities": ["light.highlight"],
+        "exclude_entity_globs": ["sensor.weather_*"],
+        "exclude_domains": [],
     }
 
-    entity_config = config[DOMAIN]['entity_config']
+    entity_config = config[DOMAIN]["entity_config"]
     assert len(entity_config) == 11
 
-    assert entity_config['switch.kitchen'] == {
-        'name': 'Выключатель',
-        'custom_toggles': {},
-        'properties': [],
-        'custom_ranges': {},
-        'range': {},
-        'modes': {},
-        'custom_modes': {}
+    assert entity_config["switch.kitchen"] == {
+        "name": "Выключатель",
+        "custom_toggles": {},
+        "properties": [],
+        "custom_ranges": {},
+        "range": {},
+        "modes": {},
+        "custom_modes": {},
     }
-    assert entity_config['light.living_room'] == {
-        'name': 'Люстра',
-        'modes': {
-            'scene': {
-                'sunrise': [
-                    'Wake up'
-                ],
-                'alarm': [
-                    'Blink'
-                ]
-            }
-        },
-        'color_profile': 'natural',
-        'custom_toggles': {},
-        'properties': [],
-        'custom_ranges': {},
-        'range': {},
-        'custom_modes': {}
+    assert entity_config["light.living_room"] == {
+        "name": "Люстра",
+        "modes": {"scene": {"sunrise": ["Wake up"], "alarm": ["Blink"]}},
+        "color_profile": "natural",
+        "custom_toggles": {},
+        "properties": [],
+        "custom_ranges": {},
+        "range": {},
+        "custom_modes": {},
     }
-    assert entity_config['media_player.tv_lg'] == {
-        'custom_ranges': {
-            'channel': {
-                'set_value': {
-                    'service': 'media_player.play_media',
-                    'entity_id': [
-                        'media_player.stupid_tv'
-                    ],
-                    'data': {
-                        'media_content_type': 'channel',
-                        'media_content_id': Template('{{ value }}', hass)
-                    }
+    assert entity_config["media_player.tv_lg"] == {
+        "custom_ranges": {
+            "channel": {
+                "set_value": {
+                    "service": "media_player.play_media",
+                    "entity_id": ["media_player.stupid_tv"],
+                    "data": {"media_content_type": "channel", "media_content_id": Template("{{ value }}", hass)},
                 },
-                'increase_value': {
-                    'service': 'script.next_channel_via_ir'
-                },
-                'decrease_value': {
-                    'service': 'script.prev_channel_via_ir'
-                },
-                'range': {
-                    'min': 0.0,
-                    'max': 999.0
-                }
+                "increase_value": {"service": "script.next_channel_via_ir"},
+                "decrease_value": {"service": "script.prev_channel_via_ir"},
+                "range": {"min": 0.0, "max": 999.0},
             },
-            'volume': {
-                'increase_value': {
-                    'service': 'script.increase_volume'
-                },
-                'decrease_value': {
-                    'service': 'script.decrease_volume'
-                }
-            }
+            "volume": {
+                "increase_value": {"service": "script.increase_volume"},
+                "decrease_value": {"service": "script.decrease_volume"},
+            },
         },
-        'custom_toggles': {},
-        'properties': [],
-        'range': {},
-        'modes': {},
-        'custom_modes': {}
+        "custom_toggles": {},
+        "properties": [],
+        "range": {},
+        "modes": {},
+        "custom_modes": {},
     }
 
-    assert entity_config['fan.xiaomi_miio_device'] == {
-        'name': 'Увлажнитель',
-        'room': 'Гостиная',
-        'type': 'devices.types.humidifier',
-        'properties': [
-            {
-                'type': 'temperature',
-                'entity': 'sensor.temperature_158d000444c824'
-            },
-            {
-                'type': 'humidity',
-                'attribute': 'humidity'
-            },
-            {
-                'type': 'water_level',
-                'attribute': 'depth'
-            }
+    assert entity_config["fan.xiaomi_miio_device"] == {
+        "name": "Увлажнитель",
+        "room": "Гостиная",
+        "type": "devices.types.humidifier",
+        "properties": [
+            {"type": "temperature", "entity": "sensor.temperature_158d000444c824"},
+            {"type": "humidity", "attribute": "humidity"},
+            {"type": "water_level", "attribute": "depth"},
         ],
-        'custom_toggles': {},
-        'custom_ranges': {},
-        'range': {},
-        'modes': {},
-        'custom_modes': {}
+        "custom_toggles": {},
+        "custom_ranges": {},
+        "range": {},
+        "modes": {},
+        "custom_modes": {},
     }
 
-    assert entity_config['climate.tion_breezer'] == {
-        'name': 'Проветриватель',
-        'modes': {
-            'fan_speed': {
-                'auto': [
-                    'auto'
-                ],
-                'min': [
-                    '1',
-                    '1.0'
-                ],
-                'low': [
-                    '2',
-                    '2.0'
-                ],
-                'medium': [
-                    '3',
-                    '3.0'
-                ],
-                'high': [
-                    '4',
-                    '4.0'
-                ],
-                'turbo': [
-                    '5',
-                    '5.0'
-                ],
-                'max': [
-                    '6',
-                    '6.0'
-                ]
+    assert entity_config["climate.tion_breezer"] == {
+        "name": "Проветриватель",
+        "modes": {
+            "fan_speed": {
+                "auto": ["auto"],
+                "min": ["1", "1.0"],
+                "low": ["2", "2.0"],
+                "medium": ["3", "3.0"],
+                "high": ["4", "4.0"],
+                "turbo": ["5", "5.0"],
+                "max": ["6", "6.0"],
             }
         },
-        'custom_toggles': {},
-        'properties': [],
-        'custom_ranges': {},
-        'range': {},
-        'custom_modes': {}
+        "custom_toggles": {},
+        "properties": [],
+        "custom_ranges": {},
+        "range": {},
+        "custom_modes": {},
     }
 
-    assert entity_config['media_player.receiver'] == {
-        'type': 'devices.types.media_device.receiver',
-        'range': {
-            'max': 95.0,
-            'min': 20.0,
-            'precision': 2.0
-        },
-        'custom_toggles': {},
-        'properties': [],
-        'custom_ranges': {},
-        'modes': {},
-        'custom_modes': {}
+    assert entity_config["media_player.receiver"] == {
+        "type": "devices.types.media_device.receiver",
+        "range": {"max": 95.0, "min": 20.0, "precision": 2.0},
+        "custom_toggles": {},
+        "properties": [],
+        "custom_ranges": {},
+        "modes": {},
+        "custom_modes": {},
     }
 
-    assert entity_config['media_player.cast'] == {
-        'support_set_channel': False,
-        'features': [
-            'volume_mute',
-            'volume_set',
-            'next_previous_track'
-        ],
-        'custom_toggles': {},
-        'properties': [],
-        'custom_ranges': {},
-        'range': {},
-        'modes': {},
-        'custom_modes': {}
+    assert entity_config["media_player.cast"] == {
+        "support_set_channel": False,
+        "features": ["volume_mute", "volume_set", "next_previous_track"],
+        "custom_toggles": {},
+        "properties": [],
+        "custom_ranges": {},
+        "range": {},
+        "modes": {},
+        "custom_modes": {},
     }
 
-    assert entity_config['climate.ac_living_room'] == {
-        'name': 'Кондиционер',
-        'room': 'Гостиная',
-        'type': 'devices.types.thermostat.ac',
-        'custom_toggles': {
-            'ionization': {
-                'state_entity_id': 'switch.ac_ionizer',
-                'turn_on': {
-                    'service': 'switch.turn_on',
-                    'entity_id': [
-                        'switch.ac_ionizer'
-                    ]
-                },
-                'turn_off': {
-                    'service': 'switch.turn_off',
-                    'entity_id': [
-                        'switch.ac_ionizer'
-                    ]
-                }
+    assert entity_config["climate.ac_living_room"] == {
+        "name": "Кондиционер",
+        "room": "Гостиная",
+        "type": "devices.types.thermostat.ac",
+        "custom_toggles": {
+            "ionization": {
+                "state_entity_id": "switch.ac_ionizer",
+                "turn_on": {"service": "switch.turn_on", "entity_id": ["switch.ac_ionizer"]},
+                "turn_off": {"service": "switch.turn_off", "entity_id": ["switch.ac_ionizer"]},
             },
-            'backlight': {
-                'state_entity_id': 'input_boolean.ac_lighting',
-                'turn_on': {
-                    'service': 'input_boolean.turn_on',
-                    'entity_id': [
-                        'input_boolean.ac_lighting'
-                    ]
-                },
-                'turn_off': {
-                    'service': 'input_boolean.turn_off',
-                    'entity_id': [
-                        'input_boolean.ac_lighting'
-                    ]
-                }
-            }
+            "backlight": {
+                "state_entity_id": "input_boolean.ac_lighting",
+                "turn_on": {"service": "input_boolean.turn_on", "entity_id": ["input_boolean.ac_lighting"]},
+                "turn_off": {"service": "input_boolean.turn_off", "entity_id": ["input_boolean.ac_lighting"]},
+            },
         },
-        'properties': [],
-        'custom_ranges': {},
-        'range': {},
-        'modes': {},
-        'custom_modes': {}
+        "properties": [],
+        "custom_ranges": {},
+        "range": {},
+        "modes": {},
+        "custom_modes": {},
     }
 
-    assert isinstance(entity_config['switch.r4s1_kettle_boil']['error_code_template'], Template)
-    del entity_config['switch.r4s1_kettle_boil']['error_code_template']
-    assert entity_config['switch.r4s1_kettle_boil'] == {
-        'name': 'Чайник',
-        'room': 'Кухня',
-        'custom_ranges': {
-            'temperature': {
-                'state_attribute': 'temperature',
-                'set_value': {
-                    'service': 'climate.set_temperature',
-                    'data': {
-                        'temperature': Template('{{ value }}', hass)
-                    },
-                    'target': {
-                        'entity_id': [
-                            'climate.r4s1_kettle_temp'
-                        ]
-                    }
+    assert isinstance(entity_config["switch.r4s1_kettle_boil"]["error_code_template"], Template)
+    del entity_config["switch.r4s1_kettle_boil"]["error_code_template"]
+    assert entity_config["switch.r4s1_kettle_boil"] == {
+        "name": "Чайник",
+        "room": "Кухня",
+        "custom_ranges": {
+            "temperature": {
+                "state_attribute": "temperature",
+                "set_value": {
+                    "service": "climate.set_temperature",
+                    "data": {"temperature": Template("{{ value }}", hass)},
+                    "target": {"entity_id": ["climate.r4s1_kettle_temp"]},
                 },
-                'range': {
-                    'min': 40.0,
-                    'max': 90.0,
-                    'precision': 10.0
-                }
+                "range": {"min": 40.0, "max": 90.0, "precision": 10.0},
             }
         },
-        'properties': [
-            {
-                'type': 'temperature',
-                'entity': 'climate.r4s1_kettle_temp',
-                'attribute': 'current_temperature'
-            }
+        "properties": [
+            {"type": "temperature", "entity": "climate.r4s1_kettle_temp", "attribute": "current_temperature"}
         ],
-        'custom_toggles': {},
-        'range': {},
-        'modes': {},
-        'custom_modes': {}
+        "custom_toggles": {},
+        "range": {},
+        "modes": {},
+        "custom_modes": {},
     }
 
-    assert entity_config['cover.ir_cover'] == {
-        'name': 'Глупые шторы',
-        'state_unknown': True,
-        'custom_toggles': {},
-        'properties': [],
-        'custom_ranges': {},
-        'range': {},
-        'modes': {},
-        'custom_modes': {}
+    assert entity_config["cover.ir_cover"] == {
+        "name": "Глупые шторы",
+        "state_unknown": True,
+        "custom_toggles": {},
+        "properties": [],
+        "custom_ranges": {},
+        "range": {},
+        "modes": {},
+        "custom_modes": {},
     }
 
-    assert entity_config['input_text.button'] == {
-        'name': 'Кнопка на автоматизации',
-        'device_class': 'button',
-        'custom_toggles': {},
-        'properties': [],
-        'custom_ranges': {},
-        'range': {},
-        'modes': {},
-        'custom_modes': {}
+    assert entity_config["input_text.button"] == {
+        "name": "Кнопка на автоматизации",
+        "device_class": "button",
+        "custom_toggles": {},
+        "properties": [],
+        "custom_ranges": {},
+        "range": {},
+        "modes": {},
+        "custom_modes": {},
     }
 
 
 async def test_empty_dict_config(hass):
-    files = {YAML_CONFIG_FILE: """
+    files = {
+        YAML_CONFIG_FILE: """
 yandex_smart_home:
   settings:
   entity_config:
-"""}
+"""
+    }
     with patch_yaml_files(files):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
     assert DOMAIN in config
-    assert isinstance(config[DOMAIN]['settings'], dict)
-    assert config[DOMAIN]['entity_config'] == {}
+    assert isinstance(config[DOMAIN]["settings"], dict)
+    assert config[DOMAIN]["entity_config"] == {}
 
 
 async def test_reload(hass, hass_admin_user, hass_read_only_user, config_entry):
@@ -367,15 +251,17 @@ async def test_reload(hass, hass_admin_user, hass_read_only_user, config_entry):
     assert await async_setup(hass, {})
     assert await async_setup_entry(hass, config_entry)
 
-    assert not hass.data[DOMAIN][CONFIG].get_entity_config('sensor.not_existed')
+    assert not hass.data[DOMAIN][CONFIG].get_entity_config("sensor.not_existed")
 
-    files = {YAML_CONFIG_FILE: """
+    files = {
+        YAML_CONFIG_FILE: """
 yandex_smart_home:
   entity_config:
     sensor.test:
       name: Test
-"""}
-    with patch('custom_components.yandex_smart_home.async_setup', return_value=True), patch_yaml_files(files):
+"""
+    }
+    with patch("custom_components.yandex_smart_home.async_setup", return_value=True), patch_yaml_files(files):
         with pytest.raises(Unauthorized):
             await hass.services.async_call(
                 DOMAIN,
@@ -392,7 +278,7 @@ yandex_smart_home:
         )
         await hass.async_block_till_done()
 
-        assert hass.data[DOMAIN][CONFIG].get_entity_config('sensor.test').get('name') == 'Test'
+        assert hass.data[DOMAIN][CONFIG].get_entity_config("sensor.test").get("name") == "Test"
 
 
 async def test_reload_invalid(hass, hass_admin_user, hass_read_only_user, config_entry, caplog):
@@ -402,11 +288,13 @@ async def test_reload_invalid(hass, hass_admin_user, hass_read_only_user, config
     assert await async_setup(hass, {})
     assert await async_setup_entry(hass, config_entry)
 
-    files = {YAML_CONFIG_FILE: """
+    files = {
+        YAML_CONFIG_FILE: """
 yandex_smart_home:
   invalid: true
-"""}
-    with patch('custom_components.yandex_smart_home.async_setup', return_value=True), patch_yaml_files(files):
+"""
+    }
+    with patch("custom_components.yandex_smart_home.async_setup", return_value=True), patch_yaml_files(files):
         await hass.services.async_call(
             DOMAIN,
             SERVICE_RELOAD,
@@ -415,16 +303,16 @@ yandex_smart_home:
         )
         await hass.async_block_till_done()
 
-        assert 'Invalid config' in caplog.messages[-1]
+        assert "Invalid config" in caplog.messages[-1]
 
 
 async def test_setup_component(hass):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 
-    with patch_yaml_files({YAML_CONFIG_FILE: load_fixture('valid-config.yaml')}):
+    with patch_yaml_files({YAML_CONFIG_FILE: load_fixture("valid-config.yaml")}):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
-    with patch.object(hass.config_entries.flow, 'async_init', return_value=None):
+    with patch.object(hass.config_entries.flow, "async_init", return_value=None):
         assert await async_setup(hass, config)
 
     assert hass.data[DOMAIN][CONFIG] is None
@@ -448,42 +336,46 @@ async def test_async_setup_entry_filters(hass):
         domain=DOMAIN,
         options={
             const.CONF_FILTER: {
-                'include_domains': [
-                    'media_player',
-                    'climate',
+                "include_domains": [
+                    "media_player",
+                    "climate",
                 ],
-                'exclude_entities': ['climate.front_gate'],
+                "exclude_entities": ["climate.front_gate"],
             },
         },
     )
     entry_with_filters.add_to_hass(hass)
 
-    with patch_yaml_files({YAML_CONFIG_FILE: ''}):
+    with patch_yaml_files({YAML_CONFIG_FILE: ""}):
         assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
         assert await async_setup_entry(hass, entry_with_filters)
 
-        assert hass.data[DOMAIN][CONFIG].should_expose('media_player.test') is True
-        assert hass.data[DOMAIN][CONFIG].should_expose('climate.test') is True
-        assert hass.data[DOMAIN][CONFIG].should_expose('climate.front_gate') is False
+        assert hass.data[DOMAIN][CONFIG].should_expose("media_player.test") is True
+        assert hass.data[DOMAIN][CONFIG].should_expose("climate.test") is True
+        assert hass.data[DOMAIN][CONFIG].should_expose("climate.front_gate") is False
 
-    with patch_yaml_files({YAML_CONFIG_FILE: 'yandex_smart_home:'}):
+    with patch_yaml_files({YAML_CONFIG_FILE: "yandex_smart_home:"}):
         assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
         assert await async_setup_entry(hass, entry_with_filters)
 
-        assert hass.data[DOMAIN][CONFIG].should_expose('media_player.test') is True
-        assert hass.data[DOMAIN][CONFIG].should_expose('climate.test') is True
-        assert hass.data[DOMAIN][CONFIG].should_expose('climate.front_gate') is False
+        assert hass.data[DOMAIN][CONFIG].should_expose("media_player.test") is True
+        assert hass.data[DOMAIN][CONFIG].should_expose("climate.test") is True
+        assert hass.data[DOMAIN][CONFIG].should_expose("climate.front_gate") is False
 
-    with patch_yaml_files({YAML_CONFIG_FILE: """
+    with patch_yaml_files(
+        {
+            YAML_CONFIG_FILE: """
 yandex_smart_home:
   filter:
     include_domains:
-      - light"""}):
+      - light"""
+        }
+    ):
         assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
         assert await async_setup_entry(hass, entry_with_filters)
 
-        assert hass.data[DOMAIN][CONFIG].should_expose('light.test') is True
-        assert hass.data[DOMAIN][CONFIG].should_expose('climate.test') is False
+        assert hass.data[DOMAIN][CONFIG].should_expose("light.test") is True
+        assert hass.data[DOMAIN][CONFIG].should_expose("climate.test") is False
 
 
 async def test_async_setup_entry_cloud(hass, config_entry_cloud_connection):
@@ -491,9 +383,7 @@ async def test_async_setup_entry_cloud(hass, config_entry_cloud_connection):
 
     assert await async_setup(hass, {})
 
-    with patch(
-            'custom_components.yandex_smart_home.cloud.BASE_API_URL', return_value=None
-    ):
+    with patch("custom_components.yandex_smart_home.cloud.BASE_API_URL", return_value=None):
         assert await async_setup_entry(hass, config_entry_cloud_connection)
 
     await hass.async_block_till_done()
@@ -520,37 +410,39 @@ async def test_async_unload_entry(hass, config_entry_with_notifier):
 
 
 async def test_async_remove_entry_cloud(hass, config_entry_cloud_connection, aioclient_mock, caplog):
-    aioclient_mock.delete(f'{cloud.BASE_API_URL}/instance/test', status=500)
+    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/test", status=500)
     await async_remove_entry(hass, config_entry_cloud_connection)
     assert aioclient_mock.call_count == 1
     assert len(caplog.records) == 1
-    assert 'Failed to delete' in caplog.records[0].message
+    assert "Failed to delete" in caplog.records[0].message
 
     aioclient_mock.clear_requests()
     caplog.clear()
 
-    aioclient_mock.delete(f'{cloud.BASE_API_URL}/instance/test', status=200)
+    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/test", status=200)
     await async_remove_entry(hass, config_entry_cloud_connection)
     (method, url, data, headers) = aioclient_mock.mock_calls[0]
-    assert headers == {'Authorization': 'Bearer foo'}
+    assert headers == {"Authorization": "Bearer foo"}
 
     assert aioclient_mock.call_count == 1
     assert len(caplog.records) == 0
 
 
-@pytest.mark.parametrize('expected_lingering_timers', [True])
+@pytest.mark.parametrize("expected_lingering_timers", [True])
 async def test_async_setup_update_from_yaml(hass, hass_admin_user, expected_lingering_timers):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={
-            const.CONF_NOTIFIER: [{
-                const.CONF_NOTIFIER_OAUTH_TOKEN: 'entry',
-                const.CONF_NOTIFIER_SKILL_ID: 'entry',
-                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-            }],
-        }
+            const.CONF_NOTIFIER: [
+                {
+                    const.CONF_NOTIFIER_OAUTH_TOKEN: "entry",
+                    const.CONF_NOTIFIER_SKILL_ID: "entry",
+                    const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
+                }
+            ],
+        },
     )
     entry.add_to_hass(hass)
 
@@ -558,29 +450,29 @@ async def test_async_setup_update_from_yaml(hass, hass_admin_user, expected_ling
     assert await async_setup_entry(hass, entry)
 
     assert entry.data == {
-        'connection_type': 'direct',
-        'devices_discovered': True,
+        "connection_type": "direct",
+        "devices_discovered": True,
     }
-    assert entry.options == {
-        'beta': False,
-        'cloud_stream': False,
-        'pressure_unit': 'mmHg'
-    }
+    assert entry.options == {"beta": False, "cloud_stream": False, "pressure_unit": "mmHg"}
 
-    with patch_yaml_files({YAML_CONFIG_FILE: f"""
+    with patch_yaml_files(
+        {
+            YAML_CONFIG_FILE: f"""
 yandex_smart_home:
   settings:
     pressure_unit: pa
   notifier:
     oauth_token: yaml
     skill_id: yaml
-    user_id: {hass_admin_user.id}"""}):
+    user_id: {hass_admin_user.id}"""
+        }
+    ):
         assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
-        with patch('custom_components.yandex_smart_home.async_setup', return_value=True):
+        with patch("custom_components.yandex_smart_home.async_setup", return_value=True):
             assert await async_setup_entry(hass, entry)
 
-    assert entry.data[const.CONF_NOTIFIER][0][const.CONF_NOTIFIER_OAUTH_TOKEN] == 'yaml'
-    assert entry.options[const.CONF_PRESSURE_UNIT] == 'pa'
+    assert entry.data[const.CONF_NOTIFIER][0][const.CONF_NOTIFIER_OAUTH_TOKEN] == "yaml"
+    assert entry.options[const.CONF_PRESSURE_UNIT] == "pa"
 
 
 async def test_async_setup_update_from_yaml_checksum(hass, hass_admin_user):
@@ -589,27 +481,28 @@ async def test_async_setup_update_from_yaml_checksum(hass, hass_admin_user):
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
 
-    with patch_yaml_files({YAML_CONFIG_FILE: """
+    with patch_yaml_files(
+        {
+            YAML_CONFIG_FILE: """
 yandex_smart_home:
   settings:
-    pressure_unit: pa"""}):
+    pressure_unit: pa"""
+        }
+    ):
         assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
         assert await async_setup_entry(hass, entry)
 
     assert entry.data == {
-        'connection_type': 'direct',
-        'devices_discovered': True,
-        'notifier': [],
-        'yaml_config_hash': '93c51c44a1036f88197b32160df2ef38'
+        "connection_type": "direct",
+        "devices_discovered": True,
+        "notifier": [],
+        "yaml_config_hash": "93c51c44a1036f88197b32160df2ef38",
     }
-    assert entry.options == {
-        'beta': False,
-        'cloud_stream': False,
-        'pressure_unit': 'pa',
-        'color_profile': {}
-    }
+    assert entry.options == {"beta": False, "cloud_stream": False, "pressure_unit": "pa", "color_profile": {}}
 
-    with patch_yaml_files({YAML_CONFIG_FILE: """
+    with patch_yaml_files(
+        {
+            YAML_CONFIG_FILE: """
 yandex_smart_home:
   entity_config:
     switch.test:
@@ -619,11 +512,13 @@ yandex_smart_home:
           entity_id: 'switch.test_{{ 1 + 2 }}'
   settings:
     pressure_unit: mmHg
-"""}):
+"""
+        }
+    ):
         assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
-        with patch('custom_components.yandex_smart_home.async_setup', return_value=True):
+        with patch("custom_components.yandex_smart_home.async_setup", return_value=True):
             assert await async_setup_entry(hass, entry)
             await hass.async_block_till_done()
 
-    assert entry.options[const.CONF_PRESSURE_UNIT] == 'mmHg'
-    assert entry.data[const.YAML_CONFIG_HASH] == '0eedd9f5ee18739bf910b36d2f9f1c6e'
+    assert entry.options[const.CONF_PRESSURE_UNIT] == "mmHg"
+    assert entry.data[const.YAML_CONFIG_HASH] == "0eedd9f5ee18739bf910b36d2f9f1c6e"
