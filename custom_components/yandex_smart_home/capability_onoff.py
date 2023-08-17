@@ -1,9 +1,6 @@
 """Implement the Yandex Smart Home on_off capability."""
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 import logging
-from typing import Any
 
 from homeassistant.components import (
     automation,
@@ -26,7 +23,6 @@ from homeassistant.components import (
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
-    ATTR_SUPPORTED_FEATURES,
     SERVICE_CLOSE_COVER,
     SERVICE_LOCK,
     SERVICE_OPEN_COVER,
@@ -36,299 +32,365 @@ from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
 )
-from homeassistant.core import DOMAIN as HA_DOMAIN
+from homeassistant.core import DOMAIN as HA_DOMAIN, Context
 from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.service import async_call_from_config
 
-from . import const
-from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
-from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+from .capability import AbstractCapability, ActionOnlyCapability, register_capability
+from .const import (
+    CONF_FEATURES,
+    CONF_STATE_UNKNOWN,
+    CONF_TURN_OFF,
+    CONF_TURN_ON,
+    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+    MEDIA_PLAYER_FEATURE_TURN_ON_OFF,
+)
 from .error import SmartHomeError
-from .helpers import RequestData
+from .schema import (
+    CapabilityType,
+    OnOffCapabilityInstance,
+    OnOffCapabilityInstanceActionState,
+    OnOffCapabilityParameters,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-CAPABILITIES_ONOFF = PREFIX_CAPABILITIES + "on_off"
-
 
 class OnOffCapability(AbstractCapability, ABC):
-    """On_off to offer basic on and off functionality.
+    """Base class for capabilitity to turn on and off a device.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/on_off-docpage/
     """
 
-    type = CAPABILITIES_ONOFF
-    instance = const.ON_OFF_INSTANCE_ON
+    type = CapabilityType.ON_OFF
+    instance = OnOffCapabilityInstance.ON
+
+    @abstractmethod
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state (if wasn't overriden by the user)."""
+        pass
 
     @property
     def retrievable(self) -> bool:
-        if self.entity_config.get(const.CONF_STATE_UNKNOWN):
+        """Test if the capability can return the current value."""
+        if self._entity_config.get(CONF_STATE_UNKNOWN):
             return False
 
         return True
 
-    def parameters(self) -> dict[str, Any] | None:
-        """Return parameters for a devices request."""
+    @property
+    def parameters(self) -> OnOffCapabilityParameters | None:
+        """Return parameters for a devices list request."""
         if not self.retrievable:
-            return {"split": True}
-
-        return None
+            return OnOffCapabilityParameters(split=True)
 
     def get_value(self) -> bool | None:
+        """Return the current capability value."""
         return self.state.state != STATE_OFF
 
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        for key, call in ((const.CONF_TURN_ON, state["value"]), (const.CONF_TURN_OFF, not state["value"])):
-            if key in self.entity_config and call:
-                return await async_call_from_config(
-                    self.hass, self.entity_config[key], blocking=True, context=data.context
-                )
+    async def set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        for key, call in ((CONF_TURN_ON, state.value), (CONF_TURN_OFF, not state.value)):
+            if key in self._entity_config and call:
+                await async_call_from_config(self._hass, self._entity_config[key], blocking=True, context=context)
+                return
 
-        await self._set_state(data, state)
+        await self._set_instance_state(context, state)
 
-    @abstractmethod
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        pass
+    @staticmethod
+    def _get_service(state: OnOffCapabilityInstanceActionState) -> str:
+        """Return the service to be called for a new state."""
+        if state.value:
+            return SERVICE_TURN_ON
+
+        return SERVICE_TURN_OFF
 
 
-class OnlyOnCapability(OnOffCapability, ABC):
+class OnlyOnCapability(ActionOnlyCapability, OnOffCapability, ABC):
+    """Capability to only turn on a device."""
+
     @property
-    def retrievable(self) -> bool:
-        return False
-
-    def parameters(self) -> dict[str, Any] | None:
+    def parameters(self) -> OnOffCapabilityParameters | None:
+        """Return parameters for a devices list request."""
         return None
 
 
 @register_capability
 class OnOffCapabilityBasic(OnOffCapability):
+    """Capability to turn on or off a device."""
+
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain in (light.DOMAIN, fan.DOMAIN, switch.DOMAIN, humidifier.DOMAIN, input_boolean.DOMAIN)
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state["value"]:
-            service = SERVICE_TURN_ON
-        else:
-            service = SERVICE_TURN_OFF
-
-        await self.hass.services.async_call(
-            self.state.domain, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state (if wasn't overriden by the user)."""
+        await self._hass.services.async_call(
+            self.state.domain,
+            self._get_service(state),
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=True,
+            context=context,
         )
 
 
 @register_capability
 class OnOffCapabilityAutomation(OnOffCapability):
-    def get_value(self) -> bool:
-        return self.state.state == STATE_ON
+    """Capability to enable or disable an automation."""
 
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain == automation.DOMAIN
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state["value"]:
-            service = SERVICE_TURN_ON
-        else:
-            service = SERVICE_TURN_OFF
+    def get_value(self) -> bool | None:
+        """Return the current capability value."""
+        return self.state.state == STATE_ON
 
-        await self.hass.services.async_call(
-            automation.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state (if wasn't overriden by the user)."""
+        await self._hass.services.async_call(
+            automation.DOMAIN,
+            self._get_service(state),
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=True,
+            context=context,
         )
 
 
 @register_capability
 class OnOffCapabilityGroup(OnOffCapability):
+    """Capability to turn on or off a group of devices."""
+
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain in group.DOMAIN
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state["value"]:
-            service = SERVICE_TURN_ON
-        else:
-            service = SERVICE_TURN_OFF
-
-        await self.hass.services.async_call(
-            HA_DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state (if wasn't overriden by the user)."""
+        await self._hass.services.async_call(
+            HA_DOMAIN,
+            self._get_service(state),
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=True,
+            context=context,
         )
 
 
 @register_capability
 class OnOffCapabilityScript(OnlyOnCapability):
-    def get_value(self) -> bool | None:
-        return None
+    """Capability to call a script or scene."""
 
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain in (scene.DOMAIN, script.DOMAIN)
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        await self.hass.services.async_call(
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             self.state.domain,
             SERVICE_TURN_ON,
             {ATTR_ENTITY_ID: self.state.entity_id},
             blocking=self.state.domain != script.DOMAIN,
-            context=data.context,
+            context=context,
         )
 
 
 @register_capability
 class OnOffCapabilityButton(OnlyOnCapability):
-    def get_value(self) -> bool | None:
-        return None
+    """Capability to press a button."""
 
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain == button.DOMAIN
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        await self.hass.services.async_call(
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             self.state.domain,
             button.SERVICE_PRESS,
             {ATTR_ENTITY_ID: self.state.entity_id},
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
 
 @register_capability
 class OnOffCapabilityInputButton(OnlyOnCapability):
-    def get_value(self) -> bool | None:
-        return None
+    """Capability to press a input_button."""
 
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain == input_button.DOMAIN
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        await self.hass.services.async_call(
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             self.state.domain,
             input_button.SERVICE_PRESS,
             {ATTR_ENTITY_ID: self.state.entity_id},
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
 
 @register_capability
 class OnOffCapabilityLock(OnOffCapability):
-    def get_value(self) -> bool:
-        return self.state.state == lock.STATE_UNLOCKED
+    """Capability to lock or unlock a lock."""
 
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain == lock.DOMAIN
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state["value"]:
+    def get_value(self) -> bool | None:
+        """Return the current capability value."""
+        return self.state.state == lock.STATE_UNLOCKED
+
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        if state.value:
             service = SERVICE_UNLOCK
         else:
             service = SERVICE_LOCK
 
-        await self.hass.services.async_call(
-            lock.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
+        await self._hass.services.async_call(
+            lock.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
         )
 
 
 @register_capability
 class OnOffCapabilityCover(OnOffCapability):
-    def get_value(self) -> bool:
-        return self.state.state == cover.STATE_OPEN
+    """Capability to open or close a cover."""
 
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain == cover.DOMAIN
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state["value"]:
+    def get_value(self) -> bool | None:
+        """Return the current capability value."""
+        return self.state.state == cover.STATE_OPEN
+
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        if state.value:
             service = SERVICE_OPEN_COVER
         else:
             service = SERVICE_CLOSE_COVER
 
-        await self.hass.services.async_call(
-            cover.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
+        await self._hass.services.async_call(
+            cover.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
         )
 
 
 @register_capability
 class OnOffCapabilityMediaPlayer(OnOffCapability):
+    """Capability to turn on or off a media player device."""
+
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         if self.state.domain == media_player.DOMAIN:
-            features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-            if const.CONF_TURN_ON in self.entity_config or const.CONF_TURN_OFF in self.entity_config:
+            if CONF_TURN_ON in self._entity_config or CONF_TURN_OFF in self._entity_config:
                 return True
 
-            if const.MEDIA_PLAYER_FEATURE_TURN_ON_OFF in self.entity_config.get(const.CONF_FEATURES, []):
+            if MEDIA_PLAYER_FEATURE_TURN_ON_OFF in self._entity_config.get(CONF_FEATURES, []):
                 return True
 
-            return (
-                features & media_player.MediaPlayerEntityFeature.TURN_ON
-                or features & media_player.MediaPlayerEntityFeature.TURN_OFF
+            return bool(
+                self._state_features & media_player.MediaPlayerEntityFeature.TURN_ON
+                or self._state_features & media_player.MediaPlayerEntityFeature.TURN_OFF
             )
 
         return False
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state["value"]:
-            service = SERVICE_TURN_ON
-        else:
-            service = SERVICE_TURN_OFF
-
-        await self.hass.services.async_call(
-            media_player.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state (if wasn't overriden by the user)."""
+        await self._hass.services.async_call(
+            media_player.DOMAIN,
+            self._get_service(state),
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=True,
+            context=context,
         )
 
 
 @register_capability
 class OnOffCapabilityVacuum(OnOffCapability):
-    def get_value(self) -> bool | None:
-        return self.state.state in [STATE_ON, vacuum.STATE_CLEANING]
+    """Capability to start or stop cleaning by a vacuum."""
 
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         if self.state.domain != vacuum.DOMAIN:
             return False
 
-        if const.CONF_TURN_ON in self.entity_config:
+        if CONF_TURN_ON in self._entity_config:
             return True
 
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-        if features & vacuum.VacuumEntityFeature.TURN_ON and features & vacuum.VacuumEntityFeature.TURN_OFF:
+        if (
+            self._state_features & vacuum.VacuumEntityFeature.TURN_ON
+            and self._state_features & vacuum.VacuumEntityFeature.TURN_OFF
+        ):
             return True
 
-        if features & vacuum.VacuumEntityFeature.START:
-            if features & vacuum.VacuumEntityFeature.RETURN_HOME or features & vacuum.VacuumEntityFeature.STOP:
+        if self._state_features & vacuum.VacuumEntityFeature.START:
+            if (
+                self._state_features & vacuum.VacuumEntityFeature.RETURN_HOME
+                or self._state_features & vacuum.VacuumEntityFeature.STOP
+            ):
                 return True
 
         return False
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES)
+    def get_value(self) -> bool | None:
+        """Return the current capability value."""
+        return self.state.state in [STATE_ON, vacuum.STATE_CLEANING]
 
-        if state["value"]:
-            if features & vacuum.VacuumEntityFeature.START:
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state (if wasn't overriden by the user)."""
+        if state.value:
+            service = SERVICE_TURN_ON
+
+            if self._state_features & vacuum.VacuumEntityFeature.START:
                 service = vacuum.SERVICE_START
-            else:
-                service = SERVICE_TURN_ON
         else:
-            if features & vacuum.VacuumEntityFeature.RETURN_HOME:
-                service = vacuum.SERVICE_RETURN_TO_BASE
-            elif features & vacuum.VacuumEntityFeature.STOP:
-                service = vacuum.SERVICE_STOP
-            else:
-                service = SERVICE_TURN_OFF
+            service = SERVICE_TURN_OFF
 
-        await self.hass.services.async_call(
-            vacuum.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=data.context
+            if self._state_features & vacuum.VacuumEntityFeature.RETURN_HOME:
+                service = vacuum.SERVICE_RETURN_TO_BASE
+            elif self._state_features & vacuum.VacuumEntityFeature.STOP:
+                service = vacuum.SERVICE_STOP
+
+        await self._hass.services.async_call(
+            vacuum.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
         )
 
 
 @register_capability
 class OnOffCapabilityClimate(OnOffCapability):
-    def get_value(self) -> bool | None:
-        return self.state.state != climate.HVAC_MODE_OFF
+    """Capability to turn on or off a climate device."""
 
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain == climate.DOMAIN
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
+    def get_value(self) -> bool | None:
+        """Return the current capability value."""
+        return self.state.state != climate.HVAC_MODE_OFF
+
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state (if wasn't overriden by the user)."""
         service_data = {ATTR_ENTITY_ID: self.state.entity_id}
 
-        if state["value"]:
+        if state.value:
             service = SERVICE_TURN_ON
 
             hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES)
@@ -342,44 +404,38 @@ class OnOffCapabilityClimate(OnOffCapability):
         else:
             service = SERVICE_TURN_OFF
 
-        await self.hass.services.async_call(climate.DOMAIN, service, service_data, blocking=True, context=data.context)
+        await self._hass.services.async_call(climate.DOMAIN, service, service_data, blocking=True, context=context)
 
 
 @register_capability
 class OnOffCapabilityWaterHeater(OnOffCapability):
-    water_heater_operations = {
+    """Capability to turn on or off a water heater."""
+
+    _water_heater_operations = {
         STATE_ON: [STATE_ON, "On", "ON", water_heater.STATE_ELECTRIC],
         STATE_OFF: [STATE_OFF, "Off", "OFF"],
     }
 
-    def get_value(self) -> bool | None:
-        return self.state.state.lower() != water_heater.STATE_OFF
-
-    def get_water_heater_operation(self, required_mode: str, operations_list: list[str]) -> str | None:
-        for operation in self.water_heater_operations[required_mode]:
-            if operation in operations_list:
-                return operation
-
-        return None
-
+    @property
     def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         return self.state.domain == water_heater.DOMAIN
 
-    async def _set_state(self, data: RequestData, state: dict[str, Any]):
-        if state["value"]:
-            service = water_heater.SERVICE_TURN_ON
-        else:
-            service = water_heater.SERVICE_TURN_OFF
+    def get_value(self) -> bool | None:
+        """Return the current capability value."""
+        return self.state.state.lower() != water_heater.STATE_OFF
 
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state (if wasn't overriden by the user)."""
         try:
-            await self.hass.services.async_call(
+            await self._hass.services.async_call(
                 water_heater.DOMAIN,
-                service,
+                self._get_service(state),
                 {
                     ATTR_ENTITY_ID: self.state.entity_id,
                 },
                 blocking=True,
-                context=data.context,
+                context=context,
             )
 
             return
@@ -389,21 +445,28 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
 
         operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST)
 
-        if state["value"]:
-            mode = self.get_water_heater_operation(STATE_ON, operation_list)
+        if state.value:
+            mode = self._get_water_heater_operation(STATE_ON, operation_list)
         else:
-            mode = self.get_water_heater_operation(STATE_OFF, operation_list)
+            mode = self._get_water_heater_operation(STATE_OFF, operation_list)
 
         if not mode:
-            target_state_text = "on" if state["value"] else "off"
+            target_state_text = "on" if state.value else "off"
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE, f"Unable to determine operation mode for {target_state_text} state"
             )
 
-        await self.hass.services.async_call(
+        await self._hass.services.async_call(
             water_heater.DOMAIN,
             water_heater.SERVICE_SET_OPERATION_MODE,
             {ATTR_ENTITY_ID: self.state.entity_id, water_heater.ATTR_OPERATION_MODE: mode},
             blocking=True,
-            context=data.context,
+            context=context,
         )
+
+    def _get_water_heater_operation(self, required_mode: str, operations_list: list[str]) -> str | None:
+        for operation in self._water_heater_operations[required_mode]:
+            if operation in operations_list:
+                return operation
+
+        return None

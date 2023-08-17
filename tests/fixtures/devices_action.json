@@ -1,0 +1,89 @@
+{
+  "payload": {
+    "devices": [
+      {
+        "id": "test",
+        "custom_data": {
+          "a": "b"
+        },
+        "capabilities": [
+          {
+            "type": "devices.capabilities.on_off",
+            "state": {
+              "instance": "on",
+              "value": false
+            }
+          },
+          {
+            "type": "devices.capabilities.video_stream",
+            "state": {
+              "instance": "get_stream",
+              "value": {
+                "protocols": [
+                  "hls"
+                ]
+              }
+            }
+          },
+          {
+            "type": "devices.capabilities.color_setting",
+            "state": {
+              "instance": "rgb",
+              "value": 14210514
+            }
+          },
+          {
+            "type": "devices.capabilities.color_setting",
+            "state": {
+              "instance": "temperature_k",
+              "value": 5100
+            }
+          },
+          {
+            "type": "devices.capabilities.color_setting",
+            "state": {
+              "instance": "scene",
+              "value": "party"
+            }
+          },
+          {
+            "type": "devices.capabilities.mode",
+            "state": {
+              "instance": "thermostat",
+              "value": "heat"
+            }
+          },
+          {
+            "type": "devices.capabilities.range",
+            "state": {
+              "instance": "brightness",
+              "value": 50
+            }
+          },
+          {
+            "type": "devices.capabilities.range",
+            "state": {
+              "instance": "volume",
+              "relative": true,
+              "value": 10
+            }
+          },
+          {
+            "type": "devices.capabilities.range",
+            "state": {
+              "instance": "open",
+              "value": -5.5
+            }
+          },
+          {
+            "type": "devices.capabilities.toggle",
+            "state": {
+              "instance": "ionization",
+              "value": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

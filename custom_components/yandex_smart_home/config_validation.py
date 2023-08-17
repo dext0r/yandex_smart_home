@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import logging
 
+from homeassistant.util.color import RGBColor
 import voluptuous as vol
 
 from . import const
-from .capability_color import ColorConverter
+from .color import rgb_to_int
 from .prop_float import PRESSURE_UNITS_TO_YANDEX_UNITS
 
 _LOGGER = logging.getLogger(__name__)
@@ -110,6 +111,6 @@ def color_value(value: list | int) -> int:
         return int(value)
 
     if isinstance(value, list) and len(value) == 3:
-        return ColorConverter.rgb_to_int(*[int(v) for v in value])
+        return rgb_to_int(RGBColor(*[int(v) for v in value]))
 
     raise vol.Invalid(f"Invalid value: {value!r}")

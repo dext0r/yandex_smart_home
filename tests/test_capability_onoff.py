@@ -1,3 +1,5 @@
+from typing import cast
+
 from homeassistant.components import (
     automation,
     button,
@@ -27,22 +29,29 @@ from homeassistant.const import (
     STATE_ON,
     STATE_UNKNOWN,
 )
-from homeassistant.core import DOMAIN as HA_DOMAIN, State
+from homeassistant.core import DOMAIN as HA_DOMAIN, Context, State
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability_onoff import CAPABILITIES_ONOFF
-from custom_components.yandex_smart_home.const import ON_OFF_INSTANCE_ON
+from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.schema import (
+    CapabilityType,
+    OnOffCapabilityInstance,
+    OnOffCapabilityInstanceActionState,
+)
 
-from . import BASIC_CONFIG, BASIC_DATA, MockConfig
+from . import BASIC_CONFIG, MockConfig
 from .test_capability import (
     assert_exact_one_capability,
     assert_no_capabilities,
     get_capabilities,
     get_exact_one_capability,
 )
+
+ACTION_STATE_ON = OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=True)
+ACTION_STATE_OFF = OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=False)
 
 
 @pytest.mark.parametrize(
@@ -58,31 +67,37 @@ from .test_capability import (
 )
 async def test_capability_onoff_simple(hass, state_domain, service_domain):
     state_on = State(f"{state_domain}.test", STATE_ON)
-    cap_on = get_exact_one_capability(hass, BASIC_CONFIG, state_on, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap_on = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state_on, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
 
-    assert cap_on.retrievable
-    assert cap_on.get_value()
-    assert cap_on.parameters() is None
+    assert cap_on.retrievable is True
+    assert cap_on.get_value() is True
+    assert cap_on.parameters is None
 
     on_calls = async_mock_service(hass, service_domain, SERVICE_TURN_ON)
-    await cap_on.set_state(BASIC_DATA, {"value": True})
+    await cap_on.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 1
     assert on_calls[0].data == {ATTR_ENTITY_ID: f"{state_domain}.test"}
 
     off_calls = async_mock_service(hass, service_domain, SERVICE_TURN_OFF)
-    await cap_on.set_state(BASIC_DATA, {"value": False})
+    await cap_on.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: f"{state_domain}.test"}
 
     state_off = State(f"{state_domain}.test", STATE_OFF)
-    cap_off = get_exact_one_capability(hass, BASIC_CONFIG, state_off, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap_off.get_value()
+    cap_off = get_exact_one_capability(hass, BASIC_CONFIG, state_off, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
+    assert cap_off.get_value() is False
 
     config = MockConfig(entity_config={f"{state_domain}.test": {const.CONF_STATE_UNKNOWN: True}})
     state = State(f"{state_domain}.test", STATE_ON)
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.retrievable
-    assert cap.parameters() == {"split": True}
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, config, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is False
+    assert cap.parameters.dict() == {"split": True}
 
 
 @pytest.mark.parametrize(
@@ -96,15 +111,18 @@ async def test_capability_onoff_simple(hass, state_domain, service_domain):
 )
 async def test_capability_onoff_only_on(hass, domain, initial_state, service):
     state = State(f"{domain}.test", initial_state)
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
 
-    assert not cap.retrievable
-    assert cap.parameters() is None
+    assert cap.retrievable is False
+    assert cap.parameters is None
     assert cap.get_value() is None
 
     on_calls = async_mock_service(hass, domain, service)
-    await cap.set_state(BASIC_DATA, {"value": True})
-    await cap.set_state(BASIC_DATA, {"value": False})
+    await cap.set_instance_state(Context(), ACTION_STATE_ON)
+    await cap.set_instance_state(Context(), ACTION_STATE_OFF)
 
     if domain == script.DOMAIN:
         await hass.async_block_till_done()
@@ -118,19 +136,22 @@ async def test_capability_onoff_cover(hass):
     state_open = State(
         "cover.test", cover.STATE_OPEN, attributes={ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION}
     )
-    cap_open = get_exact_one_capability(hass, BASIC_CONFIG, state_open, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap_open = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state_open, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
 
-    assert cap_open.retrievable
-    assert cap_open.get_value()
-    assert cap_open.parameters() is None
+    assert cap_open.retrievable is True
+    assert cap_open.get_value() is True
+    assert cap_open.parameters is None
 
     on_calls = async_mock_service(hass, cover.DOMAIN, cover.SERVICE_OPEN_COVER)
-    await cap_open.set_state(BASIC_DATA, {"value": True})
+    await cap_open.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 1
     assert on_calls[0].data == {ATTR_ENTITY_ID: "cover.test"}
 
     off_calls = async_mock_service(hass, cover.DOMAIN, cover.SERVICE_CLOSE_COVER)
-    await cap_open.set_state(BASIC_DATA, {"value": False})
+    await cap_open.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: "cover.test"}
 
@@ -138,47 +159,64 @@ async def test_capability_onoff_cover(hass):
         state_other = State(
             "cover.test", state, attributes={ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION}
         )
-        cap = get_exact_one_capability(hass, BASIC_CONFIG, state_other, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-
-        assert not cap.get_value()
+        cap = cast(
+            OnOffCapability,
+            get_exact_one_capability(
+                hass, BASIC_CONFIG, state_other, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
+            ),
+        )
+        assert cap.get_value() is False
 
     state_no_features = State("cover.test", cover.STATE_OPEN)
-    cap_no_features = get_exact_one_capability(
-        hass, BASIC_CONFIG, state_no_features, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON
+    cap_no_features = cast(
+        OnOffCapability,
+        get_exact_one_capability(
+            hass, BASIC_CONFIG, state_no_features, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
+        ),
     )
-    assert cap_no_features.retrievable
-    assert cap_no_features.get_value()
-    assert cap_no_features.parameters() is None
+    assert cap_no_features.retrievable is True
+    assert cap_no_features.get_value() is True
+    assert cap_no_features.parameters is None
 
     config = MockConfig(entity_config={"cover.test": {const.CONF_STATE_UNKNOWN: True}})
     state_binary = State("cover.test", cover.STATE_OPEN)
-    cap_binary = get_exact_one_capability(hass, config, state_binary, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap_binary.retrievable
-    assert cap_binary.parameters() == {"split": True}
+    cap_binary = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, config, state_binary, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap_binary.retrievable is False
+    assert cap_binary.parameters.dict() == {"split": True}
 
 
 async def test_capability_onoff_media_player(hass):
     state = State("media_player.simple", STATE_ON)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
     state = State("media_player.test", STATE_ON)
     config = MockConfig(entity_config={state.entity_id: {"features": ["turn_on_off"]}})
-    assert_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert_exact_one_capability(hass, config, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
     state = State(
         "media_player.only_on", STATE_ON, {ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.TURN_OFF}
     )
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert cap.retrievable
-    assert cap.parameters() is None
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is True
+    assert cap.parameters is None
 
     config = MockConfig(entity_config={"media_player.test": {const.CONF_STATE_UNKNOWN: True}})
     state_binary = State(
         "media_player.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.TURN_OFF}
     )
-    cap_binary = get_exact_one_capability(hass, config, state_binary, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap_binary.retrievable
-    assert cap_binary.parameters() == {"split": True}
+    cap_binary = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, config, state_binary, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+
+    assert cap_binary.retrievable is False
+    assert cap_binary.parameters.dict() == {"split": True}
 
     state = State(
         "media_player.test",
@@ -188,59 +226,80 @@ async def test_capability_onoff_media_player(hass):
             | media_player.MediaPlayerEntityFeature.TURN_OFF
         },
     )
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert cap.retrievable
-    assert cap.get_value()
-    assert cap.parameters() is None
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is True
+    assert cap.get_value() is True
+    assert cap.parameters is None
 
     on_calls = async_mock_service(hass, media_player.DOMAIN, SERVICE_TURN_ON)
-    await cap.set_state(BASIC_DATA, {"value": True})
+    await cap.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 1
     assert on_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
     off_calls = async_mock_service(hass, media_player.DOMAIN, SERVICE_TURN_OFF)
-    await cap.set_state(BASIC_DATA, {"value": False})
+    await cap.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
     state.state = STATE_OFF
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.get_value()
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.get_value() is False
 
 
 async def test_capability_onoff_lock(hass):
     state = State("lock.test", lock.STATE_UNLOCKED)
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
 
-    assert cap.retrievable
-    assert cap.get_value()
-    assert cap.parameters() is None
+    assert cap.retrievable is True
+    assert cap.get_value() is True
+    assert cap.parameters is None
 
     on_calls = async_mock_service(hass, lock.DOMAIN, lock.SERVICE_UNLOCK)
-    await cap.set_state(BASIC_DATA, {"value": True})
+    await cap.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 1
     assert on_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
     off_calls = async_mock_service(hass, lock.DOMAIN, lock.SERVICE_LOCK)
-    await cap.set_state(BASIC_DATA, {"value": False})
+    await cap.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
     for s in [lock.STATE_UNLOCKING, lock.STATE_LOCKING]:
         state_other = State("lock.test", s)
-        cap = get_exact_one_capability(hass, BASIC_CONFIG, state_other, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+        cap = cast(
+            OnOffCapability,
+            get_exact_one_capability(
+                hass, BASIC_CONFIG, state_other, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
+            ),
+        )
 
-        assert not cap.get_value()
+        assert cap.get_value() is False
 
     state.state = lock.STATE_LOCKED
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.get_value()
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+
+    assert cap.get_value() is False
 
     config = MockConfig(entity_config={"lock.test": {const.CONF_STATE_UNKNOWN: True}})
     state = State("lock.test", STATE_ON)
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.retrievable
-    assert cap.parameters() == {"split": True}
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, config, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is False
+    assert cap.parameters.dict() == {"split": True}
 
 
 async def test_capability_onoff_vacuum(hass):
@@ -250,10 +309,13 @@ async def test_capability_onoff_vacuum(hass):
             s,
             attributes={ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.STOP},
         )
-        cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-        assert cap.get_value()
-        assert cap.retrievable
-        assert cap.parameters() is None
+        cap = cast(
+            OnOffCapability,
+            get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        )
+        assert cap.get_value() is True
+        assert cap.retrievable is True
+        assert cap.parameters is None
 
     for s in vacuum.STATES + [STATE_OFF]:
         if s == vacuum.STATE_CLEANING:
@@ -263,8 +325,12 @@ async def test_capability_onoff_vacuum(hass):
             s,
             attributes={ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.STOP},
         )
-        cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-        assert not cap.get_value()
+        cap = cast(
+            OnOffCapability,
+            get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        )
+
+        assert cap.get_value() is False
 
     config = MockConfig(entity_config={"vacuum.test": {const.CONF_STATE_UNKNOWN: True}})
     state = State(
@@ -272,9 +338,12 @@ async def test_capability_onoff_vacuum(hass):
         STATE_ON,
         attributes={ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.START | vacuum.VacuumEntityFeature.STOP},
     )
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.retrievable
-    assert cap.parameters() == {"split": True}
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, config, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is False
+    assert cap.parameters.dict() == {"split": True}
 
 
 @pytest.mark.parametrize(
@@ -290,7 +359,10 @@ async def test_capability_onoff_vacuum(hass):
 )
 async def test_capability_onoff_vacuum_supported(hass, features, supported):
     state = State("vacuum.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: features})
-    assert bool(get_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)) == supported
+    assert (
+        bool(get_capabilities(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON))
+        == supported
+    )
 
 
 @pytest.mark.parametrize(
@@ -307,10 +379,13 @@ async def test_capability_onoff_vacuum_supported(hass, features, supported):
 )
 async def test_capability_onoff_vacuum_turn_on(hass, features, service):
     state = State("vacuum.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: features})
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
 
     on_calls = async_mock_service(hass, vacuum.DOMAIN, service)
-    await cap.set_state(BASIC_DATA, {"value": True})
+    await cap.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 1
     assert on_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
@@ -329,10 +404,13 @@ async def test_capability_onoff_vacuum_turn_on(hass, features, service):
 )
 async def test_capability_onoff_vacuum_turn_off(hass, features, service):
     state = State("vacuum.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: features})
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
 
     off_calls = async_mock_service(hass, vacuum.DOMAIN, service)
-    await cap.set_state(BASIC_DATA, {"value": False})
+    await cap.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
@@ -343,25 +421,34 @@ async def test_capability_onoff_climate(hass):
             continue
 
         state = State("climate.test", s)
-        cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-        assert cap.get_value()
-        assert cap.retrievable
-        assert cap.parameters() is None
+        cap = cast(
+            OnOffCapability,
+            get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        )
+        assert cap.get_value() is True
+        assert cap.retrievable is True
+        assert cap.parameters is None
 
     state = State("climate.test", STATE_OFF)
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.get_value()
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.get_value() is False
 
     off_calls = async_mock_service(hass, climate.DOMAIN, climate.SERVICE_TURN_OFF)
-    await cap.set_state(BASIC_DATA, {"value": False})
+    await cap.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
     config = MockConfig(entity_config={"climate.test": {const.CONF_STATE_UNKNOWN: True}})
     state = State("climate.test", STATE_ON)
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.retrievable
-    assert cap.parameters() == {"split": True}
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, config, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is False
+    assert cap.parameters.dict() == {"split": True}
 
 
 @pytest.mark.parametrize(
@@ -382,12 +469,15 @@ async def test_capability_onoff_climate(hass):
         ),
     ],
 )
-async def test_capability_onoff_climate_turn_on(hass, hvac_modes, service, service_hvac_mode):
+async def test_capability_onoff_climate_turn_on(hass, hvac_modes: list[str], service: str, service_hvac_mode: str):
     state = State("climate.test", climate.HVAC_MODE_COOL, {climate.const.ATTR_HVAC_MODES: hvac_modes})
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
 
     on_calls = async_mock_service(hass, climate.DOMAIN, service)
-    await cap.set_state(BASIC_DATA, {"value": True})
+    await cap.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 1
     assert on_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
     if service_hvac_mode:
@@ -396,18 +486,21 @@ async def test_capability_onoff_climate_turn_on(hass, hvac_modes, service, servi
 
 async def test_capability_onoff_custom_service(hass):
     state_media = State("media_player.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_CONFIG, state_media, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    assert_no_capabilities(hass, BASIC_CONFIG, state_media, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
     state_switch = State("switch.test", STATE_ON)
-    cap_switch = get_exact_one_capability(hass, BASIC_CONFIG, state_switch, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap_switch = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
 
     on_calls = async_mock_service(hass, switch.DOMAIN, switch.SERVICE_TURN_ON)
-    await cap_switch.set_state(BASIC_DATA, {"value": True})
+    await cap_switch.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 1
     assert on_calls[0].data == {ATTR_ENTITY_ID: state_switch.entity_id}
 
     off_calls = async_mock_service(hass, switch.DOMAIN, switch.SERVICE_TURN_OFF)
-    await cap_switch.set_state(BASIC_DATA, {"value": False})
+    await cap_switch.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state_switch.entity_id}
 
@@ -433,20 +526,26 @@ async def test_capability_onoff_custom_service(hass):
             },
         }
     )
-    cap_media = get_exact_one_capability(hass, config, state_media, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    cap_switch = get_exact_one_capability(hass, config, state_switch, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert_exact_one_capability(hass, config, state_vacuum, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+    cap_media = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, config, state_media, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    cap_switch = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, config, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert_exact_one_capability(hass, config, state_vacuum, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
     on_calls = async_mock_service(hass, *turn_on_service.split("."))
-    await cap_media.set_state(BASIC_DATA, {"value": True})
-    await cap_switch.set_state(BASIC_DATA, {"value": True})
+    await cap_media.set_instance_state(Context(), ACTION_STATE_ON)
+    await cap_switch.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 2
     assert on_calls[0].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
     assert on_calls[1].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
 
     off_calls = async_mock_service(hass, *turn_off_service.split("."))
-    await cap_media.set_state(BASIC_DATA, {"value": False})
-    await cap_switch.set_state(BASIC_DATA, {"value": False})
+    await cap_media.set_instance_state(Context(), ACTION_STATE_OFF)
+    await cap_switch.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 2
     assert off_calls[0].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
     assert off_calls[1].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
@@ -455,30 +554,39 @@ async def test_capability_onoff_custom_service(hass):
 async def test_capability_onoff_water_heater(hass):
     state = State("water_heater.test", STATE_ON)
 
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert cap.retrievable
-    assert cap.parameters() is None
-    assert bool(cap.get_value())
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is True
+    assert cap.parameters is None
+    assert cap.get_value() is True
 
     state = State("water_heater.test", STATE_OFF)
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not bool(cap.get_value())
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.get_value() is False
 
     on_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_TURN_ON)
-    await cap.set_state(BASIC_DATA, {"value": True})
+    await cap.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 1
     assert on_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
 
     off_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_TURN_OFF)
-    await cap.set_state(BASIC_DATA, {"value": False})
+    await cap.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 1
     assert off_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
 
     config = MockConfig(entity_config={"water_heater.test": {const.CONF_STATE_UNKNOWN: True}})
     state = State("water_heater.test", STATE_ON)
-    cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not cap.retrievable
-    assert cap.parameters() == {"split": True}
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, config, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is False
+    assert cap.parameters.dict() == {"split": True}
 
 
 @pytest.mark.parametrize("op_on", ["on", "On", "ON", "electric"])
@@ -494,10 +602,13 @@ async def test_capability_onoff_water_heater_set_op_mode(hass, op_on, op_off):
         },
     )
 
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert cap.retrievable
-    assert cap.parameters() is None
-    assert bool(cap.get_value())
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is True
+    assert cap.parameters is None
+    assert cap.get_value() is True
 
     state = State(
         "water_heater.test",
@@ -508,17 +619,20 @@ async def test_capability_onoff_water_heater_set_op_mode(hass, op_on, op_off):
             water_heater.ATTR_OPERATION_MODE: op_off,
         },
     )
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert not bool(cap.get_value())
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.get_value() is False
 
     set_mode_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_SET_OPERATION_MODE)
-    await cap.set_state(BASIC_DATA, {"value": True})
+    await cap.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(set_mode_calls) == 1
     assert set_mode_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
     assert set_mode_calls[0].data[water_heater.ATTR_OPERATION_MODE] == op_on
 
     set_mode_calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_SET_OPERATION_MODE)
-    await cap.set_state(BASIC_DATA, {"value": False})
+    await cap.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(set_mode_calls) == 1
     assert set_mode_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
     assert set_mode_calls[0].data[water_heater.ATTR_OPERATION_MODE] == op_off
@@ -535,12 +649,17 @@ async def test_capability_onoff_water_heater_set_unsupported_op_mode(hass):
         },
     )
 
-    cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
-    assert bool(cap.get_value())
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.get_value() is True
 
     for v in [True, False]:
         with pytest.raises(SmartHomeError) as e:
-            await cap.set_state(BASIC_DATA, {"value": v})
+            await cap.set_instance_state(
+                Context(), OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=v)
+            )
 
         assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
         assert "Unable to determine operation mode " in e.value.message

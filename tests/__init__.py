@@ -67,8 +67,8 @@ def generate_entity_filter(include_entity_globs=None, exclude_entities=None) -> 
     )
 
 
-REQ_ID = "5ca6622d-97b5-465c-a494-fd9954f7599a"
+REQ_ID: str = "5ca6622d-97b5-465c-a494-fd9954f7599a"
 
-BASIC_CONFIG = MockConfig(entity_filter=generate_entity_filter(include_entity_globs=["*"]))
+BASIC_CONFIG: MockConfig = MockConfig(entity_filter=generate_entity_filter(include_entity_globs=["*"]))
 
-BASIC_DATA = RequestData(BASIC_CONFIG, "test", REQ_ID)
+BASIC_DATA: RequestData = RequestData(BASIC_CONFIG, "test", REQ_ID)

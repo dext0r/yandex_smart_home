@@ -1,51 +1,58 @@
-"""Implement the Yandex Smart Home modes capabilities."""
-from __future__ import annotations
-
+"""Implement the Yandex Smart Home mode capabilities."""
 from abc import ABC, abstractmethod
 import logging
 import math
-from typing import Any
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
-from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.core import Context
 from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item
 
 from . import const
-from .capability import PREFIX_CAPABILITIES, AbstractCapability, register_capability
+from .capability import AbstractCapability, register_capability
 from .const import CONF_ENTITY_MODE_MAP, ERR_INVALID_VALUE, STATE_NONE
 from .error import SmartHomeError
-from .helpers import RequestData
+from .schema import (
+    CapabilityType,
+    ModeCapabilityInstance,
+    ModeCapabilityInstanceActionState,
+    ModeCapabilityMode,
+    ModeCapabilityParameters,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-CAPABILITIES_MODE = PREFIX_CAPABILITIES + "mode"
-
 
 class ModeCapability(AbstractCapability, ABC):
-    """Base class of capabilities with mode functionality like thermostat mode
-    or fan speed.
+    """Base class for capabilities with mode functionality like thermostat mode or fan speed.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-docpage/
     """
 
-    type = CAPABILITIES_MODE
-    modes_map_default: dict[str, list[str]] = {}
-    modes_map_index_fallback: dict[int, str] = {}
+    type = CapabilityType.MODE
 
-    def supported(self) -> bool:
-        """Test if capability is supported."""
-        return bool(self.supported_yandex_modes)
-
-    def parameters(self) -> dict[str, Any]:
-        """Return parameters for a devices request."""
-        return {
-            "instance": self.instance,
-            "modes": [{"value": v} for v in self.supported_yandex_modes],
-        }
+    _modes_map_default: dict[ModeCapabilityMode, list[str]] = {}
+    _modes_map_index_fallback: dict[int, ModeCapabilityMode] = {}
 
     @property
-    def supported_yandex_modes(self) -> list[str]:
-        """Returns list of supported Yandex modes for this entity."""
+    @abstractmethod
+    def modes_list_attribute(self) -> str | None:
+        """Return HA attribute contains modes list for the entity."""
+        pass
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
+        return bool(self.supported_yandex_modes)
+
+    @property
+    def parameters(self) -> ModeCapabilityParameters:
+        """Return parameters for a devices list request."""
+        return ModeCapabilityParameters.from_list(self.instance, self.supported_yandex_modes)
+
+    @property
+    def supported_yandex_modes(self) -> list[ModeCapabilityMode]:
+        """Returns a list of supported Yandex modes."""
         modes = []
 
         for ha_value in self.supported_ha_modes:
@@ -57,34 +64,32 @@ class ModeCapability(AbstractCapability, ABC):
 
     @property
     def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes for this entity."""
+        """Returns list of supported HA modes."""
         return self.state.attributes.get(self.modes_list_attribute, []) or []
 
     @property
-    def modes_map(self) -> dict[str, list[str]]:
-        """Return modes mapping between Yandex and HA."""
-        return self.modes_map_config or self.modes_map_default
+    def modes_map(self) -> dict[ModeCapabilityMode, list[str]]:
+        """Return a modes mapping between Yandex and HA."""
+        return self.modes_map_config or self._modes_map_default
 
     @property
-    def modes_map_config(self) -> dict[str, list[str]] | None:
-        """Return modes mapping from entity configuration."""
-        if CONF_ENTITY_MODE_MAP in self.entity_config:
-            return self.entity_config[CONF_ENTITY_MODE_MAP].get(self.instance)
+    def modes_map_config(self) -> dict[ModeCapabilityMode, list[str]] | None:
+        """Return a modes mapping from a entity configuration."""
+        if CONF_ENTITY_MODE_MAP in self._entity_config:
+            return {
+                ModeCapabilityMode(k): v
+                for k, v in self._entity_config[CONF_ENTITY_MODE_MAP].get(self.instance).items()
+            }
 
         return None
-
-    @property
-    @abstractmethod
-    def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
-        pass
 
     @property
     def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
+        """Return HA attribute for state of the entity."""
         return None
 
-    def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings=False) -> str | None:
+    def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings=False) -> ModeCapabilityMode | None:
+        """Return Yandex mode by HA mode."""
         rv = None
         for yandex_mode, names in self.modes_map.items():
             lower_names = [str(n).lower() for n in names]
@@ -92,14 +97,14 @@ class ModeCapability(AbstractCapability, ABC):
                 rv = yandex_mode
                 break
 
-        if rv is None and self.modes_map_config is None and self.modes_map_index_fallback:
+        if rv is None and self.modes_map_config is None and self._modes_map_index_fallback:
             try:
-                rv = self.modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
+                rv = self._modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
             except (IndexError, ValueError, KeyError):
                 pass
 
         if rv is not None and ha_mode not in self.supported_ha_modes:
-            err = f'Unsupported HA mode "{ha_mode}" for {self.instance} instance of {self.state.entity_id}.'
+            err = f'Unsupported HA mode "{ha_mode}" for {self.instance.value} instance of {self.state.entity_id}.'
             if self.modes_list_attribute:
                 err += f" Maybe it missing in entity attribute {self.modes_list_attribute}?"
 
@@ -109,14 +114,15 @@ class ModeCapability(AbstractCapability, ABC):
             if str(ha_mode).lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
                 if str(ha_mode).lower() in [str(m).lower() for m in self.supported_ha_modes]:
                     _LOGGER.warning(
-                        f'Unable to get Yandex mode for "{ha_mode}" for {self.instance} instance '
+                        f'Unable to get Yandex mode for "{ha_mode}" for {self.instance.value} instance '
                         f"of {self.state.entity_id}. It may cause inconsistencies between Yandex and HA. "
                         f'Check "modes" setting for this entity'
                     )
 
         return rv
 
-    def get_ha_mode_by_yandex_mode(self, yandex_mode: str) -> str:
+    def get_ha_mode_by_yandex_mode(self, yandex_mode: ModeCapabilityMode) -> str:
+        """Return HA mode by Yandex mode."""
         ha_modes = self.modes_map.get(yandex_mode, [])
         for ha_mode in ha_modes:
             for am in self.supported_ha_modes:
@@ -124,22 +130,22 @@ class ModeCapability(AbstractCapability, ABC):
                     return am
 
         if self.modes_map_config is None:
-            for ha_idx, yandex_mode_idx in self.modes_map_index_fallback.items():
+            for ha_idx, yandex_mode_idx in self._modes_map_index_fallback.items():
                 if yandex_mode_idx == yandex_mode:
                     return self.supported_ha_modes[ha_idx]
 
         raise SmartHomeError(
             ERR_INVALID_VALUE,
-            f'Unsupported mode "{yandex_mode}" for {self.instance} instance of {self.state.entity_id}. '
+            f'Unsupported mode "{yandex_mode.value}" for {self.instance.value} instance of {self.state.entity_id}. '
             f'Check "modes" setting for this entity',
         )
 
-    def get_value(self) -> str | None:
-        """Return the state value of this capability for this entity."""
+    def get_value(self) -> ModeCapabilityMode | None:
+        """Return the current capability value."""
         return self.get_yandex_mode_by_ha_mode(self._ha_value, False)
 
     @property
-    def _ha_value(self):
+    def _ha_value(self) -> str | None:
         """Return the current unmapped capability value."""
         if self.state_value_attribute:
             return self.state.attributes.get(self.state_value_attribute)
@@ -149,289 +155,295 @@ class ModeCapability(AbstractCapability, ABC):
 
 @register_capability
 class ThermostatCapability(ModeCapability):
-    """Thermostat functionality"""
+    """Capability to control mode of a climate device."""
 
-    instance = const.MODE_INSTANCE_THERMOSTAT
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_HEAT: [climate.HVACMode.HEAT],
-        const.MODE_INSTANCE_MODE_COOL: [climate.HVACMode.COOL],
-        const.MODE_INSTANCE_MODE_AUTO: [climate.HVACMode.HEAT_COOL, climate.HVACMode.AUTO],
-        const.MODE_INSTANCE_MODE_DRY: [climate.HVACMode.DRY],
-        const.MODE_INSTANCE_MODE_FAN_ONLY: [climate.HVACMode.FAN_ONLY],
+    instance = ModeCapabilityInstance.THERMOSTAT
+
+    _modes_map_default = {
+        ModeCapabilityMode.HEAT: [climate.HVACMode.HEAT],
+        ModeCapabilityMode.COOL: [climate.HVACMode.COOL],
+        ModeCapabilityMode.AUTO: [climate.HVACMode.HEAT_COOL, climate.HVACMode.AUTO],
+        ModeCapabilityMode.DRY: [climate.HVACMode.DRY],
+        ModeCapabilityMode.FAN_ONLY: [climate.HVACMode.FAN_ONLY],
     }
 
+    @property
     def supported(self) -> bool:
-        """Test if capability is supported."""
+        """Test if the capability is supported for its state."""
         if self.state.domain == climate.DOMAIN:
-            return super().supported()
+            return super().supported
 
         return False
 
     @property
     def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
+        """Return HA attribute contains modes list for the entity."""
         return climate.ATTR_HVAC_MODES
 
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        await self.hass.services.async_call(
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             climate.DOMAIN,
             climate.SERVICE_SET_HVAC_MODE,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                climate.ATTR_HVAC_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
+                climate.ATTR_HVAC_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
 
 @register_capability
 class SwingCapability(ModeCapability):
-    """Swing functionality"""
+    """Capability to control swing mode of a climate device."""
 
-    instance = const.MODE_INSTANCE_SWING
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_VERTICAL: [climate.const.SWING_VERTICAL, "ud"],
-        const.MODE_INSTANCE_MODE_HORIZONTAL: [climate.const.SWING_HORIZONTAL, "lr"],
-        const.MODE_INSTANCE_MODE_STATIONARY: [climate.const.SWING_OFF],
-        const.MODE_INSTANCE_MODE_AUTO: [climate.const.SWING_BOTH, "all"],
+    instance = ModeCapabilityInstance.SWING
+
+    _modes_map_default = {
+        ModeCapabilityMode.VERTICAL: [climate.const.SWING_VERTICAL, "ud"],
+        ModeCapabilityMode.HORIZONTAL: [climate.const.SWING_HORIZONTAL, "lr"],
+        ModeCapabilityMode.STATIONARY: [climate.const.SWING_OFF],
+        ModeCapabilityMode.AUTO: [climate.const.SWING_BOTH, "all"],
     }
 
+    @property
     def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-        if self.state.domain == climate.DOMAIN and features & climate.ClimateEntityFeature.SWING_MODE:
-            return super().supported()
+        """Test if the capability is supported for its state."""
+        if self.state.domain == climate.DOMAIN and self._state_features & climate.ClimateEntityFeature.SWING_MODE:
+            return super().supported
 
         return False
 
     @property
     def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
+        """Return HA attribute contains modes list for the entity."""
         return climate.ATTR_SWING_MODES
 
     @property
     def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
+        """Return HA attribute for state of the entity."""
         return climate.ATTR_SWING_MODE
 
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        await self.hass.services.async_call(
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             climate.DOMAIN,
             climate.SERVICE_SET_SWING_MODE,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                climate.ATTR_SWING_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
+                climate.ATTR_SWING_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
 
 class ProgramCapability(ModeCapability, ABC):
-    """Program functionality"""
+    """Base capability to control a device program."""
 
-    instance = const.MODE_INSTANCE_PROGRAM
-    modes_map_index_fallback = {
-        0: const.MODE_INSTANCE_MODE_ONE,
-        1: const.MODE_INSTANCE_MODE_TWO,
-        2: const.MODE_INSTANCE_MODE_THREE,
-        3: const.MODE_INSTANCE_MODE_FOUR,
-        4: const.MODE_INSTANCE_MODE_FIVE,
-        5: const.MODE_INSTANCE_MODE_SIX,
-        6: const.MODE_INSTANCE_MODE_SEVEN,
-        7: const.MODE_INSTANCE_MODE_EIGHT,
-        8: const.MODE_INSTANCE_MODE_NINE,
-        9: const.MODE_INSTANCE_MODE_TEN,
+    instance = ModeCapabilityInstance.PROGRAM
+
+    _modes_map_index_fallback = {
+        0: ModeCapabilityMode.ONE,
+        1: ModeCapabilityMode.TWO,
+        2: ModeCapabilityMode.THREE,
+        3: ModeCapabilityMode.FOUR,
+        4: ModeCapabilityMode.FIVE,
+        5: ModeCapabilityMode.SIX,
+        6: ModeCapabilityMode.SEVEN,
+        7: ModeCapabilityMode.EIGHT,
+        8: ModeCapabilityMode.NINE,
+        9: ModeCapabilityMode.TEN,
     }
 
 
 @register_capability
 class ProgramCapabilityHumidifier(ProgramCapability):
-    """Program functionality"""
+    """Capability to control the mode of a humidifier device."""
 
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_FAN_ONLY: [
+    _modes_map_default = {
+        ModeCapabilityMode.FAN_ONLY: [
             const.XIAOMI_AIRPURIFIER_PRESET_FAN,
         ],
-        const.MODE_INSTANCE_MODE_AUTO: [
+        ModeCapabilityMode.AUTO: [
             humidifier.const.MODE_AUTO,
         ],
-        const.MODE_INSTANCE_MODE_ECO: [
+        ModeCapabilityMode.ECO: [
             humidifier.const.MODE_ECO,
             const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
         ],
-        const.MODE_INSTANCE_MODE_QUIET: [
+        ModeCapabilityMode.QUIET: [
             humidifier.const.MODE_SLEEP,
             const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
         ],
-        const.MODE_INSTANCE_MODE_LOW: [
+        ModeCapabilityMode.LOW: [
             const.XIAOMI_AIRPURIFIER_PRESET_LOW,
         ],
-        const.MODE_INSTANCE_MODE_MIN: [humidifier.const.MODE_AWAY],
-        const.MODE_INSTANCE_MODE_MEDIUM: [
+        ModeCapabilityMode.MIN: [humidifier.const.MODE_AWAY],
+        ModeCapabilityMode.MEDIUM: [
             humidifier.const.MODE_COMFORT,
             const.XIAOMI_AIRPURIFIER_PRESET_MEDIUM,
             const.XIAOMI_AIRPURIFIER_PRESET_MIDDLE,
             const.XIAOMI_HUMIDIFIER_PRESET_MID,
         ],
-        const.MODE_INSTANCE_MODE_NORMAL: [
+        ModeCapabilityMode.NORMAL: [
             humidifier.const.MODE_NORMAL,
             const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
         ],
-        const.MODE_INSTANCE_MODE_MAX: [
+        ModeCapabilityMode.MAX: [
             humidifier.const.MODE_HOME,
         ],
-        const.MODE_INSTANCE_MODE_HIGH: [
+        ModeCapabilityMode.HIGH: [
             humidifier.const.MODE_BABY,
             const.XIAOMI_AIRPURIFIER_PRESET_HIGH,
         ],
-        const.MODE_INSTANCE_MODE_TURBO: [
+        ModeCapabilityMode.TURBO: [
             humidifier.const.MODE_BOOST,
             const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
         ],
     }
 
+    @property
     def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-        if self.state.domain == humidifier.DOMAIN and features & humidifier.HumidifierEntityFeature.MODES:
-            return super().supported()
+        """Test if the capability is supported for its state."""
+        if self.state.domain == humidifier.DOMAIN and self._state_features & humidifier.HumidifierEntityFeature.MODES:
+            return super().supported
 
         return False
 
     @property
     def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
+        """Return HA attribute contains modes list for the entity."""
         return humidifier.ATTR_AVAILABLE_MODES
 
     @property
     def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
+        """Return HA attribute for state of the entity."""
         return humidifier.ATTR_MODE
 
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        await self.hass.services.async_call(
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             humidifier.DOMAIN,
             humidifier.SERVICE_SET_MODE,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                humidifier.ATTR_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
+                humidifier.ATTR_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
 
 @register_capability
 class ProgramCapabilityFan(ProgramCapability):
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_AUTO: [
+    """Capability to control the mode preset of a fan device."""
+
+    _modes_map_default = {
+        ModeCapabilityMode.AUTO: [
             climate.const.FAN_AUTO,
         ],
-        const.MODE_INSTANCE_MODE_ECO: [
+        ModeCapabilityMode.ECO: [
             const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
         ],
-        const.MODE_INSTANCE_MODE_QUIET: [
+        ModeCapabilityMode.QUIET: [
             const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
             const.XIAOMI_FAN_PRESET_LEVEL_1,
             const.XIAOMI_FAN_PRESET_NATURE,
         ],
-        const.MODE_INSTANCE_MODE_LOW: [
+        ModeCapabilityMode.LOW: [
             const.XIAOMI_AIRPURIFIER_PRESET_LOW,
             const.XIAOMI_FAN_PRESET_LEVEL_2,
         ],
-        const.MODE_INSTANCE_MODE_MEDIUM: [
+        ModeCapabilityMode.MEDIUM: [
             const.XIAOMI_HUMIDIFIER_PRESET_MID,
             const.XIAOMI_FAN_PRESET_LEVEL_3,
         ],
-        const.MODE_INSTANCE_MODE_NORMAL: [
+        ModeCapabilityMode.NORMAL: [
             const.XIAOMI_FAN_PRESET_NORMAL,
             const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
         ],
-        const.MODE_INSTANCE_MODE_HIGH: [
+        ModeCapabilityMode.HIGH: [
             const.XIAOMI_FAN_PRESET_LEVEL_4,
         ],
-        const.MODE_INSTANCE_MODE_TURBO: [
+        ModeCapabilityMode.TURBO: [
             const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
             const.XIAOMI_FAN_PRESET_LEVEL_5,
         ],
     }
 
+    @property
     def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
+        """Test if the capability is supported for its state."""
         if self.state.domain == fan.DOMAIN:
-            if features & fan.FanEntityFeature.PRESET_MODE:
-                if features & fan.FanEntityFeature.SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
-                    return super().supported()
+            if self._state_features & fan.FanEntityFeature.PRESET_MODE:
+                if (
+                    self._state_features & fan.FanEntityFeature.SET_SPEED
+                    and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
+                ):
+                    return super().supported
 
         return False
 
     @property
-    def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
-        return fan.ATTR_PRESET_MODE
-
-    @property
     def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
+        """Return HA attribute contains modes list for the entity."""
         return fan.ATTR_PRESET_MODES
 
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        await self.hass.services.async_call(
+    @property
+    def state_value_attribute(self) -> str | None:
+        """Return HA attribute for state of the entity."""
+        return fan.ATTR_PRESET_MODE
+
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             fan.DOMAIN,
             fan.SERVICE_SET_PRESET_MODE,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
+                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
 
 @register_capability
 class InputSourceCapability(ModeCapability):
-    """Input Source functionality"""
+    """Capability to control the input source of a media player device."""
 
     instance = const.MODE_INSTANCE_INPUT_SOURCE
-    modes_map_index_fallback = {
-        0: const.MODE_INSTANCE_MODE_ONE,
-        1: const.MODE_INSTANCE_MODE_TWO,
-        2: const.MODE_INSTANCE_MODE_THREE,
-        3: const.MODE_INSTANCE_MODE_FOUR,
-        4: const.MODE_INSTANCE_MODE_FIVE,
-        5: const.MODE_INSTANCE_MODE_SIX,
-        6: const.MODE_INSTANCE_MODE_SEVEN,
-        7: const.MODE_INSTANCE_MODE_EIGHT,
-        8: const.MODE_INSTANCE_MODE_NINE,
-        9: const.MODE_INSTANCE_MODE_TEN,
+
+    _modes_map_index_fallback = {
+        0: ModeCapabilityMode.ONE,
+        1: ModeCapabilityMode.TWO,
+        2: ModeCapabilityMode.THREE,
+        3: ModeCapabilityMode.FOUR,
+        4: ModeCapabilityMode.FIVE,
+        5: ModeCapabilityMode.SIX,
+        6: ModeCapabilityMode.SEVEN,
+        7: ModeCapabilityMode.EIGHT,
+        8: ModeCapabilityMode.NINE,
+        9: ModeCapabilityMode.TEN,
     }
 
+    @property
     def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
+        """Test if the capability is supported for its state."""
         if self.state.domain == media_player.DOMAIN:
-            if const.MEDIA_PLAYER_FEATURE_SELECT_SOURCE in self.entity_config.get(const.CONF_FEATURES, []):
+            if const.MEDIA_PLAYER_FEATURE_SELECT_SOURCE in self._entity_config.get(const.CONF_FEATURES, []):
                 return True
 
-            if features & media_player.MediaPlayerEntityFeature.SELECT_SOURCE:
-                return super().supported()
+            if self._state_features & media_player.MediaPlayerEntityFeature.SELECT_SOURCE:
+                return super().supported
 
         return False
 
     @property
     def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes for this entity."""
+        """Returns list of supported HA modes."""
         modes = self.state.attributes.get(self.modes_list_attribute, []) or []
         filtered_modes = list(filter(lambda m: m not in ["Live TV"], modes))  # #418
         if filtered_modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
@@ -442,101 +454,104 @@ class InputSourceCapability(ModeCapability):
 
     @property
     def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
+        """Return HA attribute contains modes list for the entity."""
         return media_player.ATTR_INPUT_SOURCE_LIST
 
     @property
     def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
+        """Return HA attribute for state of the entity."""
         return media_player.ATTR_INPUT_SOURCE
 
-    def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings=False) -> str | None:
+    def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings=False) -> ModeCapabilityMode | None:
+        """Return Yandex mode by HA mode."""
         return super().get_yandex_mode_by_ha_mode(ha_mode, hide_warnings=True)
 
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        await self.hass.services.async_call(
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             media_player.DOMAIN,
             media_player.SERVICE_SELECT_SOURCE,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                media_player.ATTR_INPUT_SOURCE: self.get_ha_mode_by_yandex_mode(state["value"]),
+                media_player.ATTR_INPUT_SOURCE: self.get_ha_mode_by_yandex_mode(state.value),
             },
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
 
 class FanSpeedCapability(ModeCapability, ABC):
-    """Fan speed functionality."""
+    """Base capability to control a device fan speed."""
 
-    instance = const.MODE_INSTANCE_FAN_SPEED
+    instance = ModeCapabilityInstance.FAN_SPEED
 
 
 @register_capability
 class FanSpeedCapabilityClimate(FanSpeedCapability):
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_AUTO: [
+    """Capability to control the fan speed of a climate device."""
+
+    _modes_map_default = {
+        ModeCapabilityMode.AUTO: [
             climate.const.FAN_AUTO,
             climate.const.FAN_ON,
             const.SMARTTHINQ_FAN_PRESET_NATURE,
         ],
-        const.MODE_INSTANCE_MODE_QUIET: [
+        ModeCapabilityMode.QUIET: [
             climate.const.FAN_OFF,
             climate.const.FAN_DIFFUSE,
         ],
-        const.MODE_INSTANCE_MODE_MIN: [
+        ModeCapabilityMode.MIN: [
             const.TION_FAN_SPEED_1,
             const.FAN_SPEED_LOW_MID,
         ],
-        const.MODE_INSTANCE_MODE_LOW: [
+        ModeCapabilityMode.LOW: [
             climate.const.FAN_LOW,
             const.FAN_SPEED_MIN,
             const.TION_FAN_SPEED_2,
         ],
-        const.MODE_INSTANCE_MODE_MEDIUM: [
+        ModeCapabilityMode.MEDIUM: [
             climate.const.FAN_MEDIUM,
             climate.const.FAN_MIDDLE,
             const.FAN_SPEED_MID,
             const.TION_FAN_SPEED_3,
         ],
-        const.MODE_INSTANCE_MODE_HIGH: [
+        ModeCapabilityMode.HIGH: [
             climate.const.FAN_HIGH,
             const.FAN_SPEED_MAX,
             const.TION_FAN_SPEED_4,
         ],
-        const.MODE_INSTANCE_MODE_TURBO: [
+        ModeCapabilityMode.TURBO: [
             climate.const.FAN_FOCUS,
             const.FAN_SPEED_HIGHEST,
             const.TION_FAN_SPEED_5,
         ],
-        const.MODE_INSTANCE_MODE_MAX: [
+        ModeCapabilityMode.MAX: [
             const.TION_FAN_SPEED_6,
             const.FAN_SPEED_MID_HIGH,
         ],
     }
 
+    @property
     def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-        if self.state.domain == climate.DOMAIN and features & climate.ClimateEntityFeature.FAN_MODE:
-            return super().supported()
+        """Test if the capability is supported for its state."""
+        if self.state.domain == climate.DOMAIN and self._state_features & climate.ClimateEntityFeature.FAN_MODE:
+            return super().supported
 
         return False
 
     @property
-    def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
-        return climate.ATTR_FAN_MODE
-
-    @property
     def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
+        """Return HA attribute contains modes list for the entity."""
         return climate.ATTR_FAN_MODES
 
     @property
+    def state_value_attribute(self) -> str | None:
+        """Return HA attribute for state of the entity."""
+        return climate.ATTR_FAN_MODE
+
+    @property
     def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes."""
         modes = super().supported_ha_modes
 
         # esphome default state for some devices
@@ -545,110 +560,119 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
 
         return modes
 
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        await self.hass.services.async_call(
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             climate.DOMAIN,
             climate.SERVICE_SET_FAN_MODE,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                climate.ATTR_FAN_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
+                climate.ATTR_FAN_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
 
 @register_capability
 class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_AUTO: [
+    """Capability to control the fan speed of a fan device via preset."""
+
+    _modes_map_default = {
+        ModeCapabilityMode.AUTO: [
             climate.const.FAN_AUTO,
             climate.const.FAN_ON,
         ],
-        const.MODE_INSTANCE_MODE_ECO: [
+        ModeCapabilityMode.ECO: [
             const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
         ],
-        const.MODE_INSTANCE_MODE_QUIET: [
+        ModeCapabilityMode.QUIET: [
             const.FAN_SPEED_OFF,
             const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
             const.XIAOMI_FAN_PRESET_LEVEL_1,
         ],
-        const.MODE_INSTANCE_MODE_LOW: [
+        ModeCapabilityMode.LOW: [
             const.FAN_SPEED_LOW,
             const.FAN_SPEED_MIN,
             const.XIAOMI_FAN_PRESET_LEVEL_2,
         ],
-        const.MODE_INSTANCE_MODE_MEDIUM: [
+        ModeCapabilityMode.MEDIUM: [
             const.FAN_SPEED_MEDIUM,
             const.XIAOMI_HUMIDIFIER_PRESET_MID,
             const.XIAOMI_FAN_PRESET_LEVEL_3,
         ],
-        const.MODE_INSTANCE_MODE_NORMAL: [
+        ModeCapabilityMode.NORMAL: [
             const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
         ],
-        const.MODE_INSTANCE_MODE_HIGH: [
+        ModeCapabilityMode.HIGH: [
             const.FAN_SPEED_HIGH,
             const.XIAOMI_FAN_PRESET_LEVEL_4,
         ],
-        const.MODE_INSTANCE_MODE_TURBO: [
+        ModeCapabilityMode.TURBO: [
             const.FAN_SPEED_MAX,
             const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
             const.XIAOMI_FAN_PRESET_LEVEL_5,
         ],
     }
 
+    @property
     def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
+        """Test if the capability is supported for its state."""
         if self.state.domain == fan.DOMAIN:
-            if features & fan.FanEntityFeature.PRESET_MODE:
-                if features & fan.FanEntityFeature.SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
+            if self._state_features & fan.FanEntityFeature.PRESET_MODE:
+                if (
+                    self._state_features & fan.FanEntityFeature.SET_SPEED
+                    and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
+                ):
                     return False
 
-                return super().supported()
+                return super().supported
 
         return False
 
     @property
-    def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
-        return fan.ATTR_PRESET_MODE
-
-    @property
     def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
+        """Return HA attribute contains modes list for the entity."""
         return fan.ATTR_PRESET_MODES
 
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        await self.hass.services.async_call(
+    @property
+    def state_value_attribute(self) -> str | None:
+        """Return HA attribute for state of the entity."""
+        return fan.ATTR_PRESET_MODE
+
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             fan.DOMAIN,
             fan.SERVICE_SET_PRESET_MODE,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state["value"]),
+                fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
 
 @register_capability
 class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
-    def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+    """Capability to control the fan speed in percents of a fan device."""
 
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported for its state."""
         if self.state.domain == fan.DOMAIN:
-            if features & fan.FanEntityFeature.SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
-                return super().supported()
+            if (
+                self._state_features & fan.FanEntityFeature.SET_SPEED
+                and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
+            ):
+                return super().supported
 
         return False
 
     @property
     def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes."""
         if self.modes_map:
             return list(self.modes_map.keys())
 
@@ -657,25 +681,32 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         if speed_count == 1:
             return []
 
-        modes = [const.MODE_INSTANCE_MODE_LOW, const.MODE_INSTANCE_MODE_HIGH]
+        modes = [ModeCapabilityMode.LOW, ModeCapabilityMode.HIGH]
         if speed_count >= 3:
-            modes.insert(modes.index(const.MODE_INSTANCE_MODE_HIGH), const.MODE_INSTANCE_MODE_MEDIUM)
+            modes.insert(modes.index(ModeCapabilityMode.HIGH), ModeCapabilityMode.MEDIUM)
         if speed_count >= 4:
-            modes.insert(modes.index(const.MODE_INSTANCE_MODE_MEDIUM), const.MODE_INSTANCE_MODE_NORMAL)
+            modes.insert(modes.index(ModeCapabilityMode.MEDIUM), ModeCapabilityMode.NORMAL)
         if speed_count >= 5:
-            modes.insert(0, const.MODE_INSTANCE_MODE_ECO)
+            modes.insert(0, ModeCapabilityMode.ECO)
         if speed_count >= 6:
-            modes.insert(modes.index(const.MODE_INSTANCE_MODE_LOW), const.MODE_INSTANCE_MODE_QUIET)
+            modes.insert(modes.index(ModeCapabilityMode.LOW), ModeCapabilityMode.QUIET)
         if speed_count >= 7:
-            modes.append(const.MODE_INSTANCE_MODE_TURBO)
+            modes.append(ModeCapabilityMode.TURBO)
 
         return modes
 
     @property
-    def supported_yandex_modes(self) -> list[str]:
-        return self.supported_ha_modes
+    def supported_yandex_modes(self) -> list[ModeCapabilityMode]:
+        """Returns a list of supported Yandex modes."""
+        return [ModeCapabilityMode(m) for m in self.supported_ha_modes]
 
-    def get_value(self) -> str | None:
+    @property
+    def modes_list_attribute(self) -> str | None:
+        """Return HA attribute contains modes list for the entity."""
+        return None
+
+    def get_value(self) -> ModeCapabilityMode | None:
+        """Return the current capability value."""
         value = self.state.attributes.get(fan.ATTR_PERCENTAGE)
         if not value:
             return None
@@ -688,35 +719,29 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
 
             return None
 
-        return percentage_to_ordered_list_item(self.supported_ha_modes, value)
+        return ModeCapabilityMode(percentage_to_ordered_list_item(self.supported_ha_modes, value))
 
-    @property
-    def modes_list_attribute(self) -> str | None:
-        return None
-
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        yandex_mode = state["value"]
-
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
         if self.modes_map:
-            ha_modes = self.modes_map.get(yandex_mode)
+            ha_modes = self.modes_map.get(state.value)
             if not ha_modes:
                 raise SmartHomeError(
                     ERR_INVALID_VALUE,
-                    f'Unsupported mode "{yandex_mode}" for {self.instance} instance of {self.state.entity_id}. '
-                    f'Check "modes" setting for this entity',
+                    f'Unsupported mode "{state.value.value}" for {self.instance.value} instance of '
+                    f'{self.state.entity_id}. Check "modes" setting for this entity',
                 )
 
             ha_mode = self._convert_mapping_speed_value(ha_modes[0])
         else:
-            ha_mode = ordered_list_item_to_percentage(self.supported_ha_modes, yandex_mode)
+            ha_mode = ordered_list_item_to_percentage(self.supported_ha_modes, state.value)
 
-        await self.hass.services.async_call(
+        await self._hass.services.async_call(
             fan.DOMAIN,
             fan.SERVICE_SET_PERCENTAGE,
             {ATTR_ENTITY_ID: self.state.entity_id, fan.ATTR_PERCENTAGE: ha_mode},
             blocking=True,
-            context=data.context,
+            context=context,
         )
 
     def _convert_mapping_speed_value(self, value: str) -> int:
@@ -725,58 +750,58 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         except ValueError:
             raise SmartHomeError(
                 ERR_INVALID_VALUE,
-                f"Unsupported speed value {value!r} for {self.instance} " f"instance of {self.state.entity_id}.",
+                f"Unsupported speed value {value!r} for {self.instance.value} instance of {self.state.entity_id}.",
             )
 
 
 @register_capability
 class CleanupModeCapability(ModeCapability):
-    """Vacuum cleanup mode functionality."""
+    """Capability to control the program of a vacuum."""
 
-    instance = const.MODE_INSTANCE_CLEANUP_MODE
-    modes_map_default = {
-        const.MODE_INSTANCE_MODE_ECO: [const.CLEANUP_MODE_OFF],
-        const.MODE_INSTANCE_MODE_AUTO: ["auto", "automatic", "102", const.CLEANUP_MODE_BALANCED],
-        const.MODE_INSTANCE_MODE_TURBO: [const.CLEANUP_MODE_TURBO, "high", "performance", "104", "full speed", "max+"],
-        const.MODE_INSTANCE_MODE_MIN: ["min", "mop"],
-        const.MODE_INSTANCE_MODE_LOW: ["gentle"],
-        const.MODE_INSTANCE_MODE_MAX: [const.CLEANUP_MODE_MAX, "strong"],
-        const.MODE_INSTANCE_MODE_FAST: [const.CLEANUP_MODE_MAX_PLUS],
-        const.MODE_INSTANCE_MODE_EXPRESS: ["express", "105"],
-        const.MODE_INSTANCE_MODE_MEDIUM: ["medium", "middle"],
-        const.MODE_INSTANCE_MODE_NORMAL: ["normal", "standard", "basic", "103"],
-        const.MODE_INSTANCE_MODE_QUIET: ["quiet", "low", "min", const.CLEANUP_MODE_SILENT, "eco", "101"],
-        const.MODE_INSTANCE_MODE_SMART: [const.CLEANUP_MODE_MAX_PLUS],
+    instance = ModeCapabilityInstance.CLEANUP_MODE
+
+    _modes_map_default = {
+        ModeCapabilityMode.ECO: [const.CLEANUP_MODE_OFF],
+        ModeCapabilityMode.AUTO: ["auto", "automatic", "102", const.CLEANUP_MODE_BALANCED],
+        ModeCapabilityMode.TURBO: [const.CLEANUP_MODE_TURBO, "high", "performance", "104", "full speed", "max+"],
+        ModeCapabilityMode.MIN: ["min", "mop"],
+        ModeCapabilityMode.LOW: ["gentle"],
+        ModeCapabilityMode.MAX: [const.CLEANUP_MODE_MAX, "strong"],
+        ModeCapabilityMode.FAST: [const.CLEANUP_MODE_MAX_PLUS],
+        ModeCapabilityMode.EXPRESS: ["express", "105"],
+        ModeCapabilityMode.MEDIUM: ["medium", "middle"],
+        ModeCapabilityMode.NORMAL: ["normal", "standard", "basic", "103"],
+        ModeCapabilityMode.QUIET: ["quiet", "low", "min", const.CLEANUP_MODE_SILENT, "eco", "101"],
+        ModeCapabilityMode.SMART: [const.CLEANUP_MODE_MAX_PLUS],
     }
 
+    @property
     def supported(self) -> bool:
-        """Test if capability is supported."""
-        features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
-
-        if self.state.domain == vacuum.DOMAIN and features & vacuum.VacuumEntityFeature.FAN_SPEED:
-            return super().supported()
+        """Test if the capability is supported for its state."""
+        if self.state.domain == vacuum.DOMAIN and self._state_features & vacuum.VacuumEntityFeature.FAN_SPEED:
+            return super().supported
 
         return False
 
     @property
     def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for this entity."""
+        """Return HA attribute contains modes list for the entity."""
         return vacuum.ATTR_FAN_SPEED_LIST
 
     @property
     def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
+        """Return HA attribute for state of the entity."""
         return vacuum.ATTR_FAN_SPEED
 
-    async def set_state(self, data: RequestData, state: dict[str, Any]):
-        """Set device state."""
-        await self.hass.services.async_call(
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
             vacuum.DOMAIN,
             vacuum.SERVICE_SET_FAN_SPEED,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                vacuum.ATTR_FAN_SPEED: self.get_ha_mode_by_yandex_mode(state["value"]),
+                vacuum.ATTR_FAN_SPEED: self.get_ha_mode_by_yandex_mode(state.value),
             },
             blocking=True,
-            context=data.context,
+            context=context,
         )

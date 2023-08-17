@@ -108,7 +108,7 @@ async def test_user_devices(hass_platform, hass_client, hass_admin_user: MockUse
                             "parameters": {
                                 "instance": "brightness",
                                 "random_access": True,
-                                "range": {"min": 1, "max": 100, "precision": 1},
+                                "range": {"min": 1.0, "max": 100.0, "precision": 1.0},
                                 "unit": "unit.percent",
                             },
                         },

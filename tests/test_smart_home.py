@@ -1,18 +1,17 @@
-from __future__ import annotations
-
-from typing import Any
 from unittest.mock import Mock, patch
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import State
 from homeassistant.helpers.template import Template
 from homeassistant.util.decorator import Registry
+from pydantic import BaseModel
 
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import ToggleCapability
 from custom_components.yandex_smart_home.const import ERR_INTERNAL_ERROR, ERR_INVALID_ACTION, EVENT_DEVICE_ACTION
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.helpers import RequestData
+from custom_components.yandex_smart_home.schema import CapabilityType, ToggleCapabilityInstance
 from custom_components.yandex_smart_home.smart_home import (
     async_devices,
     async_devices_execute,
@@ -62,43 +61,47 @@ async def test_async_handle_message(hass):
         }
 
 
+class BaseMode:
+    pass
+
+
 async def test_async_devices_execute(hass):
-    class MockCapabilityA(OnOffCapability):
+    class FakeCapabilityInstanceActionResultValue(BaseModel):
+        foo: str
+        int: int
+
+    class MockCapability(ToggleCapability):
+        @property
         def supported(self) -> bool:
             return True
 
-        def get_value(self) -> float | str | None:
+        def get_value(self) -> bool | None:
             return None
 
-        async def set_state(self, data, state):
+        async def set_instance_state(self, *_, **__):
             pass
 
-        async def _set_state(self, data: RequestData, state: dict[str, Any]):
-            pass
+    class MockCapabilityA(MockCapability):
+        instance = ToggleCapabilityInstance.PAUSE
 
-    class MockCapabilityB(ToggleCapability):
-        instance = "b"
+    class MockCapabilityReturnState(MockCapability):
+        instance = ToggleCapabilityInstance.BACKLIGHT
 
-        def supported(self) -> bool:
-            return True
+        async def set_instance_state(self, *_, **__):
+            return FakeCapabilityInstanceActionResultValue(foo="bar", int=0)
 
-        def get_value(self) -> float | str | None:
-            return None
+    class MockCapabilityFail(MockCapability):
+        instance = ToggleCapabilityInstance.IONIZATION
 
-        async def set_state(self, data, state):
-            return {"foo": "bar", "int": 0}
-
-    class MockCapabilityWithFail(ToggleCapability):
-        instance = "fail"
-
-        def supported(self) -> bool:
-            return True
-
-        def get_value(self) -> float | str | None:
-            return None
-
-        async def set_state(self, *args, **kwargs):
+        async def set_instance_state(self, *_, **__):
             raise Exception("fail set_state")
+
+    class MockCapabilityUnsupported(MockCapability):
+        instance = ToggleCapabilityInstance.KEEP_WARM
+
+        @property
+        def supported(self) -> bool:
+            return False
 
     switch_1 = State("switch.test_1", STATE_OFF)
     switch_2 = State("switch.test_2", STATE_OFF)
@@ -111,7 +114,7 @@ async def test_async_devices_execute(hass):
 
     with patch(
         "custom_components.yandex_smart_home.capability.CAPABILITIES",
-        [MockCapabilityA, MockCapabilityB, MockCapabilityWithFail],
+        [MockCapabilityA, MockCapabilityReturnState, MockCapabilityFail],
     ):
         message = {
             "payload": {
@@ -124,20 +127,26 @@ async def test_async_devices_execute(hass):
                                 "state": {"instance": MockCapabilityA.instance, "value": True},
                             },
                             {
-                                "type": MockCapabilityB.type,
-                                "state": {"instance": MockCapabilityB.instance, "value": True},
+                                "type": MockCapabilityReturnState.type,
+                                "state": {"instance": MockCapabilityReturnState.instance, "value": True},
                             },
                             {
-                                "type": MockCapabilityWithFail.type,
-                                "state": {"instance": MockCapabilityWithFail.instance, "value": True},
+                                "type": MockCapabilityFail.type,
+                                "state": {"instance": MockCapabilityFail.instance, "value": True},
                             },
                         ],
                     },
                     {
                         "id": switch_2.entity_id,
                         "capabilities": [
-                            {"type": "unsupported", "state": {"instance": "on", "value": True}},
-                            {"type": MockCapabilityB.type, "state": {"instance": "unsupported", "value": True}},
+                            {
+                                "type": MockCapabilityUnsupported.type,
+                                "state": {"instance": MockCapabilityUnsupported.instance, "value": True},
+                            },
+                            {
+                                "type": MockCapabilityA.type,
+                                "state": {"instance": ToggleCapabilityInstance.CONTROLS_LOCKED, "value": True},
+                            },
                         ],
                     },
                     {
@@ -168,13 +177,13 @@ async def test_async_devices_execute(hass):
                     "id": "switch.test_1",
                     "capabilities": [
                         {
-                            "type": "devices.capabilities.on_off",
-                            "state": {"instance": "on", "action_result": {"status": "DONE"}},
+                            "type": CapabilityType.TOGGLE,
+                            "state": {"instance": ToggleCapabilityInstance.PAUSE, "action_result": {"status": "DONE"}},
                         },
                         {
-                            "type": "devices.capabilities.toggle",
+                            "type": CapabilityType.TOGGLE,
                             "state": {
-                                "instance": "b",
+                                "instance": ToggleCapabilityInstance.BACKLIGHT,
                                 "action_result": {
                                     "status": "DONE",
                                 },
@@ -182,9 +191,9 @@ async def test_async_devices_execute(hass):
                             },
                         },
                         {
-                            "type": "devices.capabilities.toggle",
+                            "type": CapabilityType.TOGGLE,
                             "state": {
-                                "instance": "fail",
+                                "instance": ToggleCapabilityInstance.IONIZATION,
                                 "action_result": {"status": "ERROR", "error_code": "INTERNAL_ERROR"},
                             },
                         },
@@ -194,16 +203,16 @@ async def test_async_devices_execute(hass):
                     "id": "switch.test_2",
                     "capabilities": [
                         {
-                            "type": "unsupported",
+                            "type": CapabilityType.TOGGLE,
                             "state": {
-                                "instance": "on",
+                                "instance": ToggleCapabilityInstance.KEEP_WARM,
                                 "action_result": {"status": "ERROR", "error_code": "NOT_SUPPORTED_IN_CURRENT_MODE"},
                             },
                         },
                         {
-                            "type": "devices.capabilities.toggle",
+                            "type": CapabilityType.TOGGLE,
                             "state": {
-                                "instance": "unsupported",
+                                "instance": ToggleCapabilityInstance.CONTROLS_LOCKED,
                                 "action_result": {"status": "ERROR", "error_code": "NOT_SUPPORTED_IN_CURRENT_MODE"},
                             },
                         },
@@ -220,52 +229,55 @@ async def test_async_devices_execute(hass):
         args, _ = device_action_event.call_args_list[0]
         assert args[0].as_dict()["data"] == {
             "entity_id": "switch.test_1",
-            "capability": {"state": {"instance": "on", "value": True}, "type": "devices.capabilities.on_off"},
+            "capability": {"state": {"instance": "pause", "value": True}, "type": "devices.capabilities.toggle"},
         }
 
         args, _ = device_action_event.call_args_list[1]
         assert args[0].as_dict()["data"] == {
             "entity_id": "switch.test_1",
-            "capability": {"state": {"instance": "b", "value": True}, "type": "devices.capabilities.toggle"},
+            "capability": {"state": {"instance": "backlight", "value": True}, "type": "devices.capabilities.toggle"},
         }
 
 
 async def test_async_devices_execute_error_template(hass, caplog):
     class MockCapabilityA(OnOffCapability):
+        @property
         def supported(self) -> bool:
             return True
 
-        def get_value(self) -> float | str | None:
+        def get_value(self) -> bool | None:
             return None
 
-        async def set_state(self, data, state):
+        async def set_instance_state(self, *_, **__):
             pass
 
-        async def _set_state(self, data: RequestData, state: dict[str, Any]):
+        async def _set_instance_state(self, *_, **__):
             pass
 
     class MockCapabilityB(ToggleCapability):
-        instance = "b"
+        instance = ToggleCapabilityInstance.PAUSE
 
+        @property
         def supported(self) -> bool:
             return True
 
-        def get_value(self) -> float | str | None:
+        def get_value(self) -> bool | None:
             return None
 
-        async def set_state(self, data, state):
+        async def set_instance_state(self, *_, **__):
             pass
 
     class MockCapabilityC(ToggleCapability):
-        instance = "c"
+        instance = ToggleCapabilityInstance.BACKLIGHT
 
+        @property
         def supported(self) -> bool:
             return True
 
-        def get_value(self) -> float | str | None:
+        def get_value(self) -> bool | None:
             return None
 
-        async def set_state(self, data, state):
+        async def set_instance_state(self, *_, **__):
             pass
 
     config = MockConfig(
@@ -276,11 +288,11 @@ async def test_async_devices_execute_error_template(hass, caplog):
                     {% if capability.type == "devices.capabilities.on_off" and capability.state.instance == "on" and
                           capability.state.value %}
                         NOT_ENOUGH_WATER
-                    {% elif capability.state.instance == 'b' %}
+                    {% elif capability.state.instance == 'pause' %}
                         {% if is_state('sensor.foo', 'bar') %}
                             CONTAINER_FULL
                         {% endif %}
-                    {% elif capability.state.instance == 'c' and capability.state.value %}
+                    {% elif capability.state.instance == 'backlight' and capability.state.value %}
                         WAT?
                     {% endif %}
                 """
@@ -328,20 +340,20 @@ async def test_async_devices_execute_error_template(hass, caplog):
                     "id": "switch.test",
                     "capabilities": [
                         {
-                            "type": "devices.capabilities.on_off",
+                            "type": MockCapabilityA.type,
                             "state": {
-                                "instance": "on",
+                                "instance": MockCapabilityA.instance,
                                 "action_result": {"status": "ERROR", "error_code": "NOT_ENOUGH_WATER"},
                             },
                         },
                         {
-                            "type": "devices.capabilities.toggle",
-                            "state": {"instance": "b", "action_result": {"status": "DONE"}},
+                            "type": MockCapabilityB.type,
+                            "state": {"instance": MockCapabilityB.instance, "action_result": {"status": "DONE"}},
                         },
                         {
-                            "type": "devices.capabilities.toggle",
+                            "type": MockCapabilityC.type,
                             "state": {
-                                "instance": "c",
+                                "instance": MockCapabilityC.instance,
                                 "action_result": {"status": "ERROR", "error_code": "INTERNAL_ERROR"},
                             },
                         },
@@ -350,7 +362,7 @@ async def test_async_devices_execute_error_template(hass, caplog):
             ]
         }
 
-        assert "Invalid error code" in caplog.records[-1].message
+        assert caplog.records[-1].message == "INTERNAL_ERROR: Invalid error code for switch.test: 'WAT?'"
 
         hass.states.async_set("sensor.foo", "bar")
         message = {
@@ -375,9 +387,9 @@ async def test_async_devices_execute_error_template(hass, caplog):
                     "id": "switch.test",
                     "capabilities": [
                         {
-                            "type": "devices.capabilities.toggle",
+                            "type": MockCapabilityB.type,
                             "state": {
-                                "instance": "b",
+                                "instance": MockCapabilityB.instance,
                                 "action_result": {"status": "ERROR", "error_code": "CONTAINER_FULL"},
                             },
                         }

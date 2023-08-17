@@ -1,78 +1,117 @@
-"""Implement the Yandex Smart Home capabilities."""
+"""Implement the Yandex Smart Home base capabilities."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
-from typing import Any, Type
+from typing import Any, TypeVar
 
-from homeassistant.core import HomeAssistant, State
+from homeassistant.const import ATTR_SUPPORTED_FEATURES
+from homeassistant.core import Context, HomeAssistant, State
 
-from .helpers import Config, RequestData
+from .helpers import Config
+from .schema import (
+    CapabilityDescription,
+    CapabilityInstance,
+    CapabilityInstanceActionResultValue,
+    CapabilityInstanceActionState,
+    CapabilityInstanceState,
+    CapabilityInstanceStateValue,
+    CapabilityParameters,
+    CapabilityType,
+)
 
 _LOGGER = logging.getLogger(__name__)
-
-PREFIX_CAPABILITIES = "devices.capabilities."
-
-CAPABILITIES: list[Type[AbstractCapability]] = []
+_CapabilityT = TypeVar("_CapabilityT", bound="AbstractCapability")
+CAPABILITIES: list[type[AbstractCapability]] = []
 
 
-def register_capability(capability):
+def register_capability(capability: type[_CapabilityT]) -> type[_CapabilityT]:
     """Decorate a function to register a capability."""
     CAPABILITIES.append(capability)
     return capability
 
 
 class AbstractCapability(ABC):
-    """Represents a Capability."""
+    """Represents a device base capability."""
 
-    type = ""
-    instance = ""
-    retrievable = True
+    type: CapabilityType
+    instance: CapabilityInstance | None = None
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        """Initialize a trait for a state."""
-        self.hass = hass
-        self.state = state
-
-        self.entity_config = config.get_entity_config(state.entity_id)
-        self.reportable = config.is_reporting_state
-
+        """Initialize a capability for a state."""
+        self._hass = hass
+        self._config = config
+        self._entity_config = config.get_entity_config(state.entity_id)
         self._cache = config.cache
 
+        self.state = state
+
+    @property
     @abstractmethod
     def supported(self) -> bool:
-        """Test if capability is supported."""
+        """Test if the capability is supported for its state."""
         pass
 
-    def description(self) -> dict[str, Any]:
-        """Return description for a devices request."""
-        response = {
-            "type": self.type,
-            "retrievable": self.retrievable,
-            "reportable": self.reportable,
-        }
-        parameters = self.parameters()
-        if parameters is not None:
-            response["parameters"] = parameters
+    @property
+    def retrievable(self) -> bool:
+        """Test if the capability can return the current value."""
+        return True
 
-        return response
+    @property
+    def reportable(self) -> bool:
+        """Test if the capability can report state changes."""
+        return self._config.is_reporting_state
 
-    def get_state(self) -> dict[str, Any]:
-        """Return the state of this capability for this entity."""
-        value = self.get_value()
-        return {"type": self.type, "state": {"instance": self.instance, "value": value}} if value is not None else None
+    @property
+    @abstractmethod
+    def parameters(self) -> CapabilityParameters | None:
+        """Return parameters for a devices list request."""
+        return None
+
+    def get_description(self) -> CapabilityDescription | None:
+        """Return a description for a device list request. Capability with an empty description isn't discoverable."""
+        return CapabilityDescription(
+            type=self.type, retrievable=self.retrievable, reportable=self.reportable, parameters=self.parameters
+        )
 
     @abstractmethod
-    def parameters(self) -> dict[str, Any] | None:
-        """Return parameters for a devices request."""
+    def get_value(self) -> Any:
+        """Return the current capability value."""
         pass
 
+    def get_instance_state(self) -> CapabilityInstanceState | None:
+        """Return a state for a device query request."""
+        if (value := self.get_value()) is not None:
+            return CapabilityInstanceState(
+                type=self.type, state=CapabilityInstanceStateValue(instance=self.instance, value=value)
+            )
+
     @abstractmethod
-    def get_value(self) -> float | str | bool | None:
+    async def set_instance_state(
+        self, context: Context, state: CapabilityInstanceActionState
+    ) -> CapabilityInstanceActionResultValue:
+        """Change the capability state."""
+        pass
+
+    @property
+    def _state_features(self) -> int:
+        """Return features attribute for the state."""
+        return self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+
+class ActionOnlyCapability(AbstractCapability, ABC):
+    """Represents a capability that only execute action."""
+
+    @property
+    def retrievable(self) -> bool:
+        """Test if the capability can return the current value."""
+        return False
+
+    @property
+    def reportable(self) -> bool:
+        """Test if the capability can report state changes."""
+        return False
+
+    def get_value(self) -> None:
         """Return the state value of this capability for this entity."""
-        pass
-
-    @abstractmethod
-    async def set_state(self, data: RequestData, state: dict[str, Any]) -> dict[str, Any] | None:
-        """Set device state."""
-        pass
+        return None

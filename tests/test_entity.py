@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import media_player, switch
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
@@ -17,7 +15,7 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
     UnitOfTemperature,
 )
-from homeassistant.core import State
+from homeassistant.core import Context, State
 import pytest
 from pytest_homeassistant_custom_component.common import (
     async_mock_service,
@@ -27,15 +25,19 @@ from pytest_homeassistant_custom_component.common import (
 )
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability_color import RgbCapability, TemperatureKCapability
+from custom_components.yandex_smart_home.capability_color import (
+    ColorSettingCapability,
+    ColorTemperatureCapability,
+    RGBColorCapability,
+)
 from custom_components.yandex_smart_home.capability_custom import (
     CustomModeCapability,
     CustomRangeCapability,
     CustomToggleCapability,
 )
-from custom_components.yandex_smart_home.capability_onoff import CAPABILITIES_ONOFF, OnOffCapabilityBasic
+from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic
 from custom_components.yandex_smart_home.capability_range import BrightnessCapability
-from custom_components.yandex_smart_home.capability_toggle import CAPABILITIES_TOGGLE, ToggleCapability
+from custom_components.yandex_smart_home.capability_toggle import ToggleCapability
 from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
     CONF_ENTITY_PROPERTY_ENTITY,
@@ -47,7 +49,6 @@ from custom_components.yandex_smart_home.const import (
     ERR_INTERNAL_ERROR,
     ERR_INVALID_ACTION,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-    TOGGLE_INSTANCE_PAUSE,
 )
 from custom_components.yandex_smart_home.entity import YandexEntity, YandexEntityCallbackState
 from custom_components.yandex_smart_home.error import SmartHomeError
@@ -58,8 +59,20 @@ from custom_components.yandex_smart_home.prop_custom import (
 )
 from custom_components.yandex_smart_home.prop_event import ContactProperty
 from custom_components.yandex_smart_home.prop_float import TemperatureProperty, VoltageProperty
+from custom_components.yandex_smart_home.schema import (
+    CapabilityType,
+    OnOffCapabilityInstance,
+    OnOffCapabilityInstanceAction,
+    OnOffCapabilityInstanceActionState,
+    RangeCapabilityInstance,
+    RangeCapabilityInstanceAction,
+    RangeCapabilityInstanceActionState,
+    ToggleCapabilityInstance,
+    ToggleCapabilityInstanceAction,
+    ToggleCapabilityInstanceActionState,
+)
 
-from . import BASIC_CONFIG, BASIC_DATA, MockConfig, generate_entity_filter
+from . import BASIC_CONFIG, MockConfig, generate_entity_filter
 
 
 @pytest.fixture
@@ -75,6 +88,7 @@ def registries(hass):
 
 async def test_yandex_entity_duplicate_capabilities(hass):
     class MockCapability(OnOffCapabilityBasic):
+        @property
         def supported(self) -> bool:
             return True
 
@@ -131,8 +145,9 @@ async def test_yandex_entity_capabilities(hass):
         CustomModeCapability,
         CustomToggleCapability,
         CustomRangeCapability,
-        RgbCapability,
-        TemperatureKCapability,
+        ColorSettingCapability,
+        RGBColorCapability,
+        ColorTemperatureCapability,
         BrightnessCapability,
         OnOffCapabilityBasic,
     ]
@@ -359,18 +374,19 @@ async def test_yandex_entity_device_type(hass):
 
 async def test_yandex_entity_serialize(hass):
     class PauseCapability(ToggleCapability):
-        instance = TOGGLE_INSTANCE_PAUSE
+        instance = ToggleCapabilityInstance.PAUSE
 
+        @property
         def supported(self) -> bool:
             return True
 
-        def get_value(self):
+        def get_value(self) -> bool | None:
             if self.state.state == STATE_UNAVAILABLE:
                 return None
 
             return self.state.state == STATE_ON
 
-        async def set_state(self, *args, **kwargs):
+        async def set_instance_state(self, *_, **__):
             pass
 
     state = State("switch.unavailable", STATE_UNAVAILABLE)
@@ -493,17 +509,16 @@ async def test_yandex_entity_serialize(hass):
             {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
         ]
 
-        cap_pause.retrievable = False
-        prop_temp.retrievable = False
-        assert entity.query_serialize() == {
-            "id": "switch.test",
-            "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
-            "properties": [
-                {"type": "devices.properties.float", "state": {"instance": "voltage", "value": 220.0}},
-                {"type": "devices.properties.float", "state": {"instance": "humidity", "value": 95.0}},
-            ],
-        }
-        cap_pause.retrievable = True
+        with patch.object(PauseCapability, "retrievable", PropertyMock(return_value=None)):
+            prop_temp.retrievable = False
+            assert entity.query_serialize() == {
+                "id": "switch.test",
+                "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
+                "properties": [
+                    {"type": "devices.properties.float", "state": {"instance": "voltage", "value": 220.0}},
+                    {"type": "devices.properties.float", "state": {"instance": "humidity", "value": 95.0}},
+                ],
+            }
         prop_temp.retrievable = True
 
         state_pause.state = STATE_UNAVAILABLE
@@ -521,27 +536,38 @@ async def test_yandex_entity_execute(hass):
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     with pytest.raises(SmartHomeError) as e:
         await entity.execute(
-            BASIC_DATA, {"type": CAPABILITIES_TOGGLE, "state": {"instance": TOGGLE_INSTANCE_PAUSE, "value": True}}
+            Context(),
+            ToggleCapabilityInstanceAction(
+                type=CapabilityType.TOGGLE,
+                state=ToggleCapabilityInstanceActionState(instance=ToggleCapabilityInstance.PAUSE, value=True),
+            ),
         )
 
     assert e.value.code == ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 
     off_calls = async_mock_service(hass, state.domain, SERVICE_TURN_OFF)
-    await entity.execute(BASIC_DATA, {"type": CAPABILITIES_ONOFF, "state": {"instance": "on", "value": False}})
+    await entity.execute(
+        Context(),
+        OnOffCapabilityInstanceAction(
+            type=CapabilityType.ON_OFF,
+            state=OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=False),
+        ),
+    )
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
 async def test_yandex_entity_execute_exception(hass):
     class MockOnOffCapability(OnOffCapabilityBasic):
-        async def set_state(self, *args, **kwargs):
+        async def set_instance_state(self, *_, **__):
             raise Exception("fail set_state")
 
     class MockBrightnessCapability(BrightnessCapability):
+        @property
         def supported(self) -> bool:
             return True
 
-        async def set_state(self, *args, **kwargs):
+        async def set_instance_state(self, *_, **__):
             raise SmartHomeError(ERR_INVALID_ACTION, "")
 
     state = State("switch.test", STATE_ON)
@@ -549,8 +575,11 @@ async def test_yandex_entity_execute_exception(hass):
     with patch("custom_components.yandex_smart_home.capability.CAPABILITIES", [MockOnOffCapability]):
         with pytest.raises(SmartHomeError) as e:
             await entity.execute(
-                BASIC_DATA,
-                {"type": MockOnOffCapability.type, "state": {"instance": MockOnOffCapability.instance, "value": True}},
+                Context(),
+                OnOffCapabilityInstanceAction(
+                    type=CapabilityType.ON_OFF,
+                    state=OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=True),
+                ),
             )
 
     assert e.value.code == ERR_INTERNAL_ERROR
@@ -559,11 +588,11 @@ async def test_yandex_entity_execute_exception(hass):
     with patch("custom_components.yandex_smart_home.capability.CAPABILITIES", [MockBrightnessCapability]):
         with pytest.raises(SmartHomeError) as e:
             await entity.execute(
-                BASIC_DATA,
-                {
-                    "type": MockBrightnessCapability.type,
-                    "state": {"instance": MockBrightnessCapability.instance, "value": True},
-                },
+                Context(),
+                RangeCapabilityInstanceAction(
+                    type=CapabilityType.RANGE,
+                    state=RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.BRIGHTNESS, value=50),
+                ),
             )
 
     assert e.value.code == ERR_INVALID_ACTION

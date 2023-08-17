@@ -13,6 +13,7 @@ from .const import ERR_DEVICE_UNREACHABLE, ERR_INTERNAL_ERROR, EVENT_DEVICE_ACTI
 from .entity import YandexEntity
 from .error import SmartHomeError, SmartHomeUserError
 from .helpers import DeviceActionRequest, RequestData
+from .schema import DevicesActionRequest
 
 HANDLERS = Registry()
 _LOGGER = logging.getLogger(__name__)
@@ -110,9 +111,10 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
     """
     devices = []
+    request = DevicesActionRequest.parse_obj(message)
 
-    for device in message["payload"]["devices"]:
-        entity_id = device["id"]
+    for device in request.payload.devices:
+        entity_id = device.id
         state = hass.states.get(entity_id)
 
         if state is None or state.state == STATE_UNAVAILABLE:
@@ -127,18 +129,18 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
         entity = YandexEntity(hass, data.config, state)
 
         capabilities_result = []
-        for capability in device["capabilities"]:
+        for action in device.capabilities:
             try:
-                value = await entity.execute(data, capability)
+                value = await entity.execute(data.context, action)
             except (SmartHomeError, SmartHomeUserError) as e:
                 if isinstance(e, SmartHomeError):
                     _LOGGER.error(f"{e.code}: {e.message}")
 
                 capabilities_result.append(
                     {
-                        "type": capability["type"],
+                        "type": action.type,
                         "state": {
-                            "instance": capability["state"]["instance"],
+                            "instance": action.state.instance,
                             "action_result": {"status": "ERROR", "error_code": e.code},
                         },
                     }
@@ -147,21 +149,21 @@ async def async_devices_execute(hass: HomeAssistant, data: RequestData, message:
 
             hass.bus.async_fire(
                 EVENT_DEVICE_ACTION,
-                {ATTR_ENTITY_ID: entity_id, "capability": capability},
+                {ATTR_ENTITY_ID: entity_id, "capability": action.dict()},
                 context=data.context,
             )
 
             result = {
-                "type": capability["type"],
+                "type": action.type,
                 "state": {
-                    "instance": capability["state"]["instance"],
+                    "instance": action.state.instance,
                     "action_result": {
                         "status": "DONE",
                     },
                 },
             }
             if value:
-                result["state"]["value"] = value
+                result["state"]["value"] = value.dict()
 
             capabilities_result.append(result)
 

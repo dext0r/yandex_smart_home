@@ -10,6 +10,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
 from . import const
+from .color import ColorProfiles
 from .const import DOMAIN, NOTIFIERS, STORE_CACHE_ATTRS
 
 
@@ -82,8 +83,8 @@ class Config:
         return self._data.get(const.CONF_NOTIFIER, [])
 
     @property
-    def color_profiles(self) -> dict[str, dict[str, int]]:
-        return self._options.get(const.CONF_COLOR_PROFILE, {})
+    def color_profiles(self) -> ColorProfiles:
+        return ColorProfiles.from_dict(self._options.get(const.CONF_COLOR_PROFILE, {}))
 
     @property
     def devices_discovered(self) -> bool:

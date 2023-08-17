@@ -4,7 +4,7 @@ import re
 from typing import Any
 
 from homeassistant.const import ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES, CONF_NAME, STATE_UNAVAILABLE
-from homeassistant.core import HomeAssistant, State, callback
+from homeassistant.core import Context, HomeAssistant, State, callback
 from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
@@ -25,10 +25,11 @@ from .const import (
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
 from .error import SmartHomeError, SmartHomeUserError
-from .helpers import Config, DeviceActionCapability, RequestData
+from .helpers import Config
 from .prop import AbstractProperty
 from .prop_custom import CustomEntityProperty
 from .prop_event import EventProperty
+from .schema import CapabilityInstanceAction, CapabilityInstanceActionResultValue
 
 
 def _alias_priority(text: str) -> (int, str):
@@ -75,12 +76,12 @@ class YandexEntity:
                         self.hass, self._component_config, state, instance, self._config[config_key][instance]
                     )
 
-                    if capability.supported():
+                    if capability.supported:
                         self._capabilities.append(capability)
 
         for Capability in caps.CAPABILITIES:
             capability = Capability(self.hass, self._component_config, state)
-            if capability.supported() and capability.instance not in [c.instance for c in self._capabilities]:
+            if capability.supported and capability.instance not in [c.instance for c in self._capabilities]:
                 self._capabilities.append(capability)
 
         return self._capabilities
@@ -162,9 +163,9 @@ class YandexEntity:
             if device_entry.sw_version:
                 device["device_info"]["sw_version"] = str(device_entry.sw_version)
 
-        for item in [c.description() for c in self.capabilities()]:
-            if item not in device["capabilities"]:
-                device["capabilities"].append(item)
+        for item in [c.get_description() for c in self.capabilities()]:
+            if item and item not in device["capabilities"]:
+                device["capabilities"].append(item.dict(exclude_none=True))
 
         for item in [p.description() for p in self.properties()]:
             if item not in device["properties"]:
@@ -188,9 +189,8 @@ class YandexEntity:
         }
 
         for item in [c for c in self.capabilities() if c.retrievable]:
-            state = item.get_state()
-            if state is not None:
-                device["capabilities"].append(state)
+            if (state := item.get_instance_state()) is not None:
+                device["capabilities"].append(state.dict())
 
         for item in [p for p in self.properties() if p.retrievable]:
             state = item.get_state()
@@ -199,24 +199,26 @@ class YandexEntity:
 
         return device
 
-    async def execute(self, data: RequestData, capability: DeviceActionCapability) -> dict[str, Any] | None:
+    async def execute(
+        self, context: Context, action: CapabilityInstanceAction
+    ) -> CapabilityInstanceActionResultValue | None:
         """Execute action.
 
         https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
         """
-        capability_type = capability["type"]
-        instance = capability["state"]["instance"]
-
-        target_capabilities = [c for c in self.capabilities() if c.type == capability_type and c.instance == instance]
+        target_capabilities = [
+            c for c in self.capabilities() if c.type == action.type and c.instance == action.state.instance
+        ]
         if not target_capabilities:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                f"Capability not found for instance {instance} ({capability_type}) of {self.state.entity_id}",
+                f"Capability not found for instance {action.state.instance.value} ({action.type.value}) of "
+                f"{self.state.entity_id}",
             )
 
         for target_capability in target_capabilities:
             if error_code_template := self._error_code_template:
-                if error_code := error_code_template.async_render(capability=capability, parse_result=False):
+                if error_code := error_code_template.async_render(capability=action.dict(), parse_result=False):
                     if error_code not in const.ERROR_CODES:
                         raise SmartHomeError(
                             ERR_INTERNAL_ERROR, f"Invalid error code for {self.state.entity_id}: {error_code!r}"
@@ -225,14 +227,14 @@ class YandexEntity:
                     raise SmartHomeUserError(error_code)
 
             try:
-                return await target_capability.set_state(data, capability["state"])
+                return await target_capability.set_instance_state(context, action.state)
             except SmartHomeError:
                 raise
             except Exception as e:
                 raise SmartHomeError(
                     ERR_INTERNAL_ERROR,
-                    f"Failed to execute action for instance {instance} ({capability_type}) of {self.state.entity_id}: "
-                    f"{e!r}",
+                    f"Failed to execute action for instance {action.state.instance.value} ({action.type.value}) of "
+                    f"{self.state.entity_id}: {e!r}",
                 )
 
     async def _get_entity_and_device(
@@ -304,9 +306,8 @@ class YandexEntityCallbackState:
             return
 
         for item in [c for c in entity.capabilities() if c.reportable]:
-            state = item.get_state()
-            if state is not None:
-                self.capabilities.append(state)
+            if (state := item.get_instance_state()) is not None:
+                self.capabilities.append(state.dict())
 
         for item in [c for c in entity.properties() if c.reportable]:
             if isinstance(item, CustomEntityProperty):
