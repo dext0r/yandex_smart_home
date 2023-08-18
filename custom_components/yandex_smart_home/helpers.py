@@ -17,6 +17,8 @@ from .const import DOMAIN, NOTIFIERS, STORE_CACHE_ATTRS
 class Config:
     """Hold the configuration for Yandex Smart Home."""
 
+    cache: CacheStore
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -30,7 +32,6 @@ class Config:
         self._options = entry.options
         self._entity_filter = entity_filter
 
-        self.cache: CacheStore | None = None
         self.entity_config = entity_config or {}
 
     async def async_init(self):

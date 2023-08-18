@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal, TypeVar, Union
 
 from pydantic import BaseModel, Field
 
@@ -7,8 +7,11 @@ from .capability_color import (
     ColorSettingCapabilityInstance,
     ColorSettingCapabilityInstanceActionState,
     ColorSettingCapabilityParameters,
+    RGBInstanceActionState,
+    SceneInstanceActionState,
+    TemperatureKInstanceActionState,
 )
-from .capability_mode import ModeCapabilityInstance, ModeCapabilityInstanceActionState, ModeCapabilityMode
+from .capability_mode import ModeCapabilityInstance, ModeCapabilityInstanceActionState, ModeCapabilityParameters
 from .capability_onoff import OnOffCapabilityInstance, OnOffCapabilityInstanceActionState, OnOffCapabilityParameters
 from .capability_range import RangeCapabilityInstance, RangeCapabilityInstanceActionState, RangeCapabilityParameters
 from .capability_toggle import ToggleCapabilityInstance, ToggleCapabilityInstanceActionState, ToggleCapabilityParameters
@@ -32,6 +35,7 @@ class CapabilityType(StrEnum):
 CapabilityParameters = (
     OnOffCapabilityParameters
     | ColorSettingCapabilityParameters
+    | ModeCapabilityParameters
     | RangeCapabilityParameters
     | ToggleCapabilityParameters
     | VideoStreamCapabilityParameters
@@ -67,13 +71,17 @@ class CapabilityInstanceState(BaseModel):
 
 CapabilityInstanceActionResultValue = GetStreamInstanceActionResultValue | None
 
-CapabilityInstanceActionState = (
-    OnOffCapabilityInstanceActionState
-    | ColorSettingCapabilityInstanceActionState
-    | ModeCapabilityInstanceActionState
-    | RangeCapabilityInstanceActionState
-    | ToggleCapabilityInstanceActionState
-    | GetStreamInstanceActionState
+CapabilityInstanceActionState = TypeVar(
+    "CapabilityInstanceActionState",
+    OnOffCapabilityInstanceActionState,
+    ColorSettingCapabilityInstanceActionState,
+    RGBInstanceActionState,
+    TemperatureKInstanceActionState,
+    SceneInstanceActionState,
+    ModeCapabilityInstanceActionState,
+    RangeCapabilityInstanceActionState,
+    ToggleCapabilityInstanceActionState,
+    GetStreamInstanceActionState,
 )
 """New capability state in device action request."""
 

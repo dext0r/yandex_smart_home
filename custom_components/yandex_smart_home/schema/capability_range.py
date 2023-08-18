@@ -29,7 +29,7 @@ class RangeCapabilityRange(BaseModel):
     max: float
     precision: float
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"[{self.min}, {self.max}]"
 
 

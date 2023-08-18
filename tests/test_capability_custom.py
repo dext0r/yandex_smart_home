@@ -433,3 +433,27 @@ async def test_capability_custom_range_only_relative(hass):
     assert len(calls) == 2
     assert calls[0].data == {"entity_id": "input_number.test", "value": "value: -3"}
     assert calls[1].data == {"entity_id": "input_number.test", "value": "value: -50"}
+
+
+async def test_capability_custom_range_no_service(hass):
+    state = State("switch.test", STATE_ON, {})
+    cap = CustomRangeCapability(
+        hass,
+        BASIC_CONFIG,
+        state,
+        RangeCapabilityInstance.OPEN,
+        {},
+    )
+    assert cap.supported is True
+    assert cap.support_random_access is False
+    assert cap.retrievable is False
+    assert cap.get_value() is None
+
+    with pytest.raises(SmartHomeError) as e:
+        await cap.set_instance_state(
+            Context(),
+            RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10),
+        )
+
+    assert e.value.code == const.ERR_INTERNAL_ERROR
+    assert e.value.message == "Missing capability service"

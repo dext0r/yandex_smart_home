@@ -1,6 +1,7 @@
 """Implement the Yandex Smart Home color_setting capability."""
 from functools import cached_property
 import logging
+from typing import Any
 
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID
@@ -30,13 +31,14 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @register_capability
-class ColorSettingCapability(AbstractCapability):
+class ColorSettingCapability(AbstractCapability[ColorSettingCapabilityInstanceActionState]):
     """Root capability to discover another light device capabilities.
 
     https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html
     """
 
     type = CapabilityType.COLOR_SETTING
+    instance = ColorSettingCapabilityInstance.BASE
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a capability for a state."""
@@ -60,7 +62,7 @@ class ColorSettingCapability(AbstractCapability):
         """Return parameters for a devices list request."""
         return ColorSettingCapabilityParameters(
             color_model=self._color.parameters.color_model if self._color.supported else None,
-            temperature_k=self._temperature.parameters.temperature_k if self._temperature.supported else None,
+            temperature_k=self._temperature.parameters.temperature_k if self._temperature.parameters else None,
             color_scene=self._color_scene.parameters.color_scene if self._color_scene.supported else None,
         )
 
@@ -79,7 +81,7 @@ class ColorSettingCapability(AbstractCapability):
 
 
 @register_capability
-class RGBColorCapability(AbstractCapability):
+class RGBColorCapability(AbstractCapability[RGBInstanceActionState]):
     """Capability to control color of a light device."""
 
     type = CapabilityType.COLOR_SETTING
@@ -120,7 +122,7 @@ class RGBColorCapability(AbstractCapability):
         if self.state.attributes.get(light.ATTR_COLOR_MODE) == light.COLOR_MODE_COLOR_TEMP:
             return None
 
-        rgb_color: tuple[int, int, int] = self.state.attributes.get(light.ATTR_RGB_COLOR)
+        rgb_color = self.state.attributes.get(light.ATTR_RGB_COLOR)
         if rgb_color is None:
             hs_color = self.state.attributes.get(light.ATTR_HS_COLOR)
             if hs_color is not None:
@@ -135,6 +137,8 @@ class RGBColorCapability(AbstractCapability):
                 return None
 
             return self._converter.get_yandex_color(RGBColor(*rgb_color))
+
+        return None
 
     async def set_instance_state(self, context: Context, state: RGBInstanceActionState) -> None:
         """Change the capability state."""
@@ -166,7 +170,7 @@ class RGBColorCapability(AbstractCapability):
 
 
 @register_capability
-class ColorTemperatureCapability(AbstractCapability):
+class ColorTemperatureCapability(AbstractCapability[TemperatureKInstanceActionState]):
     """Capability to control color temperature of a light device."""
 
     type = CapabilityType.COLOR_SETTING
@@ -191,8 +195,11 @@ class ColorTemperatureCapability(AbstractCapability):
         return False
 
     @property
-    def parameters(self) -> ColorSettingCapabilityParameters:
+    def parameters(self) -> ColorSettingCapabilityParameters | None:
         """Return parameters for a devices list request."""
+        if not self.supported:
+            return None
+
         supported_color_modes = set(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, []))
 
         if self._state_features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
@@ -210,6 +217,8 @@ class ColorTemperatureCapability(AbstractCapability):
             return ColorSettingCapabilityParameters(
                 temperature_k=CapabilityParameterTemperatureK(min=min_temp, max=max_temp)
             )
+
+        return None  # pragma: no cover
 
     def get_description(self) -> None:
         """Return a description for a device list request. Capability with an empty description isn't discoverable."""
@@ -247,10 +256,12 @@ class ColorTemperatureCapability(AbstractCapability):
 
             return None
 
+        return None
+
     async def set_instance_state(self, context: Context, state: TemperatureKInstanceActionState) -> None:
         """Change the capability state."""
         supported_color_modes = set(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, []))
-        service_data = {}
+        service_data: dict[str, Any] = {}
 
         if self._state_features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
             service_data[light.ATTR_KELVIN] = self._converter.get_ha_color_temperature(state.value)
@@ -296,7 +307,7 @@ class ColorTemperatureCapability(AbstractCapability):
 
 
 @register_capability
-class ColorSceneCapability(AbstractCapability):
+class ColorSceneCapability(AbstractCapability[SceneInstanceActionState]):
     """Capability to control effect of a light device."""
 
     type = CapabilityType.COLOR_SETTING
@@ -347,6 +358,8 @@ class ColorSceneCapability(AbstractCapability):
         if effect := self.state.attributes.get(light.ATTR_EFFECT):
             return self.get_scene_by_effect(effect)
 
+        return None
+
     async def set_instance_state(self, context: Context, state: SceneInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -393,9 +406,13 @@ class ColorSceneCapability(AbstractCapability):
             if effect.lower() in effects:
                 return scene
 
+        return None
+
     def get_effect_by_scene(self, scene: ColorScene) -> str | None:
         """Return HA light effect for Yandex scene."""
         for effect in self.scenes_map.get(scene, {}):
             for supported_effect in self.state.attributes.get(light.ATTR_EFFECT_LIST, []):
                 if str(supported_effect).lower() == effect:
-                    return supported_effect
+                    return str(supported_effect)
+
+        return None

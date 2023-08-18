@@ -21,6 +21,7 @@ from .const import (
     CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION,
     ERR_DEVICE_UNREACHABLE,
+    ERR_INTERNAL_ERROR,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
 from .error import SmartHomeError
@@ -68,13 +69,15 @@ class CustomCapability(AbstractCapability, ABC):
         entity_state = self.state
 
         if self._state_entity_id:
-            entity_state = self._hass.states.get(self._state_entity_id)
-            if not entity_state:
+            state_by_entity_id = self._hass.states.get(self._state_entity_id)
+            if not state_by_entity_id:
                 raise SmartHomeError(
                     ERR_DEVICE_UNREACHABLE,
                     f"Entity {self._state_entity_id} not found for "
                     f"{self.instance} instance of {self.state.entity_id}",
                 )
+
+            entity_state = state_by_entity_id
 
         if self._state_value_attribute:
             value = entity_state.attributes.get(self._state_value_attribute)
@@ -194,6 +197,9 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                     )
 
                 value = self._get_absolute_value(state.value)
+
+        if not config:
+            raise SmartHomeError(ERR_INTERNAL_ERROR, "Missing capability service")
 
         await async_call_from_config(
             self._hass,

@@ -23,13 +23,14 @@ from .schema import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class ModeCapability(AbstractCapability, ABC):
+class ModeCapability(AbstractCapability[ModeCapabilityInstanceActionState], ABC):
     """Base class for capabilities with mode functionality like thermostat mode or fan speed.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-docpage/
     """
 
     type = CapabilityType.MODE
+    instance: ModeCapabilityInstance
 
     _modes_map_default: dict[ModeCapabilityMode, list[str]] = {}
     _modes_map_index_fallback: dict[int, ModeCapabilityMode] = {}
@@ -65,7 +66,10 @@ class ModeCapability(AbstractCapability, ABC):
     @property
     def supported_ha_modes(self) -> list[str]:
         """Returns list of supported HA modes."""
-        return self.state.attributes.get(self.modes_list_attribute, []) or []
+        if self.modes_list_attribute:
+            return self.state.attributes.get(self.modes_list_attribute, []) or []
+
+        return []  # pragma: no cover
 
     @property
     def modes_map(self) -> dict[ModeCapabilityMode, list[str]]:
@@ -88,8 +92,11 @@ class ModeCapability(AbstractCapability, ABC):
         """Return HA attribute for state of the entity."""
         return None
 
-    def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings=False) -> ModeCapabilityMode | None:
+    def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings: bool = False) -> ModeCapabilityMode | None:
         """Return Yandex mode by HA mode."""
+        if ha_mode is None:
+            return None
+
         rv = None
         for yandex_mode, names in self.modes_map.items():
             lower_names = [str(n).lower() for n in names]
@@ -176,7 +183,7 @@ class ThermostatCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str | None:
+    def modes_list_attribute(self) -> str:
         """Return HA attribute contains modes list for the entity."""
         return climate.ATTR_HVAC_MODES
 
@@ -216,12 +223,12 @@ class SwingCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str | None:
+    def modes_list_attribute(self) -> str:
         """Return HA attribute contains modes list for the entity."""
         return climate.ATTR_SWING_MODES
 
     @property
-    def state_value_attribute(self) -> str | None:
+    def state_value_attribute(self) -> str:
         """Return HA attribute for state of the entity."""
         return climate.ATTR_SWING_MODE
 
@@ -313,12 +320,12 @@ class ProgramCapabilityHumidifier(ProgramCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str | None:
+    def modes_list_attribute(self) -> str:
         """Return HA attribute contains modes list for the entity."""
         return humidifier.ATTR_AVAILABLE_MODES
 
     @property
-    def state_value_attribute(self) -> str | None:
+    def state_value_attribute(self) -> str:
         """Return HA attribute for state of the entity."""
         return humidifier.ATTR_MODE
 
@@ -387,12 +394,12 @@ class ProgramCapabilityFan(ProgramCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str | None:
+    def modes_list_attribute(self) -> str:
         """Return HA attribute contains modes list for the entity."""
         return fan.ATTR_PRESET_MODES
 
     @property
-    def state_value_attribute(self) -> str | None:
+    def state_value_attribute(self) -> str:
         """Return HA attribute for state of the entity."""
         return fan.ATTR_PRESET_MODE
 
@@ -414,7 +421,7 @@ class ProgramCapabilityFan(ProgramCapability):
 class InputSourceCapability(ModeCapability):
     """Capability to control the input source of a media player device."""
 
-    instance = const.MODE_INSTANCE_INPUT_SOURCE
+    instance = ModeCapabilityInstance.INPUT_SOURCE
 
     _modes_map_index_fallback = {
         0: ModeCapabilityMode.ONE,
@@ -453,16 +460,16 @@ class InputSourceCapability(ModeCapability):
         return self._cache.get_attr_value(self.state.entity_id, self.modes_list_attribute) or []
 
     @property
-    def modes_list_attribute(self) -> str | None:
+    def modes_list_attribute(self) -> str:
         """Return HA attribute contains modes list for the entity."""
         return media_player.ATTR_INPUT_SOURCE_LIST
 
     @property
-    def state_value_attribute(self) -> str | None:
+    def state_value_attribute(self) -> str:
         """Return HA attribute for state of the entity."""
         return media_player.ATTR_INPUT_SOURCE
 
-    def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings=False) -> ModeCapabilityMode | None:
+    def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings: bool = False) -> ModeCapabilityMode | None:
         """Return Yandex mode by HA mode."""
         return super().get_yandex_mode_by_ha_mode(ha_mode, hide_warnings=True)
 
@@ -540,12 +547,12 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str | None:
+    def modes_list_attribute(self) -> str:
         """Return HA attribute contains modes list for the entity."""
         return climate.ATTR_FAN_MODES
 
     @property
-    def state_value_attribute(self) -> str | None:
+    def state_value_attribute(self) -> str:
         """Return HA attribute for state of the entity."""
         return climate.ATTR_FAN_MODE
 
@@ -631,12 +638,12 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str | None:
+    def modes_list_attribute(self) -> str:
         """Return HA attribute contains modes list for the entity."""
         return fan.ATTR_PRESET_MODES
 
     @property
-    def state_value_attribute(self) -> str | None:
+    def state_value_attribute(self) -> str:
         """Return HA attribute for state of the entity."""
         return fan.ATTR_PRESET_MODE
 
@@ -693,7 +700,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         if speed_count >= 7:
             modes.append(ModeCapabilityMode.TURBO)
 
-        return modes
+        return [str(s) for s in modes]
 
     @property
     def supported_yandex_modes(self) -> list[ModeCapabilityMode]:
@@ -701,7 +708,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         return [ModeCapabilityMode(m) for m in self.supported_ha_modes]
 
     @property
-    def modes_list_attribute(self) -> str | None:
+    def modes_list_attribute(self) -> None:
         """Return HA attribute contains modes list for the entity."""
         return None
 
@@ -784,12 +791,12 @@ class CleanupModeCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str | None:
+    def modes_list_attribute(self) -> str:
         """Return HA attribute contains modes list for the entity."""
         return vacuum.ATTR_FAN_SPEED_LIST
 
     @property
-    def state_value_attribute(self) -> str | None:
+    def state_value_attribute(self) -> str:
         """Return HA attribute for state of the entity."""
         return vacuum.ATTR_FAN_SPEED
 

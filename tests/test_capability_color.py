@@ -30,7 +30,10 @@ from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 def _get_color_setting_capability(hass: HomeAssistant, config: Config, state: State) -> ColorSettingCapability:
     return cast(
-        ColorSettingCapability, get_exact_one_capability(hass, config, state, CapabilityType.COLOR_SETTING, None)
+        ColorSettingCapability,
+        get_exact_one_capability(
+            hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
+        ),
     )
 
 
@@ -76,7 +79,7 @@ async def test_capability_color_setting(hass):
 async def test_capability_color_setting_rgb(hass, color_modes, features):
     state = State("light.test", STATE_OFF)
     assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, None)
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
 
     state = State(
         "light.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, light.ATTR_SUPPORTED_COLOR_MODES: color_modes}
@@ -85,7 +88,9 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
         assert_no_capabilities(
             hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         )
-        assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, None)
+        assert_no_capabilities(
+            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
+        )
         return
 
     cap_rgb = cast(
@@ -324,7 +329,7 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
     assert_no_capabilities(
         hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, None)
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
 
     state = State("light.test", STATE_OFF, attributes)
     cap_temp = cast(
@@ -801,7 +806,7 @@ async def test_capability_color_setting_scene(hass):
     assert_no_capabilities(
         hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, None)
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
 
     state = State(
         "light.test",
@@ -811,7 +816,7 @@ async def test_capability_color_setting_scene(hass):
     assert_no_capabilities(
         hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, None)
+    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
 
     state = State(
         "light.test",

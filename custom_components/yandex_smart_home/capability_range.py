@@ -47,7 +47,7 @@ from .schema import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class RangeCapability(AbstractCapability, ABC):
+class RangeCapability(AbstractCapability[RangeCapabilityInstanceActionState], ABC):
     """Base class for capabilities with range functionality like volume or brightness.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/range-docpage/
@@ -151,6 +151,8 @@ class RangeCapability(AbstractCapability, ABC):
                     f"Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}",
                 )
 
+        return None
+
 
 @register_capability
 class CoverPositionCapability(RangeCapability):
@@ -161,7 +163,7 @@ class CoverPositionCapability(RangeCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported for its state."""
-        return self.state.domain == cover.DOMAIN and self._state_features & cover.CoverEntityFeature.SET_POSITION
+        return self.state.domain == cover.DOMAIN and bool(self._state_features & cover.CoverEntityFeature.SET_POSITION)
 
     @property
     def support_random_access(self) -> bool:
@@ -201,9 +203,8 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported for its state."""
-        return (
-            self.state.domain == water_heater.DOMAIN
-            and self._state_features & water_heater.WaterHeaterEntityFeature.TARGET_TEMPERATURE
+        return self.state.domain == water_heater.DOMAIN and bool(
+            self._state_features & water_heater.WaterHeaterEntityFeature.TARGET_TEMPERATURE
         )
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
@@ -224,8 +225,8 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
     def _default_range(self) -> RangeCapabilityRange:
         """Return a default supporting range. Can be overrided by user."""
         return RangeCapabilityRange(
-            min=self.state.attributes.get(water_heater.ATTR_MIN_TEMP),
-            max=self.state.attributes.get(water_heater.ATTR_MAX_TEMP),
+            min=self.state.attributes.get(water_heater.ATTR_MIN_TEMP, 0),
+            max=self.state.attributes.get(water_heater.ATTR_MAX_TEMP, 100),
             precision=0.5,
         )
 
@@ -237,9 +238,8 @@ class TemperatureCapabilityClimate(TemperatureCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported for its state."""
-        return (
-            self.state.domain == climate.DOMAIN
-            and self._state_features & climate.ClimateEntityFeature.TARGET_TEMPERATURE
+        return self.state.domain == climate.DOMAIN and bool(
+            self._state_features & climate.ClimateEntityFeature.TARGET_TEMPERATURE
         )
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
@@ -260,8 +260,8 @@ class TemperatureCapabilityClimate(TemperatureCapability):
     def _default_range(self) -> RangeCapabilityRange:
         """Return a default supporting range. Can be overrided by user."""
         return RangeCapabilityRange(
-            min=self.state.attributes.get(climate.ATTR_MIN_TEMP),
-            max=self.state.attributes.get(climate.ATTR_MAX_TEMP),
+            min=self.state.attributes.get(climate.ATTR_MIN_TEMP, 0),
+            max=self.state.attributes.get(climate.ATTR_MAX_TEMP, 100),
             precision=self.state.attributes.get(climate.ATTR_TARGET_TEMP_STEP, 0.5),
         )
 
@@ -382,6 +382,8 @@ class BrightnessCapability(RangeCapability):
         if (brightness := self._convert_to_float(self.state.attributes.get(light.ATTR_BRIGHTNESS))) is not None:
             return int(100 * (brightness / 255))
 
+        return None
+
     @property
     def _default_range(self) -> RangeCapabilityRange:
         """Return a default supporting range. Can be overrided by user."""
@@ -461,12 +463,16 @@ class VolumeCapability(RangeCapability):
                 context=context,
             )
 
+        return None
+
     def _get_value(self) -> float | None:
         """Return the current capability value (unguarded)."""
         if (
             level := self._convert_to_float(self.state.attributes.get(media_player.ATTR_MEDIA_VOLUME_LEVEL))
         ) is not None:
             return int(level * 100)
+
+        return None
 
 
 @register_capability
@@ -567,12 +573,16 @@ class ChannelCapability(RangeCapability):
                 f"if the device does not support channel selection. Error: {e!r}",
             )
 
+        return None
+
     def _get_value(self) -> float | None:
         """Return the current capability value (unguarded)."""
         media_content_type = self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_TYPE)
 
         if media_content_type == media_player.const.MEDIA_TYPE_CHANNEL:
             return self._convert_to_float(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID), strict=False)
+
+        return None
 
     @property
     def _default_range(self) -> RangeCapabilityRange:

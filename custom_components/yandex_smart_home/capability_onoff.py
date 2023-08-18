@@ -56,7 +56,7 @@ from .schema import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class OnOffCapability(AbstractCapability, ABC):
+class OnOffCapability(AbstractCapability[OnOffCapabilityInstanceActionState], ABC):
     """Base class for capabilitity to turn on and off a device.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/on_off-docpage/
@@ -83,6 +83,8 @@ class OnOffCapability(AbstractCapability, ABC):
         """Return parameters for a devices list request."""
         if not self.retrievable:
             return OnOffCapabilityParameters(split=True)
+
+        return None
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
@@ -142,7 +144,7 @@ class OnOffCapabilityAutomation(OnOffCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported for its state."""
-        return self.state.domain == automation.DOMAIN
+        return bool(self.state.domain == automation.DOMAIN)
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
@@ -393,7 +395,7 @@ class OnOffCapabilityClimate(OnOffCapability):
         if state.value:
             service = SERVICE_TURN_ON
 
-            hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES)
+            hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES, [])
             for mode in (climate.HVACMode.HEAT_COOL, climate.HVACMode.AUTO):
                 if mode not in hvac_modes:
                     continue
@@ -443,7 +445,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
             # turn_on/turn_off is not supported
             pass
 
-        operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST)
+        operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST, [])
 
         if state.value:
             mode = self._get_water_heater_operation(STATE_ON, operation_list)

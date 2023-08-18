@@ -18,7 +18,7 @@ from .schema import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class ToggleCapability(AbstractCapability, ABC):
+class ToggleCapability(AbstractCapability[ToggleCapabilityInstanceActionState], ABC):
     """Base class for capabilities with toggle functions like mute or pause.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
@@ -117,7 +117,7 @@ class PauseCapabilityCover(ActionOnlyCapability, ToggleCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported for its state."""
-        return self.state.domain == cover.DOMAIN and self._state_features & cover.CoverEntityFeature.STOP
+        return self.state.domain == cover.DOMAIN and bool(self._state_features & cover.CoverEntityFeature.STOP)
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -139,7 +139,7 @@ class PauseCapabilityVacuum(ToggleCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported for its state."""
-        return self.state.domain == vacuum.DOMAIN and self._state_features & vacuum.VacuumEntityFeature.PAUSE
+        return self.state.domain == vacuum.DOMAIN and bool(self._state_features & vacuum.VacuumEntityFeature.PAUSE)
 
     def get_value(self) -> bool:
         """Return the current capability value."""
@@ -166,7 +166,7 @@ class OscillationCapability(ToggleCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported for its state."""
-        return self.state.domain == fan.DOMAIN and self._state_features & fan.FanEntityFeature.OSCILLATE
+        return self.state.domain == fan.DOMAIN and bool(self._state_features & fan.FanEntityFeature.OSCILLATE)
 
     def get_value(self) -> bool:
         """Return the current capability value."""

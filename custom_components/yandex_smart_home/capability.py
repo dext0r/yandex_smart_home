@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import logging
-from typing import Any, TypeVar
+from typing import Any, Generic, TypeVar
 
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import Context, HomeAssistant, State
@@ -22,6 +22,7 @@ from .schema import (
 
 _LOGGER = logging.getLogger(__name__)
 _CapabilityT = TypeVar("_CapabilityT", bound="AbstractCapability")
+
 CAPABILITIES: list[type[AbstractCapability]] = []
 
 
@@ -31,11 +32,11 @@ def register_capability(capability: type[_CapabilityT]) -> type[_CapabilityT]:
     return capability
 
 
-class AbstractCapability(ABC):
+class AbstractCapability(Generic[CapabilityInstanceActionState], ABC):
     """Represents a device base capability."""
 
     type: CapabilityType
-    instance: CapabilityInstance | None = None
+    instance: CapabilityInstance
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
         """Initialize a capability for a state."""
@@ -81,10 +82,12 @@ class AbstractCapability(ABC):
 
     def get_instance_state(self) -> CapabilityInstanceState | None:
         """Return a state for a device query request."""
-        if (value := self.get_value()) is not None:
+        if (value := self.get_value()) is not None and self.instance:
             return CapabilityInstanceState(
                 type=self.type, state=CapabilityInstanceStateValue(instance=self.instance, value=value)
             )
+
+        return None
 
     @abstractmethod
     async def set_instance_state(
@@ -96,7 +99,7 @@ class AbstractCapability(ABC):
     @property
     def _state_features(self) -> int:
         """Return features attribute for the state."""
-        return self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+        return int(self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0))
 
 
 class ActionOnlyCapability(AbstractCapability, ABC):

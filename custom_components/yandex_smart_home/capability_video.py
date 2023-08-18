@@ -33,7 +33,7 @@ class VideoStreamCapability(ActionOnlyCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported for its state."""
-        return self.state.domain == camera.DOMAIN and self._state_features & camera.CameraEntityFeature.STREAM
+        return self.state.domain == camera.DOMAIN and bool(self._state_features & camera.CameraEntityFeature.STREAM)
 
     @property
     def parameters(self) -> VideoStreamCapabilityParameters:

@@ -282,7 +282,7 @@ async def test_capability_demo_platform(hass):
     assert entity.yandex_device_type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [
-        ("devices.capabilities.color_setting", None),
+        ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
         ("devices.capabilities.color_setting", "temperature_k"),
         ("devices.capabilities.color_setting", "scene"),
@@ -295,7 +295,7 @@ async def test_capability_demo_platform(hass):
     assert entity.yandex_device_type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [
-        ("devices.capabilities.color_setting", None),
+        ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
         ("devices.capabilities.color_setting", "temperature_k"),
         ("devices.capabilities.range", "brightness"),
@@ -307,7 +307,7 @@ async def test_capability_demo_platform(hass):
     assert entity.yandex_device_type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [
-        ("devices.capabilities.color_setting", None),
+        ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
         ("devices.capabilities.color_setting", "temperature_k"),
         ("devices.capabilities.range", "brightness"),
@@ -319,7 +319,7 @@ async def test_capability_demo_platform(hass):
     assert entity.yandex_device_type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [
-        ("devices.capabilities.color_setting", None),
+        ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
         ("devices.capabilities.color_setting", "temperature_k"),
         ("devices.capabilities.range", "brightness"),
@@ -331,7 +331,7 @@ async def test_capability_demo_platform(hass):
     assert entity.yandex_device_type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [
-        ("devices.capabilities.color_setting", None),
+        ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
         ("devices.capabilities.range", "brightness"),
         ("devices.capabilities.on_off", "on"),
@@ -342,7 +342,7 @@ async def test_capability_demo_platform(hass):
     assert entity.yandex_device_type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [
-        ("devices.capabilities.color_setting", None),
+        ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
         ("devices.capabilities.color_setting", "temperature_k"),
         ("devices.capabilities.range", "brightness"),

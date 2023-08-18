@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, root_validator
 
 
 class ColorSettingCapabilityInstance(StrEnum):
+    BASE = "base"
     RGB = "rgb"
     HSV = "hsv"
     TEMPERATURE_K = "temperature_k"

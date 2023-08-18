@@ -196,7 +196,7 @@ class ColorTemperatureConverter:
         return self._ha_mapping.get(color_temperature, color_temperature)
 
     @property
-    def supported_range(self) -> (int, int):
+    def supported_range(self) -> tuple[int, int]:
         """Return temperature range supported for the state."""
         return min(self._yandex_mapping), max(self._yandex_mapping)
 
@@ -213,6 +213,8 @@ class ColorTemperatureConverter:
         if idx != 0:
             return self._temperature_steps[idx - 1]
 
+        return None
+
     @property
     def _last_available_temperature_step(self) -> int | None:
         """Return additional maximal temperature that outside mapped temperature range."""
@@ -221,9 +223,12 @@ class ColorTemperatureConverter:
         try:
             return self._temperature_steps[idx + 1]
         except IndexError:
-            return None
+            pass
 
-    def _map_values(self, yandex_value: int, ha_value: int):
+        return None
+
+    def _map_values(self, yandex_value: int, ha_value: int) -> None:
         """Add mapping between yandex values and HA."""
         self._yandex_mapping[yandex_value] = ha_value
         self._ha_mapping[ha_value] = yandex_value
+        return None

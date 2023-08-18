@@ -7,7 +7,7 @@ class SmartHomeError(Exception):
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/response-codes-docpage/
     """
 
-    def __init__(self, code, msg):
+    def __init__(self, code: str, msg: str):
         super().__init__(msg)
         self.code = code
         self.message = msg
@@ -16,5 +16,5 @@ class SmartHomeError(Exception):
 class SmartHomeUserError(Exception):
     """Error producted by user's template, no logging"""
 
-    def __init__(self, code):
+    def __init__(self, code: str):
         self.code = code

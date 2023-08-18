@@ -3,6 +3,7 @@ from pytest_homeassistant_custom_component.common import load_fixture
 from custom_components.yandex_smart_home.schema import DevicesActionRequest, GetStreamInstanceActionStateValue
 from custom_components.yandex_smart_home.schema.capability import *
 from custom_components.yandex_smart_home.schema.capability_color import *
+from custom_components.yandex_smart_home.schema.capability_mode import *
 
 
 def test_devices_action_request():
