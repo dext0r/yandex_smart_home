@@ -29,3 +29,86 @@ exclude_also = [
 omit = [
     "tests/*"
 ]
+
+[tool.mypy]
+python_version = 3.11
+plugins = ["pydantic.mypy"]
+follow_imports_for_stubs = true
+local_partial_types = true
+strict_equality = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+warn_return_any = true
+warn_unreachable = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.config_flow"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.cloud"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.cloud_stream"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.notifier"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.smart_home"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.entity"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.http"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.helpers"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.prop"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.prop_custom"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.prop_event"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.prop_float"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module= "custom_components.yandex_smart_home.config_validation"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true

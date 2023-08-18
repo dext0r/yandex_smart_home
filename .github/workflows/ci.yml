@@ -42,6 +42,14 @@ jobs:
         run: |
           pip install -r tests/requirements_${{ matrix.ha-version }}.txt 
 
+      # https://github.com/python/mypy/issues/8545
+      - name: Fix homeassistant type checking
+        run: |
+          python -c 'from pathlib import Path; import homeassistant; (Path(homeassistant.__file__).parent / Path("py.typed")).touch()'
+
+      - name: Type checking
+        run: mypy .
+
       - name: Test with pytest
         run: pytest  --cov-report xml --cov
 
