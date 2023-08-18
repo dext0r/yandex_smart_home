@@ -87,32 +87,32 @@ CapabilityInstanceActionState = TypeVar(
 
 
 class OnOffCapabilityInstanceAction(BaseModel):
-    type: Literal[CapabilityType.ON_OFF]
+    type: Literal[CapabilityType.ON_OFF] = CapabilityType.ON_OFF
     state: OnOffCapabilityInstanceActionState
 
 
 class ColorSettingCapabilityInstanceAction(BaseModel):
-    type: Literal[CapabilityType.COLOR_SETTING]
+    type: Literal[CapabilityType.COLOR_SETTING] = CapabilityType.COLOR_SETTING
     state: ColorSettingCapabilityInstanceActionState
 
 
 class ModeCapabilityInstanceAction(BaseModel):
-    type: Literal[CapabilityType.MODE]
+    type: Literal[CapabilityType.MODE] = CapabilityType.MODE
     state: ModeCapabilityInstanceActionState
 
 
 class RangeCapabilityInstanceAction(BaseModel):
-    type: Literal[CapabilityType.RANGE]
+    type: Literal[CapabilityType.RANGE] = CapabilityType.RANGE
     state: RangeCapabilityInstanceActionState
 
 
 class ToggleCapabilityInstanceAction(BaseModel):
-    type: Literal[CapabilityType.TOGGLE]
+    type: Literal[CapabilityType.TOGGLE] = CapabilityType.TOGGLE
     state: ToggleCapabilityInstanceActionState
 
 
 class VideoStreamCapabilityInstanceAction(BaseModel):
-    type: Literal[CapabilityType.VIDEO_STREAM]
+    type: Literal[CapabilityType.VIDEO_STREAM] = CapabilityType.VIDEO_STREAM
     state: GetStreamInstanceActionState
 
 

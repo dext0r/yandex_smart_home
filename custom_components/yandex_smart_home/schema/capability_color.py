@@ -70,17 +70,17 @@ class ColorSettingCapabilityParameters(BaseModel):
 
 
 class RGBInstanceActionState(BaseModel):
-    instance: Literal[ColorSettingCapabilityInstance.RGB]
+    instance: Literal[ColorSettingCapabilityInstance.RGB] = ColorSettingCapabilityInstance.RGB
     value: int
 
 
 class TemperatureKInstanceActionState(BaseModel):
-    instance: Literal[ColorSettingCapabilityInstance.TEMPERATURE_K]
+    instance: Literal[ColorSettingCapabilityInstance.TEMPERATURE_K] = ColorSettingCapabilityInstance.TEMPERATURE_K
     value: int
 
 
 class SceneInstanceActionState(BaseModel):
-    instance: Literal[ColorSettingCapabilityInstance.SCENE]
+    instance: Literal[ColorSettingCapabilityInstance.SCENE] = ColorSettingCapabilityInstance.SCENE
     value: ColorScene
 
 

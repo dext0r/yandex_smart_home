@@ -58,9 +58,7 @@ async def test_capability_color_setting(hass):
     )
     cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
     with pytest.raises(SmartHomeError) as e:
-        await cap_cs.set_instance_state(
-            Context(), RGBInstanceActionState(instance=ColorSettingCapabilityInstance.RGB, value=16714250)
-        )
+        await cap_cs.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
     assert e.value.code == const.ERR_INTERNAL_ERROR
 
 
@@ -141,9 +139,7 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
     assert cap_rgb.get_value() is None
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
-    await cap_rgb.set_instance_state(
-        Context(), RGBInstanceActionState(instance=ColorSettingCapabilityInstance.RGB, value=720711)
-    )
+    await cap_rgb.set_instance_state(Context(), RGBInstanceActionState(value=720711))
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (10, 255, 71)}
 
@@ -246,9 +242,7 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
     assert cap.get_value() == 16714250  # red
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
-    await cap.set_instance_state(
-        Context(), RGBInstanceActionState(instance=ColorSettingCapabilityInstance.RGB, value=16714250)
-    )
+    await cap.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 191, 0)}
 
@@ -263,9 +257,7 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
     assert e.value.message == "Color profile 'invalid' not found for instance rgb of light.invalid"
 
     with pytest.raises(SmartHomeError) as e:
-        await cap.set_instance_state(
-            Context(), RGBInstanceActionState(instance=ColorSettingCapabilityInstance.RGB, value=16714250)
-        )
+        await cap.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
     assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Color profile 'invalid' not found for instance rgb of light.invalid"
 
@@ -300,9 +292,7 @@ async def test_capability_color_setting_rgb_with_internal_profile(hass, color_mo
     assert cap.get_value() == 16714250  # red
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
-    await cap.set_instance_state(
-        Context(), RGBInstanceActionState(instance=ColorSettingCapabilityInstance.RGB, value=16714250)
-    )
+    await cap.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 0, 0)}
 
@@ -354,9 +344,7 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
     assert cap.get_value() == 2700
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
-    await cap.set_instance_state(
-        Context(), TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=6500)
-    )
+    await cap.set_instance_state(Context(), TemperatureKInstanceActionState(value=6500))
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 6500}
 
@@ -372,7 +360,7 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
     with pytest.raises(SmartHomeError) as e:
         await cap.set_instance_state(
             Context(),
-            TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=6500),
+            TemperatureKInstanceActionState(value=6500),
         )
     assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Unsupported value 6500 for instance temperature_k of light.test"
@@ -440,9 +428,7 @@ async def test_capability_color_setting_temprature_k_extend(hass):
     assert cap_temp.get_value() == 4500
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
-    await cap_temp.set_instance_state(
-        Context(), TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=4500)
-    )
+    await cap_temp.set_instance_state(Context(), TemperatureKInstanceActionState(value=4500))
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 2000}
 
@@ -485,9 +471,7 @@ async def test_capability_color_setting_temprature_k_extend(hass):
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
     for v in (1500, 6700, 7500):
-        await cap_temp.set_instance_state(
-            Context(), TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=v)
-        )
+        await cap_temp.set_instance_state(Context(), TemperatureKInstanceActionState(value=v))
     assert len(calls) == 3
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 2300}
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 6700}
@@ -561,9 +545,7 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
     assert cap_temp.get_value() == 4500
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
-    await cap_temp.set_instance_state(
-        Context(), TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=4500)
-    )
+    await cap_temp.set_instance_state(Context(), TemperatureKInstanceActionState(value=4500))
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 4100}
 
@@ -577,9 +559,7 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
     assert cap_temp.get_value() == 4100
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
-    await cap_temp.set_instance_state(
-        Context(), TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=4100)
-    )
+    await cap_temp.set_instance_state(Context(), TemperatureKInstanceActionState(value=4100))
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_KELVIN: 4100}
 
@@ -598,7 +578,7 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
     with pytest.raises(SmartHomeError) as e:
         await cap_temp.set_instance_state(
             Context(),
-            TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=4100),
+            TemperatureKInstanceActionState(value=4100),
         )
     assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Color profile 'invalid' not found for instance temperature_k of light.invalid"
@@ -638,9 +618,7 @@ async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
     for v in (4500, 4300):
-        await cap_temp.set_instance_state(
-            Context(), TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=v)
-        )
+        await cap_temp.set_instance_state(Context(), TemperatureKInstanceActionState(value=v))
     assert len(calls) == 2
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 255, 255)}
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 255, 255)}
@@ -694,9 +672,7 @@ async def test_capability_color_setting_temperature_k_rgb_white(hass, color_mode
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
     for v in (6500, 4500, 4300):
-        await cap_temp.set_instance_state(
-            Context(), TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=v)
-        )
+        await cap_temp.set_instance_state(Context(), TemperatureKInstanceActionState(value=v))
     assert len(calls) == 3
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGB_COLOR: (255, 255, 255)}
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_WHITE: 56}
@@ -750,9 +726,7 @@ async def test_capability_color_setting_temperature_k_rgbw(hass):
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
     for v in (4500, 6500, 5000):
-        await cap_temp.set_instance_state(
-            Context(), TemperatureKInstanceActionState(instance=ColorSettingCapabilityInstance.TEMPERATURE_K, value=v)
-        )
+        await cap_temp.set_instance_state(Context(), TemperatureKInstanceActionState(value=v))
     assert len(calls) == 3
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGBW_COLOR: (0, 0, 0, 255)}
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_RGBW_COLOR: (255, 255, 255, 0)}
@@ -864,9 +838,7 @@ async def test_capability_color_setting_scene(hass):
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
     for v in ("romance", "sunset"):
-        await cap_scene.set_instance_state(
-            Context(), SceneInstanceActionState(instance=ColorSettingCapabilityInstance.SCENE, value=v)
-        )
+        await cap_scene.set_instance_state(Context(), SceneInstanceActionState(value=v))
     assert len(calls) == 2
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_EFFECT: "Leasure"}
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_EFFECT: None}

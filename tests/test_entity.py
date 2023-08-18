@@ -60,7 +60,6 @@ from custom_components.yandex_smart_home.prop_custom import (
 from custom_components.yandex_smart_home.prop_event import ContactProperty
 from custom_components.yandex_smart_home.prop_float import TemperatureProperty, VoltageProperty
 from custom_components.yandex_smart_home.schema import (
-    CapabilityType,
     OnOffCapabilityInstance,
     OnOffCapabilityInstanceAction,
     OnOffCapabilityInstanceActionState,
@@ -538,7 +537,6 @@ async def test_yandex_entity_execute(hass):
         await entity.execute(
             Context(),
             ToggleCapabilityInstanceAction(
-                type=CapabilityType.TOGGLE,
                 state=ToggleCapabilityInstanceActionState(instance=ToggleCapabilityInstance.PAUSE, value=True),
             ),
         )
@@ -549,7 +547,6 @@ async def test_yandex_entity_execute(hass):
     await entity.execute(
         Context(),
         OnOffCapabilityInstanceAction(
-            type=CapabilityType.ON_OFF,
             state=OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=False),
         ),
     )
@@ -577,7 +574,6 @@ async def test_yandex_entity_execute_exception(hass):
             await entity.execute(
                 Context(),
                 OnOffCapabilityInstanceAction(
-                    type=CapabilityType.ON_OFF,
                     state=OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=True),
                 ),
             )
@@ -590,7 +586,6 @@ async def test_yandex_entity_execute_exception(hass):
             await entity.execute(
                 Context(),
                 RangeCapabilityInstanceAction(
-                    type=CapabilityType.RANGE,
                     state=RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.BRIGHTNESS, value=50),
                 ),
             )
