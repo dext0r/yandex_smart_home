@@ -38,7 +38,7 @@ from .schema import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class CustomCapability(AbstractCapability, ABC):
+class CustomCapability(AbstractCapability, ABC):  # type: ignore[type-arg]
     """Base class for capabilities that user can set up using yaml configuration."""
 
     def __init__(

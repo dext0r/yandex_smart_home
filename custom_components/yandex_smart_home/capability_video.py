@@ -8,7 +8,7 @@ from homeassistant.core import Context
 from homeassistant.helpers import network
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .capability import ActionOnlyCapability, register_capability
+from .capability import AbstractCapability, ActionOnlyCapabilityMixin, register_capability
 from .cloud_stream import CloudStream
 from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @register_capability
-class VideoStreamCapability(ActionOnlyCapability):
+class VideoStreamCapability(ActionOnlyCapabilityMixin, AbstractCapability[GetStreamInstanceActionState]):
     """Capability to stream from cameras."""
 
     type = CapabilityType.VIDEO_STREAM

@@ -75,7 +75,7 @@ class ColorSettingCapability(AbstractCapability[ColorSettingCapabilityInstanceAc
         raise SmartHomeError(ERR_INTERNAL_ERROR, "No instance")
 
     @property
-    def _capabilities(self) -> list[AbstractCapability]:
+    def _capabilities(self) -> list[AbstractCapability]:  # type: ignore[type-arg]
         """Return all child capabilities."""
         return [self._color, self._temperature, self._color_scene]
 

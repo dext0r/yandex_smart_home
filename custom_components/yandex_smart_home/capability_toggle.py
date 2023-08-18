@@ -6,7 +6,7 @@ from homeassistant.components import cover, fan, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import Context
 
-from .capability import AbstractCapability, ActionOnlyCapability, register_capability
+from .capability import AbstractCapability, ActionOnlyCapabilityMixin, register_capability
 from .const import CONF_FEATURES, MEDIA_PLAYER_FEATURE_PLAY_PAUSE, MEDIA_PLAYER_FEATURE_VOLUME_MUTE
 from .schema import (
     CapabilityType,
@@ -109,7 +109,7 @@ class PauseCapabilityMediaPlayer(ToggleCapability):
 
 
 @register_capability
-class PauseCapabilityCover(ActionOnlyCapability, ToggleCapability):
+class PauseCapabilityCover(ActionOnlyCapabilityMixin, ToggleCapability):
     """Capability to stop a cover."""
 
     instance = ToggleCapabilityInstance.PAUSE

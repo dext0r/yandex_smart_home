@@ -36,7 +36,7 @@ from homeassistant.core import DOMAIN as HA_DOMAIN, Context
 from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.service import async_call_from_config
 
-from .capability import AbstractCapability, ActionOnlyCapability, register_capability
+from .capability import AbstractCapability, ActionOnlyCapabilityMixin, register_capability
 from .const import (
     CONF_FEATURES,
     CONF_STATE_UNKNOWN,
@@ -108,7 +108,7 @@ class OnOffCapability(AbstractCapability[OnOffCapabilityInstanceActionState], AB
         return SERVICE_TURN_OFF
 
 
-class OnlyOnCapability(ActionOnlyCapability, OnOffCapability, ABC):
+class OnlyOnCapability(ActionOnlyCapabilityMixin, OnOffCapability, ABC):
     """Capability to only turn on a device."""
 
     @property

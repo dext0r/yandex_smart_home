@@ -1,4 +1,4 @@
-"""Implement the Yandex Smart Home base capabilities."""
+"""Implement the Yandex Smart Home base capability."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -21,9 +21,9 @@ from .schema import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-_CapabilityT = TypeVar("_CapabilityT", bound="AbstractCapability")
+_CapabilityT = TypeVar("_CapabilityT", bound="AbstractCapability")  # type: ignore[type-arg]
 
-CAPABILITIES: list[type[AbstractCapability]] = []
+CAPABILITIES: list[type[AbstractCapability]] = []  # type: ignore[type-arg]
 
 
 def register_capability(capability: type[_CapabilityT]) -> type[_CapabilityT]:
@@ -102,7 +102,7 @@ class AbstractCapability(Generic[CapabilityInstanceActionState], ABC):
         return int(self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0))
 
 
-class ActionOnlyCapability(AbstractCapability, ABC):
+class ActionOnlyCapabilityMixin:
     """Represents a capability that only execute action."""
 
     @property
