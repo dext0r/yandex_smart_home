@@ -91,22 +91,6 @@ module= "custom_components.yandex_smart_home.helpers"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.prop"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.prop_custom"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.prop_event"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.prop_float"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module= "custom_components.yandex_smart_home.config_validation"
 ignore_errors = true
 

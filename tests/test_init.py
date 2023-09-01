@@ -460,7 +460,7 @@ async def test_async_setup_update_from_yaml(hass, hass_admin_user, expected_ling
             YAML_CONFIG_FILE: f"""
 yandex_smart_home:
   settings:
-    pressure_unit: pa
+    pressure_unit: Pa
   notifier:
     oauth_token: yaml
     skill_id: yaml
@@ -472,7 +472,7 @@ yandex_smart_home:
             assert await async_setup_entry(hass, entry)
 
     assert entry.data[const.CONF_NOTIFIER][0][const.CONF_NOTIFIER_OAUTH_TOKEN] == "yaml"
-    assert entry.options[const.CONF_PRESSURE_UNIT] == "pa"
+    assert entry.options[const.CONF_PRESSURE_UNIT] == "Pa"
 
 
 async def test_async_setup_update_from_yaml_checksum(hass, hass_admin_user):
@@ -486,7 +486,7 @@ async def test_async_setup_update_from_yaml_checksum(hass, hass_admin_user):
             YAML_CONFIG_FILE: """
 yandex_smart_home:
   settings:
-    pressure_unit: pa"""
+    pressure_unit: Pa"""
         }
     ):
         assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
@@ -496,9 +496,9 @@ yandex_smart_home:
         "connection_type": "direct",
         "devices_discovered": True,
         "notifier": [],
-        "yaml_config_hash": "93c51c44a1036f88197b32160df2ef38",
+        "yaml_config_hash": "357c1abeae034ea7e10b10f1fc9070f6",
     }
-    assert entry.options == {"beta": False, "cloud_stream": False, "pressure_unit": "pa", "color_profile": {}}
+    assert entry.options == {"beta": False, "cloud_stream": False, "pressure_unit": "Pa", "color_profile": {}}
 
     with patch_yaml_files(
         {

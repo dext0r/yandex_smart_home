@@ -138,7 +138,7 @@ async def test_notifier_async_start(hass, entry, hass_admin_user):
         assert mock_evh.call_args[0][0].data == {"test": True}
 
 
-async def test_notifier_schedule_discovery_on_start(hass, mock_call_later, hass_admin_user):
+async def test_notifier_schedule_discovery_on_start(hass, mock_call_later):
     async_setup_notifier(hass)
 
     entry = _mock_entry_with_cloud_connection(devices_discovered=True)
@@ -167,7 +167,7 @@ async def test_notifier_schedule_discovery_on_start(hass, mock_call_later, hass_
     notifier._unsub_send_discovery.assert_called_once()
 
 
-async def test_notifier_schedule_discovery_on_config_change(hass, mock_call_later, hass_admin_user):
+async def test_notifier_schedule_discovery_on_config_change(hass, mock_call_later):
     async_setup_notifier(hass)
 
     entry = _mock_entry_with_cloud_connection(devices_discovered=True)

@@ -10,7 +10,7 @@ from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 from homeassistant.helpers.template import Template
 
-from . import capability as caps, const, prop
+from . import capability as caps, const
 from .capability import AbstractCapability
 from .capability_custom import CustomModeCapability, CustomRangeCapability, CustomToggleCapability
 from .const import (
@@ -26,9 +26,8 @@ from .const import (
 )
 from .error import SmartHomeError, SmartHomeUserError
 from .helpers import Config
-from .prop import AbstractProperty
-from .prop_custom import CustomEntityProperty
-from .prop_event import EventProperty
+from .property import STATE_PROPERTIES_REGISTRY, Property
+from .property_custom import get_custom_property
 from .schema import CapabilityInstanceAction, CapabilityInstanceActionResultValue
 
 
@@ -49,7 +48,7 @@ class YandexEntity:
         self._component_config = config
         self._config = config.get_entity_config(self.entity_id)
         self._capabilities: list[AbstractCapability] | None = None
-        self._properties: list[AbstractProperty] | None = None
+        self._properties: list[Property] | None = None
 
     @property
     def entity_id(self) -> str:
@@ -87,7 +86,7 @@ class YandexEntity:
         return self._capabilities
 
     @callback
-    def properties(self) -> list[AbstractProperty]:
+    def properties(self) -> list[Property]:
         """Return properties for entity."""
         if self._properties is not None:
             return self._properties
@@ -96,13 +95,18 @@ class YandexEntity:
         state = self.state
 
         for property_config in self._config.get(CONF_ENTITY_PROPERTIES, []):
-            self._properties.append(CustomEntityProperty.get(self.hass, self._component_config, state, property_config))
+            if (
+                device_property := get_custom_property(
+                    self.hass, self._component_config, property_config, self.entity_id
+                )
+            ).supported:
+                self._properties.append(device_property)
 
-        for Property in prop.PROPERTIES:
-            entity_property = Property(self.hass, self._component_config, state)
-            if entity_property.supported():
-                if entity_property.instance not in [p.instance for p in self._properties]:
-                    self._properties.append(entity_property)
+        for PropertyT in STATE_PROPERTIES_REGISTRY:
+            device_property = PropertyT(self.hass, self._component_config, state)
+            if device_property.supported:
+                if device_property.instance not in [p.instance for p in self._properties]:
+                    self._properties.append(device_property)
 
         return self._properties
 
@@ -167,9 +171,9 @@ class YandexEntity:
             if item and item not in device["capabilities"]:
                 device["capabilities"].append(item.dict(exclude_none=True))
 
-        for item in [p.description() for p in self.properties()]:
+        for item in [p.get_description() for p in self.properties()]:
             if item not in device["properties"]:
-                device["properties"].append(item)
+                device["properties"].append(item.dict(exclude_none=True))
 
         return device
 
@@ -193,9 +197,9 @@ class YandexEntity:
                 device["capabilities"].append(state.dict())
 
         for item in [p for p in self.properties() if p.retrievable]:
-            state = item.get_state()
+            state = item.get_instance_state()
             if state is not None:
-                device["properties"].append(state)
+                device["properties"].append(state.dict())
 
         return device
 
@@ -310,22 +314,18 @@ class YandexEntityCallbackState:
                 self.capabilities.append(state.dict())
 
         for item in [c for c in entity.properties() if c.reportable]:
-            if isinstance(item, CustomEntityProperty):
-                if item.property_entity_id != event_entity_id:
-                    continue
-            elif item.state.entity_id != event_entity_id:
+            if item.value_entity_id != event_entity_id:
                 continue
 
-            if initial_report:
-                if isinstance(item, EventProperty):
-                    continue
+            if initial_report and not item.report_on_startup:
+                continue
 
             if item.report_immediately:
                 self.should_report_immediately = True
 
-            state = item.get_state()
+            state = item.get_instance_state()
             if state is not None:
-                self.properties.append(state)
+                self.properties.append(state.dict())
 
     @property
     def should_report(self) -> bool:

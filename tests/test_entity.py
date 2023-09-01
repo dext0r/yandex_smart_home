@@ -52,13 +52,13 @@ from custom_components.yandex_smart_home.const import (
 )
 from custom_components.yandex_smart_home.entity import YandexEntity, YandexEntityCallbackState
 from custom_components.yandex_smart_home.error import SmartHomeError
-from custom_components.yandex_smart_home.prop_custom import (
-    CustomEntityProperty,
-    CustomEventEntityProperty,
-    CustomFloatEntityProperty,
+from custom_components.yandex_smart_home.property_custom import (
+    ButtonPressCustomEventProperty,
+    VoltageCustomFloatProperty,
+    get_custom_property,
 )
-from custom_components.yandex_smart_home.prop_event import ContactProperty
-from custom_components.yandex_smart_home.prop_float import TemperatureProperty, VoltageProperty
+from custom_components.yandex_smart_home.property_event import OpenStateEventProperty
+from custom_components.yandex_smart_home.property_float import TemperatureSensor, VoltageSensor
 from custom_components.yandex_smart_home.schema import (
     OnOffCapabilityInstance,
     OnOffCapabilityInstanceAction,
@@ -153,14 +153,16 @@ async def test_yandex_entity_capabilities(hass):
 
 
 async def test_yandex_entity_duplicate_properties(hass):
-    class MockProperty(TemperatureProperty):
+    class MockProperty(TemperatureSensor):
+        @property
         def supported(self) -> bool:
             return True
 
     state = State("sensor.test", "33")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
 
-    with patch("custom_components.yandex_smart_home.prop.PROPERTIES", [MockProperty, MockProperty]):
+    with patch("custom_components.yandex_smart_home.entity.STATE_PROPERTIES_REGISTRY", [MockProperty, MockProperty]):
+        entity = YandexEntity(hass, BASIC_CONFIG, state)
+
         assert len(entity.properties()) == 1
         assert isinstance(entity.properties()[0], MockProperty)
 
@@ -174,6 +176,7 @@ async def test_yandex_entity_properties(hass):
             ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
         },
     )
+    hass.states.async_set(state.entity_id, state.state)
     config = MockConfig(
         entity_config={
             state.entity_id: {
@@ -186,9 +189,9 @@ async def test_yandex_entity_properties(hass):
     )
     entity = YandexEntity(hass, config, state)
     assert [type(c) for c in entity.properties()] == [
-        CustomFloatEntityProperty,
-        CustomEventEntityProperty,
-        TemperatureProperty,
+        VoltageCustomFloatProperty,
+        ButtonPressCustomEventProperty,
+        TemperatureSensor,
     ]
 
     state = State(
@@ -199,7 +202,7 @@ async def test_yandex_entity_properties(hass):
         },
     )
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert [type(c) for c in entity.properties()] == [ContactProperty]
+    assert [type(c) for c in entity.properties()] == [OpenStateEventProperty]
 
 
 async def test_yandex_entity_serialize_state_type(hass, registries):
@@ -424,25 +427,29 @@ async def test_yandex_entity_serialize(hass):
         },
     )
 
-    prop_temp = TemperatureProperty(hass, BASIC_CONFIG, state_temp)
-    prop_humidity_custom = CustomEntityProperty.get(
+    prop_temp = TemperatureSensor(hass, BASIC_CONFIG, state_temp)
+    prop_humidity_custom = get_custom_property(
         hass,
         BASIC_CONFIG,
-        state,
         {
             CONF_ENTITY_PROPERTY_ENTITY: state_humidity.entity_id,
             CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
         },
+        state.entity_id,
     )
-    prop_voltage = VoltageProperty(hass, BASIC_CONFIG, state_voltage)
+    prop_voltage = VoltageSensor(hass, BASIC_CONFIG, state_voltage)
 
     state_button = State("binary_sensor.button", "", attributes={"action": "click"})
-    prop_button = CustomEventEntityProperty(
+    hass.states.async_set(state_button.entity_id, state_button.state, state_button.attributes)
+    prop_button = get_custom_property(
         hass,
         BASIC_CONFIG,
-        state,
-        state_button,
-        {CONF_ENTITY_PROPERTY_ATTRIBUTE: "action", CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON},
+        {
+            CONF_ENTITY_PROPERTY_ENTITY: state_button.entity_id,
+            CONF_ENTITY_PROPERTY_ATTRIBUTE: "action",
+            CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON,
+        },
+        state.entity_id,
     )
 
     entity = YandexEntity(hass, BASIC_CONFIG, state)
@@ -489,15 +496,13 @@ async def test_yandex_entity_serialize(hass):
             {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
         ]
 
-        prop_voltage.reportable = False
-        callback_state = YandexEntityCallbackState(entity, "sensor.voltage")
-        assert callback_state.properties == []
-        assert callback_state.capabilities == [
-            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
-            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
-        ]
-
-        prop_voltage.reportable = True
+        with patch.object(VoltageSensor, "reportable", PropertyMock(return_value=False)):
+            callback_state = YandexEntityCallbackState(entity, "sensor.voltage")
+            assert callback_state.properties == []
+            assert callback_state.capabilities == [
+                {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
+                {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
+            ]
 
         callback_state = YandexEntityCallbackState(entity, "binary_sensor.button")
         assert callback_state.properties == [
@@ -508,8 +513,9 @@ async def test_yandex_entity_serialize(hass):
             {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
         ]
 
-        with patch.object(PauseCapability, "retrievable", PropertyMock(return_value=None)):
-            prop_temp.retrievable = False
+        with patch.object(PauseCapability, "retrievable", PropertyMock(return_value=None)), patch.object(
+            TemperatureSensor, "retrievable", PropertyMock(return_value=False)
+        ):
             assert entity.query_serialize() == {
                 "id": "switch.test",
                 "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
@@ -518,11 +524,10 @@ async def test_yandex_entity_serialize(hass):
                     {"type": "devices.properties.float", "state": {"instance": "humidity", "value": 95.0}},
                 ],
             }
-        prop_temp.retrievable = True
 
         state_pause.state = STATE_UNAVAILABLE
         state_voltage.state = STATE_UNAVAILABLE
-        prop_humidity_custom.property_state.state = STATE_UNAVAILABLE
+        prop_humidity_custom._native_value_source.state = STATE_UNAVAILABLE
         assert entity.query_serialize() == {
             "id": "switch.test",
             "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],

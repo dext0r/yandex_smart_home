@@ -60,7 +60,7 @@ class AbstractCapability(Generic[CapabilityInstanceActionState], ABC):
 
     @property
     def reportable(self) -> bool:
-        """Test if the capability can report state changes."""
+        """Test if the capability can report changes."""
         return self._config.is_reporting_state
 
     @property
@@ -112,7 +112,7 @@ class ActionOnlyCapabilityMixin:
 
     @property
     def reportable(self) -> bool:
-        """Test if the capability can report state changes."""
+        """Test if the capability can report changes."""
         return False
 
     def get_value(self) -> None:

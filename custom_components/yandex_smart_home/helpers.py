@@ -1,7 +1,7 @@
 """Helper classes for Yandex Smart Home integration."""
 from __future__ import annotations
 
-from typing import Any, TypedDict
+from typing import Any, Protocol, TypedDict, TypeVar
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, HomeAssistant, callback
@@ -171,3 +171,33 @@ class DeviceActionCapability(TypedDict):
 class DeviceActionCapabilityState(TypedDict):
     instance: str
     value: str | int | bool
+
+
+class HasInstance(Protocol):
+    """Protocol type for objects that has instance attribute."""
+
+    instance: Any
+
+
+_HasInstanceT = TypeVar("_HasInstanceT", bound=type[HasInstance])
+
+
+class DictRegistry(dict[str, _HasInstanceT]):
+    """Dict Registry for types with instance attribute."""
+
+    def register(self, obj: _HasInstanceT) -> _HasInstanceT:
+        """Register decorated type."""
+        self[obj.instance] = obj
+        return obj
+
+
+_TypeT = TypeVar("_TypeT", bound=type[Any])
+
+
+class ListRegistry(list[_TypeT]):
+    """List Registry of items."""
+
+    def register(self, obj: _TypeT) -> _TypeT:
+        """Register decorated type."""
+        self.append(obj)
+        return obj

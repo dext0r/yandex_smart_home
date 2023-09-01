@@ -24,9 +24,9 @@ from . import (  # noqa: F401
     capability_video,
     config_validation as ycv,
     const,
-    prop_custom,
-    prop_event,
-    prop_float,
+    property_custom,
+    property_event,
+    property_float,
 )
 from .cloud import CloudManager, delete_cloud_instance
 from .cloud_stream import CloudStream

@@ -5,9 +5,10 @@ import logging
 from homeassistant.util.color import RGBColor
 import voluptuous as vol
 
+from custom_components.yandex_smart_home.color import rgb_to_int
+
 from . import const
-from .color import rgb_to_int
-from .prop_float import PRESSURE_UNITS_TO_YANDEX_UNITS
+from .unit_conversion import UnitOfPressure
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -100,10 +101,10 @@ def device_type(value: str) -> str:
 
 
 def pressure_unit(value):
-    if value not in PRESSURE_UNITS_TO_YANDEX_UNITS:
+    try:
+        return UnitOfPressure(value).value
+    except ValueError:
         raise vol.Invalid(f"Pressure unit {value!r} is not supported")
-
-    return value
 
 
 def color_value(value: list | int) -> int:
