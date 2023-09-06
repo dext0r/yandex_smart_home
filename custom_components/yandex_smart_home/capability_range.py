@@ -1,7 +1,7 @@
 """Implement the Yandex Smart Home range capabilities."""
 from abc import ABC, abstractmethod
 import logging
-from typing import Any
+from typing import Any, Protocol
 
 from homeassistant.backports.functools import cached_property
 from homeassistant.components import climate, cover, fan, humidifier, light, media_player, water_heater
@@ -15,7 +15,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import Context
 
-from .capability import AbstractCapability, register_capability
+from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
 from .const import (
     ATTR_TARGET_HUMIDITY,
     CONF_ENTITY_RANGE,
@@ -47,25 +47,25 @@ from .schema import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class RangeCapability(AbstractCapability[RangeCapabilityInstanceActionState], ABC):
+class RangeCapability(Capability[RangeCapabilityInstanceActionState], Protocol):
     """Base class for capabilities with range functionality like volume or brightness.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/range-docpage/
     """
 
-    type = CapabilityType.RANGE
+    type: CapabilityType = CapabilityType.RANGE
     instance: RangeCapabilityInstance
 
     @property
     @abstractmethod
     def support_random_access(self) -> bool:
         """Test if the capability accept arbitrary values to be set."""
-        pass
+        ...
 
     @abstractmethod
     def _get_value(self) -> float | None:
         """Return the current capability value (unguarded)."""
-        pass
+        ...
 
     @property
     def _default_range(self) -> RangeCapabilityRange:
@@ -92,8 +92,8 @@ class RangeCapability(AbstractCapability[RangeCapabilityInstanceActionState], AB
         if self.support_random_access and value is not None:
             if not (self._range.min <= value <= self._range.max):
                 _LOGGER.debug(
-                    f"Value {value} is not in range {self._range} for instance {self.instance} "
-                    f"of {self.state.entity_id}"
+                    f"Value {value} is not in range {self._range} for instance {self.instance.value} "
+                    f"of {self.device_id}"
                 )
                 return None
 
@@ -102,22 +102,12 @@ class RangeCapability(AbstractCapability[RangeCapabilityInstanceActionState], AB
     @abstractmethod
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
-        pass
+        ...
 
+    @abstractmethod
     def _get_absolute_value(self, relative_value: float) -> float:
         """Return the absolute value for a relative value."""
-        value = self._get_value()
-
-        if value is None:
-            if self.state.state == STATE_OFF:
-                raise SmartHomeError(ERR_DEVICE_OFF, f"Device {self.state.entity_id} probably turned off")
-
-            raise SmartHomeError(
-                ERR_INVALID_VALUE,
-                f"Unable to get current value or {self.instance.value} instance of {self.state.entity_id}",
-            )
-
-        return max(min(value + relative_value, self._range.max), self._range.min)
+        ...
 
     def _get_service_call_value(self, state: RangeCapabilityInstanceActionState) -> float:
         """Return the absolute value for a service call."""
@@ -148,14 +138,33 @@ class RangeCapability(AbstractCapability[RangeCapabilityInstanceActionState], AB
             if strict:
                 raise SmartHomeError(
                     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f"Unsupported value {value!r} for instance {self.instance} of {self.state.entity_id}",
+                    f"Unsupported value {value!r} for instance {self.instance} of {self.device_id}",
                 )
 
         return None
 
 
-@register_capability
-class CoverPositionCapability(RangeCapability):
+class StateRangeCapability(RangeCapability, StateCapability[RangeCapabilityInstanceActionState], Protocol):
+    """Base class for a range capability based on the state."""
+
+    def _get_absolute_value(self, relative_value: float) -> float:
+        """Return the absolute value for a relative value."""
+        value = self._get_value()
+
+        if value is None:
+            if self.state.state == STATE_OFF:
+                raise SmartHomeError(ERR_DEVICE_OFF, f"Device {self.state.entity_id} probably turned off")
+
+            raise SmartHomeError(
+                ERR_INVALID_VALUE,
+                f"Unable to get current value or {self.instance.value} instance of {self.device_id}",
+            )
+
+        return max(min(value + relative_value, self._range.max), self._range.min)
+
+
+@STATE_CAPABILITIES_REGISTRY.register
+class CoverPositionCapability(StateRangeCapability):
     """Capability to control position of a cover."""
 
     instance = RangeCapabilityInstance.OPEN
@@ -185,7 +194,7 @@ class CoverPositionCapability(RangeCapability):
         return self._convert_to_float(self.state.attributes.get(cover.ATTR_CURRENT_POSITION))
 
 
-class TemperatureCapability(RangeCapability, ABC):
+class TemperatureCapability(StateRangeCapability, ABC):
     """Capability to control a device target temperature."""
 
     instance = RangeCapabilityInstance.TEMPERATURE
@@ -196,7 +205,7 @@ class TemperatureCapability(RangeCapability, ABC):
         return True
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class TemperatureCapabilityWaterHeater(TemperatureCapability):
     """Capability to control a water heater target temperature."""
 
@@ -231,7 +240,7 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class TemperatureCapabilityClimate(TemperatureCapability):
     """Capability to control a climate device target temperature."""
 
@@ -266,7 +275,7 @@ class TemperatureCapabilityClimate(TemperatureCapability):
         )
 
 
-class HumidityCapability(RangeCapability, ABC):
+class HumidityCapability(StateRangeCapability, ABC):
     """Capability to control a device target humidity."""
 
     instance = RangeCapabilityInstance.HUMIDITY
@@ -277,7 +286,7 @@ class HumidityCapability(RangeCapability, ABC):
         return True
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class HumidityCapabilityHumidifier(HumidityCapability):
     """Capability to control a humidifier target humidity."""
 
@@ -310,7 +319,7 @@ class HumidityCapabilityHumidifier(HumidityCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class HumidityCapabilityXiaomiFan(HumidityCapability):
     """Capability to control a Xiaomi fan target humidity."""
 
@@ -339,8 +348,8 @@ class HumidityCapabilityXiaomiFan(HumidityCapability):
         return self._convert_to_float(self.state.attributes.get(ATTR_TARGET_HUMIDITY))
 
 
-@register_capability
-class BrightnessCapability(RangeCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class BrightnessCapability(StateRangeCapability):
     """Capability to control brightness of a device."""
 
     instance = RangeCapabilityInstance.BRIGHTNESS
@@ -394,8 +403,8 @@ class BrightnessCapability(RangeCapability):
         )
 
 
-@register_capability
-class VolumeCapability(RangeCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class VolumeCapability(StateRangeCapability):
     """Capability to control volume of a device."""
 
     instance = RangeCapabilityInstance.VOLUME
@@ -475,8 +484,8 @@ class VolumeCapability(RangeCapability):
         return None
 
 
-@register_capability
-class ChannelCapability(RangeCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class ChannelCapability(StateRangeCapability):
     """Capability to control media playback state."""
 
     instance = RangeCapabilityInstance.CHANNEL

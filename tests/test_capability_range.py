@@ -17,7 +17,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.capability_range import RangeCapability
+from custom_components.yandex_smart_home.capability_range import RangeCapability, StateRangeCapability
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -31,8 +31,8 @@ from . import BASIC_CONFIG, MockConfig
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 
-async def test_capability_range(hass):
-    class MockCapability(RangeCapability):
+async def test_capability_range(hass, caplog):
+    class MockCapability(StateRangeCapability):
         instance = RangeCapabilityInstance.VOLUME
 
         @property
@@ -43,7 +43,7 @@ async def test_capability_range(hass):
         def supported(self) -> bool:
             return True
 
-        async def set_instance_state(self, *_, **__):
+        async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
             pass
 
         def _get_value(self) -> float | None:
@@ -110,6 +110,11 @@ async def test_capability_range(hass):
     for v in [-1, 101]:
         with patch.object(MockCapability, "_get_value", return_value=v):
             assert cap.get_value() is None
+
+    assert caplog.messages == [
+        "Value -1 is not in range [0.0, 100.0] for instance volume of switch.test",
+        "Value 101 is not in range [0.0, 100.0] for instance volume of switch.test",
+    ]
 
     with pytest.raises(SmartHomeError) as e:
         cap._get_absolute_value(0)

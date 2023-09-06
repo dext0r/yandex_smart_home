@@ -1,6 +1,4 @@
 """Implement the Yandex Smart Home video_stream capabilities."""
-import logging
-
 from homeassistant.components import camera
 from homeassistant.components.camera import StreamType, _get_camera_from_entity_id
 from homeassistant.components.stream import Stream
@@ -8,7 +6,7 @@ from homeassistant.core import Context
 from homeassistant.helpers import network
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .capability import AbstractCapability, ActionOnlyCapabilityMixin, register_capability
+from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
 from .cloud_stream import CloudStream
 from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
@@ -20,11 +18,9 @@ from .schema import (
     VideoStreamCapabilityParameters,
 )
 
-_LOGGER = logging.getLogger(__name__)
 
-
-@register_capability
-class VideoStreamCapability(ActionOnlyCapabilityMixin, AbstractCapability[GetStreamInstanceActionState]):
+@STATE_CAPABILITIES_REGISTRY.register
+class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStreamInstanceActionState]):
     """Capability to stream from cameras."""
 
     type = CapabilityType.VIDEO_STREAM

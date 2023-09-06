@@ -1,6 +1,5 @@
 """Implement the Yandex Smart Home color_setting capability."""
 from functools import cached_property
-import logging
 from typing import Any
 
 from homeassistant.components import light
@@ -8,7 +7,7 @@ from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
 
-from .capability import AbstractCapability, register_capability
+from .capability import STATE_CAPABILITIES_REGISTRY, StateCapability
 from .color import ColorConverter, ColorTemperatureConverter
 from .const import CONF_COLOR_PROFILE, CONF_ENTITY_MODE_MAP, ERR_INTERNAL_ERROR, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
@@ -27,11 +26,9 @@ from .schema import (
     TemperatureKInstanceActionState,
 )
 
-_LOGGER = logging.getLogger(__name__)
 
-
-@register_capability
-class ColorSettingCapability(AbstractCapability[ColorSettingCapabilityInstanceActionState]):
+@STATE_CAPABILITIES_REGISTRY.register
+class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActionState]):
     """Root capability to discover another light device capabilities.
 
     https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html
@@ -75,13 +72,13 @@ class ColorSettingCapability(AbstractCapability[ColorSettingCapabilityInstanceAc
         raise SmartHomeError(ERR_INTERNAL_ERROR, "No instance")
 
     @property
-    def _capabilities(self) -> list[AbstractCapability]:  # type: ignore[type-arg]
+    def _capabilities(self) -> list[StateCapability[Any]]:
         """Return all child capabilities."""
         return [self._color, self._temperature, self._color_scene]
 
 
-@register_capability
-class RGBColorCapability(AbstractCapability[RGBInstanceActionState]):
+@STATE_CAPABILITIES_REGISTRY.register
+class RGBColorCapability(StateCapability[RGBInstanceActionState]):
     """Capability to control color of a light device."""
 
     type = CapabilityType.COLOR_SETTING
@@ -169,8 +166,8 @@ class RGBColorCapability(AbstractCapability[RGBInstanceActionState]):
         return ColorConverter()
 
 
-@register_capability
-class ColorTemperatureCapability(AbstractCapability[TemperatureKInstanceActionState]):
+@STATE_CAPABILITIES_REGISTRY.register
+class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState]):
     """Capability to control color temperature of a light device."""
 
     type = CapabilityType.COLOR_SETTING
@@ -306,8 +303,8 @@ class ColorTemperatureCapability(AbstractCapability[TemperatureKInstanceActionSt
         return ColorTemperatureConverter(None, self.state)
 
 
-@register_capability
-class ColorSceneCapability(AbstractCapability[SceneInstanceActionState]):
+@STATE_CAPABILITIES_REGISTRY.register
+class ColorSceneCapability(StateCapability[SceneInstanceActionState]):
     """Capability to control effect of a light device."""
 
     type = CapabilityType.COLOR_SETTING

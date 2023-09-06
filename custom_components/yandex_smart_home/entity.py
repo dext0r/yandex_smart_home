@@ -10,9 +10,9 @@ from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 from homeassistant.helpers.template import Template
 
-from . import capability as caps, const
-from .capability import AbstractCapability
-from .capability_custom import CustomModeCapability, CustomRangeCapability, CustomToggleCapability
+from . import const
+from .capability import STATE_CAPABILITIES_REGISTRY, Capability
+from .capability_custom import get_custom_capability
 from .const import (
     CONF_DEVICE_CLASS,
     CONF_ENTITY_PROPERTIES,
@@ -28,7 +28,7 @@ from .error import SmartHomeError, SmartHomeUserError
 from .helpers import Config
 from .property import STATE_PROPERTIES_REGISTRY, Property
 from .property_custom import get_custom_property
-from .schema import CapabilityInstanceAction, CapabilityInstanceActionResultValue
+from .schema import CapabilityInstanceAction, CapabilityInstanceActionResultValue, CapabilityType
 
 
 def _alias_priority(text: str) -> (int, str):
@@ -47,7 +47,7 @@ class YandexEntity:
 
         self._component_config = config
         self._config = config.get_entity_config(self.entity_id)
-        self._capabilities: list[AbstractCapability] | None = None
+        self._capabilities: list[Capability] | None = None
         self._properties: list[Property] | None = None
 
     @property
@@ -56,7 +56,7 @@ class YandexEntity:
         return self.state.entity_id
 
     @callback
-    def capabilities(self) -> list[AbstractCapability]:
+    def capabilities(self) -> list[Capability]:
         """Return capabilities for entity."""
         if self._capabilities is not None:
             return self._capabilities
@@ -64,22 +64,27 @@ class YandexEntity:
         self._capabilities = []
         state = self.state
 
-        for capability_class, config_key in (
-            (CustomModeCapability, const.CONF_ENTITY_CUSTOM_MODES),
-            (CustomToggleCapability, const.CONF_ENTITY_CUSTOM_TOGGLES),
-            (CustomRangeCapability, const.CONF_ENTITY_CUSTOM_RANGES),
+        for capability_type, config_key in (
+            (CapabilityType.MODE, const.CONF_ENTITY_CUSTOM_MODES),
+            (CapabilityType.TOGGLE, const.CONF_ENTITY_CUSTOM_TOGGLES),
+            (CapabilityType.RANGE, const.CONF_ENTITY_CUSTOM_RANGES),
         ):
             if config_key in self._config:
                 for instance in self._config[config_key]:
-                    capability = capability_class(
-                        self.hass, self._component_config, state, instance, self._config[config_key][instance]
+                    capability = get_custom_capability(
+                        self.hass,
+                        self._component_config,
+                        self._config[config_key][instance],
+                        capability_type,
+                        instance,
+                        self.entity_id,
                     )
 
                     if capability.supported:
                         self._capabilities.append(capability)
 
-        for Capability in caps.CAPABILITIES:
-            capability = Capability(self.hass, self._component_config, state)
+        for CapabilityT in STATE_CAPABILITIES_REGISTRY:
+            capability = CapabilityT(self.hass, self._component_config, state)
             if capability.supported and capability.instance not in [c.instance for c in self._capabilities]:
                 self._capabilities.append(capability)
 

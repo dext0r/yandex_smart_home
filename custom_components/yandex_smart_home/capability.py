@@ -1,14 +1,12 @@
 """Implement the Yandex Smart Home base capability."""
-from __future__ import annotations
-
-from abc import ABC, abstractmethod
-import logging
-from typing import Any, Generic, TypeVar
+from abc import abstractmethod
+from functools import cached_property
+from typing import Any, Protocol
 
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import Context, HomeAssistant, State
 
-from .helpers import Config
+from .helpers import CacheStore, Config, ListRegistry
 from .schema import (
     CapabilityDescription,
     CapabilityInstance,
@@ -20,38 +18,22 @@ from .schema import (
     CapabilityType,
 )
 
-_LOGGER = logging.getLogger(__name__)
-_CapabilityT = TypeVar("_CapabilityT", bound="AbstractCapability")  # type: ignore[type-arg]
 
-CAPABILITIES: list[type[AbstractCapability]] = []  # type: ignore[type-arg]
+class Capability(Protocol[CapabilityInstanceActionState]):
+    """Base class for a device capability."""
 
-
-def register_capability(capability: type[_CapabilityT]) -> type[_CapabilityT]:
-    """Decorate a function to register a capability."""
-    CAPABILITIES.append(capability)
-    return capability
-
-
-class AbstractCapability(Generic[CapabilityInstanceActionState], ABC):
-    """Represents a device base capability."""
-
+    device_id: str
     type: CapabilityType
     instance: CapabilityInstance
 
-    def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        """Initialize a capability for a state."""
-        self._hass = hass
-        self._config = config
-        self._entity_config = config.get_entity_config(state.entity_id)
-        self._cache = config.cache
-
-        self.state = state
+    _hass: HomeAssistant
+    _config: Config
 
     @property
     @abstractmethod
     def supported(self) -> bool:
         """Test if the capability is supported for its state."""
-        pass
+        ...
 
     @property
     def retrievable(self) -> bool:
@@ -67,7 +49,7 @@ class AbstractCapability(Generic[CapabilityInstanceActionState], ABC):
     @abstractmethod
     def parameters(self) -> CapabilityParameters | None:
         """Return parameters for a devices list request."""
-        return None
+        ...
 
     def get_description(self) -> CapabilityDescription | None:
         """Return a description for a device list request. Capability with an empty description isn't discoverable."""
@@ -78,11 +60,11 @@ class AbstractCapability(Generic[CapabilityInstanceActionState], ABC):
     @abstractmethod
     def get_value(self) -> Any:
         """Return the current capability value."""
-        pass
+        ...
 
     def get_instance_state(self) -> CapabilityInstanceState | None:
         """Return a state for a device query request."""
-        if (value := self.get_value()) is not None and self.instance:
+        if (value := self.get_value()) is not None:
             return CapabilityInstanceState(
                 type=self.type, state=CapabilityInstanceStateValue(instance=self.instance, value=value)
             )
@@ -94,12 +76,12 @@ class AbstractCapability(Generic[CapabilityInstanceActionState], ABC):
         self, context: Context, state: CapabilityInstanceActionState
     ) -> CapabilityInstanceActionResultValue:
         """Change the capability state."""
-        pass
+        ...
 
-    @property
-    def _state_features(self) -> int:
-        """Return features attribute for the state."""
-        return int(self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0))
+    @cached_property
+    def _entity_config(self) -> dict[str, Any]:
+        """Return additional configuration for the device."""
+        return self._config.get_entity_config(self.device_id)
 
 
 class ActionOnlyCapabilityMixin:
@@ -115,6 +97,34 @@ class ActionOnlyCapabilityMixin:
         """Test if the capability can report changes."""
         return False
 
+    # noinspection PyMethodMayBeStatic
     def get_value(self) -> None:
         """Return the state value of this capability for this entity."""
         return None
+
+
+class StateCapability(Capability[CapabilityInstanceActionState], Protocol):
+    """Base class for a device property based on the state."""
+
+    state: State
+
+    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+        """Initialize a capability for a state."""
+        self._hass = hass
+        self._config = config
+
+        self.device_id = state.entity_id
+        self.state = state
+
+    @property
+    def _state_features(self) -> int:
+        """Return features attribute for the state."""
+        return int(self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0))
+
+    @property
+    def _cache(self) -> CacheStore:
+        """Return cache storage."""
+        return self._config.cache
+
+
+STATE_CAPABILITIES_REGISTRY = ListRegistry[type[StateCapability[Any]]]()

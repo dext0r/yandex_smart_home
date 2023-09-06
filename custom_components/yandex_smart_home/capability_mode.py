@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 import logging
 import math
+from typing import Protocol
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -9,7 +10,7 @@ from homeassistant.core import Context
 from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item
 
 from . import const
-from .capability import AbstractCapability, register_capability
+from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
 from .const import CONF_ENTITY_MODE_MAP, ERR_INVALID_VALUE, STATE_NONE
 from .error import SmartHomeError
 from .schema import (
@@ -23,23 +24,17 @@ from .schema import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class ModeCapability(AbstractCapability[ModeCapabilityInstanceActionState], ABC):
+class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
     """Base class for capabilities with mode functionality like thermostat mode or fan speed.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/mode-docpage/
     """
 
-    type = CapabilityType.MODE
+    type: CapabilityType = CapabilityType.MODE
     instance: ModeCapabilityInstance
 
     _modes_map_default: dict[ModeCapabilityMode, list[str]] = {}
     _modes_map_index_fallback: dict[int, ModeCapabilityMode] = {}
-
-    @property
-    @abstractmethod
-    def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for the entity."""
-        pass
 
     @property
     def supported(self) -> bool:
@@ -64,12 +59,10 @@ class ModeCapability(AbstractCapability[ModeCapabilityInstanceActionState], ABC)
         return modes
 
     @property
+    @abstractmethod
     def supported_ha_modes(self) -> list[str]:
         """Returns list of supported HA modes."""
-        if self.modes_list_attribute:
-            return self.state.attributes.get(self.modes_list_attribute, []) or []
-
-        return []  # pragma: no cover
+        ...
 
     @property
     def modes_map(self) -> dict[ModeCapabilityMode, list[str]]:
@@ -85,11 +78,6 @@ class ModeCapability(AbstractCapability[ModeCapabilityInstanceActionState], ABC)
                 for k, v in self._entity_config[CONF_ENTITY_MODE_MAP].get(self.instance).items()
             }
 
-        return None
-
-    @property
-    def state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of the entity."""
         return None
 
     def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings: bool = False) -> ModeCapabilityMode | None:
@@ -111,9 +99,10 @@ class ModeCapability(AbstractCapability[ModeCapabilityInstanceActionState], ABC)
                 pass
 
         if rv is not None and ha_mode not in self.supported_ha_modes:
-            err = f'Unsupported HA mode "{ha_mode}" for {self.instance.value} instance of {self.state.entity_id}.'
-            if self.modes_list_attribute:
-                err += f" Maybe it missing in entity attribute {self.modes_list_attribute}?"
+            err = (
+                f'Unsupported HA mode "{ha_mode}" for {self.instance.value} instance of {self.device_id} '
+                f"(not in {self.supported_ha_modes!r})"
+            )
 
             raise SmartHomeError(ERR_INVALID_VALUE, err)
 
@@ -122,7 +111,7 @@ class ModeCapability(AbstractCapability[ModeCapabilityInstanceActionState], ABC)
                 if str(ha_mode).lower() in [str(m).lower() for m in self.supported_ha_modes]:
                     _LOGGER.warning(
                         f'Unable to get Yandex mode for "{ha_mode}" for {self.instance.value} instance '
-                        f"of {self.state.entity_id}. It may cause inconsistencies between Yandex and HA. "
+                        f"of {self.device_id}. It may cause inconsistencies between Yandex and HA. "
                         f'Check "modes" setting for this entity'
                     )
 
@@ -143,9 +132,18 @@ class ModeCapability(AbstractCapability[ModeCapabilityInstanceActionState], ABC)
 
         raise SmartHomeError(
             ERR_INVALID_VALUE,
-            f'Unsupported mode "{yandex_mode.value}" for {self.instance.value} instance of {self.state.entity_id}. '
+            f'Unsupported mode "{yandex_mode.value}" for {self.instance.value} instance of {self.device_id}. '
             f'Check "modes" setting for this entity',
         )
+
+    @abstractmethod
+    def get_value(self) -> ModeCapabilityMode | None:
+        """Return the current capability value."""
+        ...
+
+
+class StateModeCapability(ModeCapability, StateCapability[ModeCapabilityInstanceActionState], Protocol):
+    """Base class for a mode capability based on the state."""
 
     def get_value(self) -> ModeCapabilityMode | None:
         """Return the current capability value."""
@@ -154,14 +152,11 @@ class ModeCapability(AbstractCapability[ModeCapabilityInstanceActionState], ABC)
     @property
     def _ha_value(self) -> str | None:
         """Return the current unmapped capability value."""
-        if self.state_value_attribute:
-            return self.state.attributes.get(self.state_value_attribute)
-
         return self.state.state
 
 
-@register_capability
-class ThermostatCapability(ModeCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class ThermostatCapability(StateModeCapability):
     """Capability to control mode of a climate device."""
 
     instance = ModeCapabilityInstance.THERMOSTAT
@@ -183,9 +178,9 @@ class ThermostatCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str:
-        """Return HA attribute contains modes list for the entity."""
-        return climate.ATTR_HVAC_MODES
+    def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes."""
+        return self.state.attributes.get(climate.ATTR_HVAC_MODES, []) or []
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -201,8 +196,8 @@ class ThermostatCapability(ModeCapability):
         )
 
 
-@register_capability
-class SwingCapability(ModeCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class SwingCapability(StateModeCapability):
     """Capability to control swing mode of a climate device."""
 
     instance = ModeCapabilityInstance.SWING
@@ -223,14 +218,9 @@ class SwingCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str:
-        """Return HA attribute contains modes list for the entity."""
-        return climate.ATTR_SWING_MODES
-
-    @property
-    def state_value_attribute(self) -> str:
-        """Return HA attribute for state of the entity."""
-        return climate.ATTR_SWING_MODE
+    def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes."""
+        return self.state.attributes.get(climate.ATTR_SWING_MODES, []) or []
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -245,8 +235,13 @@ class SwingCapability(ModeCapability):
             context=context,
         )
 
+    @property
+    def _ha_value(self) -> str | None:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(climate.ATTR_SWING_MODE)
 
-class ProgramCapability(ModeCapability, ABC):
+
+class ProgramCapability(StateModeCapability, ABC):
     """Base capability to control a device program."""
 
     instance = ModeCapabilityInstance.PROGRAM
@@ -265,7 +260,7 @@ class ProgramCapability(ModeCapability, ABC):
     }
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class ProgramCapabilityHumidifier(ProgramCapability):
     """Capability to control the mode of a humidifier device."""
 
@@ -320,14 +315,9 @@ class ProgramCapabilityHumidifier(ProgramCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str:
-        """Return HA attribute contains modes list for the entity."""
-        return humidifier.ATTR_AVAILABLE_MODES
-
-    @property
-    def state_value_attribute(self) -> str:
-        """Return HA attribute for state of the entity."""
-        return humidifier.ATTR_MODE
+    def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes."""
+        return self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES, []) or []
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -342,8 +332,13 @@ class ProgramCapabilityHumidifier(ProgramCapability):
             context=context,
         )
 
+    @property
+    def _ha_value(self) -> str | None:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(humidifier.ATTR_MODE)
 
-@register_capability
+
+@STATE_CAPABILITIES_REGISTRY.register
 class ProgramCapabilityFan(ProgramCapability):
     """Capability to control the mode preset of a fan device."""
 
@@ -394,14 +389,9 @@ class ProgramCapabilityFan(ProgramCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str:
-        """Return HA attribute contains modes list for the entity."""
-        return fan.ATTR_PRESET_MODES
-
-    @property
-    def state_value_attribute(self) -> str:
-        """Return HA attribute for state of the entity."""
-        return fan.ATTR_PRESET_MODE
+    def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes."""
+        return self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or []
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -416,9 +406,14 @@ class ProgramCapabilityFan(ProgramCapability):
             context=context,
         )
 
+    @property
+    def _ha_value(self) -> str | None:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(fan.ATTR_PRESET_MODE)
 
-@register_capability
-class InputSourceCapability(ModeCapability):
+
+@STATE_CAPABILITIES_REGISTRY.register
+class InputSourceCapability(StateModeCapability):
     """Capability to control the input source of a media player device."""
 
     instance = ModeCapabilityInstance.INPUT_SOURCE
@@ -451,23 +446,13 @@ class InputSourceCapability(ModeCapability):
     @property
     def supported_ha_modes(self) -> list[str]:
         """Returns list of supported HA modes."""
-        modes = self.state.attributes.get(self.modes_list_attribute, []) or []
+        modes = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST, []) or []
         filtered_modes = list(filter(lambda m: m not in ["Live TV"], modes))  # #418
         if filtered_modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
-            self._cache.save_attr_value(self.state.entity_id, self.modes_list_attribute, modes)
+            self._cache.save_attr_value(self.state.entity_id, media_player.ATTR_INPUT_SOURCE_LIST, modes)
             return modes
 
-        return self._cache.get_attr_value(self.state.entity_id, self.modes_list_attribute) or []
-
-    @property
-    def modes_list_attribute(self) -> str:
-        """Return HA attribute contains modes list for the entity."""
-        return media_player.ATTR_INPUT_SOURCE_LIST
-
-    @property
-    def state_value_attribute(self) -> str:
-        """Return HA attribute for state of the entity."""
-        return media_player.ATTR_INPUT_SOURCE
+        return self._cache.get_attr_value(self.state.entity_id, media_player.ATTR_INPUT_SOURCE_LIST) or []
 
     def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings: bool = False) -> ModeCapabilityMode | None:
         """Return Yandex mode by HA mode."""
@@ -486,14 +471,19 @@ class InputSourceCapability(ModeCapability):
             context=context,
         )
 
+    @property
+    def _ha_value(self) -> str | None:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(media_player.ATTR_INPUT_SOURCE)
 
-class FanSpeedCapability(ModeCapability, ABC):
+
+class FanSpeedCapability(StateModeCapability, ABC):
     """Base capability to control a device fan speed."""
 
     instance = ModeCapabilityInstance.FAN_SPEED
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class FanSpeedCapabilityClimate(FanSpeedCapability):
     """Capability to control the fan speed of a climate device."""
 
@@ -547,19 +537,9 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str:
-        """Return HA attribute contains modes list for the entity."""
-        return climate.ATTR_FAN_MODES
-
-    @property
-    def state_value_attribute(self) -> str:
-        """Return HA attribute for state of the entity."""
-        return climate.ATTR_FAN_MODE
-
-    @property
     def supported_ha_modes(self) -> list[str]:
         """Returns list of supported HA modes."""
-        modes = super().supported_ha_modes
+        modes = self.state.attributes.get(climate.ATTR_FAN_MODES, []) or []
 
         # esphome default state for some devices
         if self._ha_value == climate.const.FAN_ON and climate.const.FAN_ON not in modes:
@@ -580,8 +560,13 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
             context=context,
         )
 
+    @property
+    def _ha_value(self) -> str | None:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(climate.ATTR_FAN_MODE)
 
-@register_capability
+
+@STATE_CAPABILITIES_REGISTRY.register
 class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
     """Capability to control the fan speed of a fan device via preset."""
 
@@ -638,14 +623,9 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str:
-        """Return HA attribute contains modes list for the entity."""
-        return fan.ATTR_PRESET_MODES
-
-    @property
-    def state_value_attribute(self) -> str:
-        """Return HA attribute for state of the entity."""
-        return fan.ATTR_PRESET_MODE
+    def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes."""
+        return self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or []
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -660,8 +640,13 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
             context=context,
         )
 
+    @property
+    def _ha_value(self) -> str | None:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(fan.ATTR_PRESET_MODE)
 
-@register_capability
+
+@STATE_CAPABILITIES_REGISTRY.register
 class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
     """Capability to control the fan speed in percents of a fan device."""
 
@@ -707,21 +692,16 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         """Returns a list of supported Yandex modes."""
         return [ModeCapabilityMode(m) for m in self.supported_ha_modes]
 
-    @property
-    def modes_list_attribute(self) -> None:
-        """Return HA attribute contains modes list for the entity."""
-        return None
-
     def get_value(self) -> ModeCapabilityMode | None:
         """Return the current capability value."""
-        value = self.state.attributes.get(fan.ATTR_PERCENTAGE)
-        if not value:
+        if not self._ha_value:
             return None
 
+        value = int(self._ha_value)
         if self.modes_map:
             for yandex_mode, values in self.modes_map.items():
                 for str_value in values:
-                    if int(value) == self._convert_mapping_speed_value(str_value):
+                    if value == self._convert_mapping_speed_value(str_value):
                         return yandex_mode
 
             return None
@@ -751,6 +731,11 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
             context=context,
         )
 
+    @property
+    def _ha_value(self) -> str | None:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(fan.ATTR_PERCENTAGE)
+
     def _convert_mapping_speed_value(self, value: str) -> int:
         try:
             return int(value.replace("%", ""))
@@ -761,8 +746,8 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
             )
 
 
-@register_capability
-class CleanupModeCapability(ModeCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class CleanupModeCapability(StateModeCapability):
     """Capability to control the program of a vacuum."""
 
     instance = ModeCapabilityInstance.CLEANUP_MODE
@@ -791,14 +776,9 @@ class CleanupModeCapability(ModeCapability):
         return False
 
     @property
-    def modes_list_attribute(self) -> str:
-        """Return HA attribute contains modes list for the entity."""
-        return vacuum.ATTR_FAN_SPEED_LIST
-
-    @property
-    def state_value_attribute(self) -> str:
-        """Return HA attribute for state of the entity."""
-        return vacuum.ATTR_FAN_SPEED
+    def supported_ha_modes(self) -> list[str]:
+        """Returns list of supported HA modes."""
+        return self.state.attributes.get(vacuum.ATTR_FAN_SPEED_LIST, []) or []
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -812,3 +792,8 @@ class CleanupModeCapability(ModeCapability):
             blocking=True,
             context=context,
         )
+
+    @property
+    def _ha_value(self) -> str | None:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(vacuum.ATTR_FAN_SPEED)

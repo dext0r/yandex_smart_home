@@ -1,6 +1,6 @@
 """Implement the Yandex Smart Home on_off capability."""
 from abc import ABC, abstractmethod
-import logging
+from typing import Protocol
 
 from homeassistant.components import (
     automation,
@@ -36,7 +36,7 @@ from homeassistant.core import DOMAIN as HA_DOMAIN, Context
 from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.service import async_call_from_config
 
-from .capability import AbstractCapability, ActionOnlyCapabilityMixin, register_capability
+from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
 from .const import (
     CONF_FEATURES,
     CONF_STATE_UNKNOWN,
@@ -53,22 +53,20 @@ from .schema import (
     OnOffCapabilityParameters,
 )
 
-_LOGGER = logging.getLogger(__name__)
 
-
-class OnOffCapability(AbstractCapability[OnOffCapabilityInstanceActionState], ABC):
+class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Protocol):
     """Base class for capabilitity to turn on and off a device.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/on_off-docpage/
     """
 
-    type = CapabilityType.ON_OFF
-    instance = OnOffCapabilityInstance.ON
+    type: CapabilityType = CapabilityType.ON_OFF
+    instance: OnOffCapabilityInstance = OnOffCapabilityInstance.ON
 
     @abstractmethod
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state (if wasn't overriden by the user)."""
-        pass
+        ...
 
     @property
     def retrievable(self) -> bool:
@@ -117,7 +115,7 @@ class OnlyOnCapability(ActionOnlyCapabilityMixin, OnOffCapability, ABC):
         return None
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityBasic(OnOffCapability):
     """Capability to turn on or off a device."""
 
@@ -137,7 +135,7 @@ class OnOffCapabilityBasic(OnOffCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityAutomation(OnOffCapability):
     """Capability to enable or disable an automation."""
 
@@ -161,7 +159,7 @@ class OnOffCapabilityAutomation(OnOffCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityGroup(OnOffCapability):
     """Capability to turn on or off a group of devices."""
 
@@ -181,7 +179,7 @@ class OnOffCapabilityGroup(OnOffCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityScript(OnlyOnCapability):
     """Capability to call a script or scene."""
 
@@ -201,7 +199,7 @@ class OnOffCapabilityScript(OnlyOnCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityButton(OnlyOnCapability):
     """Capability to press a button."""
 
@@ -221,7 +219,7 @@ class OnOffCapabilityButton(OnlyOnCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityInputButton(OnlyOnCapability):
     """Capability to press a input_button."""
 
@@ -241,7 +239,7 @@ class OnOffCapabilityInputButton(OnlyOnCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityLock(OnOffCapability):
     """Capability to lock or unlock a lock."""
 
@@ -266,7 +264,7 @@ class OnOffCapabilityLock(OnOffCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityCover(OnOffCapability):
     """Capability to open or close a cover."""
 
@@ -291,7 +289,7 @@ class OnOffCapabilityCover(OnOffCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityMediaPlayer(OnOffCapability):
     """Capability to turn on or off a media player device."""
 
@@ -323,7 +321,7 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityVacuum(OnOffCapability):
     """Capability to start or stop cleaning by a vacuum."""
 
@@ -375,7 +373,7 @@ class OnOffCapabilityVacuum(OnOffCapability):
         )
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityClimate(OnOffCapability):
     """Capability to turn on or off a climate device."""
 
@@ -409,7 +407,7 @@ class OnOffCapabilityClimate(OnOffCapability):
         await self._hass.services.async_call(climate.DOMAIN, service, service_data, blocking=True, context=context)
 
 
-@register_capability
+@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityWaterHeater(OnOffCapability):
     """Capability to turn on or off a water heater."""
 

@@ -18,6 +18,7 @@ from custom_components.yandex_smart_home.color import ColorConverter, ColorName,
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
+    ColorScene,
     ColorSettingCapabilityInstance,
     RGBInstanceActionState,
     SceneInstanceActionState,
@@ -838,7 +839,7 @@ async def test_capability_color_setting_scene(hass):
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
     for v in ("romance", "sunset"):
-        await cap_scene.set_instance_state(Context(), SceneInstanceActionState(value=v))
+        await cap_scene.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene(v)))
     assert len(calls) == 2
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_EFFECT: "Leasure"}
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_EFFECT: None}

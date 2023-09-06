@@ -6,7 +6,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
-from custom_components.yandex_smart_home.capability import CAPABILITIES, AbstractCapability
+from custom_components.yandex_smart_home.capability import STATE_CAPABILITIES_REGISTRY, StateCapability
 from custom_components.yandex_smart_home.entity import YandexEntity
 from custom_components.yandex_smart_home.helpers import Config
 from custom_components.yandex_smart_home.schema import CapabilityInstance, CapabilityType
@@ -16,11 +16,11 @@ from . import BASIC_CONFIG
 
 def get_capabilities(
     hass: HomeAssistant, config: Config, state: State, capability_type: CapabilityType, instance: CapabilityInstance
-) -> list[AbstractCapability]:
+) -> list[StateCapability]:
     caps = []
 
-    for Capability in CAPABILITIES:
-        capability = Capability(hass, config, state)
+    for CapabilityT in STATE_CAPABILITIES_REGISTRY:
+        capability = CapabilityT(hass, config, state)
 
         if capability.type != capability_type or capability.instance != instance:
             continue
@@ -33,7 +33,7 @@ def get_capabilities(
 
 def get_exact_one_capability(
     hass: HomeAssistant, config: Config, state: State, capability_type: CapabilityType, instance: CapabilityInstance
-) -> AbstractCapability:
+) -> StateCapability:
     caps = get_capabilities(hass, config, state, capability_type, instance)
     assert len(caps) == 1
     return caps[0]
@@ -49,65 +49,6 @@ def assert_no_capabilities(
     hass: HomeAssistant, config: Config, state: State, capability_type: CapabilityType, instance: CapabilityInstance
 ):
     assert len(get_capabilities(hass, config, state, capability_type, instance)) == 0
-
-
-# def test_capability(hass):
-#     class TestCapabilityWithParametersNoValue(AbstractCapability):
-#         type = "test_type"
-#         instance = "test_instance"
-#
-#         def supported(self) -> bool:
-#             return True
-#
-#         def parameters(self) -> Optional[dict[str, Any]]:
-#             return {"param": "value"}
-#
-#         def get_value(self):
-#             return None
-#
-#         async def set_instance_state(self, request, state):
-#             pass
-#
-#     cap = TestCapabilityWithParametersNoValue(hass, BASIC_CONFIG, State("switch.test", STATE_ON))
-#     assert cap.description() == {
-#         "type": "test_type",
-#         "retrievable": True,
-#         "reportable": True,
-#         "parameters": {
-#             "param": "value",
-#         },
-#     }
-#     assert cap.state() is None
-#
-#     class TestCapability(AbstractCapability):
-#         type = "test_type"
-#         instance = "test_instance"
-#
-#         def supported(self) -> bool:
-#             return True
-#
-#         def parameters(self) -> Optional[dict[str, Any]]:
-#             return None
-#
-#         def get_value(self):
-#             return "v"
-#
-#         async def set_instance_state(self, request, state):
-#             pass
-#
-#     cap = TestCapability(hass, BASIC_CONFIG, State("switch.test", STATE_ON))
-#     assert cap.description() == {
-#         "type": "test_type",
-#         "retrievable": True,
-#         "reportable": True,
-#     }
-#     assert cap.state() == {
-#         "type": "test_type",
-#         "state": {
-#             "instance": "test_instance",
-#             "value": "v",
-#         },
-#     }
 
 
 async def test_capability_demo_platform(hass):

@@ -1,12 +1,11 @@
 """Implement the Yandex Smart Home toggle capabilities."""
-from abc import ABC
-import logging
+from typing import Protocol
 
 from homeassistant.components import cover, fan, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import Context
 
-from .capability import AbstractCapability, ActionOnlyCapabilityMixin, register_capability
+from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, Capability, StateCapability
 from .const import CONF_FEATURES, MEDIA_PLAYER_FEATURE_PLAY_PAUSE, MEDIA_PLAYER_FEATURE_VOLUME_MUTE
 from .schema import (
     CapabilityType,
@@ -15,16 +14,14 @@ from .schema import (
     ToggleCapabilityParameters,
 )
 
-_LOGGER = logging.getLogger(__name__)
 
-
-class ToggleCapability(AbstractCapability[ToggleCapabilityInstanceActionState], ABC):
+class ToggleCapability(Capability[ToggleCapabilityInstanceActionState], Protocol):
     """Base class for capabilities with toggle functions like mute or pause.
 
     https://yandex.ru/dev/dialogs/alice/doc/smart-home/concepts/toggle-docpage/
     """
 
-    type = CapabilityType.TOGGLE
+    type: CapabilityType = CapabilityType.TOGGLE
     instance: ToggleCapabilityInstance
 
     @property
@@ -33,8 +30,14 @@ class ToggleCapability(AbstractCapability[ToggleCapabilityInstanceActionState], 
         return ToggleCapabilityParameters(instance=self.instance)
 
 
-@register_capability
-class MuteCapability(ToggleCapability):
+class StateToggleCapability(ToggleCapability, StateCapability[ToggleCapabilityInstanceActionState], Protocol):
+    """Base class for a toggle capability based on the state."""
+
+    pass
+
+
+@STATE_CAPABILITIES_REGISTRY.register
+class MuteCapability(StateToggleCapability):
     """Capability to mute and unmute device."""
 
     instance = ToggleCapabilityInstance.MUTE
@@ -71,8 +74,8 @@ class MuteCapability(ToggleCapability):
         )
 
 
-@register_capability
-class PauseCapabilityMediaPlayer(ToggleCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class PauseCapabilityMediaPlayer(StateToggleCapability):
     """Capability to pause and resume media player playback."""
 
     instance = ToggleCapabilityInstance.PAUSE
@@ -108,8 +111,8 @@ class PauseCapabilityMediaPlayer(ToggleCapability):
         )
 
 
-@register_capability
-class PauseCapabilityCover(ActionOnlyCapabilityMixin, ToggleCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class PauseCapabilityCover(ActionOnlyCapabilityMixin, StateToggleCapability):
     """Capability to stop a cover."""
 
     instance = ToggleCapabilityInstance.PAUSE
@@ -130,8 +133,8 @@ class PauseCapabilityCover(ActionOnlyCapabilityMixin, ToggleCapability):
         )
 
 
-@register_capability
-class PauseCapabilityVacuum(ToggleCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class PauseCapabilityVacuum(StateToggleCapability):
     """Capability to stop a vacuum."""
 
     instance = ToggleCapabilityInstance.PAUSE
@@ -157,8 +160,8 @@ class PauseCapabilityVacuum(ToggleCapability):
         )
 
 
-@register_capability
-class OscillationCapability(ToggleCapability):
+@STATE_CAPABILITIES_REGISTRY.register
+class OscillationCapability(StateToggleCapability):
     """Capability to control fan oscillation."""
 
     instance = ToggleCapabilityInstance.OSCILLATION

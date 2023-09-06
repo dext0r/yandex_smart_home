@@ -82,6 +82,7 @@ CapabilityInstanceActionState = TypeVar(
     RangeCapabilityInstanceActionState,
     ToggleCapabilityInstanceActionState,
     GetStreamInstanceActionState,
+    contravariant=True,
 )
 """New capability state in device action request."""
 

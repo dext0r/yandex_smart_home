@@ -1,5 +1,4 @@
 from typing import cast
-from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF, STATE_ON, STATE_UNKNOWN
@@ -12,6 +11,7 @@ from custom_components.yandex_smart_home.capability_mode import (
     FanSpeedCapabilityFanViaPercentage,
     FanSpeedCapabilityFanViaPreset,
     ModeCapability,
+    StateModeCapability,
 )
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.schema import (
@@ -25,7 +25,7 @@ from . import BASIC_CONFIG, MockConfig
 from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
 
 
-class MockModeCapability(ModeCapability):
+class MockModeCapability(StateModeCapability):
     instance = ModeCapabilityInstance.SWING
     _modes_map_default = {
         ModeCapabilityMode.FOWL: ["mode_1"],
@@ -34,18 +34,20 @@ class MockModeCapability(ModeCapability):
     }
 
     @property
-    def modes_list_attribute(self) -> str | None:
-        return "modes_list"
+    def supported_ha_modes(self) -> list[str]:
+        return self.state.attributes.get("modes_list", [])
 
-    @property
-    def state_value_attribute(self) -> str | None:
-        return "current_mode"
-
-    async def set_instance_state(self, *_, **__):
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         pass
 
 
-class MockFallbackModeCapability(MockModeCapability):
+class MockModeCapabilityA(MockModeCapability):
+    @property
+    def _ha_value(self) -> str | None:
+        return self.state.attributes.get("current_mode")
+
+
+class MockFallbackModeCapability(MockModeCapabilityA):
     _modes_map_index_fallback = {
         0: ModeCapabilityMode.ONE,
         1: ModeCapabilityMode.TWO,
@@ -62,17 +64,17 @@ class MockFallbackModeCapability(MockModeCapability):
 
 async def test_capability_mode_unsupported(hass):
     state = State("switch.test", STATE_OFF)
-    cap = MockModeCapability(hass, BASIC_CONFIG, state)
+    cap = MockModeCapabilityA(hass, BASIC_CONFIG, state)
     assert cap.supported is False
 
     state = State("switch.test", STATE_OFF, {"modes_list": ["foo", "bar"]})
-    cap = MockModeCapability(hass, BASIC_CONFIG, state)
+    cap = MockModeCapabilityA(hass, BASIC_CONFIG, state)
     assert cap.supported is False
 
 
 async def test_capability_mode_auto_mapping(hass, caplog):
     state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3", "mode_4"]})
-    cap = MockModeCapability(hass, BASIC_CONFIG, state)
+    cap = MockModeCapabilityA(hass, BASIC_CONFIG, state)
 
     assert cap.supported is True
     assert cap.supported_ha_modes == ["mode_1", "mode_3", "mode_4"]
@@ -103,8 +105,7 @@ async def test_capability_mode_auto_mapping(hass, caplog):
         assert cap.get_yandex_mode_by_ha_mode("MODE_1")
     assert e.value.code == const.ERR_INVALID_VALUE
     assert e.value.message == (
-        'Unsupported HA mode "MODE_1" for swing instance of switch.test. '
-        "Maybe it missing in entity attribute modes_list?"
+        """Unsupported HA mode "MODE_1" for swing instance of switch.test (not in ['mode_1', 'mode_3', 'mode_4'])"""
     )
 
     with pytest.raises(SmartHomeError) as e:
@@ -132,7 +133,7 @@ async def test_capability_mode_custom_mapping(hass):
             }
         }
     )
-    cap = MockModeCapability(hass, config, state)
+    cap = MockModeCapabilityA(hass, config, state)
     assert cap.supported is True
     assert cap.supported_ha_modes == ["mode_1", "mode_foo", "mode_bar"]  # yeap, strange too
     assert cap.supported_yandex_modes == [ModeCapabilityMode.ECO, ModeCapabilityMode.LATTE]
@@ -178,14 +179,13 @@ async def test_capability_mode_fallback_index(hass):
 
 async def test_capability_mode_get_value(hass, caplog):
     state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3"], "current_mode": "mode_1"})
-    cap = MockModeCapability(hass, BASIC_CONFIG, state)
+    cap = MockModeCapabilityA(hass, BASIC_CONFIG, state)
     assert cap.get_value() == ModeCapabilityMode.FOWL
 
-    with patch.object(MockModeCapability, "state_value_attribute", new_callable=PropertyMock(return_value=None)):
-        assert cap.get_value() is None
-
-        cap.state.state = "mode_3"
-        assert cap.get_value() == ModeCapabilityMode.PUERH_TEA
+    cap = MockModeCapability(hass, BASIC_CONFIG, state)
+    assert cap.get_value() is None
+    cap.state.state = "mode_3"
+    assert cap.get_value() == ModeCapabilityMode.PUERH_TEA
 
 
 async def test_capability_mode_thermostat(hass):
@@ -201,7 +201,7 @@ async def test_capability_mode_thermostat(hass):
         {climate.ATTR_HVAC_MODES: [climate.HVAC_MODE_HEAT_COOL, climate.HVACMode.FAN_ONLY, climate.HVAC_MODE_OFF]},
     )
     cap = cast(
-        ModeCapability,
+        StateModeCapability,
         get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.THERMOSTAT),
     )
     assert cap.retrievable is True
@@ -536,7 +536,6 @@ async def test_capability_mode_fan_speed_fan_via_percentage(hass, features):
 
     assert isinstance(cap, FanSpeedCapabilityFanViaPercentage)
     assert cap.retrievable is True
-    assert cap.modes_list_attribute is None
     assert cap.parameters.dict() == {
         "instance": "fan_speed",
         "modes": [{"value": "low"}, {"value": "normal"}, {"value": "medium"}, {"value": "high"}],

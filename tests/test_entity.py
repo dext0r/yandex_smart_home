@@ -37,7 +37,7 @@ from custom_components.yandex_smart_home.capability_custom import (
 )
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic
 from custom_components.yandex_smart_home.capability_range import BrightnessCapability
-from custom_components.yandex_smart_home.capability_toggle import ToggleCapability
+from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
 from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
     CONF_ENTITY_PROPERTY_ENTITY,
@@ -94,7 +94,9 @@ async def test_yandex_entity_duplicate_capabilities(hass):
     state = State("switch.test", STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
 
-    with patch("custom_components.yandex_smart_home.capability.CAPABILITIES", [MockCapability, MockCapability]):
+    with patch(
+        "custom_components.yandex_smart_home.entity.STATE_CAPABILITIES_REGISTRY", [MockCapability, MockCapability]
+    ):
         assert len(entity.capabilities()) == 1
         assert isinstance(entity.capabilities()[0], MockCapability)
 
@@ -113,6 +115,7 @@ async def test_yandex_entity_capabilities(hass):
 
     state = hass.states.get("light.test")
     state_sensor = State("sensor.test", "33")
+    hass.states.async_set(state_sensor.entity_id, state_sensor.state)
     config = MockConfig(
         entity_config={
             light.entity_id: {
@@ -375,7 +378,7 @@ async def test_yandex_entity_device_type(hass):
 
 
 async def test_yandex_entity_serialize(hass):
-    class PauseCapability(ToggleCapability):
+    class PauseCapability(StateToggleCapability):
         instance = ToggleCapabilityInstance.PAUSE
 
         @property
@@ -388,7 +391,7 @@ async def test_yandex_entity_serialize(hass):
 
             return self.state.state == STATE_ON
 
-        async def set_instance_state(self, *_, **__):
+        async def set_instance_state(self, _: Context, __: ToggleCapabilityInstanceActionState) -> None:
             pass
 
     state = State("switch.unavailable", STATE_UNAVAILABLE)
@@ -574,7 +577,7 @@ async def test_yandex_entity_execute_exception(hass):
 
     state = State("switch.test", STATE_ON)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    with patch("custom_components.yandex_smart_home.capability.CAPABILITIES", [MockOnOffCapability]):
+    with patch("custom_components.yandex_smart_home.entity.STATE_CAPABILITIES_REGISTRY", [MockOnOffCapability]):
         with pytest.raises(SmartHomeError) as e:
             await entity.execute(
                 Context(),
@@ -586,7 +589,7 @@ async def test_yandex_entity_execute_exception(hass):
     assert e.value.code == ERR_INTERNAL_ERROR
 
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    with patch("custom_components.yandex_smart_home.capability.CAPABILITIES", [MockBrightnessCapability]):
+    with patch("custom_components.yandex_smart_home.entity.STATE_CAPABILITIES_REGISTRY", [MockBrightnessCapability]):
         with pytest.raises(SmartHomeError) as e:
             await entity.execute(
                 Context(),

@@ -1,99 +1,117 @@
 """Implement the Yandex Smart Home user specific capabilities."""
-from abc import ABC
 import itertools
 import logging
-from typing import Any
+from typing import Any, Protocol
 
 from homeassistant.const import STATE_OFF
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers.service import async_call_from_config
 from homeassistant.helpers.typing import ConfigType
 
-from . import const
-from .capability import AbstractCapability
+from .capability import Capability
 from .capability_mode import ModeCapability
 from .capability_range import RangeCapability
 from .capability_toggle import ToggleCapability
 from .const import (
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE,
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
+    CONF_ENTITY_CUSTOM_MODE_SET_MODE,
+    CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
+    CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE,
+    CONF_ENTITY_CUSTOM_RANGE_SET_VALUE,
+    CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF,
+    CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON,
     CONF_ENTITY_MODE_MAP,
     CONF_ENTITY_RANGE,
     CONF_ENTITY_RANGE_MAX,
     CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION,
+    ERR_DEVICE_OFF,
     ERR_DEVICE_UNREACHABLE,
     ERR_INTERNAL_ERROR,
+    ERR_INVALID_VALUE,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
 from .error import SmartHomeError
 from .helpers import Config
 from .schema import (
     CapabilityInstance,
+    CapabilityType,
+    ModeCapabilityInstance,
     ModeCapabilityInstanceActionState,
     ModeCapabilityMode,
+    RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
     RangeCapabilityRange,
+    ToggleCapabilityInstance,
     ToggleCapabilityInstanceActionState,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class CustomCapability(AbstractCapability, ABC):  # type: ignore[type-arg]
-    """Base class for capabilities that user can set up using yaml configuration."""
+class CustomCapability(Capability[Any], Protocol):
+    """Base class for a capability that user can set up using yaml configuration."""
+
+    _capability_config: dict[str, Any]
+    _value_source: State | None
 
     def __init__(
         self,
         hass: HomeAssistant,
         config: Config,
-        state: State,
-        instance: CapabilityInstance,
         capability_config: dict[str, Any],
+        instance: CapabilityInstance,
+        device_id: str,
+        value_source: State | None,
     ):
-        super().__init__(hass, config, state)
+        """Initialize a custom capability."""
+        self._hass = hass
+        self._config = config
+        self._capability_config = capability_config
+        self._value_source = value_source
 
+        self.device_id = device_id
         self.instance = instance
 
         self._capability_config = capability_config
-        self._state_entity_id = self._capability_config.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
 
+    # noinspection PyProtocol
     @property
     def retrievable(self) -> bool:
         """Test if the capability can return the current value."""
-        return bool(self._state_entity_id or self._state_value_attribute)
+        for attr in (
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE,
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
+        ):
+            if self._capability_config.get(attr):
+                return True
 
-    def get_value(self) -> Any:
-        """Return the current capability value."""
-        if not self.retrievable:
-            return None
-
-        entity_state = self.state
-
-        if self._state_entity_id:
-            state_by_entity_id = self._hass.states.get(self._state_entity_id)
-            if not state_by_entity_id:
-                raise SmartHomeError(
-                    ERR_DEVICE_UNREACHABLE,
-                    f"Entity {self._state_entity_id} not found for "
-                    f"{self.instance} instance of {self.state.entity_id}",
-                )
-
-            entity_state = state_by_entity_id
-
-        if self._state_value_attribute:
-            value = entity_state.attributes.get(self._state_value_attribute)
-        else:
-            value = entity_state.state
-
-        return value
+        return False
 
     @property
-    def _state_value_attribute(self) -> str | None:
-        """Return HA attribute for state of this entity."""
-        return self._capability_config.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
+    def reportable(self) -> bool:
+        """Test if the capability can report changes."""
+        if not self.retrievable:
+            return False
+
+        return super().reportable
+
+    def _get_source_value(self) -> Any:
+        """Return the current capability value (unprocessed)."""
+        if self._value_source is None:
+            return None
+
+        if value_attribute := self._capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE):
+            return self._value_source.attributes.get(value_attribute)
+
+        return self._value_source.state
 
 
 class CustomModeCapability(CustomCapability, ModeCapability):
     """Mode capability that user can set up using yaml configuration."""
+
+    instance: ModeCapabilityInstance
 
     @property
     def supported_ha_modes(self) -> list[str]:
@@ -102,24 +120,19 @@ class CustomModeCapability(CustomCapability, ModeCapability):
         rv = list(itertools.chain(*modes.values()))
         return rv
 
-    @property
-    def modes_list_attribute(self) -> str | None:
-        """Return HA attribute contains modes list for the entity."""
-        return None
-
     def get_value(self) -> ModeCapabilityMode | None:
         """Return the current capability value."""
         if not self.retrievable:
             return None
 
-        return self.get_yandex_mode_by_ha_mode(super().get_value())
+        return self.get_yandex_mode_by_ha_mode(self._get_source_value())
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
 
         await async_call_from_config(
             self._hass,
-            self._capability_config[const.CONF_ENTITY_CUSTOM_MODE_SET_MODE],
+            self._capability_config[CONF_ENTITY_CUSTOM_MODE_SET_MODE],
             validate_config=False,
             variables={"mode": self.get_ha_mode_by_yandex_mode(state.value)},
             blocking=True,
@@ -129,6 +142,8 @@ class CustomModeCapability(CustomCapability, ModeCapability):
 
 class CustomToggleCapability(CustomCapability, ToggleCapability):
     """Toggle capability that user can set up using yaml configuration."""
+
+    instance: ToggleCapabilityInstance
 
     @property
     def supported(self) -> bool:
@@ -140,12 +155,16 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
         if not self.retrievable:
             return None
 
-        return super().get_value() not in [STATE_OFF, False]
+        value = self._get_source_value()
+        if value is None:
+            return None
+
+        return value not in [STATE_OFF, False]
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
-        turn_on_config = self._capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON]
-        turn_off_config = self._capability_config[const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF]
+        turn_on_config = self._capability_config[CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON]
+        turn_off_config = self._capability_config[CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF]
 
         await async_call_from_config(
             self._hass,
@@ -158,6 +177,8 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
 
 class CustomRangeCapability(CustomCapability, RangeCapability):
     """Range capability that user can set up using yaml configuration."""
+
+    instance: RangeCapabilityInstance
 
     @property
     def supported(self) -> bool:
@@ -172,10 +193,6 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                 return False
 
         return self._set_value_service_config is not None
-
-    def get_value(self) -> float | None:
-        """Return the current capability value."""
-        return RangeCapability.get_value(self)
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -192,8 +209,8 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                 if not self.retrievable:
                     raise SmartHomeError(
                         ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-                        f"Failed to set relative value for {self.instance.value} instance of {self.state.entity_id}. "
-                        f"No state or service found.",
+                        f"Failed to set relative value for {self.instance.value} instance of {self.device_id}. "
+                        f"No state source or service found.",
                     )
 
                 value = self._get_absolute_value(state.value)
@@ -209,6 +226,32 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
             blocking=True,
             context=context,
         )
+
+    def _get_value(self) -> float | None:
+        """Return the current capability value (unguarded)."""
+        if not self.retrievable:
+            return None
+
+        return self._convert_to_float(self._get_source_value())
+
+    def _get_absolute_value(self, relative_value: float) -> float:
+        """Return the absolute value for a relative value."""
+        value = self._get_value()
+
+        if value is None:
+            if isinstance(self._value_source, State):
+                if (
+                    self._capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
+                    and self._value_source.state == STATE_OFF
+                ):
+                    raise SmartHomeError(ERR_DEVICE_OFF, f"Device {self._value_source.entity_id} probably turned off")
+
+            raise SmartHomeError(
+                ERR_INVALID_VALUE,
+                f"Unable to get current value for {self.instance.value} instance of {self.device_id}",
+            )
+
+        return max(min(value + relative_value, self._range.max), self._range.min)
 
     @property
     def _default_range(self) -> RangeCapabilityRange:
@@ -228,21 +271,56 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
     @property
     def _set_value_service_config(self) -> ConfigType | None:
         """Return service configuration for setting value action."""
-        return self._capability_config.get(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE)
+        return self._capability_config.get(CONF_ENTITY_CUSTOM_RANGE_SET_VALUE)
 
     @property
     def _increase_value_service_config(self) -> ConfigType | None:
         """Return service configuration for setting increase value action."""
-        return self._capability_config.get(const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE)
+        return self._capability_config.get(CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE)
 
     @property
     def _decrease_value_service_config(self) -> ConfigType | None:
         """Return service configuration for setting decrease value action."""
-        return self._capability_config.get(const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE)
+        return self._capability_config.get(CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE)
 
-    def _get_value(self) -> float | None:
-        """Return the current capability value (unguarded)."""
-        if not self.retrievable:
-            return None
 
-        return self._convert_to_float(CustomCapability.get_value(self))
+def get_custom_capability(
+    hass: HomeAssistant,
+    config: Config,
+    capability_config: dict[str, Any],
+    capability_type: CapabilityType,
+    instance: str,
+    device_id: str,
+) -> CustomCapability:
+    """Return initialized custom capability based on parameters."""
+    value_source: State | None = None
+    value_source_entity_id = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
+    value_source_attribute = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
+
+    if value_source_entity_id or value_source_attribute:
+        value_source_entity_id = value_source_entity_id or device_id
+
+        state = hass.states.get(value_source_entity_id)
+        if not state:
+            raise SmartHomeError(
+                ERR_DEVICE_UNREACHABLE,
+                f"Entity {value_source_entity_id} not found for {instance} instance of {device_id}",
+            )
+
+        value_source = state
+
+    match capability_type:
+        case CapabilityType.MODE:
+            return CustomModeCapability(
+                hass, config, capability_config, ModeCapabilityInstance(instance), device_id, value_source
+            )
+        case CapabilityType.TOGGLE:
+            return CustomToggleCapability(
+                hass, config, capability_config, ToggleCapabilityInstance(instance), device_id, value_source
+            )
+        case CapabilityType.RANGE:
+            return CustomRangeCapability(
+                hass, config, capability_config, RangeCapabilityInstance(instance), device_id, value_source
+            )
+
+    raise ValueError(f"Unsupported capability type: {capability_type}")

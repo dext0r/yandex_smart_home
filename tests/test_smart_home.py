@@ -1,17 +1,22 @@
 from unittest.mock import Mock, patch
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
-from homeassistant.core import State
+from homeassistant.core import Context, State
 from homeassistant.helpers.template import Template
 from homeassistant.util.decorator import Registry
 from pydantic import BaseModel
 
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
-from custom_components.yandex_smart_home.capability_toggle import ToggleCapability
+from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
 from custom_components.yandex_smart_home.const import ERR_INTERNAL_ERROR, ERR_INVALID_ACTION, EVENT_DEVICE_ACTION
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.helpers import RequestData
-from custom_components.yandex_smart_home.schema import CapabilityType, ToggleCapabilityInstance
+from custom_components.yandex_smart_home.schema import (
+    CapabilityType,
+    OnOffCapabilityInstanceActionState,
+    ToggleCapabilityInstance,
+    ToggleCapabilityInstanceActionState,
+)
 from custom_components.yandex_smart_home.smart_home import (
     async_devices,
     async_devices_execute,
@@ -70,7 +75,7 @@ async def test_async_devices_execute(hass):
         foo: str
         int: int
 
-    class MockCapability(ToggleCapability):
+    class MockCapability(StateToggleCapability):
         @property
         def supported(self) -> bool:
             return True
@@ -78,7 +83,7 @@ async def test_async_devices_execute(hass):
         def get_value(self) -> bool | None:
             return None
 
-        async def set_instance_state(self, *_, **__):
+        async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
             pass
 
     class MockCapabilityA(MockCapability):
@@ -113,7 +118,7 @@ async def test_async_devices_execute(hass):
     hass.bus.async_listen(EVENT_DEVICE_ACTION, device_action_event)
 
     with patch(
-        "custom_components.yandex_smart_home.capability.CAPABILITIES",
+        "custom_components.yandex_smart_home.entity.STATE_CAPABILITIES_REGISTRY",
         [MockCapabilityA, MockCapabilityReturnState, MockCapabilityFail],
     ):
         message = {
@@ -248,13 +253,13 @@ async def test_async_devices_execute_error_template(hass, caplog):
         def get_value(self) -> bool | None:
             return None
 
-        async def set_instance_state(self, *_, **__):
+        async def set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
             pass
 
-        async def _set_instance_state(self, *_, **__):
+        async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
             pass
 
-    class MockCapabilityB(ToggleCapability):
+    class MockCapabilityB(StateToggleCapability):
         instance = ToggleCapabilityInstance.PAUSE
 
         @property
@@ -264,10 +269,10 @@ async def test_async_devices_execute_error_template(hass, caplog):
         def get_value(self) -> bool | None:
             return None
 
-        async def set_instance_state(self, *_, **__):
+        async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
             pass
 
-    class MockCapabilityC(ToggleCapability):
+    class MockCapabilityC(StateToggleCapability):
         instance = ToggleCapabilityInstance.BACKLIGHT
 
         @property
@@ -277,7 +282,7 @@ async def test_async_devices_execute_error_template(hass, caplog):
         def get_value(self) -> bool | None:
             return None
 
-        async def set_instance_state(self, *_, **__):
+        async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
             pass
 
     config = MockConfig(
@@ -306,7 +311,7 @@ async def test_async_devices_execute_error_template(hass, caplog):
     hass.states.async_set(switch.entity_id, switch.state, switch.attributes)
 
     with patch(
-        "custom_components.yandex_smart_home.capability.CAPABILITIES",
+        "custom_components.yandex_smart_home.entity.STATE_CAPABILITIES_REGISTRY",
         [MockCapabilityA, MockCapabilityB, MockCapabilityC],
     ):
         message = {
