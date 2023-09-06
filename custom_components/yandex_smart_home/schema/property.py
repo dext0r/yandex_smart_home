@@ -27,7 +27,7 @@ class EventPropertyDescription(BaseModel):
     type: Literal[PropertyType.EVENT] = PropertyType.EVENT
     retrievable: bool
     reportable: bool
-    parameters: EventPropertyParameters  # type: ignore[type-arg]
+    parameters: EventPropertyParameters[Any]
 
 
 PropertyDescription = FloatPropertyDescription | EventPropertyDescription

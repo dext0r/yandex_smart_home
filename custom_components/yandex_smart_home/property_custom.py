@@ -250,24 +250,19 @@ class BatteryLevelCustomFloatProperty(BatteryLevelPercentageProperty, CustomFloa
 
 
 def get_custom_property(
-    hass: HomeAssistant,
-    config: Config,
-    property_config: dict[str, Any],
-    device_id: str,
-    native_value_source: State | None = None,
+    hass: HomeAssistant, config: Config, property_config: dict[str, Any], device_id: str
 ) -> CustomProperty:
     """Return initialized custom property based on property configuration."""
     instance = property_config[CONF_ENTITY_PROPERTY_TYPE]
     state_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY, device_id)
 
-    if native_value_source is None:
-        native_value_source = hass.states.get(state_entity_id)
+    native_value_source = hass.states.get(state_entity_id)
 
-        if native_value_source is None:
-            raise SmartHomeError(
-                ERR_DEVICE_UNREACHABLE,
-                f"Entity {state_entity_id} not found for {instance} instance of {device_id}",
-            )
+    if native_value_source is None:
+        raise SmartHomeError(
+            ERR_DEVICE_UNREACHABLE,
+            f"Entity {state_entity_id} not found for {instance} instance of {device_id}",
+        )
 
     if native_value_source.domain == binary_sensor.DOMAIN:
         try:
