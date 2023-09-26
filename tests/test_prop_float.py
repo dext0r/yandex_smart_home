@@ -23,7 +23,6 @@ from homeassistant.const import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_ILLUMINANCE,
     DEVICE_CLASS_POWER,
-    DEVICE_CLASS_PRESSURE,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
     PERCENTAGE,
@@ -158,35 +157,36 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
     assert prop.get_value() is None
 
 
+@pytest.mark.parametrize('device_class', ['pressure', 'atmospheric_pressure'])
 @pytest.mark.parametrize('yandex_pressure_unit,v', [
     (const.PRESSURE_UNIT_PASCAL, 98658.28),
     (const.PRESSURE_UNIT_MMHG, 740),
     (const.PRESSURE_UNIT_ATM, 0.97),
     (const.PRESSURE_UNIT_BAR, 0.99),
 ])
-def test_property_float_pressure(hass, yandex_pressure_unit, v):
+def test_property_float_pressure(hass, device_class, yandex_pressure_unit, v):
     entry = MockConfigEntry(options={
         const.CONF_PRESSURE_UNIT: yandex_pressure_unit
     })
     config = MockConfig(entry=entry)
     state = State('sensor.test', '740', {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE
+        ATTR_DEVICE_CLASS: device_class
     })
     assert_no_properties(hass, config, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_PRESSURE)
 
     state = State('sensor.test', '740', {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
+        ATTR_DEVICE_CLASS: device_class,
         ATTR_UNIT_OF_MEASUREMENT: const.PRESSURE_UNIT_MMHG
     })
     prop = get_exact_one_property(hass, config, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_PRESSURE)
     prop.state = State('sensor.test', '740', {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE
+        ATTR_DEVICE_CLASS: device_class
     })
     with pytest.raises(SmartHomeError):
         prop.get_value()
 
     state = State('sensor.test', '740', {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
+        ATTR_DEVICE_CLASS: device_class,
         ATTR_UNIT_OF_MEASUREMENT: const.PRESSURE_UNIT_MMHG
     })
     prop = get_exact_one_property(hass, config, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_PRESSURE)
@@ -198,7 +198,7 @@ def test_property_float_pressure(hass, yandex_pressure_unit, v):
     assert prop.get_value() == v
 
     prop.state = State('sensor.test', '-5', {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_PRESSURE,
+        ATTR_DEVICE_CLASS: device_class,
         ATTR_UNIT_OF_MEASUREMENT: const.PRESSURE_UNIT_MMHG
     })
     assert prop.get_value() == 0

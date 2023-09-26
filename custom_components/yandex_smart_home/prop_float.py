@@ -211,7 +211,8 @@ class PressureProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_PRESSURE:
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) in [DEVICE_CLASS_PRESSURE,
+                                                                const.DEVICE_CLASS_ATMOSPHERIC_PRESSURE]:
                 if self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) in PRESSURE_TO_PASCAL:
                     return True
 

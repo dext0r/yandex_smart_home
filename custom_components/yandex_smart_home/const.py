@@ -95,6 +95,9 @@ EVENT_CONFIG_CHANGED = 'yandex_smart_home_config_changed'
 # Fake device class
 DEVICE_CLASS_BUTTON = 'button'
 
+# Backported from newer versions
+DEVICE_CLASS_ATMOSPHERIC_PRESSURE = 'atmospheric_pressure'
+
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html
 PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'

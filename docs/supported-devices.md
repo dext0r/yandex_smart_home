@@ -29,22 +29,22 @@
 
 !!! success "Только в домене `sensor`"
 
-| Датчик                | `device_class`   | `unit_of_measurements`                                        | Примечания                                                | 
-|-----------------------|------------------|---------------------------------------------------------------|-----------------------------------------------------------|
-| Температура           | `temperature`    | `°C`                                                          | Или из атрибутов `temperature`, `current_temperature`     |
-| Влажность             | `humidity`       | `%`                                                           | Или из атрибутов `humidity`, `current_humidity`           |
-| Давление              | `pressure`       | `pa`, `hPa`, `kPa`, `MPa`, `mmHg`, `atm`, `bar`, `mbar`       ||
-| Освещенность          | `illumination`   |                                                               | Или из атрибута `illuminance`                             |
-| Уровень воды          |                  |                                                               | Из атрибута `water_level` для увлажнителей и вентиляторов |
-| Уровень CO2           | `carbon_dioxide` |                                                               | Или из атрибута `carbon_dioxide`                          |
-| Уровень частиц PM1    |                  || Из атрибута `particulate_matter_0_1`                          |
-| Уровень частиц PM2.5  |                  || Из атрибута `particulate_matter_2_5`                          |
-| Уровень частиц PM10   |                  || Из атрибута `particulate_matter_10`                           |
-| Уровень TVOC          |                  | `µg/m³`, `mg/m³`, `μg/ft³`, `p/m³`, `ppm`, `ppb`              | Из атрибута `total_volatile_` `organic_compounds`         |
-| Напряжение            | `voltage`        || Или из атрибута `voltage`                                     |
-| Потребление тока      | `current`        | `mA`, `A`                                                     | Или из атрибута `current`                                 |
-| Потребляемая мощность | `power`          || Или из атрибутов `power`, `load_power`, `current_consumption` |
-| Уровень заряда        | `battery`        | `%`                                                           | Или из атрибута `battery_level`                           |
+| Датчик                | `device_class`                     | `unit_of_measurements`                                  | Примечания                                                    | 
+|-----------------------|------------------------------------|---------------------------------------------------------|---------------------------------------------------------------|
+| Температура           | `temperature`                      | `°C`                                                    | Или из атрибутов `temperature`, `current_temperature`         |
+| Влажность             | `humidity`                         | `%`                                                     | Или из атрибутов `humidity`, `current_humidity`               |
+| Давление              | `pressure`, `atmospheric_pressure` | `pa`, `hPa`, `kPa`, `MPa`, `mmHg`, `atm`, `bar`, `mbar` |                                                               |
+| Освещенность          | `illumination`                     |                                                         | Или из атрибута `illuminance`                                 |
+| Уровень воды          |                                    |                                                         | Из атрибута `water_level` для увлажнителей и вентиляторов     |
+| Уровень CO2           | `carbon_dioxide`                   |                                                         | Или из атрибута `carbon_dioxide`                              |
+| Уровень частиц PM1    |                                    |                                                         | Из атрибута `particulate_matter_0_1`                          |
+| Уровень частиц PM2.5  |                                    |                                                         | Из атрибута `particulate_matter_2_5`                          |
+| Уровень частиц PM10   |                                    |                                                         | Из атрибута `particulate_matter_10`                           |
+| Уровень TVOC          |                                    | `µg/m³`, `mg/m³`, `μg/ft³`, `p/m³`, `ppm`, `ppb`        | Из атрибута `total_volatile_` `organic_compounds`             |
+| Напряжение            | `voltage`                          |                                                         | Или из атрибута `voltage`                                     |
+| Потребление тока      | `current`                          | `mA`, `A`                                               | Или из атрибута `current`                                     |
+| Потребляемая мощность | `power`                            |                                                         | Или из атрибутов `power`, `load_power`, `current_consumption` |
+| Уровень заряда        | `battery`                          | `%`                                                     | Или из атрибута `battery_level`                               |
 
 ## Бинарные датчики { id=binary-sensors }
 !!! danger "Для автоматического обнаружения датчиков обязательно наличие атрибута `device_class`.<br>Если вы создаёте [датчик на шаблоне](https://www.home-assistant.io/integrations/template/#configuration-variables) - не забудьте его указать.<br>Если другая интеграция создала датчик без `device_class` - задайте его [вручную](./devices/sensor.md#device-class)."
