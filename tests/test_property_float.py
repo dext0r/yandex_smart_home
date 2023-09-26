@@ -170,6 +170,7 @@ async def test_property_float_temperature_convertion(hass):
     assert prop.get_value() == 10.06
 
 
+@pytest.mark.parametrize("device_class", [SensorDeviceClass.PRESSURE, SensorDeviceClass.ATMOSPHERIC_PRESSURE])
 @pytest.mark.parametrize(
     "unit_of_measurement,property_unit,v",
     [
@@ -179,14 +180,14 @@ async def test_property_float_temperature_convertion(hass):
         (UnitOfPressure.BAR, "unit.pressure.bar", 0.99),
     ],
 )
-def test_property_float_pressure_from_mmhg(hass, unit_of_measurement, property_unit, v):
+def test_property_float_pressure_from_mmhg(hass, device_class, unit_of_measurement, property_unit, v):
     entry = MockConfigEntry(options={const.CONF_PRESSURE_UNIT: unit_of_measurement})
     config = MockConfig(entry=entry)
 
     state = State(
         "sensor.test",
         "740",
-        {ATTR_DEVICE_CLASS: SensorDeviceClass.PRESSURE, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.MMHG},
+        {ATTR_DEVICE_CLASS: device_class, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.MMHG},
     )
     prop = get_exact_one_property(hass, config, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
     assert prop.retrievable is True
@@ -196,11 +197,12 @@ def test_property_float_pressure_from_mmhg(hass, unit_of_measurement, property_u
     prop.state = State(
         "sensor.test",
         "-5",
-        {ATTR_DEVICE_CLASS: SensorDeviceClass.PRESSURE, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.MMHG},
+        {ATTR_DEVICE_CLASS: device_class, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.MMHG},
     )
     assert prop.get_value() == 0
 
 
+@pytest.mark.parametrize("device_class", [SensorDeviceClass.PRESSURE, SensorDeviceClass.ATMOSPHERIC_PRESSURE])
 @pytest.mark.parametrize(
     "unit_of_measurement,property_unit,v",
     [
@@ -210,14 +212,14 @@ def test_property_float_pressure_from_mmhg(hass, unit_of_measurement, property_u
         (UnitOfPressure.BAR, "unit.pressure.bar", 1.07),
     ],
 )
-def test_property_float_pressure_from_psi(hass, unit_of_measurement, property_unit, v):
+def test_property_float_pressure_from_psi(hass, device_class, unit_of_measurement, property_unit, v):
     entry = MockConfigEntry(options={const.CONF_PRESSURE_UNIT: unit_of_measurement})
     config = MockConfig(entry=entry)
 
     state = State(
         "sensor.test",
         "15.5",
-        {ATTR_DEVICE_CLASS: SensorDeviceClass.PRESSURE, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.PSI},
+        {ATTR_DEVICE_CLASS: device_class, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.PSI},
     )
     prop = get_exact_one_property(hass, config, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
     assert prop.retrievable is True

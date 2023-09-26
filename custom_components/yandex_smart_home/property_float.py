@@ -406,10 +406,10 @@ class PressureSensor(StateProperty, PressureProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        return (
-            self.state.domain == sensor.DOMAIN
-            and self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.PRESSURE
-        )
+        return self.state.domain == sensor.DOMAIN and self.state.attributes.get(ATTR_DEVICE_CLASS) in [
+            SensorDeviceClass.PRESSURE,
+            SensorDeviceClass.ATMOSPHERIC_PRESSURE,
+        ]
 
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
