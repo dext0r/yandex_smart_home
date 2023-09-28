@@ -1,4 +1,4 @@
-"""Implement the Yandex Smart Home base capability."""
+"""Implement the Yandex Smart Home base device capability."""
 from abc import abstractmethod
 from functools import cached_property
 from typing import Any, Protocol
@@ -32,7 +32,7 @@ class Capability(Protocol[CapabilityInstanceActionState]):
     @property
     @abstractmethod
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         ...
 
     @property
@@ -63,7 +63,7 @@ class Capability(Protocol[CapabilityInstanceActionState]):
         ...
 
     def get_instance_state(self) -> CapabilityInstanceState | None:
-        """Return a state for a device query request."""
+        """Return a state for a state query request."""
         if (value := self.get_value()) is not None:
             return CapabilityInstanceState(
                 type=self.type, state=CapabilityInstanceStateValue(instance=self.instance, value=value)
@@ -104,12 +104,12 @@ class ActionOnlyCapabilityMixin:
 
 
 class StateCapability(Capability[CapabilityInstanceActionState], Protocol):
-    """Base class for a device property based on the state."""
+    """Base class for a device capability based on the state."""
 
     state: State
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        """Initialize a capability for a state."""
+        """Initialize a capability for the state."""
         self._hass = hass
         self._config = config
 
@@ -118,7 +118,7 @@ class StateCapability(Capability[CapabilityInstanceActionState], Protocol):
 
     @property
     def _state_features(self) -> int:
-        """Return features attribute for the state."""
+        """Return supported features for the state."""
         return int(self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0))
 
     @property

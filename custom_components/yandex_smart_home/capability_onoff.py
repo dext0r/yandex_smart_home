@@ -121,7 +121,7 @@ class OnOffCapabilityBasic(OnOffCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain in (light.DOMAIN, fan.DOMAIN, switch.DOMAIN, humidifier.DOMAIN, input_boolean.DOMAIN)
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -141,7 +141,7 @@ class OnOffCapabilityAutomation(OnOffCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return bool(self.state.domain == automation.DOMAIN)
 
     def get_value(self) -> bool | None:
@@ -165,7 +165,7 @@ class OnOffCapabilityGroup(OnOffCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain in group.DOMAIN
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -185,7 +185,7 @@ class OnOffCapabilityScript(OnlyOnCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain in (scene.DOMAIN, script.DOMAIN)
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -205,7 +205,7 @@ class OnOffCapabilityButton(OnlyOnCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == button.DOMAIN
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -225,7 +225,7 @@ class OnOffCapabilityInputButton(OnlyOnCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == input_button.DOMAIN
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -245,7 +245,7 @@ class OnOffCapabilityLock(OnOffCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == lock.DOMAIN
 
     def get_value(self) -> bool | None:
@@ -270,7 +270,7 @@ class OnOffCapabilityCover(OnOffCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == cover.DOMAIN
 
     def get_value(self) -> bool | None:
@@ -295,7 +295,7 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
             if CONF_TURN_ON in self._entity_config or CONF_TURN_OFF in self._entity_config:
                 return True
@@ -327,7 +327,7 @@ class OnOffCapabilityVacuum(OnOffCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain != vacuum.DOMAIN:
             return False
 
@@ -379,7 +379,7 @@ class OnOffCapabilityClimate(OnOffCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == climate.DOMAIN
 
     def get_value(self) -> bool | None:
@@ -418,7 +418,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == water_heater.DOMAIN
 
     def get_value(self) -> bool | None:

@@ -38,7 +38,7 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
     instance = ColorSettingCapabilityInstance.BASE
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        """Initialize a capability for a state."""
+        """Initialize a capability for the state."""
         super().__init__(hass, config, state)
 
         self._color = RGBColorCapability(hass, config, state)
@@ -47,7 +47,7 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         for capability in self._capabilities:
             if capability.supported:
                 return True
@@ -333,7 +333,7 @@ class ColorSceneCapability(StateCapability[SceneInstanceActionState]):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == light.DOMAIN and self._state_features & light.LightEntityFeature.EFFECT:
             return bool(self.supported_scenes)
 

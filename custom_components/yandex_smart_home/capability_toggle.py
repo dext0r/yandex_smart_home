@@ -44,7 +44,7 @@ class MuteCapability(StateToggleCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
             if self._state_features & media_player.MediaPlayerEntityFeature.VOLUME_MUTE:
                 return True
@@ -82,7 +82,7 @@ class PauseCapabilityMediaPlayer(StateToggleCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
             if MEDIA_PLAYER_FEATURE_PLAY_PAUSE in self._entity_config.get(CONF_FEATURES, []):
                 return True
@@ -119,7 +119,7 @@ class PauseCapabilityCover(ActionOnlyCapabilityMixin, StateToggleCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == cover.DOMAIN and bool(self._state_features & cover.CoverEntityFeature.STOP)
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
@@ -141,7 +141,7 @@ class PauseCapabilityVacuum(StateToggleCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == vacuum.DOMAIN and bool(self._state_features & vacuum.VacuumEntityFeature.PAUSE)
 
     def get_value(self) -> bool:
@@ -168,7 +168,7 @@ class OscillationCapability(StateToggleCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == fan.DOMAIN and bool(self._state_features & fan.FanEntityFeature.OSCILLATE)
 
     def get_value(self) -> bool:

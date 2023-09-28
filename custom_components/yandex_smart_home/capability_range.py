@@ -171,7 +171,7 @@ class CoverPositionCapability(StateRangeCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == cover.DOMAIN and bool(self._state_features & cover.CoverEntityFeature.SET_POSITION)
 
     @property
@@ -211,7 +211,7 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == water_heater.DOMAIN and bool(
             self._state_features & water_heater.WaterHeaterEntityFeature.TARGET_TEMPERATURE
         )
@@ -246,7 +246,7 @@ class TemperatureCapabilityClimate(TemperatureCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == climate.DOMAIN and bool(
             self._state_features & climate.ClimateEntityFeature.TARGET_TEMPERATURE
         )
@@ -292,7 +292,7 @@ class HumidityCapabilityHumidifier(HumidityCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return self.state.domain == humidifier.DOMAIN
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
@@ -325,7 +325,7 @@ class HumidityCapabilityXiaomiFan(HumidityCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == fan.DOMAIN:
             if self.state.attributes.get(ATTR_MODEL, "").startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
                 if ATTR_TARGET_HUMIDITY in self.state.attributes:
@@ -356,7 +356,7 @@ class BrightnessCapability(StateRangeCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == light.DOMAIN:
             if self._state_features & light.SUPPORT_BRIGHTNESS:
                 return True
@@ -411,7 +411,7 @@ class VolumeCapability(StateRangeCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
             if self._state_features & media_player.MediaPlayerEntityFeature.VOLUME_STEP:
                 return True
@@ -492,7 +492,7 @@ class ChannelCapability(StateRangeCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
             if (
                 self._state_features & media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK

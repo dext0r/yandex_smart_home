@@ -38,7 +38,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return bool(self.supported_yandex_modes)
 
     @property
@@ -171,7 +171,7 @@ class ThermostatCapability(StateModeCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == climate.DOMAIN:
             return super().supported
 
@@ -211,7 +211,7 @@ class SwingCapability(StateModeCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == climate.DOMAIN and self._state_features & climate.ClimateEntityFeature.SWING_MODE:
             return super().supported
 
@@ -308,7 +308,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == humidifier.DOMAIN and self._state_features & humidifier.HumidifierEntityFeature.MODES:
             return super().supported
 
@@ -377,7 +377,7 @@ class ProgramCapabilityFan(ProgramCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == fan.DOMAIN:
             if self._state_features & fan.FanEntityFeature.PRESET_MODE:
                 if (
@@ -433,7 +433,7 @@ class InputSourceCapability(StateModeCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
             if const.MEDIA_PLAYER_FEATURE_SELECT_SOURCE in self._entity_config.get(const.CONF_FEATURES, []):
                 return True
@@ -530,7 +530,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == climate.DOMAIN and self._state_features & climate.ClimateEntityFeature.FAN_MODE:
             return super().supported
 
@@ -609,7 +609,7 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == fan.DOMAIN:
             if self._state_features & fan.FanEntityFeature.PRESET_MODE:
                 if (
@@ -652,7 +652,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == fan.DOMAIN:
             if (
                 self._state_features & fan.FanEntityFeature.SET_SPEED
@@ -769,7 +769,7 @@ class CleanupModeCapability(StateModeCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         if self.state.domain == vacuum.DOMAIN and self._state_features & vacuum.VacuumEntityFeature.FAN_SPEED:
             return super().supported
 

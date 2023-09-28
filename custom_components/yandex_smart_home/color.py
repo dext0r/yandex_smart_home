@@ -52,6 +52,8 @@ ColorProfile = dict[ColorName, int]
 
 
 class ColorProfiles(dict[str, ColorProfile]):
+    """Represent color profiles."""
+
     _default_profiles = {
         "natural": {
             ColorName.RED: 16711680,

@@ -1,4 +1,4 @@
-"""Implement the Yandex Smart Home base property."""
+"""Implement the Yandex Smart Home base device property."""
 from abc import abstractmethod
 from typing import Any, Protocol
 
@@ -68,7 +68,7 @@ class Property(Protocol):
         ...
 
     def get_instance_state(self) -> PropertyInstanceState | None:
-        """Return a state for a device query request."""
+        """Return a state for a state query request."""
         if (value := self.get_value()) is not None:
             return PropertyInstanceState(
                 type=self.type, state=PropertyInstanceStateValue(instance=self.instance, value=value)
@@ -89,7 +89,7 @@ class StateProperty(Property, Protocol):
     state: State
 
     def __init__(self, hass: HomeAssistant, config: Config, state: State):
-        """Initialize a property for a state."""
+        """Initialize a property for the state."""
         self._hass = hass
         self._config = config
 

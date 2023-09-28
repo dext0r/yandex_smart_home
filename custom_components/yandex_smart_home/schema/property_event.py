@@ -10,7 +10,10 @@ from pydantic.generics import GenericModel
 
 
 class EventPropertyInstance(StrEnum):
-    """# https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html"""
+    """Instance of an event property.
+
+    https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html
+    """
 
     VIBRATION = "vibration"
     OPEN = "open"
@@ -25,58 +28,78 @@ class EventPropertyInstance(StrEnum):
 
 
 class VibrationInstanceEvent(StrEnum):
+    """Event of a vibration instance."""
+
     TILT = "tilt"
     FALL = "fall"
     VIBRATION = "vibration"
 
 
 class OpenInstanceEvent(StrEnum):
+    """Event of a open instance."""
+
     OPENED = "opened"
     CLOSED = "closed"
 
 
 class ButtonInstanceEvent(StrEnum):
+    """Event of a button instance."""
+
     CLICK = "click"
     DOUBLE_CLICK = "double_click"
     LONG_PRESS = "long_press"
 
 
 class MotionInstanceEvent(StrEnum):
+    """Event of a motion instance."""
+
     DETECTED = "detected"
     NOT_DETECTED = "not_detected"
 
 
 class SmokeInstanceEvent(StrEnum):
+    """Event of a smoke instance."""
+
     DETECTED = "detected"
     NOT_DETECTED = "not_detected"
     HIGH = "high"
 
 
 class GasInstanceEvent(StrEnum):
+    """Event of a gas instance."""
+
     DETECTED = "detected"
     NOT_DETECTED = "not_detected"
     HIGH = "high"
 
 
 class BatteryLevelInstanceEvent(StrEnum):
+    """Event of a battery_level instance."""
+
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
 
 
 class FoodLevelInstanceEvent(StrEnum):
+    """Event of a food_level instance."""
+
     EMPTY = "empty"
     LOW = "low"
     NORMAL = "normal"
 
 
 class WaterLevelInstanceEvent(StrEnum):
+    """Event of a water_level instance."""
+
     EMPTY = "empty"
     LOW = "low"
     NORMAL = "normal"
 
 
 class WaterLeakInstanceEvent(StrEnum):
+    """Event of a water_leak instance."""
+
     DRY = "dry"
     LEAK = "leak"
 
@@ -94,14 +117,18 @@ EventInstanceEvent = TypeVar(
     WaterLevelInstanceEvent,
     WaterLeakInstanceEvent,
 )
+"""All events of event instances."""
 
 
 class EventPropertyParameters(GenericModel, Generic[EventInstanceEvent]):
+    """Parameters of an event property."""
+
     instance: EventPropertyInstance
     events: list[dict[Literal["value"], EventInstanceEvent]] = []
 
     @validator("events", pre=True, always=True)
     def set_events(cls, v: Any) -> Any:
+        """Update events list value."""
         if not v:
             instance_event: type[EventInstanceEvent] = cls.__fields__["events"].type_.__args__[1]
             return [{"value": m} for m in instance_event.__members__.values()]

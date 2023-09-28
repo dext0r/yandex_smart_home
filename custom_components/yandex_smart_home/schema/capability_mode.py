@@ -9,7 +9,10 @@ from pydantic import BaseModel
 
 
 class ModeCapabilityInstance(StrEnum):
-    """https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html"""
+    """Instance of a mode capability.
+
+    https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html
+    """
 
     CLEANUP_MODE = "cleanup_mode"
     COFFEE_MODE = "coffee_mode"
@@ -25,7 +28,10 @@ class ModeCapabilityInstance(StrEnum):
 
 
 class ModeCapabilityMode(StrEnum):
-    """https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html"""
+    """Mode value of a mode capability.
+
+    https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html
+    """
 
     AUTO = "auto"
     ECO = "eco"
@@ -103,6 +109,8 @@ class ModeCapabilityMode(StrEnum):
 
 
 class ModeCapabilityParameters(BaseModel):
+    """Parameters of a mode capability."""
+
     instance: ModeCapabilityInstance
     modes: list[dict[Literal["value"], ModeCapabilityMode]]
 
@@ -112,5 +120,7 @@ class ModeCapabilityParameters(BaseModel):
 
 
 class ModeCapabilityInstanceActionState(BaseModel):
+    """New value for a mode capability."""
+
     instance: ModeCapabilityInstance
     value: ModeCapabilityMode

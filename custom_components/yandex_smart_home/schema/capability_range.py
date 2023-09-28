@@ -9,12 +9,17 @@ from pydantic import BaseModel, root_validator
 
 
 class RangeCapabilityUnit(StrEnum):
+    """Unit used in a range capability."""
+
     PERCENT = "unit.percent"
     TEMPERATURE_CELSIUS = "unit.temperature.celsius"
 
 
 class RangeCapabilityInstance(StrEnum):
-    """https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html"""
+    """Instance of a range capability.
+
+    https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html
+    """
 
     BRIGHTNESS = "brightness"
     CHANNEL = "channel"
@@ -25,6 +30,8 @@ class RangeCapabilityInstance(StrEnum):
 
 
 class RangeCapabilityRange(BaseModel):
+    """Value range of a range capability."""
+
     min: float
     max: float
     precision: float
@@ -34,6 +41,8 @@ class RangeCapabilityRange(BaseModel):
 
 
 class RangeCapabilityParameters(BaseModel):
+    """Parameters of a range capability."""
+
     instance: RangeCapabilityInstance
     unit: RangeCapabilityUnit | None
     random_access: bool
@@ -41,6 +50,7 @@ class RangeCapabilityParameters(BaseModel):
 
     @root_validator
     def compute_unit(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """Return value unit for a capability instance."""
         match values.get("instance"):
             case RangeCapabilityInstance.BRIGHTNESS:
                 values["unit"] = RangeCapabilityUnit.PERCENT
@@ -55,6 +65,8 @@ class RangeCapabilityParameters(BaseModel):
 
 
 class RangeCapabilityInstanceActionState(BaseModel):
+    """New value for a range capability."""
+
     instance: RangeCapabilityInstance
     value: float
     relative: bool = False

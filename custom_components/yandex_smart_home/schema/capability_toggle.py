@@ -8,7 +8,10 @@ from pydantic import BaseModel
 
 
 class ToggleCapabilityInstance(StrEnum):
-    """https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html"""
+    """Instance of a toggle capability.
+
+    https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html
+    """
 
     BACKLIGHT = "backlight"
     CONTROLS_LOCKED = "controls_locked"
@@ -20,9 +23,13 @@ class ToggleCapabilityInstance(StrEnum):
 
 
 class ToggleCapabilityParameters(BaseModel):
+    """Parameters of a toggle capability."""
+
     instance: ToggleCapabilityInstance
 
 
 class ToggleCapabilityInstanceActionState(BaseModel):
+    """New value for a toggle capability."""
+
     instance: ToggleCapabilityInstance
     value: bool

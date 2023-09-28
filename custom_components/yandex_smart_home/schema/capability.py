@@ -1,3 +1,4 @@
+"""Schema for device capabilities."""
 from enum import StrEnum
 from typing import Annotated, Any, Literal, TypeVar, Union
 
@@ -21,9 +22,12 @@ from .capability_video import (
     VideoStreamCapabilityInstance,
     VideoStreamCapabilityParameters,
 )
+from .response import ResponseCode
 
 
 class CapabilityType(StrEnum):
+    """Capability type."""
+
     ON_OFF = "devices.capabilities.on_off"
     COLOR_SETTING = "devices.capabilities.color_setting"
     MODE = "devices.capabilities.mode"
@@ -40,6 +44,8 @@ CapabilityParameters = (
     | ToggleCapabilityParameters
     | VideoStreamCapabilityParameters
 )
+"""Parameters of a capability for a device list request."""
+
 CapabilityInstance = (
     OnOffCapabilityInstance
     | ColorSettingCapabilityInstance
@@ -48,9 +54,12 @@ CapabilityInstance = (
     | ToggleCapabilityInstance
     | VideoStreamCapabilityInstance
 )
+"""All capability instances."""
 
 
 class CapabilityDescription(BaseModel):
+    """Description of a capability for a device list request."""
+
     type: CapabilityType
     retrievable: bool
     reportable: bool
@@ -58,61 +67,57 @@ class CapabilityDescription(BaseModel):
 
 
 class CapabilityInstanceStateValue(BaseModel):
+    """Capability instance value."""
+
     instance: CapabilityInstance
     value: Any
 
 
 class CapabilityInstanceState(BaseModel):
-    """Capability state in query and callback requests."""
+    """Capability state for state query and callback requests."""
 
     type: CapabilityType
     state: CapabilityInstanceStateValue
 
 
-CapabilityInstanceActionResultValue = GetStreamInstanceActionResultValue | None
-
-CapabilityInstanceActionState = TypeVar(
-    "CapabilityInstanceActionState",
-    OnOffCapabilityInstanceActionState,
-    ColorSettingCapabilityInstanceActionState,
-    RGBInstanceActionState,
-    TemperatureKInstanceActionState,
-    SceneInstanceActionState,
-    ModeCapabilityInstanceActionState,
-    RangeCapabilityInstanceActionState,
-    ToggleCapabilityInstanceActionState,
-    GetStreamInstanceActionState,
-    contravariant=True,
-)
-"""New capability state in device action request."""
-
-
 class OnOffCapabilityInstanceAction(BaseModel):
+    """New capability state for a state change request of on_off capability."""
+
     type: Literal[CapabilityType.ON_OFF] = CapabilityType.ON_OFF
     state: OnOffCapabilityInstanceActionState
 
 
 class ColorSettingCapabilityInstanceAction(BaseModel):
+    """New capability state for a state change request of color_setting capability."""
+
     type: Literal[CapabilityType.COLOR_SETTING] = CapabilityType.COLOR_SETTING
     state: ColorSettingCapabilityInstanceActionState
 
 
 class ModeCapabilityInstanceAction(BaseModel):
+    """New capability state for a state change request of mode capability."""
+
     type: Literal[CapabilityType.MODE] = CapabilityType.MODE
     state: ModeCapabilityInstanceActionState
 
 
 class RangeCapabilityInstanceAction(BaseModel):
+    """New capability state for a state change request of range capability."""
+
     type: Literal[CapabilityType.RANGE] = CapabilityType.RANGE
     state: RangeCapabilityInstanceActionState
 
 
 class ToggleCapabilityInstanceAction(BaseModel):
+    """New capability state for a state change request of toggle capability."""
+
     type: Literal[CapabilityType.TOGGLE] = CapabilityType.TOGGLE
     state: ToggleCapabilityInstanceActionState
 
 
 class VideoStreamCapabilityInstanceAction(BaseModel):
+    """New capability state for a state change request of video_stream capability."""
+
     type: Literal[CapabilityType.VIDEO_STREAM] = CapabilityType.VIDEO_STREAM
     state: GetStreamInstanceActionState
 
@@ -129,3 +134,22 @@ CapabilityInstanceAction = Annotated[
     Field(discriminator="type"),
 ]
 """Capability state in action requests."""
+"""New capability state including type for a state change request."""
+
+CapabilityInstanceActionState = TypeVar(
+    "CapabilityInstanceActionState",
+    OnOffCapabilityInstanceActionState,
+    ColorSettingCapabilityInstanceActionState,
+    RGBInstanceActionState,
+    TemperatureKInstanceActionState,
+    SceneInstanceActionState,
+    ModeCapabilityInstanceActionState,
+    RangeCapabilityInstanceActionState,
+    ToggleCapabilityInstanceActionState,
+    GetStreamInstanceActionState,
+    contravariant=True,
+)
+"""New capability state for a state change request."""
+
+CapabilityInstanceActionResultValue = GetStreamInstanceActionResultValue | None
+"""Result of a capability state change."""

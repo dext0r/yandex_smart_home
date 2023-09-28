@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field, root_validator
 
 
 class ColorSettingCapabilityInstance(StrEnum):
+    """Instance of a color_setting capability."""
+
     BASE = "base"
     RGB = "rgb"
     HSV = "hsv"
@@ -18,6 +20,8 @@ class ColorSettingCapabilityInstance(StrEnum):
 
 
 class ColorScene(StrEnum):
+    """Color scene."""
+
     ALARM = "alarm"
     ALICE = "alice"
     CANDLE = "candle"
@@ -39,16 +43,22 @@ class ColorScene(StrEnum):
 
 
 class CapabilityParameterColorModel(StrEnum):
+    """Color model."""
+
     RGB = "rgb"
     HSV = "hsv"
 
 
 class CapabilityParameterTemperatureK(BaseModel):
+    """Color temperature range."""
+
     min: int
     max: int
 
 
 class CapabilityParameterColorScene(BaseModel):
+    """Parameter of a scene instance."""
+
     scenes: list[dict[Literal["id"], ColorScene]]
 
     @classmethod
@@ -57,6 +67,8 @@ class CapabilityParameterColorScene(BaseModel):
 
 
 class ColorSettingCapabilityParameters(BaseModel):
+    """Parameters of a color_setting capability."""
+
     color_model: CapabilityParameterColorModel | None
     temperature_k: CapabilityParameterTemperatureK | None
     color_scene: CapabilityParameterColorScene | None
@@ -70,16 +82,22 @@ class ColorSettingCapabilityParameters(BaseModel):
 
 
 class RGBInstanceActionState(BaseModel):
+    """New value for a rgb instance."""
+
     instance: Literal[ColorSettingCapabilityInstance.RGB] = ColorSettingCapabilityInstance.RGB
     value: int
 
 
 class TemperatureKInstanceActionState(BaseModel):
+    """New value for a temperature_k instance."""
+
     instance: Literal[ColorSettingCapabilityInstance.TEMPERATURE_K] = ColorSettingCapabilityInstance.TEMPERATURE_K
     value: int
 
 
 class SceneInstanceActionState(BaseModel):
+    """New value for a scene instance."""
+
     instance: Literal[ColorSettingCapabilityInstance.SCENE] = ColorSettingCapabilityInstance.SCENE
     value: ColorScene
 
@@ -88,3 +106,4 @@ ColorSettingCapabilityInstanceActionState = Annotated[
     Union[RGBInstanceActionState, TemperatureKInstanceActionState, SceneInstanceActionState],
     Field(discriminator="instance"),
 ]
+"""New value for an instance of color_setting capability."""

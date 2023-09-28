@@ -9,7 +9,10 @@ from pydantic import BaseModel
 
 
 class FloatPropertyInstance(StrEnum):
-    """https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html"""
+    """Instance of an event property.
+
+    https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html
+    """
 
     AMPERAGE = "amperage"
     BATTERY_LEVEL = "battery_level"
@@ -29,6 +32,8 @@ class FloatPropertyInstance(StrEnum):
 
 
 class FloatUnit(StrEnum):
+    """Unit used in a float property."""
+
     AMPERE = "unit.ampere"
     LUX = "unit.illumination.lux"
     PERCENT = "unit.percent"
@@ -39,6 +44,8 @@ class FloatUnit(StrEnum):
 
 
 class PressureUnit(StrEnum):
+    """Pressure unit."""
+
     PASCAL = "unit.pressure.pascal"
     MMHG = "unit.pressure.mmhg"
     ATM = "unit.pressure.atm"
@@ -46,11 +53,15 @@ class PressureUnit(StrEnum):
 
 
 class TemperatureUnit(StrEnum):
+    """Temperature unit."""
+
     CELSIUS = "unit.temperature.celsius"
     KELVIN = "unit.temperature.kelvin"
 
 
 class FloatPropertyParameters(BaseModel):
+    """Parameters of a float property."""
+
     instance: FloatPropertyInstance
     unit: FloatUnit | PressureUnit | TemperatureUnit
 
@@ -61,6 +72,8 @@ class FloatPropertyParameters(BaseModel):
 
 
 class FloatPropertyAboveZeroMixin:
+    """Mixin for a property that has value only above zero."""
+
     @property
     def range(self) -> tuple[int | None, int | None]:
         """Return value range."""

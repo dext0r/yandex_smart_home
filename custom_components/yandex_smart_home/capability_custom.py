@@ -147,7 +147,7 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return True
 
     def get_value(self) -> bool | None:
@@ -182,7 +182,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
 
     @property
     def supported(self) -> bool:
-        """Test if the capability is supported for its state."""
+        """Test if the capability is supported."""
         return True
 
     @property
