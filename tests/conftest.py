@@ -25,8 +25,8 @@ def pytest_configure(*_):
 
 
 @pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(enable_custom_integrations):
-    yield
+def enable_custom_integrations(enable_custom_integrations):
+    return enable_custom_integrations
 
 
 @pytest.fixture(name="skip_notifications", autouse=True)
@@ -41,6 +41,18 @@ def skip_notifications_fixture():
 @pytest.fixture
 def config_entry():
     return MockConfigEntry(domain=DOMAIN, options={const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]}})
+
+
+@pytest.fixture
+def socket_enabled(socket_enabled):
+    """Mark socket_enabled as fixture."""
+    return socket_enabled
+
+
+@pytest.fixture
+def aiohttp_client(aiohttp_client, socket_enabled):
+    """Return aiohttp_client and allow opening sockets."""
+    return aiohttp_client
 
 
 @pytest.fixture

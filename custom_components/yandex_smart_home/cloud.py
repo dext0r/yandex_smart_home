@@ -1,13 +1,10 @@
 """Implement the Yandex Smart Home cloud connection manager."""
-from __future__ import annotations
-
 from asyncio import TimeoutError
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from http import HTTPStatus
-import json
 import logging
-from typing import Any, AsyncIterable, cast
+from typing import AsyncIterable, cast
 
 from aiohttp import (
     ClientConnectorError,
@@ -18,16 +15,22 @@ from aiohttp import (
     WSMsgType,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HassJob, HomeAssistant
+from homeassistant.core import Context, HassJob, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_call_later
-from homeassistant.helpers.json import JSONEncoder
 from homeassistant.util import dt
+from pydantic import BaseModel
 
-from . import const
-from .const import CLOUD_BASE_URL, CONFIG, DOMAIN
+from . import handlers
+from .const import (
+    CLOUD_BASE_URL,
+    CONF_CLOUD_INSTANCE,
+    CONF_CLOUD_INSTANCE_CONNECTION_TOKEN,
+    CONF_CLOUD_INSTANCE_ID,
+    CONFIG,
+    DOMAIN,
+)
 from .helpers import Config, RequestData
-from .smart_home import async_handle_message
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,21 +48,10 @@ class CloudInstanceData:
     connection_token: str
 
 
-@dataclass
-class CloudRequest:
+class CloudRequest(BaseModel):
     request_id: str
     action: str
-    message: dict[str, Any]
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]):
-        if "message" in data:
-            if isinstance(data["message"], str):
-                data["message"] = json.loads(data["message"])
-        else:
-            data["message"] = {}
-
-        return cls(**data)
+    message: str = ""
 
 
 class CloudManager:
@@ -94,7 +86,7 @@ class CloudManager:
 
             async for msg in cast(AsyncIterable[WSMessage], self._ws):
                 if msg.type == WSMsgType.TEXT:
-                    await self._on_message(msg.json())
+                    await self._on_message(msg)
 
             _LOGGER.debug(f"Disconnected: {self._ws.close_code}")
             if self._ws.close_code is not None:
@@ -112,19 +104,19 @@ class CloudManager:
         if self._ws:
             await self._ws.close()
 
-    async def _on_message(self, payload: dict[Any, Any]):
-        request = CloudRequest.from_dict(payload)
+    async def _on_message(self, message: WSMessage):
+        request = CloudRequest.parse_raw(message.data)
         _LOGGER.debug("Request: %s (message: %s)" % (request.action, request.message))
 
         data = RequestData(
             config=self._hass.data[DOMAIN][CONFIG],
+            context=Context(user_id=self._user_id),
             request_user_id=self._instance_id,
             request_id=request.request_id,
-            user_id=self._user_id,
         )
 
-        result = await async_handle_message(self._hass, data, request.action, request.message)
-        response = json.dumps(result, cls=JSONEncoder)
+        result = await handlers.async_handle_request(self._hass, data, request.action, request.message)
+        response = result.json(exclude_none=True)
         _LOGGER.debug(f"Response: {response}")
 
         await self._ws.send_str(response)
@@ -157,8 +149,8 @@ async def register_cloud_instance(hass: HomeAssistant) -> CloudInstanceData:
 async def delete_cloud_instance(hass: HomeAssistant, entry: ConfigEntry):
     session = async_create_clientsession(hass)
 
-    instance_id = entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_ID]
-    token = entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN]
+    instance_id = entry.data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID]
+    token = entry.data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_CONNECTION_TOKEN]
 
     response = await session.delete(
         f"{BASE_API_URL}/instance/{instance_id}", headers={"Authorization": f"Bearer {token}"}

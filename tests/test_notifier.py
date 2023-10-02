@@ -17,12 +17,12 @@ from homeassistant.const import (
     STATE_UNKNOWN,
     TEMP_CELSIUS,
 )
-from homeassistant.core import State
+from homeassistant.core import Context, State
 from homeassistant.exceptions import ConfigEntryNotReady
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import const
+from custom_components.yandex_smart_home import const, handlers
 from custom_components.yandex_smart_home.const import (
     CONF_NOTIFIER_OAUTH_TOKEN,
     CONF_NOTIFIER_SKILL_ID,
@@ -32,6 +32,7 @@ from custom_components.yandex_smart_home.const import (
     NOTIFIERS,
 )
 from custom_components.yandex_smart_home.entity import YandexEntityCallbackState
+from custom_components.yandex_smart_home.helpers import RequestData
 from custom_components.yandex_smart_home.notifier import (
     YandexCloudNotifier,
     YandexDirectNotifier,
@@ -39,7 +40,6 @@ from custom_components.yandex_smart_home.notifier import (
     async_start_notifier,
     async_unload_notifier,
 )
-from custom_components.yandex_smart_home.smart_home import RequestData, async_devices
 
 from . import BASIC_CONFIG, REQ_ID, MockConfig, generate_entity_filter
 
@@ -420,7 +420,7 @@ async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connect
         mock_send_cb.assert_not_called()
 
     with patch("custom_components.yandex_smart_home.cloud.CloudManager.connect", return_value=None):
-        await async_devices(hass, RequestData(hass.data[DOMAIN][CONFIG], None, None), {})
+        await handlers.async_device_list(hass, RequestData(hass.data[DOMAIN][CONFIG], Context(), "foo", None), "")
         await hass.async_block_till_done()
 
     assert len(hass.data[DOMAIN][NOTIFIERS]) == 1

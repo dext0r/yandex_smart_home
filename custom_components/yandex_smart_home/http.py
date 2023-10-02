@@ -1,84 +1,94 @@
-"""Support for Yandex Smart Home."""
-from __future__ import annotations
-
+"""Yandex Smart Home HTTP interface."""
 import logging
-from typing import Any
+from typing import Any, Awaitable, Callable, Coroutine, TypeVar, cast
 
-from aiohttp.web import Request, Response
+from aiohttp.web import HTTPServiceUnavailable, Request, Response, json_response
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant, callback
 
+from . import handlers
 from .const import CONFIG, DOMAIN
-from .helpers import Config
-from .smart_home import RequestData, async_devices, async_handle_message
+from .helpers import Config, RequestData
+from .schema import DeviceList
 
 _LOGGER = logging.getLogger(__name__)
+_T = TypeVar("_T", bound=HomeAssistantView)
 
 
 @callback
-def async_register_http(hass: HomeAssistant):
+def async_register_http(hass: HomeAssistant) -> None:
     """Register HTTP views for Yandex Smart Home."""
     hass.http.register_view(YandexSmartHomeUnauthorizedView())
     hass.http.register_view(YandexSmartHomePingView())
     hass.http.register_view(YandexSmartHomeView())
 
 
-class YandexSmartHomeView:
-    @staticmethod
-    def _get_config(request: Request) -> Config | None:
-        return request.app["hass"].data[DOMAIN][CONFIG]
+def async_http_request(
+    func: Callable[[_T, HomeAssistant, Request, RequestData], Awaitable[Response]]
+) -> Callable[[_T, Request], Coroutine[Any, Any, Response]]:
+    """Decorate an async function to handle HTTP requests."""
 
-    def _is_direct_connection(self, request: Request) -> bool:
-        """Check if integration configured to use direct connection."""
-        config = self._get_config(request)
-        if not config:
-            return False
+    async def _log_request(request: Request) -> None:
+        """Log the request."""
+        if body := await request.text():
+            _LOGGER.debug(f"Request: {request.url} ({request.method} data: {body})")
+        else:
+            _LOGGER.debug(f"Request: {request.url} ({request.method})")
 
-        return config.is_direct_connection
+    async def decorator(self: _T, request: Request) -> Response:
+        """Decorate."""
+        await _log_request(request)
+        hass: HomeAssistant = request.app["hass"]
+        config: Config | None = hass.data[DOMAIN][CONFIG]
+        context = self.context(request)
+        if config is None:
+            raise HTTPServiceUnavailable(text="Error: Integration is not enabled")
+        if not config.is_direct_connection:
+            raise HTTPServiceUnavailable(text="Error: Integration uses cloud connection")
+
+        data = RequestData(
+            config=config,
+            context=context,
+            request_user_id=context.user_id,
+            request_id=request.headers.get("X-Request-Id"),
+        )
+
+        return await func(self, hass, request, data)
+
+    return decorator
 
 
-class YandexSmartHomeUnauthorizedView(HomeAssistantView, YandexSmartHomeView):
-    """Handle Yandex Smart Home unauthorized requests."""
+class YandexSmartHomeUnauthorizedView(HomeAssistantView):
+    """View to handle Yandex Smart Home unauthorized HTTP requests."""
 
     url = f"/api/{DOMAIN}/v1.0"
     name = f"api:{DOMAIN}:unauthorized"
     requires_auth = False
 
-    async def head(self, request: Request) -> Response:
+    @async_http_request
+    async def head(self, _: HomeAssistant, __: Request, ___: RequestData) -> Response:
         """Handle Yandex Smart Home HEAD requests."""
-        _LOGGER.debug("Request: %s (HEAD)" % request.url)
-
-        if not self._is_direct_connection(request):
-            _LOGGER.debug("Integration is not enabled or use cloud connection")
-            return Response(status=404)
-
+        print(123)
         return Response(status=200)
 
 
-class YandexSmartHomePingView(HomeAssistantView, YandexSmartHomeView):
-    """Handle Yandex Smart Home ping requests."""
+class YandexSmartHomePingView(HomeAssistantView):
+    """View to handle Yandex Smart Home ping requests."""
 
     url = f"/api/{DOMAIN}/v1.0/ping"
     name = f"api:{DOMAIN}:unauthorized"
     requires_auth = False
 
-    # noinspection PyMethodMayBeStatic
-    async def get(self, request: Request) -> Response:
-        """Handle Yandex Smart Home Get requests."""
-        _LOGGER.debug("Request: %s (GET)" % request.url)
-
-        if not self._is_direct_connection(request):
-            return Response(text="Error: Integration is not enabled or use cloud connection", status=503)
-
-        data = RequestData(self._get_config(request), None, "ping")
-        devices_sync_response = await async_devices(request.app["hass"], data, {})
-        device_count = len(devices_sync_response["devices"])
-
-        return Response(text=f"OK: {device_count}", status=200)
+    @async_http_request
+    async def get(self, hass: HomeAssistant, _request: Request, data: RequestData) -> Response:
+        """Handle Yandex Smart Home GET requests."""
+        data.request_user_id = "ping"
+        dl = cast(DeviceList, await handlers.async_device_list(hass, data, ""))
+        return Response(text=f"OK: {len(dl.devices)}", status=200)
 
 
-class YandexSmartHomeView(YandexSmartHomeUnauthorizedView, YandexSmartHomeView):
-    """Handle Yandex Smart Home requests."""
+class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
+    """View to handle Yandex Smart Home HTTP requests."""
 
     url = f"/api/{DOMAIN}/v1.0"
     extra_urls = [
@@ -90,33 +100,22 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView, YandexSmartHomeView):
     name = f"api:{DOMAIN}"
     requires_auth = True
 
-    async def _async_handle_request(self, request: Request, message: dict[str, Any] | None = None) -> Response:
-        if not self._is_direct_connection(request):
-            _LOGGER.debug("Integration is not enabled or use cloud connection")
-            return Response(status=404)
-
-        data = RequestData(
-            config=self._get_config(request),
-            request_user_id=request["hass_user"].id,
-            request_id=request.headers.get("X-Request-Id"),
-            user_id=request["hass_user"].id,
+    async def _async_handle_request(self, hass: HomeAssistant, request: Request, data: RequestData) -> Response:
+        """Handle Yandex Smart Home requests."""
+        result = await handlers.async_handle_request(
+            hass, data, action=request.path.replace(self.url, "", 1), payload=await request.text()
         )
-        action = request.path.replace(self.url, "", 1)
-
-        result = await async_handle_message(request.app["hass"], data, action, message or {})
-        response = self.json(result)
+        response = json_response(text=result.json(exclude_none=True))
         _LOGGER.debug(f"Response: {response.text}")
+
         return response
 
-    async def post(self, request: Request) -> Response:
+    @async_http_request
+    async def post(self, hass: HomeAssistant, request: Request, data: RequestData) -> Response:
         """Handle Yandex Smart Home POST requests."""
-        _LOGGER.debug("Request: %s (POST data: %s)" % (request.url, await request.text()))
-        if str(request.url).endswith("/user/unlink"):
-            return await self._async_handle_request(request)
+        return await self._async_handle_request(hass, request, data)
 
-        return await self._async_handle_request(request, await request.json())
-
-    async def get(self, request: Request) -> Response:
+    @async_http_request
+    async def get(self, hass: HomeAssistant, request: Request, data: RequestData) -> Response:
         """Handle Yandex Smart Home GET requests."""
-        _LOGGER.debug("Request: %s" % request.url)
-        return await self._async_handle_request(request)
+        return await self._async_handle_request(hass, request, data)

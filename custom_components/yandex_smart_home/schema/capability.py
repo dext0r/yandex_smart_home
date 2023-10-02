@@ -22,7 +22,6 @@ from .capability_video import (
     VideoStreamCapabilityInstance,
     VideoStreamCapabilityParameters,
 )
-from .response import ResponseCode
 
 
 class CapabilityType(StrEnum):
@@ -133,7 +132,6 @@ CapabilityInstanceAction = Annotated[
     ],
     Field(discriminator="type"),
 ]
-"""Capability state in action requests."""
 """New capability state including type for a state change request."""
 
 CapabilityInstanceActionState = TypeVar(

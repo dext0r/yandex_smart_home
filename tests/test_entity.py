@@ -208,22 +208,22 @@ async def test_yandex_entity_properties(hass):
     assert [type(c) for c in entity.properties()] == [OpenStateEventProperty]
 
 
-async def test_yandex_entity_serialize_state_type(hass, registries):
+async def test_yandex_entity_type(hass, registries):
     ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
 
     entity_unavailable = YandexEntity(hass, BASIC_CONFIG, State("switch.test", STATE_UNAVAILABLE))
-    assert await entity_unavailable.devices_serialize(ent_reg, dev_reg, area_reg) is None
+    assert await entity_unavailable.describe(ent_reg, dev_reg, area_reg) is None
 
     entity_no_caps = YandexEntity(hass, BASIC_CONFIG, State("sensor.test", "13"))
-    assert await entity_no_caps.devices_serialize(ent_reg, dev_reg, area_reg) is None
+    assert await entity_no_caps.describe(ent_reg, dev_reg, area_reg) is None
 
     entity = YandexEntity(hass, BASIC_CONFIG, State("switch.test_1", STATE_ON))
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s["id"] == "switch.test_1"
-    assert s["name"] == "test 1"
-    assert s["type"] == const.TYPE_SWITCH
-    assert "room" not in s
-    assert s["device_info"] == {"model": "switch.test_1"}
+    s = await entity.describe(ent_reg, dev_reg, area_reg)
+    assert s.id == "switch.test_1"
+    assert s.name == "test 1"
+    assert s.type == const.TYPE_SWITCH
+    assert s.room is None
+    assert s.device_info.model == "switch.test_1"
 
     config = MockConfig(
         entity_config={
@@ -233,9 +233,9 @@ async def test_yandex_entity_serialize_state_type(hass, registries):
         }
     )
     entity = YandexEntity(hass, config, State("switch.test_1", STATE_ON))
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s["id"] == "switch.test_1"
-    assert s["type"] == const.TYPE_OPENABLE
+    s = await entity.describe(ent_reg, dev_reg, area_reg)
+    assert s.id == "switch.test_1"
+    assert s.type == const.TYPE_OPENABLE
 
 
 async def test_yandex_entity_serialize_device_info(hass, registries):
@@ -249,9 +249,9 @@ async def test_yandex_entity_serialize_device_info(hass, registries):
     )
     ent_reg.async_get_or_create("switch", "test", "1", device_id=device.id)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s["id"] == "switch.test_1"
-    assert s["device_info"] == {"model": "switch.test_1", "manufacturer": "Acme Inc."}
+    s = await entity.describe(ent_reg, dev_reg, area_reg)
+    assert s.id == "switch.test_1"
+    assert s.device_info.dict(exclude_none=True) == {"model": "switch.test_1", "manufacturer": "Acme Inc."}
 
     state = State("switch.test_2", STATE_ON)
     device = dev_reg.async_get_or_create(
@@ -268,9 +268,9 @@ async def test_yandex_entity_serialize_device_info(hass, registries):
         device_id=device.id,
     )
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s["id"] == "switch.test_2"
-    assert s["device_info"] == {
+    s = await entity.describe(ent_reg, dev_reg, area_reg)
+    assert s.id == "switch.test_2"
+    assert s.device_info.dict(exclude_none=True) == {
         "manufacturer": "Acme Inc.",
         "model": "Ultra Switch | switch.test_2",
         "sw_version": "57",
@@ -287,30 +287,30 @@ async def test_yandex_entity_serialize_name_room(hass, registries):
     device = dev_reg.async_get_or_create(identifiers={"test_1"}, config_entry_id="test_1")
     entry = ent_reg.async_get_or_create("switch", "test", "1", device_id=device.id)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s["id"] == "switch.test_1"
-    assert s["name"] == "test 1"
-    assert "room" not in s
+    s = await entity.describe(ent_reg, dev_reg, area_reg)
+    assert s.id == "switch.test_1"
+    assert s.name == "test 1"
+    assert s.room is None
 
     dev_reg.async_update_device(device.id, area_id=area_room.id)
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s["room"] == "Room"
+    s = await entity.describe(ent_reg, dev_reg, area_reg)
+    assert s.room == "Room"
 
     ent_reg.async_update_entity(entry.entity_id, area_id=area_kitchen.id)
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s["name"] == "test 1"
-    assert s["room"] == "Kitchen"
+    s = await entity.describe(ent_reg, dev_reg, area_reg)
+    assert s.name == "test 1"
+    assert s.room == "Kitchen"
 
     ent_reg.async_update_entity(entry.entity_id, area_id=area_closet.id, aliases=["2", "foo", "Устройство", "апельсин"])
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s["name"] == "Устройство"
-    assert s["room"] == "Кладовка"
+    s = await entity.describe(ent_reg, dev_reg, area_reg)
+    assert s.name == "Устройство"
+    assert s.room == "Кладовка"
 
     config = MockConfig(entity_config={"switch.test_1": {CONF_NAME: "Имя", CONF_ROOM: "Комната"}})
     entity = YandexEntity(hass, config, state)
-    s = await entity.devices_serialize(ent_reg, dev_reg, area_reg)
-    assert s["name"] == "Имя"
-    assert s["room"] == "Комната"
+    s = await entity.describe(ent_reg, dev_reg, area_reg)
+    assert s.name == "Имя"
+    assert s.room == "Комната"
 
 
 async def test_yandex_entity_should_expose(hass):
@@ -396,7 +396,7 @@ async def test_yandex_entity_serialize(hass):
 
     state = State("switch.unavailable", STATE_UNAVAILABLE)
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.query_serialize() == {"id": state.entity_id, "error_code": ERR_DEVICE_UNREACHABLE}
+    assert entity.query().dict(exclude_none=True) == {"id": state.entity_id, "error_code": ERR_DEVICE_UNREACHABLE}
 
     state = State("switch.test", STATE_ON)
     state_pause = State("input_boolean.pause", STATE_OFF)
@@ -460,7 +460,7 @@ async def test_yandex_entity_serialize(hass):
     with patch.object(entity, "capabilities", return_value=[cap_onoff, cap_pause]), patch.object(
         entity, "properties", return_value=[prop_temp, prop_voltage, prop_humidity_custom, prop_button]
     ):
-        assert entity.query_serialize() == {
+        assert entity.query().dict(exclude_none=True) == {
             "id": "switch.test",
             "capabilities": [
                 {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
@@ -519,7 +519,7 @@ async def test_yandex_entity_serialize(hass):
         with patch.object(PauseCapability, "retrievable", PropertyMock(return_value=None)), patch.object(
             TemperatureSensor, "retrievable", PropertyMock(return_value=False)
         ):
-            assert entity.query_serialize() == {
+            assert entity.query().dict(exclude_none=True) == {
                 "id": "switch.test",
                 "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
                 "properties": [
@@ -531,7 +531,7 @@ async def test_yandex_entity_serialize(hass):
         state_pause.state = STATE_UNAVAILABLE
         state_voltage.state = STATE_UNAVAILABLE
         prop_humidity_custom._native_value_source.state = STATE_UNAVAILABLE
-        assert entity.query_serialize() == {
+        assert entity.query().dict(exclude_none=True) == {
             "id": "switch.test",
             "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
             "properties": [{"type": "devices.properties.float", "state": {"instance": "temperature", "value": 5.0}}],

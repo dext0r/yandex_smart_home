@@ -5,7 +5,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import entityfilter
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -71,4 +71,4 @@ REQ_ID: str = "5ca6622d-97b5-465c-a494-fd9954f7599a"
 
 BASIC_CONFIG: MockConfig = MockConfig(entity_filter=generate_entity_filter(include_entity_globs=["*"]))
 
-BASIC_DATA: RequestData = RequestData(BASIC_CONFIG, "test", REQ_ID)
+BASIC_DATA: RequestData = RequestData(config=BASIC_CONFIG, context=Context(), request_user_id="test", request_id=REQ_ID)

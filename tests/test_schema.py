@@ -1,13 +1,13 @@
 from pytest_homeassistant_custom_component.common import load_fixture
 
-from custom_components.yandex_smart_home.schema import DevicesActionRequest, GetStreamInstanceActionStateValue
+from custom_components.yandex_smart_home.schema import ActionRequest, GetStreamInstanceActionStateValue
 from custom_components.yandex_smart_home.schema.capability import *
 from custom_components.yandex_smart_home.schema.capability_color import *
 from custom_components.yandex_smart_home.schema.capability_mode import *
 
 
 def test_devices_action_request():
-    request = DevicesActionRequest.parse_raw(load_fixture("devices_action.json"))
+    request = ActionRequest.parse_raw(load_fixture("devices_action.json"))
     assert len(request.payload.devices) == 1
     assert len(request.payload.devices[0].capabilities) == 10
 

@@ -20,7 +20,6 @@ from .const import (
     CONF_TYPE,
     DEVICE_CLASS_TO_YANDEX_TYPES,
     DOMAIN_TO_YANDEX_TYPES,
-    ERR_DEVICE_UNREACHABLE,
     ERR_INTERNAL_ERROR,
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
@@ -28,7 +27,20 @@ from .error import SmartHomeError, SmartHomeUserError
 from .helpers import Config
 from .property import STATE_PROPERTIES_REGISTRY, Property
 from .property_custom import get_custom_property
-from .schema import CapabilityInstanceAction, CapabilityInstanceActionResultValue, CapabilityType
+from .schema import (
+    CapabilityDescription,
+    CapabilityInstanceAction,
+    CapabilityInstanceActionResultValue,
+    CapabilityInstanceState,
+    CapabilityType,
+    DeviceDescription,
+    DeviceInfo,
+    DeviceState,
+    DeviceType,
+    PropertyDescription,
+    PropertyInstanceState,
+    ResponseCode,
+)
 
 
 def _alias_priority(text: str) -> (int, str):
@@ -136,119 +148,112 @@ class YandexEntity:
         device_class = self._config.get(CONF_DEVICE_CLASS, self.state.attributes.get(ATTR_DEVICE_CLASS))
         return DEVICE_CLASS_TO_YANDEX_TYPES.get((domain, device_class), DOMAIN_TO_YANDEX_TYPES.get(domain))
 
-    async def devices_serialize(
+    async def describe(
         self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry, area_reg: AreaRegistry
-    ) -> dict[str, Any] | None:
-        """Serialize entity for a devices response.
-
-        https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/get-devices-docpage/
-        """
-        if self.state.state == STATE_UNAVAILABLE:
+    ) -> DeviceDescription | None:
+        """Return description of the device."""
+        if self.state.state == STATE_UNAVAILABLE or not self.yandex_device_type:
             return None
 
-        if not self.capabilities() and not self.properties():
+        capabilities: list[CapabilityDescription] = []
+        for c in self.capabilities():
+            if description := c.get_description():
+                capabilities.append(description)
+
+        properties: list[PropertyDescription] = []
+        for p in self.properties():
+            if description := p.get_description():
+                properties.append(description)
+
+        if not capabilities and not properties:
             return None
 
         entity_entry, device_entry = await self._get_entity_and_device(ent_reg, dev_reg)
-        device = {
-            "id": self.entity_id,
-            "name": self._get_name(entity_entry).strip(),
-            "type": self.yandex_device_type,
-            "capabilities": [],
-            "properties": [],
-            "device_info": {
-                "model": self.entity_id,
-            },
-        }
-
-        if room := self._get_room(entity_entry, device_entry, area_reg):
-            device["room"] = room.strip()
-
-        if device_entry:
-            if device_entry.manufacturer:
-                device["device_info"]["manufacturer"] = device_entry.manufacturer
+        device_info = DeviceInfo(model=self.entity_id)
+        if device_entry is not None:
             if device_entry.model:
-                device["device_info"]["model"] = f"{device_entry.model} | {self.entity_id}"
-            if device_entry.sw_version:
-                device["device_info"]["sw_version"] = str(device_entry.sw_version)
+                device_model = f"{device_entry.model} | {self.entity_id}"
+            else:
+                device_model = self.entity_id
 
-        for item in [c.get_description() for c in self.capabilities()]:
-            if item and item not in device["capabilities"]:
-                device["capabilities"].append(item.dict(exclude_none=True))
+            device_info = DeviceInfo(
+                manufacturer=device_entry.manufacturer,
+                model=device_model,
+                sw_version=device_entry.sw_version,
+            )
 
-        for item in [p.get_description() for p in self.properties()]:
-            if item not in device["properties"]:
-                device["properties"].append(item.dict(exclude_none=True))
+        if (room := self._get_room(entity_entry, device_entry, area_reg)) is not None:
+            room = room.strip()
 
-        return device
+        return DeviceDescription(
+            id=self.entity_id,
+            name=self._get_name(entity_entry).strip(),
+            room=room,
+            type=DeviceType(self.yandex_device_type),
+            capabilities=capabilities,
+            properties=properties,
+            device_info=device_info,
+        )
 
     @callback
-    def query_serialize(self) -> dict[str, Any]:
-        """Serialize entity for a query response.
-
-        https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-devices-query-docpage/
-        """
+    def query(self) -> DeviceState:
+        """Return state of the device."""
         if self.state.state == STATE_UNAVAILABLE:
-            return {"id": self.entity_id, "error_code": ERR_DEVICE_UNREACHABLE}
+            return DeviceState(id=self.entity_id, error_code=ResponseCode.DEVICE_UNREACHABLE)
 
-        device = {
-            "id": self.entity_id,
-            "capabilities": [],
-            "properties": [],
-        }
+        capabilities: list[CapabilityInstanceState] = []
+        for c in [c for c in self.capabilities() if c.retrievable]:
+            if (state := c.get_instance_state()) is not None:
+                capabilities.append(state)
 
-        for item in [c for c in self.capabilities() if c.retrievable]:
-            if (state := item.get_instance_state()) is not None:
-                device["capabilities"].append(state.dict())
+        properties: list[PropertyInstanceState] = []
+        for p in [p for p in self.properties() if p.retrievable]:
+            if (state := p.get_instance_state()) is not None:
+                properties.append(state)
 
-        for item in [p for p in self.properties() if p.retrievable]:
-            state = item.get_instance_state()
-            if state is not None:
-                device["properties"].append(state.dict())
-
-        return device
+        return DeviceState(id=self.entity_id, capabilities=capabilities, properties=properties)
 
     async def execute(
         self, context: Context, action: CapabilityInstanceAction
     ) -> CapabilityInstanceActionResultValue | None:
-        """Execute action.
+        """Execute an action to change capability state."""
+        target_capability: Capability[Any] | None = None
 
-        https://yandex.ru/dev/dialogs/alice/doc/smart-home/reference/post-action-docpage/
-        """
-        target_capabilities = [
-            c for c in self.capabilities() if c.type == action.type and c.instance == action.state.instance
-        ]
-        if not target_capabilities:
+        for capability in self.capabilities():
+            if capability.type == action.type and capability.instance == action.state.instance:
+                target_capability = capability
+                break
+
+        if not target_capability:
             raise SmartHomeError(
                 ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
                 f"Capability not found for instance {action.state.instance.value} ({action.type.value}) of "
                 f"{self.state.entity_id}",
             )
 
-        for target_capability in target_capabilities:
-            if error_code_template := self._error_code_template:
-                if error_code := error_code_template.async_render(capability=action.dict(), parse_result=False):
-                    if error_code not in const.ERROR_CODES:
-                        raise SmartHomeError(
-                            ERR_INTERNAL_ERROR, f"Invalid error code for {self.state.entity_id}: {error_code!r}"
-                        )
+        if error_code_template := self._error_code_template:
+            if error_code := error_code_template.async_render(capability=action.dict(), parse_result=False):
+                if error_code not in const.ERROR_CODES:
+                    raise SmartHomeError(
+                        ERR_INTERNAL_ERROR, f"Invalid error code for {self.state.entity_id}: {error_code!r}"
+                    )
 
-                    raise SmartHomeUserError(error_code)
+                raise SmartHomeUserError(error_code)
 
-            try:
-                return await target_capability.set_instance_state(context, action.state)
-            except SmartHomeError:
-                raise
-            except Exception as e:
-                raise SmartHomeError(
-                    ERR_INTERNAL_ERROR,
-                    f"Failed to execute action for instance {action.state.instance.value} ({action.type.value}) of "
-                    f"{self.state.entity_id}: {e!r}",
-                )
+        try:
+            return await target_capability.set_instance_state(context, action.state)
+        except SmartHomeError:
+            raise
+        except Exception as e:
+            raise SmartHomeError(
+                ERR_INTERNAL_ERROR,
+                f"Failed to execute action for instance {action.state.instance.value} ({action.type.value}) of "
+                f"{self.state.entity_id}: {e!r}",
+            )
 
     async def _get_entity_and_device(
         self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry
-    ) -> tuple[RegistryEntry, DeviceEntry] | tuple[None, None]:
+    ) -> tuple[RegistryEntry | None, DeviceEntry | None]:
         """Fetch the entity and device entries."""
         entity_entry = ent_reg.async_get(self.entity_id)
         if not entity_entry:

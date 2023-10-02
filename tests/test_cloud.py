@@ -193,14 +193,14 @@ async def test_cloud_messages_invalid_format(hass_platform_cloud_connection, con
         await manager.connect()
         mock_reconnect.assert_called_once()
 
-    requests = [json.dumps({"request_id": "req", "action": "foo", "message": "not_{_json"})]
+    requests = [json.dumps({"request_id": "req", "action": "/user/devices/query", "message": "not_{_json"})]
     session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=r) for r in requests])
     manager = CloudManager(hass, config, session)
 
-    mock_reconnect.reset_mock()
     with patch.object(manager, "_try_reconnect", return_value=None) as mock_reconnect:
         await manager.connect()
-        mock_reconnect.assert_called_once()
+        mock_reconnect.assert_not_called()
+    assert json.loads(session.ws.send_queue[0]) == {"payload": {"error_code": "INTERNAL_ERROR"}, "request_id": "req"}
 
 
 @pytest.mark.parametrize("expected_lingering_timers", [True])

@@ -1,7 +1,8 @@
 """Helper classes for Yandex Smart Home integration."""
 from __future__ import annotations
 
-from typing import Any, Protocol, TypedDict, TypeVar
+from dataclasses import dataclass
+from typing import Any, Protocol, TypeVar
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, HomeAssistant, callback
@@ -137,40 +138,14 @@ class CacheStore:
             self._data = data
 
 
+@dataclass
 class RequestData:
     """Hold data associated with a particular request."""
 
-    def __init__(
-        self, config: Config, request_user_id: str | None, request_id: str | None = None, user_id: str | None = None
-    ):
-        """Initialize the request data."""
-        self.config = config
-        self.context = Context(user_id=user_id)
-        self.request_user_id = request_user_id
-        self.request_id = request_id
-
-
-class DeviceActionRequest(TypedDict):
-    payload: DeviceActionRequestPayload
-
-
-class DeviceActionRequestPayload(TypedDict):
-    devices: list[DeviceActionRequestDevice]
-
-
-class DeviceActionRequestDevice(TypedDict):
-    id: str
-    capabilities: list[DeviceActionCapability]
-
-
-class DeviceActionCapability(TypedDict):
-    type: str
-    state: DeviceActionCapabilityState
-
-
-class DeviceActionCapabilityState(TypedDict):
-    instance: str
-    value: str | int | bool
+    config: Config
+    context: Context
+    request_user_id: str | None
+    request_id: str | None
 
 
 class HasInstance(Protocol):

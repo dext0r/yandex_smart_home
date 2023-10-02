@@ -71,19 +71,11 @@ module= "custom_components.yandex_smart_home.cloud_stream"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.notifier"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.smart_home"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module= "custom_components.yandex_smart_home.entity"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.http"
+module= "custom_components.yandex_smart_home.notifier"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
