@@ -1,15 +1,13 @@
-from __future__ import annotations
-
+"""Config flow for Yandex Smart Home integration."""
 import logging
 from typing import Any
 
 from aiohttp import ClientConnectorError, ClientResponseError
-from homeassistant import data_entry_flow
 from homeassistant.auth.const import GROUP_ID_READ_ONLY
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import CONF_ENTITIES
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowHandler
+from homeassistant.data_entry_flow import FlowHandler, FlowResult
 from homeassistant.helpers import selector
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
 from homeassistant.helpers.typing import ConfigType
@@ -24,11 +22,15 @@ CONNECTION_TYPES = {const.CONNECTION_TYPE_CLOUD: "Через облако", cons
 
 
 class BaseFlowHandler(FlowHandler):
-    def __init__(self):
+    """Base class to handle a data entry flow."""
+
+    def __init__(self) -> None:
+        """Initialize a config flow handler."""
         self._data: dict[str, Any] = {}
         self._options: dict[str, Any] = {}
 
-    def _populate_data_from_yaml_config(self):
+    def _populate_data_from_yaml_config(self) -> None:
+        """Update config entry data from yaml configuration."""
         yaml_config = None
         if DOMAIN in self.hass.data:
             yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
@@ -36,16 +38,21 @@ class BaseFlowHandler(FlowHandler):
         data, options = get_config_entry_data_from_yaml_config(self._data, self._options, yaml_config)
         self._data.update(data)
         self._options.update(options)
+        return None
 
 
 class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for Yandex Smart Home."""
+
     def __init__(self) -> None:
+        """Initialize a config flow handler."""
         super().__init__()
 
         self._yaml_config: ConfigType | None = None
         self._data: dict[str, Any] = {const.CONF_DEVICES_DISCOVERED: False}
 
-    async def async_step_user(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_user(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Handle a flow initialized by the user."""
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
 
@@ -57,13 +64,15 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
 
         return await self.async_step_include_entities()
 
-    async def async_step_filter_yaml(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_filter_yaml(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Show warning about filter was configured in yaml."""
         if user_input is not None:
             return await self.async_step_connection_type()
 
         return self.async_show_form(step_id="filter_yaml")
 
-    async def async_step_include_entities(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_include_entities(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose entities that should be exposed."""
         errors = {}
         if user_input is not None:
             if user_input[CONF_ENTITIES]:
@@ -80,7 +89,8 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_connection_type(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_connection_type(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose connection type."""
         errors = {}
         if user_input is not None:
             self._data.update(user_input)
@@ -128,33 +138,42 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(entry: ConfigEntry) -> OptionsFlow:
+        """Get the options flow for this handler."""
         return OptionsFlowHandler(entry)
 
 
 class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
+    """Handle a options flow for Yandex Smart Home."""
+
     def __init__(self, entry: ConfigEntry):
+        """Initialize an options flow handler."""
+
         super().__init__()
 
         self._entry = entry
-        self._options = dict(entry.options)
-        self._data = dict(entry.data)
+        self._options: dict[str, Any] = dict(entry.options)
+        self._data: dict[str, Any] = dict(entry.data)
 
-    async def async_step_init(self, _: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_init(self, _: ConfigType | None = None) -> FlowResult:
+        """Show menu."""
         options = ["include_entities", "connection_type"]
         if self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
             options += ["cloud_info", "cloud_settings"]
 
         return self.async_show_menu(step_id="menu", menu_options=options)
 
-    async def async_step_filter_yaml(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_filter_yaml(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Show warning about filter was configured in yaml."""
         if user_input is not None:
             return await self.async_step_init()
 
         return self.async_show_form(step_id="filter_yaml")
 
-    async def async_step_include_entities(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_include_entities(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose entities that should be exposed."""
+
         errors = {}
-        entities = []
+        entities: set[str] = set()
         yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
 
         if yaml_config and yaml_config.get(const.CONF_FILTER):
@@ -175,7 +194,7 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
                 return await self.async_step_done()
             else:
                 errors["base"] = "entities_not_selected"
-                entities = []
+                entities.clear()
 
         return self.async_show_form(
             step_id="include_entities",
@@ -189,7 +208,9 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
             errors=errors,
         )
 
-    async def async_step_connection_type(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_connection_type(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose connection type."""
+
         errors = {}
         if user_input is not None:
             self._data.update(user_input)
@@ -226,7 +247,8 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
             errors=errors,
         )
 
-    async def async_step_cloud_settings(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_cloud_settings(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose additional cloud options."""
         if user_input is not None:
             self._options.update(user_input)
             return await self.async_step_done()
@@ -242,7 +264,8 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
             ),
         )
 
-    async def async_step_cloud_info(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
+    async def async_step_cloud_info(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Show cloud connection credential."""
         if user_input is not None:
             return await self.async_step_init()
 
@@ -255,16 +278,18 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
             },
         )
 
-    async def async_step_done(self) -> data_entry_flow.FlowResult:
+    async def async_step_done(self) -> FlowResult:
+        """Finish the flow."""
         return self.async_create_entry(title="", data=self._options)
 
 
 async def _async_get_users(hass: HomeAssistant) -> dict[str, str]:
-    rv = {}
+    """Return users with admin privileges."""
+    users = {}
     for user in await hass.auth.async_get_users():
         if any(gr.id == GROUP_ID_READ_ONLY for gr in user.groups):
             continue
 
-        rv[user.id] = user.name
+        users[user.id] = user.name or user.id
 
-    return rv
+    return users

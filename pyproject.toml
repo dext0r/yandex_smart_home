@@ -55,23 +55,7 @@ warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
 [[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.config_flow"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module= "custom_components.yandex_smart_home.notifier"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.helpers"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.config_validation"
 ignore_errors = true
 
 [[tool.mypy.overrides]]

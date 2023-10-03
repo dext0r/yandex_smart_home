@@ -1,8 +1,7 @@
-"""Support for Actions on Yandex Smart Home."""
-from __future__ import annotations
-
+"""The Yandex Smart Home component."""
 import hashlib
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, SERVICE_RELOAD
@@ -188,19 +187,19 @@ YANDEX_SMART_HOME_SCHEMA = vol.All(
 CONFIG_SCHEMA = vol.Schema({DOMAIN: YANDEX_SMART_HOME_SCHEMA}, extra=vol.ALLOW_EXTRA)
 
 
-async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
+async def async_setup(hass: HomeAssistant, yaml_config: ConfigType) -> bool:
     """Activate Yandex Smart Home component."""
     hass.data[DOMAIN] = {}
-    hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []
-    hass.data[DOMAIN][CONFIG]: Config | None = None
-    hass.data[DOMAIN][YAML_CONFIG]: ConfigType | None = yaml_config.get(DOMAIN)
-    hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None
-    hass.data[DOMAIN][CLOUD_STREAMS]: dict[str, CloudStreamManager] = {}
+    hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []  # type: ignore
+    hass.data[DOMAIN][CONFIG]: Config | None = None  # type: ignore
+    hass.data[DOMAIN][YAML_CONFIG]: ConfigType | None = yaml_config.get(DOMAIN)  # type: ignore
+    hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None  # type: ignore
+    hass.data[DOMAIN][CLOUD_STREAMS]: dict[str, CloudStreamManager] = {}  # type: ignore
 
     async_register_http(hass)
     async_setup_notifier(hass)
 
-    def _device_discovery_listener(_: Event):
+    def _device_discovery_listener(_: Event) -> None:
         for entry in hass.config_entries.async_entries(DOMAIN):
             if not entry.data[const.CONF_DEVICES_DISCOVERED]:
                 data = dict(entry.data)
@@ -208,13 +207,17 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
 
                 hass.config_entries.async_update_entry(entry, data=data, options=entry.options)
 
+        return None
+
     hass.bus.async_listen(EVENT_DEVICE_DISCOVERY, _device_discovery_listener)
 
-    async def _handle_reload(*_):
+    async def _handle_reload(*_: Any) -> None:
         config = await async_integration_yaml_config(hass, DOMAIN)
         if config:
             hass.data[DOMAIN][YAML_CONFIG] = config.get(DOMAIN)
             _update_config_entries(hass)
+
+        return None
 
     hass.helpers.service.async_register_admin_service(DOMAIN, SERVICE_RELOAD, _handle_reload)
 
@@ -223,7 +226,7 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     yaml_config = hass.data[DOMAIN][YAML_CONFIG] or {}
@@ -255,30 +258,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, _: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, _: ConfigEntry) -> bool:
     if hass.data[DOMAIN][CLOUD_MANAGER]:
         hass.async_create_task(hass.data[DOMAIN][CLOUD_MANAGER].disconnect())
 
-    hass.data[DOMAIN][CONFIG]: Config | None = None
-    hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None
+    hass.data[DOMAIN][CONFIG]: Config | None = None  # type: ignore
+    hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None  # type: ignore
 
     await async_unload_notifier(hass)
 
     return True
 
 
-async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if entry.data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
         await delete_cloud_instance(hass, entry)
 
+    return None
 
-async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
+
+async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
     hass.bus.async_fire(EVENT_CONFIG_CHANGED)
 
+    return None
 
-def get_config_entry_data_from_yaml_config(data: dict, options: dict, yaml_config: ConfigType | None) -> (dict, dict):
-    data, options = data.copy(), options.copy()
+
+def get_config_entry_data_from_yaml_config(
+    data: ConfigType, options: ConfigType, yaml_config: ConfigType | None
+) -> tuple[ConfigType, ConfigType]:
     data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
     data.setdefault(const.CONF_DEVICES_DISCOVERED, True)  # <0.3 migration
 
@@ -319,17 +327,19 @@ def get_config_entry_data_from_yaml_config(data: dict, options: dict, yaml_confi
 
 
 @callback
-def _update_config_entries(hass: HomeAssistant):
+def _update_config_entries(hass: HomeAssistant) -> None:
     for entry in hass.config_entries.async_entries(DOMAIN):
         data, options = get_config_entry_data_from_yaml_config(
-            entry.data, entry.options, hass.data[DOMAIN][YAML_CONFIG]
+            entry.data.copy(), entry.options.copy(), hass.data[DOMAIN][YAML_CONFIG]
         )
 
         hass.config_entries.async_update_entry(entry, data=data, options=options)
 
+    return None
+
 
 def _yaml_config_checksum(yaml_config: ConfigType) -> str:
-    def _order_dict(d):
+    def _order_dict(d: dict[str, Any]) -> dict[str, Any]:
         return {k: _order_dict(v) if isinstance(v, dict) else v for k, v in sorted(d.items())}
 
     return hashlib.md5(repr(_order_dict(yaml_config)).encode("utf8")).hexdigest()

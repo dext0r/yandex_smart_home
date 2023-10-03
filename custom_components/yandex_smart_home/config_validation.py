@@ -1,6 +1,6 @@
-from __future__ import annotations
-
+"""Helpers for config validation using voluptuous."""
 import logging
+from typing import Any
 
 from homeassistant.util.color import RGBColor
 import voluptuous as vol
@@ -80,7 +80,7 @@ def range_instance(value: str) -> str:
     return value
 
 
-def entity_features(value: list[str]):
+def entity_features(value: list[str]) -> list[str]:
     for feature in value:
         if feature not in const.MEDIA_PLAYER_FEATURES:
             raise vol.Invalid(f"Feature {feature!r} is not supported")
@@ -100,14 +100,14 @@ def device_type(value: str) -> str:
     return value
 
 
-def pressure_unit(value):
+def pressure_unit(value: str) -> str:
     try:
-        return UnitOfPressure(value).value
+        return str(UnitOfPressure(value).value)
     except ValueError:
         raise vol.Invalid(f"Pressure unit {value!r} is not supported")
 
 
-def color_value(value: list | int) -> int:
+def color_value(value: list[Any] | int) -> int:
     if isinstance(value, (int, str)):
         return int(value)
 
