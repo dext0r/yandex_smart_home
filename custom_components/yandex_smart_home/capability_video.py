@@ -7,7 +7,7 @@ from homeassistant.helpers import network
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
-from .cloud_stream import CloudStream
+from .cloud_stream import CloudStreamManager
 from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
 from .schema import (
@@ -46,7 +46,7 @@ class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStream
         if self._config.use_cloud_stream:
             cloud_stream = self._hass.data[DOMAIN][CLOUD_STREAMS].get(entity_id)
             if not cloud_stream:
-                cloud_stream = CloudStream(self._hass, stream, async_get_clientsession(self._hass))
+                cloud_stream = CloudStreamManager(self._hass, stream, async_get_clientsession(self._hass))
                 self._hass.data[DOMAIN][CLOUD_STREAMS][entity_id] = cloud_stream
 
             await cloud_stream.start()

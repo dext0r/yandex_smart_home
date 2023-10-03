@@ -1,10 +1,6 @@
-from __future__ import annotations
-
+"""Implement the Yandex Smart Home cloud connection manager for video streaming."""
 import asyncio
-from asyncio import TimeoutError
-from dataclasses import asdict, dataclass
 from datetime import timedelta
-import json
 import logging
 from typing import Any, AsyncIterable, cast
 
@@ -15,9 +11,11 @@ from aiohttp import (
     ClientWebSocketResponse,
     WSMessage,
     WSMsgType,
+    web,
 )
 from aiohttp.web_request import Request as AIOWebRequest
 from homeassistant.components.stream import Stream
+from homeassistant.components.stream.core import StreamView
 from homeassistant.components.stream.hls import (
     HlsInitView,
     HlsMasterPlaylistView,
@@ -28,6 +26,7 @@ from homeassistant.components.stream.hls import (
 from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
 from homeassistant.helpers.event import async_call_later
 from multidict import MultiDictProxy
+from pydantic import BaseModel
 import yarl
 
 from .const import CLOUD_STREAM_BASE_URL
@@ -38,32 +37,42 @@ RECONNECTION_DELAY = 2
 WAIT_FOR_CONNECTION_TIMEOUT = 10
 
 
-@dataclass
-class Request:
+class Request(BaseModel):
+    """Request from the cloud."""
+
     view: str
-    sequence: str = None
-    part_num: str = None
-    url_query: str = None
+    sequence: str = ""
+    part_num: str = ""
+    url_query: str | None
 
 
-@dataclass
-class ResponseMeta:
+class ResponseMeta(BaseModel):
+    """Response metadata."""
+
     status_code: int
-    headers: dict[str, Any] | None = None
+    headers: dict[str, str]
 
 
 class WebRequest:
+    """Represent minimal HTTP request to use in HomeAssistantView"""
+
     def __init__(self, hass: HomeAssistant, url: yarl.URL):
+        """Initialize web request from url."""
         self.app = {"hass": hass}
         self._url = url
 
     @property
     def query(self) -> MultiDictProxy[str]:
+        """Return parsed query parameters in decoded representation."""
         return MultiDictProxy(self._url.query)
 
 
-class CloudStream:
+class CloudStreamManager:
+    """Class to manage cloud connection for streaming."""
+
     def __init__(self, hass: HomeAssistant, stream: Stream, session: ClientSession):
+        """Initialize a cloud manager with stream and client session."""
+
         self._hass = hass
         self._stream = stream
         self._running_stream_id: str | None = None
@@ -74,12 +83,14 @@ class CloudStream:
 
     @property
     def stream_url(self) -> str | None:
+        """Return URL to stream."""
         if not self._running_stream_id:
             return None
 
         return f"{CLOUD_STREAM_BASE_URL}/{self._running_stream_id}/master_playlist.m3u8"
 
-    async def start(self):
+    async def start(self) -> None:
+        """Start connection."""
         if self._ws or not self._stream.access_token:
             return
 
@@ -88,14 +99,18 @@ class CloudStream:
 
         await asyncio.wait_for(self._connected.wait(), timeout=WAIT_FOR_CONNECTION_TIMEOUT)
         await self._keepalive()
+        return None
 
-    async def _keepalive(self, *_):
+    async def _keepalive(self, *_: Any) -> None:
+        """Disconnect if stream is not active anymore."""
         if self._stream.access_token != self._running_stream_id:
             return await self._disconnect()
 
         async_call_later(self._hass, timedelta(seconds=1), HassJob(self._keepalive))
+        return None
 
-    async def _connect(self, *_):
+    async def _connect(self, *_: Any) -> None:
+        """Connect to the cloud."""
         if not self._running_stream_id:
             return
 
@@ -111,19 +126,23 @@ class CloudStream:
 
             async for msg in cast(AsyncIterable[WSMessage], self._ws):
                 if msg.type == WSMsgType.TEXT:
-                    await self._handle_request(msg.json())
+                    await self._on_message(msg)
 
             _LOGGER.debug(f"Disconnected: {self._ws.close_code}")
             if self._ws.close_code is not None:
                 self._try_reconnect()
-        except (ClientConnectionError, ClientResponseError, TimeoutError):
+        except (ClientConnectionError, ClientResponseError, asyncio.TimeoutError):
             _LOGGER.exception("Failed to connect to Yandex Smart Home cloud")
             self._try_reconnect()
         except Exception:
             _LOGGER.exception("Unexpected exception")
             self._try_reconnect()
 
-    async def _disconnect(self, *_):
+        return None
+
+    async def _disconnect(self, *_: Any) -> None:
+        """Disconnect from the cloud."""
+
         self._running_stream_id = None
         self._connected.clear()
 
@@ -135,14 +154,17 @@ class CloudStream:
             await self._ws.close()
             self._ws = None
 
-    async def _handle_request(self, payload: dict):
-        _LOGGER.debug(f"Request: {payload}")
+        return None
 
-        request = Request(**payload)
+    async def _on_message(self, message: WSMessage) -> None:
+        """Handle incoming request from the cloud."""
+        _LOGGER.debug(f"Request: {message.data}")
+
+        request = Request.parse_raw(message.data)
         request_url = yarl.URL.build(path=f"{request.view}", query=request.url_query)
         web_request = cast(AIOWebRequest, WebRequest(self._hass, request_url))
 
-        views = {
+        views: dict[str, type[StreamView]] = {
             "master_playlist": HlsMasterPlaylistView,
             "playlist": HlsPlaylistView,
             "init": HlsInitView,
@@ -152,11 +174,20 @@ class CloudStream:
 
         view = views[request.view]()
 
-        r = await view.get(web_request, self._stream.access_token, request.sequence, request.part_num)
+        r = cast(
+            web.Response,
+            await view.get(web_request, self._stream.access_token or "", request.sequence, request.part_num),
+        )
+        assert self._ws is not None
+        assert isinstance(r.body, bytes)
         meta = ResponseMeta(status_code=r.status, headers=dict(r.headers))
-        response = bytes(json.dumps(asdict(meta)), "utf-8") + b"\r\n" + r.body
+        response = bytes(meta.json(), "utf-8") + b"\r\n" + r.body
         await self._ws.send_bytes(response, compress=False)
+        return None
 
-    def _try_reconnect(self):
+    def _try_reconnect(self) -> None:
+        """Schedule reconnection to the cloud."""
+
         _LOGGER.debug(f"Trying to reconnect in {RECONNECTION_DELAY} seconds")
         self._unsub_reconnect = async_call_later(self._hass, RECONNECTION_DELAY, HassJob(self._connect))
+        return None

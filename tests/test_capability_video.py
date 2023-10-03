@@ -190,7 +190,7 @@ async def test_capability_video_stream_cloud(hass_platform, connection_type):
     with patch(
         "custom_components.yandex_smart_home.capability_video.VideoStreamCapability._async_request_stream",
         return_value=stream,
-    ), patch("custom_components.yandex_smart_home.cloud_stream.CloudStream.start") as mock_start_cloud_stream:
+    ), patch("custom_components.yandex_smart_home.cloud_stream.CloudStreamManager.start") as mock_start_cloud_stream:
         with pytest.raises(SmartHomeError) as e:
             await cap.set_instance_state(Context(), ACTION_STATE)
         assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE

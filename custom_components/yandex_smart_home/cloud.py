@@ -1,10 +1,9 @@
 """Implement the Yandex Smart Home cloud connection manager."""
 from asyncio import TimeoutError
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from http import HTTPStatus
 import logging
-from typing import AsyncIterable, cast
+from typing import Any, AsyncIterable, cast
 
 from aiohttp import (
     ClientConnectorError,
@@ -15,7 +14,7 @@ from aiohttp import (
     WSMsgType,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Context, HassJob, HomeAssistant
+from homeassistant.core import CALLBACK_TYPE, Context, HassJob, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt
@@ -41,21 +40,27 @@ FAST_RECONNECTION_THRESHOLD = 5
 BASE_API_URL = f"{CLOUD_BASE_URL}/api/home_assistant/v1"
 
 
-@dataclass
-class CloudInstanceData:
+class CloudInstanceData(BaseModel):
+    """Hold settings for the cloud connection."""
+
     id: str
     password: str
     connection_token: str
 
 
 class CloudRequest(BaseModel):
+    """Request from the cloud."""
+
     request_id: str
     action: str
     message: str = ""
 
 
 class CloudManager:
+    """Class to manage cloud connection."""
+
     def __init__(self, hass: HomeAssistant, config: Config, session: ClientSession):
+        """Initialize a cloud manager with config and client session."""
         self._hass = hass
         self._instance_id = config.cloud_instance_id
         self._token = config.cloud_connection_token
@@ -69,9 +74,10 @@ class CloudManager:
 
         self._url = f"{BASE_API_URL}/connect"
 
-    async def connect(self, *_):
+    async def connect(self, *_: Any) -> None:
+        """Connect to the cloud."""
         if not self._ws_active:
-            return
+            return None
 
         # noinspection PyBroadException
         try:
@@ -98,13 +104,19 @@ class CloudManager:
             _LOGGER.exception("Unexpected exception")
             self._try_reconnect()
 
-    async def disconnect(self, *_):
+        return None
+
+    async def disconnect(self, *_: Any) -> None:
+        """Disconnect from the cloud."""
         self._ws_active = False
 
         if self._ws:
             await self._ws.close()
 
-    async def _on_message(self, message: WSMessage):
+        return None
+
+    async def _on_message(self, message: WSMessage) -> None:
+        """Handle incoming request from the cloud."""
         request = CloudRequest.parse_raw(message.data)
         _LOGGER.debug("Request: %s (message: %s)" % (request.action, request.message))
 
@@ -119,9 +131,12 @@ class CloudManager:
         response = result.json(exclude_none=True)
         _LOGGER.debug(f"Response: {response}")
 
+        assert self._ws is not None
         await self._ws.send_str(response)
+        return None
 
-    def _try_reconnect(self):
+    def _try_reconnect(self) -> CALLBACK_TYPE:
+        """Schedule reconnection to the cloud."""
         self._ws_reconnect_delay = min(2 * self._ws_reconnect_delay, MAX_RECONNECTION_DELAY)
 
         if self._last_connection_at and self._last_connection_at + FAST_RECONNECTION_TIME > dt.utcnow():
@@ -134,19 +149,21 @@ class CloudManager:
             _LOGGER.warning(f"Reconnecting too fast, next reconnection in {self._ws_reconnect_delay} seconds")
 
         _LOGGER.debug(f"Trying to reconnect in {self._ws_reconnect_delay} seconds")
-        async_call_later(self._hass, self._ws_reconnect_delay, HassJob(self.connect))
+        return async_call_later(self._hass, self._ws_reconnect_delay, HassJob(self.connect))
 
 
 async def register_cloud_instance(hass: HomeAssistant) -> CloudInstanceData:
+    """Register new cloud instance."""
     session = async_create_clientsession(hass)
 
     response = await session.post(f"{BASE_API_URL}/instance/register")
     response.raise_for_status()
 
-    return CloudInstanceData(**await response.json())
+    return CloudInstanceData.parse_raw(await response.text())
 
 
-async def delete_cloud_instance(hass: HomeAssistant, entry: ConfigEntry):
+async def delete_cloud_instance(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Delete cloud instance from the cloud."""
     session = async_create_clientsession(hass)
 
     instance_id = entry.data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID]
@@ -157,3 +174,5 @@ async def delete_cloud_instance(hass: HomeAssistant, entry: ConfigEntry):
     )
     if response.status != HTTPStatus.OK:
         _LOGGER.error(f"Failed to delete cloud instance, status code: {response.status}")
+
+    return None

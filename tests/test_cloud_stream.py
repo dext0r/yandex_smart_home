@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 import pytest
 import yarl
 
-from custom_components.yandex_smart_home.cloud_stream import CloudStream, WebRequest
+from custom_components.yandex_smart_home.cloud_stream import CloudStreamManager, WebRequest
 
 
 class MockWSConnection:
@@ -89,7 +89,7 @@ def mock_call_later_fixture():
 async def test_cloud_stream_connect(hass, aioclient_mock, mock_call_later):
     session = MockSession(aioclient_mock)
     stream = MockStream(hass)
-    cloud_stream = CloudStream(hass, stream, cast(ClientSession, session))
+    cloud_stream = CloudStreamManager(hass, stream, cast(ClientSession, session))
 
     with patch.object(hass.loop, "create_task") as mock_async_create_task, patch(
         "custom_components.yandex_smart_home.cloud_stream.WAIT_FOR_CONNECTION_TIMEOUT", 0.1
@@ -115,7 +115,7 @@ async def test_cloud_stream_connect(hass, aioclient_mock, mock_call_later):
 async def test_cloud_stream_try_reconnect(hass, aioclient_mock, caplog):
     session = MockSession(aioclient_mock)
     stream = MockStream(hass)
-    cloud_stream = CloudStream(hass, stream, cast(ClientSession, session))
+    cloud_stream = CloudStreamManager(hass, stream, cast(ClientSession, session))
 
     with patch.object(session, "ws_connect") as mock_ws_connect:
         await cloud_stream._connect()
@@ -141,7 +141,7 @@ async def test_cloud_stream_try_reconnect(hass, aioclient_mock, caplog):
 
     session = MockSession(aioclient_mock, ws_close_code=1000)
     stream = MockStream(hass)
-    cloud_stream = CloudStream(hass, stream, cast(ClientSession, session))
+    cloud_stream = CloudStreamManager(hass, stream, cast(ClientSession, session))
     cloud_stream._running_stream_id = "foo"
 
     caplog.clear()
@@ -156,7 +156,7 @@ async def test_cloud_stream_keepalive(hass, aioclient_mock, mock_call_later):
     stream = MockStream(hass)
     stream.access_token = "foo"
     unsub_mock = MagicMock()
-    cloud_stream = CloudStream(hass, stream, cast(ClientSession, session))
+    cloud_stream = CloudStreamManager(hass, stream, cast(ClientSession, session))
     cloud_stream._running_stream_id = "foo"
     cloud_stream._unsub_reconnect = unsub_mock
     cloud_stream._ws = MockWSConnection(url="foo")
@@ -181,7 +181,7 @@ async def test_cloud_stream_handle_requests(hass, aioclient_mock):
     session = MockSession(
         aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=json.dumps(r)) for r in requests]
     )
-    cloud_stream = CloudStream(hass, stream, cast(ClientSession, session))
+    cloud_stream = CloudStreamManager(hass, stream, cast(ClientSession, session))
     cloud_stream._running_stream_id = "foo"
     with patch.object(HlsMasterPlaylistView, "get", return_value=Response(body=b"master")):
         await cloud_stream._connect()

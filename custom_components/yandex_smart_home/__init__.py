@@ -29,7 +29,7 @@ from . import (  # noqa: F401
     property_float,
 )
 from .cloud import CloudManager, delete_cloud_instance
-from .cloud_stream import CloudStream
+from .cloud_stream import CloudStreamManager
 from .const import (
     CLOUD_MANAGER,
     CLOUD_STREAMS,
@@ -195,7 +195,7 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
     hass.data[DOMAIN][CONFIG]: Config | None = None
     hass.data[DOMAIN][YAML_CONFIG]: ConfigType | None = yaml_config.get(DOMAIN)
     hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None
-    hass.data[DOMAIN][CLOUD_STREAMS]: dict[str, CloudStream] = {}
+    hass.data[DOMAIN][CLOUD_STREAMS]: dict[str, CloudStreamManager] = {}
 
     async_register_http(hass)
     async_setup_notifier(hass)
