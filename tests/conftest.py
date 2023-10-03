@@ -100,7 +100,7 @@ def hass_platform(event_loop: asyncio.AbstractEventLoop, hass, config_entry):
     )
     demo_sensor.hass = hass
     demo_sensor.entity_id = "sensor.outside_temp"
-    demo_sensor._attr_name = "Outside Temperature"
+    demo_sensor._attr_name = "Температура за бортом"
 
     demo_light = DemoLight(
         "light_kitchen",
@@ -138,7 +138,7 @@ def hass_platform_cloud_connection(event_loop: asyncio.AbstractEventLoop, hass, 
     )
     demo_sensor.hass = hass
     demo_sensor.entity_id = "sensor.outside_temp"
-    demo_sensor._attr_name = "Outside Temperature"
+    demo_sensor._attr_name = "Температура за бортом"
 
     demo_binary_sensor = DemoBinarySensor(
         "front_door",

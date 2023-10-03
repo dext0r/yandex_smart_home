@@ -105,7 +105,7 @@ class YandexSmartHomeView(YandexSmartHomeUnauthorizedView):
         result = await handlers.async_handle_request(
             hass, data, action=request.path.replace(self.url, "", 1), payload=await request.text()
         )
-        response = json_response(text=result.json(exclude_none=True))
+        response = json_response(text=result.json(exclude_none=True, ensure_ascii=False))
         _LOGGER.debug(f"Response: {response.text}")
 
         return response

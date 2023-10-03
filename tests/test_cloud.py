@@ -223,7 +223,7 @@ async def test_cloud_req_user_devices(
             "devices": [
                 {
                     "id": "sensor.outside_temp",
-                    "name": "Outside Temperature",
+                    "name": "Температура за бортом",
                     "type": "devices.types.sensor.climate",
                     "capabilities": [],
                     "properties": [

@@ -110,7 +110,7 @@ async def test_http_user_devices(hass_platform, hass_client, hass_admin_user: Mo
             "devices": [
                 {
                     "id": "sensor.outside_temp",
-                    "name": "Outside Temperature",
+                    "name": "Температура за бортом",
                     "type": "devices.types.sensor.climate",
                     "capabilities": [],
                     "properties": [
