@@ -5,7 +5,9 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range.html
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator
+
+from .base import APIModel
 
 
 class RangeCapabilityUnit(StrEnum):
@@ -29,7 +31,7 @@ class RangeCapabilityInstance(StrEnum):
     VOLUME = "volume"
 
 
-class RangeCapabilityRange(BaseModel):
+class RangeCapabilityRange(APIModel):
     """Value range of a range capability."""
 
     min: float
@@ -40,7 +42,7 @@ class RangeCapabilityRange(BaseModel):
         return f"[{self.min}, {self.max}]"
 
 
-class RangeCapabilityParameters(BaseModel):
+class RangeCapabilityParameters(APIModel):
     """Parameters of a range capability."""
 
     instance: RangeCapabilityInstance
@@ -64,7 +66,7 @@ class RangeCapabilityParameters(BaseModel):
         return values
 
 
-class RangeCapabilityInstanceActionState(BaseModel):
+class RangeCapabilityInstanceActionState(APIModel):
     """New value for a range capability."""
 
     instance: RangeCapabilityInstance

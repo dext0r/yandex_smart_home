@@ -4,7 +4,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle.html
 """
 from enum import StrEnum
 
-from pydantic import BaseModel
+from .base import APIModel
 
 
 class ToggleCapabilityInstance(StrEnum):
@@ -22,13 +22,13 @@ class ToggleCapabilityInstance(StrEnum):
     PAUSE = "pause"
 
 
-class ToggleCapabilityParameters(BaseModel):
+class ToggleCapabilityParameters(APIModel):
     """Parameters of a toggle capability."""
 
     instance: ToggleCapabilityInstance
 
 
-class ToggleCapabilityInstanceActionState(BaseModel):
+class ToggleCapabilityInstanceActionState(APIModel):
     """New value for a toggle capability."""
 
     instance: ToggleCapabilityInstance

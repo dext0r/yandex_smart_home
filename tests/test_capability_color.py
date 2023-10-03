@@ -102,9 +102,9 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
 
     assert cap_cs.retrievable is True
     if light.ColorMode.RGBWW in color_modes or not color_modes:
-        assert cap_cs.parameters.dict(exclude_none=True) == {"color_model": "rgb"}
+        assert cap_cs.parameters.as_dict() == {"color_model": "rgb"}
     else:
-        assert cap_cs.parameters.dict(exclude_none=True) == {
+        assert cap_cs.parameters.as_dict() == {
             "color_model": "rgb",
             "temperature_k": {"max": 4500 if light.ColorMode.RGBW not in color_modes else 6500, "min": 4500},
         }
@@ -597,7 +597,7 @@ async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
         ),
     )
     assert cap_cs.retrievable is True
-    assert cap_cs.parameters.dict(exclude_none=True) == {
+    assert cap_cs.parameters.as_dict() == {
         "color_model": "rgb",
         "temperature_k": {"max": 4500, "min": 4500},
     }
@@ -637,7 +637,7 @@ async def test_capability_color_setting_temperature_k_rgb_white(hass, color_mode
         ),
     )
     assert cap_cs.retrievable is True
-    assert cap_cs.parameters.dict(exclude_none=True) == {
+    assert cap_cs.parameters.as_dict() == {
         "color_model": "rgb",
         "temperature_k": {"max": 6500, "min": 4500},
     }
@@ -691,7 +691,7 @@ async def test_capability_color_setting_temperature_k_rgbw(hass):
         ),
     )
     assert cap_cs.retrievable is True
-    assert cap_cs.parameters.dict(exclude_none=True) == {
+    assert cap_cs.parameters.as_dict() == {
         "color_model": "rgb",
         "temperature_k": {"max": 6500, "min": 4500},
     }
@@ -810,9 +810,7 @@ async def test_capability_color_setting_scene(hass):
             hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
         ),
     )
-    assert cap_cs.parameters.dict(exclude_none=True) == {
-        "color_scene": {"scenes": [{"id": "alice"}, {"id": "garland"}]}
-    }
+    assert cap_cs.parameters.as_dict() == {"color_scene": {"scenes": [{"id": "alice"}, {"id": "garland"}]}}
     assert cap_scene.get_value() == "garland"
     assert cap_scene.get_description() is None
 
@@ -829,9 +827,7 @@ async def test_capability_color_setting_scene(hass):
         ),
     )
     assert cap_cs.retrievable is True
-    assert cap_cs.parameters.dict(exclude_none=True) == {
-        "color_scene": {"scenes": [{"id": "romance"}, {"id": "siren"}]}
-    }
+    assert cap_cs.parameters.as_dict() == {"color_scene": {"scenes": [{"id": "romance"}, {"id": "siren"}]}}
     assert cap_scene.get_value() is None
 
     cap_scene.state = State("light.test", STATE_OFF, dict({light.ATTR_EFFECT: "Rainbow"}, **attributes))

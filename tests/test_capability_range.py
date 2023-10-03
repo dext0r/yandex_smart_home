@@ -81,7 +81,7 @@ async def test_capability_range(hass, caplog):
                     max=range_max or cap._default_range.max,
                     precision=range_prec or cap._default_range.precision,
                 )
-                assert cap.parameters.dict(exclude_none=True) == {
+                assert cap.parameters.as_dict() == {
                     "instance": "volume",
                     "random_access": True,
                     "range": {
@@ -198,7 +198,7 @@ async def test_capability_range_temperature_climate(hass):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "temperature",
         "random_access": True,
         "range": {"max": 25, "min": 10, "precision": 1},
@@ -222,7 +222,7 @@ async def test_capability_range_temperature_climate(hass):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "temperature",
         "random_access": True,
         "range": {"max": 27, "min": 12, "precision": 0.5},
@@ -269,7 +269,7 @@ async def test_capability_range_temperature_water_heater(hass):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "temperature",
         "random_access": True,
         "range": {"max": 90, "min": 30, "precision": 0.5},
@@ -330,7 +330,7 @@ async def test_capability_range_humidity_humidifier(hass):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "humidity",
         "random_access": True,
         "range": {"max": 80, "min": 10, "precision": 1},
@@ -380,7 +380,7 @@ async def test_capability_range_humidity_fan(hass):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "humidity",
         "random_access": True,
         "range": {"max": 100, "min": 0, "precision": 1},
@@ -419,7 +419,7 @@ async def test_capability_range_brightness_legacy(hass):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "brightness",
         "random_access": True,
         "range": {"max": 100, "min": 1, "precision": 1},
@@ -450,7 +450,7 @@ async def test_capability_range_brightness(hass, color_mode):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "brightness",
         "random_access": True,
         "range": {"max": 100, "min": 1, "precision": 1},
@@ -519,7 +519,7 @@ async def test_capability_range_volume_support_random(hass, features):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "volume",
         "random_access": True,
         "range": {"max": 100, "min": 0, "precision": 1},
@@ -706,7 +706,7 @@ async def test_capability_range_channel_set_random(hass):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "channel",
         "random_access": True,
         "range": {"max": 999, "min": 0, "precision": 1},
@@ -787,7 +787,7 @@ async def test_capability_range_channel_set_random_with_value(hass):
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict(exclude_none=True) == {
+    assert cap.parameters.as_dict() == {
         "instance": "channel",
         "random_access": True,
         "range": {"max": 999, "min": 0, "precision": 1},
@@ -894,7 +894,7 @@ async def test_capability_range_channel_set_relative(hass, features, device_clas
     else:
         assert cap.retrievable is False
         assert cap.support_random_access is False
-        assert cap.parameters.dict(exclude_none=True) == {"instance": "channel", "random_access": False}
+        assert cap.parameters.as_dict() == {"instance": "channel", "random_access": False}
         assert cap.get_value() is None
 
     calls_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_NEXT_TRACK)

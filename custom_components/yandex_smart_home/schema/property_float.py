@@ -5,7 +5,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float.html
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel
+from .base import APIModel
 
 
 class FloatPropertyInstance(StrEnum):
@@ -59,7 +59,7 @@ class TemperatureUnit(StrEnum):
     KELVIN = "unit.temperature.kelvin"
 
 
-class FloatPropertyParameters(BaseModel):
+class FloatPropertyParameters(APIModel):
     """Parameters of a float property."""
 
     instance: FloatPropertyInstance

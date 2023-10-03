@@ -7,8 +7,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-action.html
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel
-
+from .base import APIModel
 from .capability import (
     CapabilityDescription,
     CapabilityInstance,
@@ -65,7 +64,7 @@ class DeviceType(StrEnum):
     OTHER = "devices.types.other"
 
 
-class DeviceInfo(BaseModel):
+class DeviceInfo(APIModel):
     """Extended device info."""
 
     manufacturer: str | None
@@ -74,7 +73,7 @@ class DeviceInfo(BaseModel):
     sw_version: str | None
 
 
-class DeviceDescription(BaseModel):
+class DeviceDescription(APIModel):
     """Device description for a device list request."""
 
     id: str
@@ -87,7 +86,7 @@ class DeviceDescription(BaseModel):
     device_info: DeviceInfo | None
 
 
-class DeviceState(BaseModel):
+class DeviceState(APIModel):
     """Device state for a state query request."""
 
     id: str
@@ -110,52 +109,52 @@ class DeviceStates(ResponsePayload):
     devices: list[DeviceState]
 
 
-class StatesRequestDevice(BaseModel):
+class StatesRequestDevice(APIModel):
     """Device for a state query request."""
 
     id: str
     custom_data: dict[str, Any] | None
 
 
-class StatesRequest(BaseModel):
+class StatesRequest(APIModel):
     """Request body for a state query request."""
 
     devices: list[StatesRequestDevice]
 
 
-class ActionRequestDevice(BaseModel):
+class ActionRequestDevice(APIModel):
     """Device for a state change request."""
 
     id: str
     capabilities: list[CapabilityInstanceAction]
 
 
-class ActionRequestPayload(BaseModel):
+class ActionRequestPayload(APIModel):
     """Request payload for state change request."""
 
     devices: list[ActionRequestDevice]
 
 
-class ActionRequest(BaseModel):
+class ActionRequest(APIModel):
     """Request body for a state change request."""
 
     payload: ActionRequestPayload
 
 
-class SuccessActionResult(BaseModel):
+class SuccessActionResult(APIModel):
     """Success device action result."""
 
     status: Literal["DONE"] = "DONE"
 
 
-class FailedActionResult(BaseModel):
+class FailedActionResult(APIModel):
     """Failed device action result."""
 
     status: Literal["ERROR"] = "ERROR"
     error_code: ResponseCode
 
 
-class ActionResultCapabilityState(BaseModel):
+class ActionResultCapabilityState(APIModel):
     """Result of capability instance state change."""
 
     instance: CapabilityInstance
@@ -163,14 +162,14 @@ class ActionResultCapabilityState(BaseModel):
     action_result: SuccessActionResult | FailedActionResult
 
 
-class ActionResultCapability(BaseModel):
+class ActionResultCapability(APIModel):
     """Result of capability state change."""
 
     type: CapabilityType
     state: ActionResultCapabilityState
 
 
-class ActionResultDevice(BaseModel):
+class ActionResultDevice(APIModel):
     """Device for a state change response."""
 
     id: str

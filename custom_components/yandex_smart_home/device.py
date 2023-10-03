@@ -295,7 +295,7 @@ class Device:
             )
 
         if error_code_template := self._error_code_template:
-            if error_code := error_code_template.async_render(capability=action.dict(), parse_result=False):
+            if error_code := error_code_template.async_render(capability=action.as_dict(), parse_result=False):
                 if error_code not in const.ERROR_CODES:
                     raise SmartHomeError(const.ERR_INTERNAL_ERROR, f"Invalid error code for {self.id}: {error_code!r}")
 
@@ -390,7 +390,7 @@ class DeviceCallbackState:
 
         for device_capability in [c for c in device.get_capabilities() if c.reportable]:
             if (capability_state := device_capability.get_instance_state()) is not None:
-                self.capabilities.append(capability_state.dict())
+                self.capabilities.append(capability_state.as_dict())
 
         for device_property in [c for c in device.get_properties() if c.reportable]:
             if device_property.value_entity_id != event_entity_id:
@@ -404,7 +404,7 @@ class DeviceCallbackState:
 
             property_state = device_property.get_instance_state()
             if property_state is not None:
-                self.properties.append(property_state.dict())
+                self.properties.append(property_state.as_dict())
 
     @property
     def should_report(self) -> bool:

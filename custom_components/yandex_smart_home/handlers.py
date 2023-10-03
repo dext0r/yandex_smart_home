@@ -150,7 +150,7 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
 
             hass.bus.async_fire(
                 EVENT_DEVICE_ACTION,
-                {ATTR_ENTITY_ID: device_id, "capability": action.dict()},
+                {ATTR_ENTITY_ID: device_id, "capability": action.as_dict()},
                 context=data.context,
             )
 

@@ -38,21 +38,21 @@ async def test_handle_request(hass, caplog):
         return None
 
     with patch("custom_components.yandex_smart_home.handlers.HANDLERS", r):
-        assert (await handlers.async_handle_request(hass, BASIC_DATA, "missing", "")).dict(exclude_none=True) == {
+        assert (await handlers.async_handle_request(hass, BASIC_DATA, "missing", "")).as_dict() == {
             "request_id": REQ_ID,
             "payload": {"error_code": "INTERNAL_ERROR"},
         }
         assert caplog.messages == ["Unexpected action 'missing'"]
         caplog.clear()
 
-        assert (await handlers.async_handle_request(hass, BASIC_DATA, "error", "")).dict(exclude_none=True) == {
+        assert (await handlers.async_handle_request(hass, BASIC_DATA, "error", "")).as_dict() == {
             "request_id": REQ_ID,
             "payload": {"error_code": "INVALID_ACTION"},
         }
         assert caplog.messages == ["foo (INVALID_ACTION)"]
         caplog.clear()
 
-        assert (await handlers.async_handle_request(hass, BASIC_DATA, "exception", "")).dict(exclude_none=True) == {
+        assert (await handlers.async_handle_request(hass, BASIC_DATA, "exception", "")).as_dict() == {
             "request_id": REQ_ID,
             "payload": {"error_code": "INTERNAL_ERROR"},
         }
@@ -60,7 +60,7 @@ async def test_handle_request(hass, caplog):
         assert "boooo" in caplog.records[-1].exc_text
         caplog.clear()
 
-        assert (await handlers.async_handle_request(hass, BASIC_DATA, "none", "")).dict(exclude_none=True) == {
+        assert (await handlers.async_handle_request(hass, BASIC_DATA, "none", "")).as_dict() == {
             "request_id": REQ_ID,
         }
 
@@ -79,7 +79,7 @@ async def test_handler_devices_query(hass, caplog):
         {"devices": [{"id": switch_1.entity_id}, {"id": switch_not_expose.entity_id}, {"id": "invalid.foo"}]}
     )
 
-    assert (await handlers.async_devices_query(hass, data, payload)).dict(exclude_none=True) == {
+    assert (await handlers.async_devices_query(hass, data, payload)).as_dict() == {
         "devices": [
             {
                 "id": "switch.test_1",
@@ -94,7 +94,7 @@ async def test_handler_devices_query(hass, caplog):
             {"id": "invalid.foo", "error_code": "DEVICE_UNREACHABLE"},
         ]
     }
-    assert (await handlers.async_device_list(hass, data, "")).dict(exclude_none=True) == {
+    assert (await handlers.async_device_list(hass, data, "")).as_dict() == {
         "user_id": "test",
         "devices": [
             {
@@ -220,7 +220,7 @@ async def test_handler_devices_action(hass, caplog):
                 }
             }
         )
-        assert (await handlers.async_devices_action(hass, BASIC_DATA, payload)).dict(exclude_none=True) == {
+        assert (await handlers.async_devices_action(hass, BASIC_DATA, payload)).as_dict() == {
             "devices": [
                 {
                     "id": "switch.test_1",
@@ -393,7 +393,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
             }
         )
 
-        assert (await handlers.async_devices_action(hass, data, payload)).dict(exclude_none=True) == {
+        assert (await handlers.async_devices_action(hass, data, payload)).as_dict() == {
             "devices": [
                 {
                     "id": "switch.test",
@@ -442,7 +442,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
             }
         )
 
-        assert (await handlers.async_devices_action(hass, data, payload)).dict(exclude_none=True) == {
+        assert (await handlers.async_devices_action(hass, data, payload)).as_dict() == {
             "devices": [
                 {
                     "id": "switch.test",

@@ -5,8 +5,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/properties-types.html
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel
-
+from .base import APIModel
 from .property_event import EventPropertyInstance, EventPropertyParameters
 from .property_float import FloatPropertyInstance, FloatPropertyParameters
 
@@ -18,7 +17,7 @@ class PropertyType(StrEnum):
     EVENT = "devices.properties.event"
 
 
-class FloatPropertyDescription(BaseModel):
+class FloatPropertyDescription(APIModel):
     """Description of a float property for a device list request."""
 
     type: Literal[PropertyType.FLOAT] = PropertyType.FLOAT
@@ -27,7 +26,7 @@ class FloatPropertyDescription(BaseModel):
     parameters: FloatPropertyParameters
 
 
-class EventPropertyDescription(BaseModel):
+class EventPropertyDescription(APIModel):
     """Description of an event property for a device list request."""
 
     type: Literal[PropertyType.EVENT] = PropertyType.EVENT
@@ -46,14 +45,14 @@ PropertyInstance = FloatPropertyInstance | EventPropertyInstance
 """All property instances."""
 
 
-class PropertyInstanceStateValue(BaseModel):
+class PropertyInstanceStateValue(APIModel):
     """Property instance value."""
 
     instance: PropertyInstance
     value: Any
 
 
-class PropertyInstanceState(BaseModel):
+class PropertyInstanceState(APIModel):
     """Property state for state query and callback requests."""
 
     type: PropertyType

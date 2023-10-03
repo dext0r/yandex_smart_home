@@ -6,7 +6,8 @@ from enum import StrEnum
 from typing import Any, Generic, Literal, TypeVar
 
 from pydantic import validator
-from pydantic.generics import GenericModel
+
+from .base import GenericAPIModel
 
 
 class EventPropertyInstance(StrEnum):
@@ -120,7 +121,7 @@ EventInstanceEvent = TypeVar(
 """All events of event instances."""
 
 
-class EventPropertyParameters(GenericModel, Generic[EventInstanceEvent]):
+class EventPropertyParameters(GenericAPIModel, Generic[EventInstanceEvent]):
     """Parameters of an event property."""
 
     instance: EventPropertyInstance

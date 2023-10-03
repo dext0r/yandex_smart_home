@@ -249,7 +249,7 @@ async def test_device_info(hass, registries):
     device = Device(hass, BASIC_CONFIG, state.entity_id, state)
     d = await device.describe(ent_reg, dev_reg, area_reg)
     assert d.id == "switch.test_1"
-    assert d.device_info.dict(exclude_none=True) == {"model": "switch.test_1", "manufacturer": "Acme Inc."}
+    assert d.device_info.as_dict() == {"model": "switch.test_1", "manufacturer": "Acme Inc."}
 
     state = State("switch.test_2", STATE_ON)
     device = dev_reg.async_get_or_create(
@@ -268,7 +268,7 @@ async def test_device_info(hass, registries):
     device = Device(hass, BASIC_CONFIG, state.entity_id, state)
     d = await device.describe(ent_reg, dev_reg, area_reg)
     assert d.id == "switch.test_2"
-    assert d.device_info.dict(exclude_none=True) == {
+    assert d.device_info.as_dict() == {
         "manufacturer": "Acme Inc.",
         "model": "Ultra Switch | switch.test_2",
         "sw_version": "57",
@@ -407,7 +407,7 @@ async def test_device_query(hass):
 
     state = State("switch.unavailable", STATE_UNAVAILABLE)
     device = Device(hass, BASIC_CONFIG, state.entity_id, state)
-    assert device.query().dict(exclude_none=True) == {"id": state.entity_id, "error_code": ERR_DEVICE_UNREACHABLE}
+    assert device.query().as_dict() == {"id": state.entity_id, "error_code": ERR_DEVICE_UNREACHABLE}
 
     state = State("switch.test", STATE_ON)
     state_pause = State("input_boolean.pause", STATE_OFF)
@@ -471,7 +471,7 @@ async def test_device_query(hass):
     with patch.object(Device, "get_capabilities", return_value=[cap_onoff, cap_pause]), patch.object(
         Device, "get_properties", return_value=[prop_temp, prop_voltage, prop_humidity_custom, prop_button]
     ):
-        assert device.query().dict(exclude_none=True) == {
+        assert device.query().as_dict() == {
             "id": "switch.test",
             "capabilities": [
                 {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
@@ -530,7 +530,7 @@ async def test_device_query(hass):
         with patch.object(PauseCapability, "retrievable", PropertyMock(return_value=None)), patch.object(
             TemperatureSensor, "retrievable", PropertyMock(return_value=False)
         ):
-            assert device.query().dict(exclude_none=True) == {
+            assert device.query().as_dict() == {
                 "id": "switch.test",
                 "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
                 "properties": [
@@ -542,7 +542,7 @@ async def test_device_query(hass):
         state_pause.state = STATE_UNAVAILABLE
         state_voltage.state = STATE_UNAVAILABLE
         prop_humidity_custom._native_value_source.state = STATE_UNAVAILABLE
-        assert device.query().dict(exclude_none=True) == {
+        assert device.query().as_dict() == {
             "id": "switch.test",
             "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
             "properties": [{"type": "devices.properties.float", "state": {"instance": "temperature", "value": 5.0}}],

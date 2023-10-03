@@ -5,7 +5,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode.html
 from enum import StrEnum
 from typing import Literal, Self
 
-from pydantic import BaseModel
+from .base import APIModel
 
 
 class ModeCapabilityInstance(StrEnum):
@@ -108,7 +108,7 @@ class ModeCapabilityMode(StrEnum):
     YOGURT = "yogurt"
 
 
-class ModeCapabilityParameters(BaseModel):
+class ModeCapabilityParameters(APIModel):
     """Parameters of a mode capability."""
 
     instance: ModeCapabilityInstance
@@ -119,7 +119,7 @@ class ModeCapabilityParameters(BaseModel):
         return cls(instance=instance, modes=[{"value": m} for m in modes])
 
 
-class ModeCapabilityInstanceActionState(BaseModel):
+class ModeCapabilityInstanceActionState(APIModel):
     """New value for a mode capability."""
 
     instance: ModeCapabilityInstance

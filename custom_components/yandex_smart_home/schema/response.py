@@ -4,7 +4,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/response-codes.html
 """
 from enum import StrEnum
 
-from pydantic import BaseModel
+from .base import APIModel
 
 
 class ResponseCode(StrEnum):
@@ -33,7 +33,7 @@ class ResponseCode(StrEnum):
     DEVICE_NOT_FOUND = "DEVICE_NOT_FOUND"
 
 
-class ResponsePayload(BaseModel):
+class ResponsePayload(APIModel):
     """Base class for an API response payload."""
 
 
@@ -44,7 +44,7 @@ class Error(ResponsePayload):
     error_message: str | None
 
 
-class Response(BaseModel):
+class Response(APIModel):
     """Base API response."""
 
     request_id: str | None

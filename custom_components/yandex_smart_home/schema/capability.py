@@ -2,8 +2,9 @@
 from enum import StrEnum
 from typing import Annotated, Any, Literal, TypeVar, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from .base import APIModel
 from .capability_color import (
     ColorSettingCapabilityInstance,
     ColorSettingCapabilityInstanceActionState,
@@ -56,7 +57,7 @@ CapabilityInstance = (
 """All capability instances."""
 
 
-class CapabilityDescription(BaseModel):
+class CapabilityDescription(APIModel):
     """Description of a capability for a device list request."""
 
     type: CapabilityType
@@ -65,56 +66,56 @@ class CapabilityDescription(BaseModel):
     parameters: CapabilityParameters | None
 
 
-class CapabilityInstanceStateValue(BaseModel):
+class CapabilityInstanceStateValue(APIModel):
     """Capability instance value."""
 
     instance: CapabilityInstance
     value: Any
 
 
-class CapabilityInstanceState(BaseModel):
+class CapabilityInstanceState(APIModel):
     """Capability state for state query and callback requests."""
 
     type: CapabilityType
     state: CapabilityInstanceStateValue
 
 
-class OnOffCapabilityInstanceAction(BaseModel):
+class OnOffCapabilityInstanceAction(APIModel):
     """New capability state for a state change request of on_off capability."""
 
     type: Literal[CapabilityType.ON_OFF] = CapabilityType.ON_OFF
     state: OnOffCapabilityInstanceActionState
 
 
-class ColorSettingCapabilityInstanceAction(BaseModel):
+class ColorSettingCapabilityInstanceAction(APIModel):
     """New capability state for a state change request of color_setting capability."""
 
     type: Literal[CapabilityType.COLOR_SETTING] = CapabilityType.COLOR_SETTING
     state: ColorSettingCapabilityInstanceActionState
 
 
-class ModeCapabilityInstanceAction(BaseModel):
+class ModeCapabilityInstanceAction(APIModel):
     """New capability state for a state change request of mode capability."""
 
     type: Literal[CapabilityType.MODE] = CapabilityType.MODE
     state: ModeCapabilityInstanceActionState
 
 
-class RangeCapabilityInstanceAction(BaseModel):
+class RangeCapabilityInstanceAction(APIModel):
     """New capability state for a state change request of range capability."""
 
     type: Literal[CapabilityType.RANGE] = CapabilityType.RANGE
     state: RangeCapabilityInstanceActionState
 
 
-class ToggleCapabilityInstanceAction(BaseModel):
+class ToggleCapabilityInstanceAction(APIModel):
     """New capability state for a state change request of toggle capability."""
 
     type: Literal[CapabilityType.TOGGLE] = CapabilityType.TOGGLE
     state: ToggleCapabilityInstanceActionState
 
 
-class VideoStreamCapabilityInstanceAction(BaseModel):
+class VideoStreamCapabilityInstanceAction(APIModel):
     """New capability state for a state change request of video_stream capability."""
 
     type: Literal[CapabilityType.VIDEO_STREAM] = CapabilityType.VIDEO_STREAM

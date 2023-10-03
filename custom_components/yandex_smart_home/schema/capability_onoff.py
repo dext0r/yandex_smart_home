@@ -4,7 +4,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/on_off.html
 """
 from enum import StrEnum
 
-from pydantic import BaseModel
+from .base import APIModel
 
 
 class OnOffCapabilityInstance(StrEnum):
@@ -13,13 +13,13 @@ class OnOffCapabilityInstance(StrEnum):
     ON = "on"
 
 
-class OnOffCapabilityParameters(BaseModel):
+class OnOffCapabilityParameters(APIModel):
     """Parameters of a on_off capability."""
 
     split: bool
 
 
-class OnOffCapabilityInstanceActionState(BaseModel):
+class OnOffCapabilityInstanceActionState(APIModel):
     """New value for an on_off capability."""
 
     instance: OnOffCapabilityInstance

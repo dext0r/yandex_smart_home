@@ -6,7 +6,9 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html
 from enum import StrEnum
 from typing import Annotated, Any, Literal, Self, Union
 
-from pydantic import BaseModel, Field, root_validator
+from pydantic import Field, root_validator
+
+from .base import APIModel
 
 
 class ColorSettingCapabilityInstance(StrEnum):
@@ -49,14 +51,14 @@ class CapabilityParameterColorModel(StrEnum):
     HSV = "hsv"
 
 
-class CapabilityParameterTemperatureK(BaseModel):
+class CapabilityParameterTemperatureK(APIModel):
     """Color temperature range."""
 
     min: int
     max: int
 
 
-class CapabilityParameterColorScene(BaseModel):
+class CapabilityParameterColorScene(APIModel):
     """Parameter of a scene instance."""
 
     scenes: list[dict[Literal["id"], ColorScene]]
@@ -66,7 +68,7 @@ class CapabilityParameterColorScene(BaseModel):
         return cls(scenes=[{"id": s} for s in scenes])
 
 
-class ColorSettingCapabilityParameters(BaseModel):
+class ColorSettingCapabilityParameters(APIModel):
     """Parameters of a color_setting capability."""
 
     color_model: CapabilityParameterColorModel | None
@@ -81,21 +83,21 @@ class ColorSettingCapabilityParameters(BaseModel):
         return values
 
 
-class RGBInstanceActionState(BaseModel):
+class RGBInstanceActionState(APIModel):
     """New value for a rgb instance."""
 
     instance: Literal[ColorSettingCapabilityInstance.RGB] = ColorSettingCapabilityInstance.RGB
     value: int
 
 
-class TemperatureKInstanceActionState(BaseModel):
+class TemperatureKInstanceActionState(APIModel):
     """New value for a temperature_k instance."""
 
     instance: Literal[ColorSettingCapabilityInstance.TEMPERATURE_K] = ColorSettingCapabilityInstance.TEMPERATURE_K
     value: int
 
 
-class SceneInstanceActionState(BaseModel):
+class SceneInstanceActionState(APIModel):
     """New value for a scene instance."""
 
     instance: Literal[ColorSettingCapabilityInstance.SCENE] = ColorSettingCapabilityInstance.SCENE
