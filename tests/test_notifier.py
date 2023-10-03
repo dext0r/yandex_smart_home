@@ -31,7 +31,7 @@ from custom_components.yandex_smart_home.const import (
     DOMAIN,
     NOTIFIERS,
 )
-from custom_components.yandex_smart_home.entity import YandexEntityCallbackState
+from custom_components.yandex_smart_home.device import DeviceCallbackState
 from custom_components.yandex_smart_home.helpers import RequestData
 from custom_components.yandex_smart_home.notifier import (
     YandexCloudNotifier,
@@ -44,7 +44,7 @@ from custom_components.yandex_smart_home.notifier import (
 from . import BASIC_CONFIG, REQ_ID, MockConfig, generate_entity_filter
 
 
-class MockYandexEntityCallbackState(YandexEntityCallbackState):
+class MockDeviceCallbackState(DeviceCallbackState):
     # noinspection PyMissingConstructor
     def __init__(self, device_id, capabilities=None, properties=None):
         self.device_id = device_id
@@ -514,8 +514,8 @@ async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
 
     notifier = YandexCloudNotifier(hass, hass_admin_user.id, "foo")
 
-    notifier._pending.append(MockYandexEntityCallbackState("foo", properties=["prop"]))
-    notifier._pending.append(MockYandexEntityCallbackState("bar", capabilities=["cap"]))
+    notifier._pending.append(MockDeviceCallbackState("foo", properties=["prop"]))
+    notifier._pending.append(MockDeviceCallbackState("bar", capabilities=["cap"]))
 
     with patch.object(notifier, "async_send_state") as mock_send_state:
         await notifier._report_states(None)
@@ -525,11 +525,11 @@ async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
         ]
         mock_call_later.assert_not_called()
 
-    notifier._pending.append(MockYandexEntityCallbackState("foo", properties=["prop"]))
+    notifier._pending.append(MockDeviceCallbackState("foo", properties=["prop"]))
     with patch.object(
         notifier,
         "async_send_state",
-        side_effect=lambda v: notifier._pending.append(MockYandexEntityCallbackState("test")),
+        side_effect=lambda v: notifier._pending.append(MockDeviceCallbackState("test")),
     ) as mock_send_state:
         await notifier._report_states(None)
         assert mock_send_state.call_args[0][0] == [{"id": "foo", "properties": ["prop"], "capabilities": []}]
@@ -538,10 +538,10 @@ async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
 
     notifier._pending.clear()
     mock_call_later.reset_mock()
-    notifier._pending.append(MockYandexEntityCallbackState("foo", properties=["prop"], capabilities=["cap"]))
-    notifier._pending.append(MockYandexEntityCallbackState("bar", properties=["prop1"], capabilities=["cap1"]))
-    notifier._pending.append(MockYandexEntityCallbackState("bar", properties=["prop2"]))
-    notifier._pending.append(MockYandexEntityCallbackState("bar", properties=["prop3"]))
+    notifier._pending.append(MockDeviceCallbackState("foo", properties=["prop"], capabilities=["cap"]))
+    notifier._pending.append(MockDeviceCallbackState("bar", properties=["prop1"], capabilities=["cap1"]))
+    notifier._pending.append(MockDeviceCallbackState("bar", properties=["prop2"]))
+    notifier._pending.append(MockDeviceCallbackState("bar", properties=["prop3"]))
 
     with patch.object(notifier, "async_send_state") as mock_send_state:
         await notifier._report_states(None)

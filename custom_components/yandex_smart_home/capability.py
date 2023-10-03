@@ -1,7 +1,7 @@
 """Implement the Yandex Smart Home base device capability."""
 from abc import abstractmethod
 from functools import cached_property
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import Context, HomeAssistant, State
@@ -19,6 +19,7 @@ from .schema import (
 )
 
 
+@runtime_checkable
 class Capability(Protocol[CapabilityInstanceActionState]):
     """Base class for a device capability."""
 
@@ -82,6 +83,10 @@ class Capability(Protocol[CapabilityInstanceActionState]):
     def _entity_config(self) -> dict[str, Any]:
         """Return additional configuration for the device."""
         return self._config.get_entity_config(self.device_id)
+
+    def __eq__(self, other: Any) -> bool:
+        """Compare capabilities."""
+        return bool(isinstance(other, self.__class__) and self.type == other.type and self.instance == other.instance)
 
 
 class ActionOnlyCapabilityMixin:

@@ -2,13 +2,13 @@
 import logging
 from typing import Any, Callable, Coroutine
 
-from homeassistant.const import ATTR_ENTITY_ID, STATE_UNAVAILABLE
+from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
 
 from .const import EVENT_DEVICE_ACTION, EVENT_DEVICE_DISCOVERY
-from .entity import YandexEntity
+from .device import Device
 from .error import SmartHomeError, SmartHomeUserError
 from .helpers import RequestData
 from .schema import (
@@ -74,14 +74,14 @@ async def async_device_list(hass: HomeAssistant, data: RequestData, _payload: st
     hass.bus.async_fire(EVENT_DEVICE_DISCOVERY, context=data.context)
 
     for state in hass.states.async_all():
-        entity = YandexEntity(hass, data.config, state)
-        if not entity.should_expose:
+        device = Device(hass, data.config, state.entity_id, state)
+        if not device.should_expose:
             continue
 
-        if (d := await entity.describe(ent_reg, dev_reg, area_reg)) is not None:
-            devices.append(d)
+        if (description := await device.describe(ent_reg, dev_reg, area_reg)) is not None:
+            devices.append(description)
         else:
-            _LOGGER.debug(f"Unsupported entity: {entity.state!r}")
+            _LOGGER.debug(f"Missing capabilities and properties for {device.id}")
 
     assert data.request_user_id
     return DeviceList(user_id=data.request_user_id, devices=devices)
@@ -97,20 +97,14 @@ async def async_devices_query(hass: HomeAssistant, data: RequestData, payload: s
     states: list[DeviceState] = []
 
     for device_id in [rd.id for rd in request.devices]:
-        state = hass.states.get(device_id)
-
-        if state is None:
-            states.append(DeviceState(id=device_id, error_code=ResponseCode.DEVICE_UNREACHABLE))
-            continue
-
-        entity = YandexEntity(hass, data.config, state)
-        if not entity.should_expose:
+        device = Device(hass, data.config, device_id, hass.states.get(device_id))
+        if not device.should_expose:
             _LOGGER.warning(
-                f"State requested for unexposed entity {entity.entity_id}. Please either expose the entity via "
+                f"State requested for unexposed entity {device.id}. Please either expose the entity via "
                 f"filters in component configuration or delete the device from Yandex."
             )
 
-        states.append(entity.query())
+        states.append(device.query())
 
     return DeviceStates(devices=states)
 
@@ -125,9 +119,9 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
     results: list[ActionResultDevice] = []
 
     for device_id, actions in [(rd.id, rd.capabilities) for rd in request.payload.devices]:
-        state = hass.states.get(device_id)
+        device = Device(hass, data.config, device_id, hass.states.get(device_id))
 
-        if state is None or state.state == STATE_UNAVAILABLE:
+        if device.unavailable:
             results.append(
                 ActionResultDevice(
                     id=device_id, action_result=FailedActionResult(error_code=ResponseCode.DEVICE_UNREACHABLE)
@@ -135,11 +129,10 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
             )
             continue
 
-        entity = YandexEntity(hass, data.config, state)
         capability_results: list[ActionResultCapability] = []
         for action in actions:
             try:
-                value = await entity.execute(data.context, action)
+                value = await device.execute(data.context, action)
             except (SmartHomeError, SmartHomeUserError) as err:
                 if isinstance(err, SmartHomeError):
                     _LOGGER.error(f"{err.message} ({err.code})")

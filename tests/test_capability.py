@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
 from custom_components.yandex_smart_home.capability import STATE_CAPABILITIES_REGISTRY, StateCapability
-from custom_components.yandex_smart_home.entity import YandexEntity
+from custom_components.yandex_smart_home.device import Device
 from custom_components.yandex_smart_home.helpers import Config
 from custom_components.yandex_smart_home.schema import CapabilityInstance, CapabilityType
 
@@ -72,25 +72,28 @@ async def test_capability_demo_platform(hass):
         await hass.async_block_till_done()
 
     # for x in sorted(hass.states.async_all(), key=lambda e: e.entity_id):
-    #     e = YandexEntity(hass, BASIC_CONFIG, x)
-    #     l = list((c.type, c.instance) for c in e.capabilities())
-    #     print(f'state = hass.states.get(\'{x.entity_id}\')')
-    #     print(f'entity = YandexEntity(hass, BASIC_CONFIG, state)')
-    #     print(f'assert entity.yandex_device_type == \'{e.yandex_device_type}\'')
-    #     print(f'capabilities = list((c.type, c.instance) for c in entity.capabilities())')
-    #     print(f'assert capabilities == {l}')
+    #     d = Device(hass, BASIC_CONFIG, x.entity_id, x)
+    #     l = list((c.type.value, c.instance.value) for c in d.get_capabilities())
+    #     print(f"state = hass.states.get('{x.entity_id}')")
+    #     print(f"device = Device(hass, BASIC_CONFIG, state.entity_id, state)")
+    #     if d.type is None:
+    #         print(f"assert device.type is None")
+    #     else:
+    #         print(f"assert device.type == '{d.type.value}'")
+    #     print(f"capabilities = list((c.type, c.instance) for c in device.get_capabilities())")
+    #     print(f"assert capabilities == {l}")
     #     print()
 
     state = hass.states.get("button.push")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.other"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.other"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("climate.ecobee")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.thermostat"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.thermostat"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.mode", "thermostat"),
         ("devices.capabilities.mode", "swing"),
@@ -99,9 +102,9 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("climate.heatpump")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.thermostat"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.thermostat"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.mode", "thermostat"),
         ("devices.capabilities.range", "temperature"),
@@ -109,9 +112,9 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("climate.hvac")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.thermostat"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.thermostat"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.mode", "thermostat"),
         ("devices.capabilities.mode", "swing"),
@@ -121,15 +124,15 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("cover.garage_door")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.openable.curtain"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.openable.curtain"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("cover.hall_window")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.openable.curtain"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.openable.curtain"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.range", "open"),
         ("devices.capabilities.toggle", "pause"),
@@ -137,15 +140,15 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("cover.kitchen_window")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.openable.curtain"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.openable.curtain"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.toggle", "pause"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("cover.living_room_window")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.openable.curtain"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.openable.curtain"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.range", "open"),
         ("devices.capabilities.toggle", "pause"),
@@ -153,21 +156,21 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("cover.pergola_roof")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.openable.curtain"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.openable.curtain"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.ceiling_fan")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.fan"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.fan"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.living_room_fan")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.fan"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.fan"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.mode", "fan_speed"),
         ("devices.capabilities.toggle", "oscillation"),
@@ -175,9 +178,9 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("fan.percentage_full_fan")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.fan"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.fan"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.mode", "fan_speed"),
         ("devices.capabilities.toggle", "oscillation"),
@@ -185,33 +188,33 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("fan.percentage_limited_fan")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.fan"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.fan"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.preset_only_limited_fan")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.fan"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.fan"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("humidifier.dehumidifier")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.humidifier"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.humidifier"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.range", "humidity"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("humidifier.humidifier")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.humidifier"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.humidifier"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.range", "humidity"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("humidifier.hygrostat")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.humidifier"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.humidifier"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.mode", "program"),
         ("devices.capabilities.range", "humidity"),
@@ -219,9 +222,9 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.bed_light")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.light"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -232,9 +235,9 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.ceiling_lights")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.light"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -244,9 +247,9 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.entrance_color_white_lights")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.light"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -256,9 +259,9 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.kitchen_lights")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.light"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -268,9 +271,9 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.living_room_rgbww_lights")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.light"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -279,9 +282,9 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.office_rgbw_lights")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.light"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -291,33 +294,45 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("lock.front_door")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.openable"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("lock.kitchen_door")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.openable"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("lock.openable_lock")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.openable"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("lock.poorly_installed_door")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.openable"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("media_player.bedroom")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    assert capabilities == [
+        ("devices.capabilities.range", "volume"),
+        ("devices.capabilities.range", "channel"),
+        ("devices.capabilities.toggle", "mute"),
+        ("devices.capabilities.toggle", "pause"),
+        ("devices.capabilities.on_off", "on"),
+    ]
+
+    state = hass.states.get("media_player.bedroom_2")
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.range", "volume"),
         ("devices.capabilities.range", "channel"),
@@ -327,9 +342,21 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.kitchen")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    assert capabilities == [
+        ("devices.capabilities.range", "volume"),
+        ("devices.capabilities.range", "channel"),
+        ("devices.capabilities.toggle", "mute"),
+        ("devices.capabilities.toggle", "pause"),
+        ("devices.capabilities.on_off", "on"),
+    ]
+
+    state = hass.states.get("media_player.kitchen_2")
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.range", "volume"),
         ("devices.capabilities.range", "channel"),
@@ -339,9 +366,21 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.living_room")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    assert capabilities == [
+        ("devices.capabilities.range", "volume"),
+        ("devices.capabilities.range", "channel"),
+        ("devices.capabilities.toggle", "mute"),
+        ("devices.capabilities.toggle", "pause"),
+        ("devices.capabilities.on_off", "on"),
+    ]
+
+    state = hass.states.get("media_player.living_room_2")
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.range", "volume"),
         ("devices.capabilities.range", "channel"),
@@ -351,9 +390,20 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.lounge_room")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.media_device.tv"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device.tv"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    assert capabilities == [
+        ("devices.capabilities.mode", "input_source"),
+        ("devices.capabilities.range", "channel"),
+        ("devices.capabilities.toggle", "pause"),
+        ("devices.capabilities.on_off", "on"),
+    ]
+
+    state = hass.states.get("media_player.lounge_room_2")
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device.tv"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.mode", "input_source"),
         ("devices.capabilities.range", "channel"),
@@ -362,9 +412,21 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.walkman")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    assert capabilities == [
+        ("devices.capabilities.range", "volume"),
+        ("devices.capabilities.range", "channel"),
+        ("devices.capabilities.toggle", "mute"),
+        ("devices.capabilities.toggle", "pause"),
+        ("devices.capabilities.on_off", "on"),
+    ]
+
+    state = hass.states.get("media_player.walkman_2")
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.media_device"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.range", "volume"),
         ("devices.capabilities.range", "channel"),
@@ -374,13 +436,19 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("switch.ac")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.socket"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.socket"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("switch.decorative_lights")
-    entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == "devices.types.switch"
-    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type == "devices.types.switch"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
+
+    state = hass.states.get("zone.home")
+    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    assert device.type is None
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    assert capabilities == []

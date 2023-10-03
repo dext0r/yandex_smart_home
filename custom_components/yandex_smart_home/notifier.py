@@ -32,7 +32,7 @@ from .const import (
     EVENT_CONFIG_CHANGED,
     NOTIFIERS,
 )
-from .entity import YandexEntity, YandexEntityCallbackState
+from .device import Device, DeviceCallbackState
 from .helpers import Config
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ class YandexNotifier(ABC):
 
         self._unsub_pending: CALLBACK_TYPE | None = None
         self._unsub_send_discovery: CALLBACK_TYPE | None = None
-        self._pending: deque[YandexEntityCallbackState] = deque()
+        self._pending: deque[DeviceCallbackState] = deque()
         self._report_states_job = HassJob(self._report_states)
 
     @property
@@ -193,14 +193,14 @@ class YandexNotifier(ABC):
                 if not state:
                     continue
 
-            yandex_entity = YandexEntity(self._hass, self._config, state)
-            if not yandex_entity.should_expose:
+            device = Device(self._hass, self._config, state.entity_id, state)
+            if not device.should_expose:
                 continue
 
-            callback_state = YandexEntityCallbackState(yandex_entity, event_entity_id)
+            callback_state = DeviceCallbackState(device, event_entity_id)
             if entity_id == event_entity_id and entity_id not in self._property_entities.keys():
-                callback_state.old_state = YandexEntityCallbackState(
-                    YandexEntity(self._hass, self._config, old_state), event_entity_id
+                callback_state.old_state = DeviceCallbackState(
+                    Device(self._hass, self._config, old_state.entity_id, old_state), event_entity_id
                 )
 
             if callback_state.should_report:
@@ -223,13 +223,11 @@ class YandexNotifier(ABC):
 
         _LOGGER.debug("Reporting initial states")
         for state in self._hass.states.async_all():
-            yandex_entity = YandexEntity(self._hass, self._config, state)
-            if not yandex_entity.should_expose:
+            device = Device(self._hass, self._config, state.entity_id, state)
+            if not device.should_expose:
                 continue
 
-            callback_state = YandexEntityCallbackState(
-                yandex_entity, event_entity_id=state.entity_id, initial_report=True
-            )
+            callback_state = DeviceCallbackState(device, event_entity_id=state.entity_id, initial_report=True)
 
             if callback_state.should_report:
                 self._pending.append(callback_state)

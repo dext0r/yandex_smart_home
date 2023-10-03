@@ -76,7 +76,7 @@ async def test_handler_devices_query(hass, caplog):
     config = MockConfig(entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]))
     data = RequestData(config, Context(), "test", REQ_ID)
     payload = json.dumps(
-        {"devices": [{"id": switch_1.entity_id}, {"id": switch_not_expose.entity_id}, {"id": "invalid"}]}
+        {"devices": [{"id": switch_1.entity_id}, {"id": switch_not_expose.entity_id}, {"id": "invalid.foo"}]}
     )
 
     assert (await handlers.async_devices_query(hass, data, payload)).dict(exclude_none=True) == {
@@ -91,7 +91,7 @@ async def test_handler_devices_query(hass, caplog):
                 "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
                 "properties": [],
             },
-            {"id": "invalid", "error_code": "DEVICE_UNREACHABLE"},
+            {"id": "invalid.foo", "error_code": "DEVICE_UNREACHABLE"},
         ]
     }
     assert (await handlers.async_device_list(hass, data, "")).dict(exclude_none=True) == {
@@ -107,6 +107,14 @@ async def test_handler_devices_query(hass, caplog):
             }
         ],
     }
+
+    assert caplog.messages == [
+        "State requested for unexposed entity switch.not_expose. Please either expose the entity via filters in "
+        "component configuration or delete the device from Yandex.",
+        "State requested for unexposed entity invalid.foo. Please either expose the entity via filters in component "
+        "configuration or delete the device from Yandex.",
+        "Missing capabilities and properties for sensor.test",
+    ]
 
 
 async def test_handler_devices_action(hass, caplog):
@@ -153,7 +161,7 @@ async def test_handler_devices_action(hass, caplog):
     hass.bus.async_listen(EVENT_DEVICE_ACTION, device_action_event)
 
     with patch(
-        "custom_components.yandex_smart_home.entity.STATE_CAPABILITIES_REGISTRY",
+        "custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY",
         [MockCapabilityA, MockCapabilityReturnState, MockCapabilityFail],
     ):
         payload = json.dumps(
@@ -200,7 +208,7 @@ async def test_handler_devices_action(hass, caplog):
                             ],
                         },
                         {
-                            "id": "not_exist",
+                            "id": "foo.not_exist",
                             "capabilities": [
                                 {
                                     "type": MockCapabilityA.type,
@@ -260,7 +268,7 @@ async def test_handler_devices_action(hass, caplog):
                     ],
                 },
                 {"id": "switch.test_3", "action_result": {"status": "ERROR", "error_code": "DEVICE_UNREACHABLE"}},
-                {"id": "not_exist", "action_result": {"status": "ERROR", "error_code": "DEVICE_UNREACHABLE"}},
+                {"id": "foo.not_exist", "action_result": {"status": "ERROR", "error_code": "DEVICE_UNREACHABLE"}},
             ]
         }
 
@@ -356,7 +364,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
     hass.states.async_set(switch.entity_id, switch.state, switch.attributes)
 
     with patch(
-        "custom_components.yandex_smart_home.entity.STATE_CAPABILITIES_REGISTRY",
+        "custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY",
         [MockCapabilityA, MockCapabilityB, MockCapabilityC],
     ):
         payload = json.dumps(

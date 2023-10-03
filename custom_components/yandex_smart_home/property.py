@@ -1,6 +1,6 @@
 """Implement the Yandex Smart Home base device property."""
 from abc import abstractmethod
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from homeassistant.core import HomeAssistant, State
 
@@ -15,6 +15,7 @@ from .schema import (
 )
 
 
+@runtime_checkable
 class Property(Protocol):
     """Base class for a device property."""
 
@@ -81,6 +82,10 @@ class Property(Protocol):
     def value_entity_id(self) -> str:
         """Return id of entity the current value is based on."""
         ...
+
+    def __eq__(self, other: Any) -> bool:
+        """Compare properties."""
+        return bool(isinstance(other, self.__class__) and self.type == other.type and self.instance == other.instance)
 
 
 class StateProperty(Property, Protocol):

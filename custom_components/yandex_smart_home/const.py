@@ -1,29 +1,4 @@
 """Constants for Yandex Smart Home."""
-from homeassistant.components import (
-    air_quality,
-    automation,
-    binary_sensor,
-    button,
-    camera,
-    climate,
-    cover,
-    fan,
-    group,
-    humidifier,
-    input_boolean,
-    input_button,
-    input_text,
-    light,
-    lock,
-    media_player,
-    scene,
-    script,
-    sensor,
-    switch,
-    vacuum,
-    water_heater,
-)
-
 DOMAIN = "yandex_smart_home"
 CONFIG = "config"
 YAML_CONFIG = "yaml_config"
@@ -173,60 +148,6 @@ TYPES = (
     TYPE_PET_FEEDER,
     TYPE_OTHER,
 )
-
-DOMAIN_TO_YANDEX_TYPES = {
-    air_quality.DOMAIN: TYPE_SENSOR,
-    automation.DOMAIN: TYPE_OTHER,
-    binary_sensor.DOMAIN: TYPE_SENSOR,
-    button.DOMAIN: TYPE_OTHER,
-    camera.DOMAIN: TYPE_CAMERA,
-    climate.DOMAIN: TYPE_THERMOSTAT,
-    cover.DOMAIN: TYPE_OPENABLE_CURTAIN,
-    fan.DOMAIN: TYPE_FAN,
-    group.DOMAIN: TYPE_SWITCH,
-    humidifier.DOMAIN: TYPE_HUMIDIFIER,
-    input_boolean.DOMAIN: TYPE_SWITCH,
-    input_button.DOMAIN: TYPE_OTHER,
-    input_text.DOMAIN: TYPE_SENSOR,
-    light.DOMAIN: TYPE_LIGHT,
-    lock.DOMAIN: TYPE_OPENABLE,
-    media_player.DOMAIN: TYPE_MEDIA_DEVICE,
-    scene.DOMAIN: TYPE_OTHER,
-    script.DOMAIN: TYPE_OTHER,
-    sensor.DOMAIN: TYPE_SENSOR,
-    switch.DOMAIN: TYPE_SWITCH,
-    vacuum.DOMAIN: TYPE_VACUUM_CLEANER,
-    water_heater.DOMAIN: TYPE_KETTLE,
-}
-
-DEVICE_CLASS_TO_YANDEX_TYPES = {
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.DOOR): TYPE_SENSOR_OPEN,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.GARAGE_DOOR): TYPE_SENSOR_OPEN,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.GAS): TYPE_SENSOR_GAS,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.MOISTURE): TYPE_SENSOR_WATER_LEAK,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.MOTION): TYPE_SENSOR_MOTION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.MOVING): TYPE_SENSOR_MOTION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.OCCUPANCY): TYPE_SENSOR_MOTION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.OPENING): TYPE_SENSOR_OPEN,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.PRESENCE): TYPE_SENSOR_MOTION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.SMOKE): TYPE_SENSOR_SMOKE,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.VIBRATION): TYPE_SENSOR_VIBRATION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.WINDOW): TYPE_SENSOR_OPEN,
-    (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.RECEIVER): TYPE_MEDIA_DEVICE_RECIEVER,
-    (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.TV): TYPE_MEDIA_DEVICE_TV,
-    (sensor.DOMAIN, DEVICE_CLASS_BUTTON): TYPE_SENSOR_BUTTON,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.CO): TYPE_SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.CO2): TYPE_SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.HUMIDITY): TYPE_SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.ILLUMINANCE): TYPE_SENSOR_ILLUMINATION,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.PM1): TYPE_SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.PM10): TYPE_SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.PM25): TYPE_SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.PRESSURE): TYPE_SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.TEMPERATURE): TYPE_SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS): TYPE_SENSOR_CLIMATE,
-    (switch.DOMAIN, switch.SwitchDeviceClass.OUTLET): TYPE_SOCKET,
-}
 
 ON_OFF_INSTANCE_ON = "on"
 
