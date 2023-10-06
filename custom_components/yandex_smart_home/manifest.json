@@ -5,6 +5,7 @@
   "documentation": "https://docs.yaha-cloud.ru/v0.6.x/",
   "issue_tracker": "https://github.com/dext0r/yandex_smart_home/issues",
   "requirements": [],
+  "after_dependencies": ["local_calendar"],
   "iot_class": "cloud_polling",
   "dependencies": ["http"],
   "codeowners": ["@dext0r"],
