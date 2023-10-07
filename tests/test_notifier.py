@@ -23,8 +23,8 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome, const
+from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.device import DeviceCallbackState
-from custom_components.yandex_smart_home.entry_data import CONF_DEVICES_DISCOVERED
 from custom_components.yandex_smart_home.notifier import NotifierConfig, YandexCloudNotifier, YandexDirectNotifier
 
 from . import BASIC_ENTRY_DATA, REQ_ID, MockConfigEntryData, generate_entity_filter, test_cloud
@@ -91,10 +91,13 @@ async def test_notifier_setup_not_discovered(hass, hass_admin_user, aioclient_mo
     component: YandexSmartHome = hass.data[DOMAIN]
 
     config_entry_direct = MockConfigEntry(
-        domain=DOMAIN, data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT}
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT},
     )
     config_entry_cloud = MockConfigEntry(
         domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
         data={
             const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
             const.CONF_CLOUD_INSTANCE: {
@@ -134,17 +137,20 @@ async def test_notifier_lifecycle_discovered(hass, hass_admin_user, aioclient_mo
     component: YandexSmartHome = hass.data[DOMAIN]
 
     config_entry_direct = MockConfigEntry(
-        domain=DOMAIN, data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT, CONF_DEVICES_DISCOVERED: True}
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT, const.CONF_DEVICES_DISCOVERED: True},
     )
     config_entry_cloud = MockConfigEntry(
         domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
         data={
             const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
             const.CONF_CLOUD_INSTANCE: {
                 const.CONF_CLOUD_INSTANCE_ID: "test",
                 const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
-            CONF_DEVICES_DISCOVERED: True,
+            const.CONF_DEVICES_DISCOVERED: True,
         },
     )
 
@@ -187,7 +193,9 @@ async def test_notifier_postponed_setup(hass, hass_admin_user):
     component: YandexSmartHome = hass.data[DOMAIN]
 
     config_entry = MockConfigEntry(
-        domain=DOMAIN, data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT, CONF_DEVICES_DISCOVERED: True}
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT, const.CONF_DEVICES_DISCOVERED: True},
     )
     with patch.object(hass, "state", return_value=CoreState.starting):
         config_entry.add_to_hass(hass)

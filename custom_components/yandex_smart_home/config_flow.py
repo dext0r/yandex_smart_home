@@ -32,11 +32,13 @@ CONNECTION_TYPES = {const.CONNECTION_TYPE_CLOUD: "Через облако", cons
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Yandex Smart Home."""
 
+    VERSION = 2
+
     def __init__(self) -> None:
         """Initialize a config flow handler."""
         super().__init__()
 
-        self._data: ConfigType = {}
+        self._data: ConfigType = {const.CONF_DEVICES_DISCOVERED: False}
         self._options: ConfigType = {}
 
     async def async_step_user(self, user_input: ConfigType | None = None) -> FlowResult:

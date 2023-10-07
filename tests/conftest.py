@@ -14,6 +14,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import DOMAIN, const
+from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 
@@ -53,6 +54,7 @@ def aiohttp_client(aiohttp_client, socket_enabled):
 def config_entry_direct():
     return MockConfigEntry(
         domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
         data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT},
         options={const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]}},
     )
@@ -62,6 +64,7 @@ def config_entry_direct():
 def config_entry_cloud():
     return MockConfigEntry(
         domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
         data={
             const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
             const.CONF_CLOUD_INSTANCE: {

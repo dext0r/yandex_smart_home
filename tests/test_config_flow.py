@@ -9,7 +9,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, patch_yaml_files
 
 from custom_components.yandex_smart_home import YandexSmartHome, cloud, const
-from custom_components.yandex_smart_home.config_flow import DOMAIN
+from custom_components.yandex_smart_home.config_flow import DOMAIN, ConfigFlowHandler
 
 from . import test_cloud
 
@@ -26,6 +26,7 @@ def _mock_config_entry(data: ConfigType):
 
     return MockConfigEntry(
         domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
         data=data,
         options={
             "filter": {
@@ -110,6 +111,7 @@ async def test_config_flow_cloud(hass, aioclient_mock):
     assert result5["data"] == {
         "connection_type": "cloud",
         "cloud_instance": {"id": "test", "password": "simple", "token": "foo"},
+        "devices_discovered": False,
     }
     assert result5["options"] == {
         "filter": {"include_entities": ["foo.bar", "script.test"]},
@@ -138,7 +140,7 @@ async def test_config_flow_direct(hass):
 
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
     assert result3["title"] == "Yandex Smart Home"
-    assert result3["data"] == {"connection_type": "direct"}
+    assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
     assert result3["options"] == {
         "filter": {"include_entities": ["foo.bar", "script.test"]},
     }
@@ -176,7 +178,7 @@ yandex_smart_home:
 
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
     assert result3["title"] == "Yandex Smart Home"
-    assert result3["data"] == {"connection_type": "direct"}
+    assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
     assert result3["options"] == {"filter": {"include_entities": ["foo.bar", "script.test"]}}
 
     component: YandexSmartHome = hass.data[DOMAIN]
@@ -211,7 +213,7 @@ yandex_smart_home:
 
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
     assert result3["title"] == "Yandex Smart Home"
-    assert result3["data"] == {"connection_type": "direct"}
+    assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
     assert result3["options"] == {}
 
     component: YandexSmartHome = hass.data[DOMAIN]

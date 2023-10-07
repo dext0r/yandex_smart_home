@@ -12,6 +12,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture, patch_yaml_files
 
 from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome, cloud, const
+from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 
 from . import test_cloud
 
@@ -308,6 +309,7 @@ yandex_smart_home:
 async def test_setup_entry_filters(hass, hass_admin_user):
     config_entry = MockConfigEntry(
         domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
         data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT},
         options={
             const.CONF_FILTER: {
@@ -435,7 +437,57 @@ async def test_remove_entry_cloud_unloaded(hass, config_entry_cloud, aioclient_m
 async def test_remove_entry_unknown(hass):
     await async_setup_component(hass, DOMAIN, {DOMAIN: {}})
 
-    entry = MockConfigEntry(domain=DOMAIN)
+    entry = MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION)
     entry.add_to_hass(hass)
 
     await hass.config_entries.async_remove(entry.entry_id)
+
+
+async def test_migrate_entity_v1(hass):
+    entity = MockConfigEntry(
+        domain=DOMAIN,
+        version=1,
+        data={
+            "devices_discovered": False,
+            "connection_type": "direct",
+            "cloud_instance": {"id": "foo", "password": "bar", "token": "xxx"},
+            "notifier": [],
+            "yaml_config_hash": "33cc1b5c66d9e4516c50b607952862a2",
+            "abc": [],
+        },
+        options={
+            "filter": {"include_entities": ["switch.ac"]},
+            "color_profile": {},
+            "pressure_unit": "mmHg",
+            "cloud_stream": True,
+            "beta": True,
+            "ddd": [],
+            "user_id": "user",
+        },
+    )
+    entity.add_to_hass(hass)
+    await hass.config_entries.async_setup(entity.entry_id)
+    await hass.async_block_till_done()
+
+    assert entity.version == 2
+    assert entity.data == {
+        "cloud_instance": {"id": "foo", "password": "bar", "token": "xxx"},
+        "connection_type": "direct",
+        "devices_discovered": False,
+    }
+    assert entity.options == {"filter": {"include_entities": ["switch.ac"]}, "user_id": "user"}
+
+    entity = MockConfigEntry(
+        domain=DOMAIN,
+        version=1,
+    )
+    entity.add_to_hass(hass)
+    await hass.config_entries.async_setup(entity.entry_id)
+    await hass.async_block_till_done()
+
+    assert entity.version == 2
+    assert entity.data == {
+        "connection_type": "direct",
+        "devices_discovered": True,
+    }
+    assert entity.options == {}

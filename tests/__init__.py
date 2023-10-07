@@ -9,6 +9,7 @@ from homeassistant.helpers.typing import ConfigType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import DOMAIN
+from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.entry_data import ConfigEntryData
 from custom_components.yandex_smart_home.helpers import STORE_CACHE_ATTRS, CacheStore, RequestData
 
@@ -23,7 +24,7 @@ class MockConfigEntryData(ConfigEntryData):
         entity_filter: entityfilter.EntityFilter | None = None,
     ):
         if not entry:
-            entry = MockConfigEntry(domain=DOMAIN, data={}, options={})
+            entry = MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={})
 
         super().__init__(hass, entry, yaml_config, entity_config, entity_filter)
 
@@ -66,7 +67,7 @@ def generate_entity_filter(include_entity_globs=None, exclude_entities=None) -> 
 REQ_ID: str = "5ca6622d-97b5-465c-a494-fd9954f7599a"
 
 BASIC_ENTRY_DATA: MockConfigEntryData = MockConfigEntryData(
-    entry=MockConfigEntry(domain=DOMAIN, data={}, options={}),
+    entry=MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={}),
     entity_filter=generate_entity_filter(include_entity_globs=["*"]),
 )
 

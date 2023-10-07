@@ -259,6 +259,37 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return await component.async_unload_entry(entry)
 
 
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate the config entry upon new versions."""
+    version = entry.version
+    data = {**entry.data}
+    options = {**entry.options}
+
+    _LOGGER.debug(f"Migrating from version {version}")
+
+    if version == 1:
+        preserve_keys = [
+            const.CONF_CONNECTION_TYPE,
+            const.CONF_CLOUD_INSTANCE,
+            const.CONF_DEVICES_DISCOVERED,
+            const.CONF_FILTER,
+            const.CONF_USER_ID,
+        ]
+        for store in [data, options]:
+            for key in list(store.keys()):
+                if key not in preserve_keys:
+                    store.pop(key, None)
+
+        data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
+        data.setdefault(const.CONF_DEVICES_DISCOVERED, True)
+
+        version = entry.version = 2
+        hass.config_entries.async_update_entry(entry, data=data, options=options)
+        _LOGGER.debug(f"Migration to version {version} successful")
+
+    return True
+
+
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Remove a config entry."""
     if entry.data.get(const.CONF_CONNECTION_TYPE) == ConnectionType.CLOUD:

@@ -20,8 +20,6 @@ from .notifier import NotifierConfig, YandexCloudNotifier, YandexDirectNotifier,
 
 _LOGGER = logging.getLogger(__name__)
 
-CONF_DEVICES_DISCOVERED = "devices_discovered"
-
 
 class ConfigEntryData:
     """Class to hold config entry data."""
@@ -138,17 +136,17 @@ class ConfigEntryData:
 
     def discover_devices(self) -> bool:
         """Mark config entry has returned the device list once."""
-        if self.entry.data.get(CONF_DEVICES_DISCOVERED):
+        if self.entry.data.get(const.CONF_DEVICES_DISCOVERED):
             return False
 
         data = self.entry.data.copy()
-        data[CONF_DEVICES_DISCOVERED] = True
+        data[const.CONF_DEVICES_DISCOVERED] = True
 
         return self._hass.config_entries.async_update_entry(self.entry, data=data, options=self.entry.options)
 
     async def _async_setup_notifiers(self, *_: Any) -> None:
         """Set up notifiers."""
-        if not self.entry.data.get(CONF_DEVICES_DISCOVERED) or not self._notifier_configs:
+        if not self.entry.data.get(const.CONF_DEVICES_DISCOVERED) or not self._notifier_configs:
             return
 
         for config in self._notifier_configs:

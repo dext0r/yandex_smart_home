@@ -9,8 +9,12 @@ from homeassistant.util.decorator import Registry
 from custom_components.yandex_smart_home import YandexSmartHome, handlers
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
-from custom_components.yandex_smart_home.const import DOMAIN, ERR_INVALID_ACTION, EVENT_DEVICE_ACTION
-from custom_components.yandex_smart_home.entry_data import CONF_DEVICES_DISCOVERED
+from custom_components.yandex_smart_home.const import (
+    CONF_DEVICES_DISCOVERED,
+    DOMAIN,
+    ERR_INVALID_ACTION,
+    EVENT_DEVICE_ACTION,
+)
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.handlers import PING_REQUEST_USER_ID
 from custom_components.yandex_smart_home.helpers import RequestData

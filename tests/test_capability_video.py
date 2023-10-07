@@ -14,6 +14,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import YandexSmartHome, const
 from custom_components.yandex_smart_home.capability_video import VideoStreamCapability
+from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.const import DOMAIN
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.schema import (
@@ -157,7 +158,9 @@ async def test_capability_video_stream_direct(hass_platform_direct, config_entry
 async def test_capability_video_stream_cloud(hass_platform_direct, connection_type):
     hass = hass_platform_direct
     component: YandexSmartHome = hass.data[DOMAIN]
-    entry = MockConfigEntry(domain=DOMAIN, data={const.CONF_CONNECTION_TYPE: connection_type})
+    entry = MockConfigEntry(
+        domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={const.CONF_CONNECTION_TYPE: connection_type}
+    )
     entry_data = MockConfigEntryData(entry=entry, yaml_config={const.CONF_SETTINGS: {const.CONF_CLOUD_STREAM: True}})
     state = State("camera.test", camera.STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
 
