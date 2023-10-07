@@ -34,7 +34,6 @@ ENTITY_PROPERTY_SCHEMA = vol.All(
             vol.Optional(const.CONF_ENTITY_PROPERTY_ENTITY): cv.entity_id,
             vol.Optional(const.CONF_ENTITY_PROPERTY_ATTRIBUTE): cv.string,
         },
-        extra=vol.PREVENT_EXTRA,
     ),
 )
 
@@ -49,7 +48,6 @@ ENTITY_RANGE_SCHEMA = vol.Schema(
         vol.Optional(const.CONF_ENTITY_RANGE_MIN): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
         vol.Optional(const.CONF_ENTITY_RANGE_PRECISION): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
     },
-    extra=vol.PREVENT_EXTRA,
 )
 
 ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema(
@@ -131,7 +129,6 @@ NOTIFIER_SCHEMA = vol.Schema(
         vol.Required(const.CONF_NOTIFIER_SKILL_ID): cv.string,
         vol.Required(const.CONF_NOTIFIER_USER_ID): cv.string,
     },
-    extra=vol.PREVENT_EXTRA,
 )
 
 
@@ -159,7 +156,6 @@ YANDEX_SMART_HOME_SCHEMA = vol.All(
                 {cv.string: {vol.All(ycv.color_name): vol.All(ycv.color_value)}}
             ),
         },
-        extra=vol.PREVENT_EXTRA,
     )
 )
 
