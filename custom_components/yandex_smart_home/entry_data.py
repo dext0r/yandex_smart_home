@@ -116,7 +116,7 @@ class ConfigEntryData:
     @property
     def pressure_unit(self) -> str:
         settings = self._yaml_config.get(const.CONF_SETTINGS, {})
-        return settings.get(const.CONF_PRESSURE_UNIT) or UnitOfPressure.MMHG.value
+        return str(settings.get(const.CONF_PRESSURE_UNIT) or UnitOfPressure.MMHG.value)
 
     @property
     def color_profiles(self) -> ColorProfiles:
