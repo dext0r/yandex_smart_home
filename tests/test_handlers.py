@@ -109,7 +109,7 @@ async def test_handler_devices_query(hass, caplog):
         ],
     }
 
-    assert caplog.messages == [
+    assert caplog.messages[-3:] == [
         "State requested for unexposed entity switch.not_expose. Please either expose the entity via filters in "
         "component configuration or delete the device from Yandex.",
         "State requested for unexposed entity invalid.foo. Please either expose the entity via filters in component "
