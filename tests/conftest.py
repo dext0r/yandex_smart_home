@@ -13,7 +13,7 @@ from homeassistant.helpers import entityfilter
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import DOMAIN, const
+from custom_components.yandex_smart_home import DOMAIN, ConnectionType, const
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 
 pytest_plugins = "pytest_homeassistant_custom_component"
@@ -55,7 +55,7 @@ def config_entry_direct():
     return MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT},
+        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
         options={const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]}},
     )
 
@@ -66,7 +66,7 @@ def config_entry_cloud():
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
+            const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD,
             const.CONF_CLOUD_INSTANCE: {
                 const.CONF_CLOUD_INSTANCE_ID: "i-test",
                 const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "token-foo",

@@ -6,7 +6,7 @@ from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import Context
 
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, Capability, StateCapability
-from .const import CONF_FEATURES, MEDIA_PLAYER_FEATURE_PLAY_PAUSE, MEDIA_PLAYER_FEATURE_VOLUME_MUTE
+from .const import CONF_FEATURES, MediaPlayerFeature
 from .schema import (
     CapabilityType,
     ToggleCapabilityInstance,
@@ -49,7 +49,7 @@ class MuteCapability(StateToggleCapability):
             if self._state_features & media_player.MediaPlayerEntityFeature.VOLUME_MUTE:
                 return True
 
-            if MEDIA_PLAYER_FEATURE_VOLUME_MUTE in self._entity_config.get(CONF_FEATURES, []):
+            if MediaPlayerFeature.VOLUME_MUTE in self._entity_config.get(CONF_FEATURES, []):
                 return True
 
         return False
@@ -84,7 +84,7 @@ class PauseCapabilityMediaPlayer(StateToggleCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
-            if MEDIA_PLAYER_FEATURE_PLAY_PAUSE in self._entity_config.get(CONF_FEATURES, []):
+            if MediaPlayerFeature.PLAY_PAUSE in self._entity_config.get(CONF_FEATURES, []):
                 return True
 
             if (

@@ -37,7 +37,7 @@ from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.service import async_call_from_config
 
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
-from .const import CONF_FEATURES, CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON, MEDIA_PLAYER_FEATURE_TURN_ON_OFF
+from .const import CONF_FEATURES, CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON, MediaPlayerFeature
 from .helpers import APIError
 from .schema import (
     CapabilityType,
@@ -294,7 +294,7 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
             if CONF_TURN_ON in self._entity_config or CONF_TURN_OFF in self._entity_config:
                 return True
 
-            if MEDIA_PLAYER_FEATURE_TURN_ON_OFF in self._entity_config.get(CONF_FEATURES, []):
+            if MediaPlayerFeature.TURN_ON_OFF in self._entity_config.get(CONF_FEATURES, []):
                 return True
 
             return bool(

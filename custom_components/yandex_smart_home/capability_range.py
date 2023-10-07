@@ -25,12 +25,10 @@ from .const import (
     CONF_FEATURES,
     CONF_SUPPORT_SET_CHANNEL,
     DOMAIN_XIAOMI_AIRPURIFIER,
-    MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK,
-    MEDIA_PLAYER_FEATURE_PLAY_MEDIA,
-    MEDIA_PLAYER_FEATURE_VOLUME_SET,
     MODEL_PREFIX_XIAOMI_AIRPURIFIER,
     SERVICE_FAN_SET_TARGET_HUMIDITY,
     STATE_NONE,
+    MediaPlayerFeature,
 )
 from .helpers import APIError
 from .schema import (
@@ -427,7 +425,7 @@ class VolumeCapability(StateRangeCapability):
             if self._state_features & media_player.MediaPlayerEntityFeature.VOLUME_SET:
                 return True
 
-            if MEDIA_PLAYER_FEATURE_VOLUME_SET in self._entity_config.get(CONF_FEATURES, []):
+            if MediaPlayerFeature.VOLUME_SET in self._entity_config.get(CONF_FEATURES, []):
                 return True
 
         return False
@@ -435,7 +433,7 @@ class VolumeCapability(StateRangeCapability):
     @property
     def support_random_access(self) -> bool:
         """Test if the capability accept arbitrary values to be set."""
-        if MEDIA_PLAYER_FEATURE_VOLUME_SET in self._entity_config.get(CONF_FEATURES, []):
+        if MediaPlayerFeature.VOLUME_SET in self._entity_config.get(CONF_FEATURES, []):
             return True
 
         return not (
@@ -508,12 +506,12 @@ class ChannelCapability(StateRangeCapability):
             ):
                 return True
 
-            if MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK in self._entity_config.get(CONF_FEATURES, []):
+            if MediaPlayerFeature.NEXT_PREVIOUS_TRACK in self._entity_config.get(CONF_FEATURES, []):
                 return True
 
             if (
                 self._state_features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA
-                or MEDIA_PLAYER_FEATURE_PLAY_MEDIA in self._entity_config.get(CONF_FEATURES, [])
+                or MediaPlayerFeature.PLAY_MEDIA in self._entity_config.get(CONF_FEATURES, [])
             ):
                 if self._entity_config.get(CONF_SUPPORT_SET_CHANNEL) is False:
                     return False
@@ -533,7 +531,7 @@ class ChannelCapability(StateRangeCapability):
         if device_class == media_player.MediaPlayerDeviceClass.TV:
             if (
                 self._state_features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA
-                or MEDIA_PLAYER_FEATURE_PLAY_MEDIA in self._entity_config.get(CONF_FEATURES, [])
+                or MediaPlayerFeature.PLAY_MEDIA in self._entity_config.get(CONF_FEATURES, [])
             ):
                 return True
 

@@ -777,7 +777,7 @@ async def test_capability_range_channel_set_not_supported(hass):
     assert cap.retrievable is True
     assert cap.support_random_access is True
 
-    with patch.object(cap._hass.services, "async_call", side_effect=ValueError("nope")):
+    with patch("homeassistant.core.ServiceRegistry.async_call", side_effect=ValueError("nope")):
         with pytest.raises(APIError) as e:
             await cap.set_instance_state(
                 Context(),

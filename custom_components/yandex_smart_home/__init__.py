@@ -5,7 +5,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.const import SERVICE_RELOAD
+from homeassistant.const import SERVICE_RELOAD, UnitOfPressure
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA
@@ -137,7 +137,7 @@ NOTIFIER_SCHEMA = vol.Schema(
 
 SETTINGS_SCHEMA = vol.Schema(
     {
-        vol.Optional(const.CONF_PRESSURE_UNIT, default=const.PRESSURE_UNIT_MMHG): vol.Schema(
+        vol.Optional(const.CONF_PRESSURE_UNIT, default=UnitOfPressure.MMHG.value): vol.Schema(
             vol.All(str, ycv.pressure_unit)
         ),
         vol.Optional(const.CONF_BETA, default=False): cv.boolean,
@@ -280,7 +280,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 if key not in preserve_keys:
                     store.pop(key, None)
 
-        data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
+        data.setdefault(const.CONF_CONNECTION_TYPE, ConnectionType.DIRECT)
         data.setdefault(const.CONF_DEVICES_DISCOVERED, True)
 
         version = entry.version = 2

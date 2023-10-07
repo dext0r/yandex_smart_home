@@ -18,6 +18,7 @@ from homeassistant.const import (
 from homeassistant.core import Context, State
 import pytest
 from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
     async_mock_service,
     mock_area_registry,
     mock_device_registry,
@@ -129,22 +130,22 @@ async def test_device_capabilities(hass):
     entry_data = MockConfigEntryData(
         entity_config={
             light.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {const.MODE_INSTANCE_DISHWASHING: {const.MODE_INSTANCE_MODE_ECO: [""]}},
+                const.CONF_ENTITY_MODE_MAP: {"dishwashing": {"eco": [""]}},
                 const.CONF_ENTITY_CUSTOM_RANGES: {
-                    const.RANGE_INSTANCE_HUMIDITY: {
+                    "humidity": {
                         const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
                         const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {},
                     }
                 },
                 const.CONF_ENTITY_CUSTOM_TOGGLES: {
-                    const.TOGGLE_INSTANCE_PAUSE: {
+                    "pause": {
                         const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
                         const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: {},
                         const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: {},
                     }
                 },
                 const.CONF_ENTITY_CUSTOM_MODES: {
-                    const.MODE_INSTANCE_DISHWASHING: {
+                    "dishwashing": {
                         const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
                         const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {},
                     }
@@ -209,8 +210,8 @@ async def test_device_properties(hass):
         entity_config={
             state.entity_id: {
                 const.CONF_ENTITY_PROPERTIES: [
-                    {const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_VOLTAGE},
-                    {const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON},
+                    {const.CONF_ENTITY_PROPERTY_TYPE: "voltage"},
+                    {const.CONF_ENTITY_PROPERTY_TYPE: "button"},
                 ]
             }
         }
@@ -235,12 +236,14 @@ async def test_device_properties(hass):
 
 async def test_device_info(hass, registries):
     ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
+    config_entry = MockConfigEntry(domain="test", data={})
+    config_entry.add_to_hass(hass)
 
     state = State("switch.test_1", STATE_ON)
     device = dev_reg.async_get_or_create(
         manufacturer="Acme Inc.",
         identifiers={"test_1"},
-        config_entry_id="test_1",
+        config_entry_id=config_entry.entry_id,
     )
     ent_reg.async_get_or_create("switch", "test", "1", device_id=device.id)
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
@@ -444,7 +447,7 @@ async def test_device_query(hass):
         BASIC_ENTRY_DATA,
         {
             CONF_ENTITY_PROPERTY_ENTITY: state_humidity.entity_id,
-            CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
+            CONF_ENTITY_PROPERTY_TYPE: "humidity",
         },
         state.entity_id,
     )
@@ -458,7 +461,7 @@ async def test_device_query(hass):
         {
             CONF_ENTITY_PROPERTY_ENTITY: state_button.entity_id,
             CONF_ENTITY_PROPERTY_ATTRIBUTE: "action",
-            CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON,
+            CONF_ENTITY_PROPERTY_TYPE: "button",
         },
         state.entity_id,
     )

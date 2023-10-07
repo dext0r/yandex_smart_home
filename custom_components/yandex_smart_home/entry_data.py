@@ -5,7 +5,7 @@ import logging
 from typing import Any, Self
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT_STOP
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT_STOP, UnitOfPressure
 from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entityfilter import EntityFilter
@@ -116,7 +116,7 @@ class ConfigEntryData:
     @property
     def pressure_unit(self) -> str:
         settings = self._yaml_config.get(const.CONF_SETTINGS, {})
-        return settings.get(const.CONF_PRESSURE_UNIT) or const.PRESSURE_UNIT_MMHG
+        return settings.get(const.CONF_PRESSURE_UNIT) or UnitOfPressure.MMHG.value
 
     @property
     def color_profiles(self) -> ColorProfiles:

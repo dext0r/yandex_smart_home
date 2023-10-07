@@ -22,7 +22,7 @@ from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome, const
+from custom_components.yandex_smart_home import DOMAIN, ConnectionType, YandexSmartHome, const
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.device import DeviceCallbackState
 from custom_components.yandex_smart_home.notifier import NotifierConfig, YandexCloudNotifier, YandexDirectNotifier
@@ -93,13 +93,13 @@ async def test_notifier_setup_not_discovered(hass, hass_admin_user, aioclient_mo
     config_entry_direct = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT},
+        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
     )
     config_entry_cloud = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
+            const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD,
             const.CONF_CLOUD_INSTANCE: {
                 const.CONF_CLOUD_INSTANCE_ID: "test",
                 const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
@@ -139,13 +139,13 @@ async def test_notifier_lifecycle_discovered(hass, hass_admin_user, aioclient_mo
     config_entry_direct = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT, const.CONF_DEVICES_DISCOVERED: True},
+        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT, const.CONF_DEVICES_DISCOVERED: True},
     )
     config_entry_cloud = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
+            const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD,
             const.CONF_CLOUD_INSTANCE: {
                 const.CONF_CLOUD_INSTANCE_ID: "test",
                 const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
@@ -195,7 +195,7 @@ async def test_notifier_postponed_setup(hass, hass_admin_user):
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT, const.CONF_DEVICES_DISCOVERED: True},
+        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT, const.CONF_DEVICES_DISCOVERED: True},
     )
     with patch.object(hass, "state", return_value=CoreState.starting):
         config_entry.add_to_hass(hass)
@@ -222,27 +222,21 @@ async def test_notifier_property_entities(hass):
         entity_config={
             "switch.test_1": {
                 const.CONF_ENTITY_CUSTOM_MODES: {
-                    const.MODE_INSTANCE_DISHWASHING: {
-                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_select.dishwashing"
-                    }
+                    "dishwashing": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_select.dishwashing"}
                 },
                 const.CONF_ENTITY_CUSTOM_TOGGLES: {
-                    const.TOGGLE_INSTANCE_PAUSE: {
-                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_boolean.pause"
-                    }
+                    "pause": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_boolean.pause"}
                 },
                 const.CONF_ENTITY_CUSTOM_RANGES: {
-                    const.RANGE_INSTANCE_VOLUME: {
-                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_number.volume"
-                    }
+                    "volume": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_number.volume"}
                 },
                 const.CONF_ENTITY_PROPERTIES: [
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
+                        const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
                         const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.temperature",
                     },
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
+                        const.CONF_ENTITY_PROPERTY_TYPE: "humidity",
                         const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.humidity",
                     },
                 ],
@@ -253,7 +247,7 @@ async def test_notifier_property_entities(hass):
                 const.CONF_ENTITY_CUSTOM_RANGES: {},
                 const.CONF_ENTITY_PROPERTIES: [
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
+                        const.CONF_ENTITY_PROPERTY_TYPE: "humidity",
                         const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.humidity",
                     }
                 ],
@@ -280,7 +274,7 @@ async def test_notifier_event_handler(hass, mock_call_later):
                 const.CONF_ENTITY_CUSTOM_RANGES: {},
                 const.CONF_ENTITY_PROPERTIES: [
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
+                        const.CONF_ENTITY_PROPERTY_TYPE: "humidity",
                         const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.humidity",
                     }
                 ],

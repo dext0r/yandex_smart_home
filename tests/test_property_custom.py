@@ -93,7 +93,7 @@ async def test_property_custom_get_value_button_event(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON,
+            const.CONF_ENTITY_PROPERTY_TYPE: "button",
         },
         state.entity_id,
     )
@@ -103,7 +103,7 @@ async def test_property_custom_get_value_button_event(hass):
     prop = get_custom_property(
         hass,
         BASIC_ENTRY_DATA,
-        {const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON, const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "action"},
+        {const.CONF_ENTITY_PROPERTY_TYPE: "button", const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "action"},
         state.entity_id,
     )
     assert prop.get_value() is None
@@ -112,7 +112,7 @@ async def test_property_custom_get_value_button_event(hass):
     prop = get_custom_property(
         hass,
         BASIC_ENTRY_DATA,
-        {const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON, const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "action"},
+        {const.CONF_ENTITY_PROPERTY_TYPE: "button", const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "action"},
         state.entity_id,
     )
     assert prop.get_value() == "long_press"
@@ -126,7 +126,7 @@ async def test_property_custom_get_value_binary_event(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_GAS,
+            const.CONF_ENTITY_PROPERTY_TYPE: "gas",
         },
         state.entity_id,
     )
@@ -137,7 +137,7 @@ async def test_property_custom_get_value_binary_event(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_GAS,
+            const.CONF_ENTITY_PROPERTY_TYPE: "gas",
         },
         state.entity_id,
     )
@@ -152,7 +152,7 @@ async def test_property_custom_get_value_float(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
+            const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
         },
         state.entity_id,
     )
@@ -173,7 +173,7 @@ async def test_property_custom_get_value_float(hass):
             hass,
             BASIC_ENTRY_DATA,
             {
-                const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
+                const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
                 const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "value",
             },
             state.entity_id,
@@ -189,7 +189,7 @@ async def test_property_custom_get_value_float(hass):
             hass,
             BASIC_ENTRY_DATA,
             {
-                const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
+                const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
                 const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.test_2",
             },
             state.entity_id,
@@ -202,7 +202,7 @@ async def test_property_custom_get_value_float(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
+            const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
             const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.test_2",
         },
         state.entity_id,
@@ -214,7 +214,7 @@ async def test_property_custom_get_value_float(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
+            const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
             const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.test_2",
             const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "value",
         },
@@ -231,7 +231,7 @@ async def test_property_custom_value_float_limit(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_BATTERY_LEVEL,
+            const.CONF_ENTITY_PROPERTY_TYPE: "battery_level",
         },
         state.entity_id,
     )

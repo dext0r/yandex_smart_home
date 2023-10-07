@@ -8,7 +8,7 @@ from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, patch_yaml_files
 
-from custom_components.yandex_smart_home import YandexSmartHome, cloud, const
+from custom_components.yandex_smart_home import ConnectionType, YandexSmartHome, cloud, const
 from custom_components.yandex_smart_home.config_flow import DOMAIN, ConfigFlowHandler
 
 from . import test_cloud
@@ -17,7 +17,7 @@ COMPONENT_PATH = "custom_components.yandex_smart_home"
 
 
 def _mock_config_entry(data: ConfigType):
-    if data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
+    if data[const.CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
         data[const.CONF_CLOUD_INSTANCE] = {
             const.CONF_CLOUD_INSTANCE_ID: "test",
             const.CONF_CLOUD_INSTANCE_PASSWORD: "secret",
@@ -44,7 +44,7 @@ def _mock_config_entry(data: ConfigType):
 
 
 async def test_config_flow_duplicate(hass):
-    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT})
+    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT})
     config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
@@ -79,7 +79,7 @@ async def test_config_flow_cloud(hass, aioclient_mock):
 
     aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/register", status=500)
     result3 = await hass.config_entries.flow.async_configure(
-        result2["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD}
+        result2["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD}
     )
     assert result3["type"] == "form"
     assert result3["step_id"] == "connection_type"
@@ -87,7 +87,7 @@ async def test_config_flow_cloud(hass, aioclient_mock):
 
     aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/register", side_effect=Exception())
     result4 = await hass.config_entries.flow.async_configure(
-        result3["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD}
+        result3["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD}
     )
     assert result4["type"] == "form"
     assert result4["step_id"] == "connection_type"
@@ -101,7 +101,7 @@ async def test_config_flow_cloud(hass, aioclient_mock):
     )
 
     result5 = await hass.config_entries.flow.async_configure(
-        result4["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD}
+        result4["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD}
     )
     await hass.async_block_till_done()
 
@@ -134,7 +134,7 @@ async def test_config_flow_direct(hass):
     assert result2["errors"] == {}
 
     result3 = await hass.config_entries.flow.async_configure(
-        result2["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT}
+        result2["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT}
     )
     await hass.async_block_till_done()
 
@@ -172,7 +172,7 @@ yandex_smart_home:
     assert result2["errors"] == {}
 
     result3 = await hass.config_entries.flow.async_configure(
-        result2["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT}
+        result2["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT}
     )
     await hass.async_block_till_done()
 
@@ -207,7 +207,7 @@ yandex_smart_home:
     assert result2["errors"] == {}
 
     result3 = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT}
+        result["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT}
     )
     await hass.async_block_till_done()
 
@@ -221,7 +221,7 @@ yandex_smart_home:
 
 
 async def test_options_step_init_cloud(hass):
-    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD})
+    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
     config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
@@ -231,7 +231,7 @@ async def test_options_step_init_cloud(hass):
 
 
 async def test_options_step_init_direct(hass):
-    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT})
+    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT})
     config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
@@ -240,7 +240,7 @@ async def test_options_step_init_direct(hass):
     assert result["menu_options"] == ["include_entities", "connection_type"]
 
 
-@pytest.mark.parametrize("connection_type", [const.CONNECTION_TYPE_CLOUD, const.CONNECTION_TYPE_DIRECT])
+@pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])
 async def test_options_step_connection_type_no_change(hass, connection_type):
     config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: connection_type})
     config_entry.add_to_hass(hass)
@@ -265,7 +265,7 @@ async def test_options_step_connection_type_no_change(hass, connection_type):
 
 
 async def test_options_step_connection_type_change_to_direct(hass):
-    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD, "foo": "bar"})
+    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD, "foo": "bar"})
     config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
@@ -277,10 +277,10 @@ async def test_options_step_connection_type_change_to_direct(hass):
     )
     assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
     assert result2["step_id"] == "connection_type"
-    assert list(result2["data_schema"].schema.keys())[0].default() == const.CONNECTION_TYPE_CLOUD
+    assert list(result2["data_schema"].schema.keys())[0].default() == ConnectionType.CLOUD
 
     result3 = await hass.config_entries.options.async_configure(
-        result2["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT}
+        result2["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT}
     )
     await hass.async_block_till_done()
 
@@ -293,7 +293,7 @@ async def test_options_step_connection_type_change_to_direct(hass):
 
 
 async def test_options_step_connection_type_change_to_cloud(hass, aioclient_mock):
-    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT})
+    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT})
     config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
@@ -305,11 +305,11 @@ async def test_options_step_connection_type_change_to_cloud(hass, aioclient_mock
     )
     assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
     assert result2["step_id"] == "connection_type"
-    assert list(result2["data_schema"].schema.keys())[0].default() == const.CONNECTION_TYPE_DIRECT
+    assert list(result2["data_schema"].schema.keys())[0].default() == ConnectionType.DIRECT
 
     aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/register", status=500)
     result3 = await hass.config_entries.options.async_configure(
-        result2["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD}
+        result2["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD}
     )
     assert result3["type"] == "form"
     assert result3["step_id"] == "connection_type"
@@ -317,7 +317,7 @@ async def test_options_step_connection_type_change_to_cloud(hass, aioclient_mock
 
     aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/register", side_effect=Exception())
     result4 = await hass.config_entries.options.async_configure(
-        result3["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD}
+        result3["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD}
     )
     assert result4["type"] == "form"
     assert result4["step_id"] == "connection_type"
@@ -330,7 +330,7 @@ async def test_options_step_connection_type_change_to_cloud(hass, aioclient_mock
         json={"id": "test", "password": "change_to_cloud", "connection_token": "foo"},
     )
     result4 = await hass.config_entries.options.async_configure(
-        result3["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD}
+        result3["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD}
     )
 
     assert result4["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
@@ -343,7 +343,7 @@ async def test_options_step_connection_type_change_to_cloud(hass, aioclient_mock
 async def test_options_step_connection_type_change_to_cloud_again(hass, aioclient_mock):
     config_entry = _mock_config_entry(
         {
-            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT,
+            const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
             const.CONF_CLOUD_INSTANCE: {
                 const.CONF_CLOUD_INSTANCE_ID: "again",
                 const.CONF_CLOUD_INSTANCE_PASSWORD: "secret",
@@ -362,11 +362,11 @@ async def test_options_step_connection_type_change_to_cloud_again(hass, aioclien
     )
     assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
     assert result2["step_id"] == "connection_type"
-    assert list(result2["data_schema"].schema.keys())[0].default() == const.CONNECTION_TYPE_DIRECT
+    assert list(result2["data_schema"].schema.keys())[0].default() == ConnectionType.DIRECT
 
     aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/register", status=500)
     result3 = await hass.config_entries.options.async_configure(
-        result2["flow_id"], {const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD}
+        result2["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD}
     )
 
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
@@ -377,7 +377,7 @@ async def test_options_step_connection_type_change_to_cloud_again(hass, aioclien
 
 
 async def test_options_step_cloud_info(hass):
-    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD})
+    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
     config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
@@ -397,7 +397,7 @@ async def test_options_step_cloud_info(hass):
 
 
 async def test_options_step_cloud_settings(hass, hass_admin_user):
-    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD})
+    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
     config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
@@ -430,7 +430,7 @@ yandex_smart_home:
     ):
         await async_setup_component(hass, DOMAIN, await async_integration_yaml_config(hass, DOMAIN))
 
-    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD})
+    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
     config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
@@ -448,7 +448,7 @@ yandex_smart_home:
     assert result3["step_id"] == "menu"
 
 
-@pytest.mark.parametrize("connection_type", [const.CONNECTION_TYPE_CLOUD, const.CONNECTION_TYPE_DIRECT])
+@pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])
 async def test_options_flow_include_entities(hass, connection_type):
     await async_setup_component(hass, DOMAIN, {})
 
@@ -479,7 +479,7 @@ async def test_options_flow_include_entities(hass, connection_type):
     }
 
 
-@pytest.mark.parametrize("connection_type", [const.CONNECTION_TYPE_CLOUD, const.CONNECTION_TYPE_DIRECT])
+@pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])
 async def test_options_flow_filter_no_entities(hass, connection_type):
     await async_setup_component(hass, DOMAIN, {})
 

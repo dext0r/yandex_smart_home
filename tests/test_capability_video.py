@@ -12,7 +12,7 @@ from homeassistant.core import Context, HomeAssistant, State
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import YandexSmartHome, const
+from custom_components.yandex_smart_home import ConnectionType, YandexSmartHome, const
 from custom_components.yandex_smart_home.capability_video import VideoStreamCapability
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.const import DOMAIN
@@ -155,7 +155,7 @@ async def test_capability_video_stream_direct(hass_platform_direct, config_entry
         }
 
 
-@pytest.mark.parametrize("connection_type", [const.CONNECTION_TYPE_DIRECT, const.CONNECTION_TYPE_CLOUD])
+@pytest.mark.parametrize("connection_type", [ConnectionType.DIRECT, ConnectionType.CLOUD])
 async def test_capability_video_stream_cloud(hass_platform_direct, connection_type):
     hass = hass_platform_direct
     component: YandexSmartHome = hass.data[DOMAIN]

@@ -11,7 +11,7 @@ from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture, patch_yaml_files
 
-from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome, cloud, const
+from custom_components.yandex_smart_home import DOMAIN, ConnectionType, YandexSmartHome, cloud, const
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 
 from . import test_cloud
@@ -310,7 +310,7 @@ async def test_setup_entry_filters(hass, hass_admin_user):
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT},
+        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
         options={
             const.CONF_FILTER: {
                 "include_domains": [

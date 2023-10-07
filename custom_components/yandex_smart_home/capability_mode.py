@@ -11,7 +11,7 @@ from homeassistant.util.percentage import ordered_list_item_to_percentage, perce
 
 from . import const
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
-from .const import CONF_ENTITY_MODE_MAP, STATE_NONE
+from .const import CONF_ENTITY_MODE_MAP, STATE_NONE, MediaPlayerFeature
 from .helpers import APIError
 from .schema import (
     CapabilityType,
@@ -436,7 +436,7 @@ class InputSourceCapability(StateModeCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
-            if const.MEDIA_PLAYER_FEATURE_SELECT_SOURCE in self._entity_config.get(const.CONF_FEATURES, []):
+            if MediaPlayerFeature.SELECT_SOURCE in self._entity_config.get(const.CONF_FEATURES, []):
                 return True
 
             if self._state_features & media_player.MediaPlayerEntityFeature.SELECT_SOURCE:

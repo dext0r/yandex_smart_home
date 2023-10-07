@@ -16,6 +16,7 @@ import voluptuous as vol
 
 from . import DOMAIN, FILTER_SCHEMA, const
 from .cloud import register_cloud_instance
+from .const import ConnectionType
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-CONNECTION_TYPES = {const.CONNECTION_TYPE_CLOUD: "Через облако", const.CONNECTION_TYPE_DIRECT: "Напрямую"}
+CONNECTION_TYPES = {ConnectionType.CLOUD: "Через облако", ConnectionType.DIRECT: "Напрямую"}
 
 
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
@@ -87,7 +88,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             entry_description = user_input[const.CONF_CONNECTION_TYPE]
             entry_description_placeholders = {}
 
-            if user_input[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
+            if user_input[const.CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
                 try:
                     instance = await register_cloud_instance(self.hass)
                     self._data[const.CONF_CLOUD_INSTANCE] = {
@@ -113,11 +114,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="connection_type",
             data_schema=vol.Schema(
-                {
-                    vol.Required(const.CONF_CONNECTION_TYPE, default=const.CONNECTION_TYPE_CLOUD): vol.In(
-                        CONNECTION_TYPES
-                    )
-                }
+                {vol.Required(const.CONF_CONNECTION_TYPE, default=ConnectionType.CLOUD): vol.In(CONNECTION_TYPES)}
             ),
             errors=errors,
         )
@@ -144,7 +141,7 @@ class OptionsFlowHandler(OptionsFlow):
     async def async_step_init(self, _: ConfigType | None = None) -> FlowResult:
         """Show menu."""
         options = ["include_entities", "connection_type"]
-        if self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
+        if self._data[const.CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
             options += ["cloud_info", "cloud_settings"]
 
         return self.async_show_menu(step_id="menu", menu_options=options)
@@ -202,7 +199,7 @@ class OptionsFlowHandler(OptionsFlow):
             self._data.update(user_input)
 
             if (
-                user_input[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD
+                user_input[const.CONF_CONNECTION_TYPE] == ConnectionType.CLOUD
                 and const.CONF_CLOUD_INSTANCE not in self._data
             ):
                 try:
