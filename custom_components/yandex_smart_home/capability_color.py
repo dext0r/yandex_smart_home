@@ -395,7 +395,7 @@ class ColorSceneCapability(StateCapability[SceneInstanceActionState]):
 
         if CONF_ENTITY_MODE_MAP in self._entity_config:
             scenes_map.update(
-                {ColorScene(k): v for k, v in self._entity_config[CONF_ENTITY_MODE_MAP].get(self.instance).items()}
+                {ColorScene(k): v for k, v in self._entity_config[CONF_ENTITY_MODE_MAP].get(self.instance, {}).items()}
             )
 
         for scene, effects in scenes_map.items():

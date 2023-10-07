@@ -76,7 +76,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
         if CONF_ENTITY_MODE_MAP in self._entity_config:
             return {
                 ModeCapabilityMode(k): v
-                for k, v in self._entity_config[CONF_ENTITY_MODE_MAP].get(self.instance).items()
+                for k, v in self._entity_config[CONF_ENTITY_MODE_MAP].get(self.instance, {}).items()
             }
 
         return None
