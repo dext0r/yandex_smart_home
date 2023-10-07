@@ -24,7 +24,7 @@ def property_type(value: str) -> str:
     if value == const.EVENT_INSTANCE_BUTTON:
         _LOGGER.warning(
             'Property type "button" is not supported. See documentation '
-            "at https://docs.yaha-cloud.ru/v0.6.x/devices/button/"
+            "at https://docs.yaha-cloud.ru/master/devices/button/"
         )
 
     return value
