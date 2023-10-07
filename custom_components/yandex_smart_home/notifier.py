@@ -309,7 +309,7 @@ class YandexCloudNotifier(YandexNotifier):
     def _base_url(self) -> str:
         """Return base URL."""
 
-        return "https://yaha-cloud.ru/api/home_assistant/v1/callback"
+        return f"{const.CLOUD_BASE_URL}/api/home_assistant/v1/callback"
 
     @property
     def _request_headers(self) -> dict[str, str]:
