@@ -10,7 +10,9 @@
 ![](../assets/images/install/hacs-2.png){ width=750 }
 
 ## Вручную (не рекомендуется) { id=manual }
-* Вручную скопируйте папку `custom_components/yandex_smart_home` из [latest release](https://github.com/dext0r/yandex_smart_home/releases/latest) в директорию `/config/custom_components`
+* Скачайте архив `yandex_smart_home.zip` из [последнего релиза](https://github.com/dext0r/yandex_smart_home/releases/latest)
+* Создайте подкаталог `custom_components/yandex_smart_home` в каталоге где расположен файл `configuration.yaml`
+* Распакуйте содержимое архива в `custom_components/yandex_smart_home`
 * Перезапустите Home Assistant
 
 ## Переход на бета-версию { id=change-version }
