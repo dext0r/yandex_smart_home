@@ -83,6 +83,16 @@ class RangeCapability(Capability[RangeCapabilityInstanceActionState], Protocol):
         if self.support_random_access:
             return RangeCapabilityParameters(instance=self.instance, random_access=True, range=self._range)
 
+        if self.instance in [
+            RangeCapabilityInstance.BRIGHTNESS,
+            RangeCapabilityInstance.HUMIDITY,
+            RangeCapabilityInstance.OPEN,
+            RangeCapabilityInstance.TEMPERATURE,
+        ]:
+            return RangeCapabilityParameters(
+                instance=self.instance, random_access=self.support_random_access, range=self._range
+            )
+
         return RangeCapabilityParameters(instance=self.instance, random_access=False)
 
     def get_value(self) -> float | None:

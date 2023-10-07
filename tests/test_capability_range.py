@@ -1,3 +1,4 @@
+from abc import ABC
 from typing import cast
 from unittest.mock import patch
 
@@ -930,3 +931,47 @@ async def test_capability_range_channel_set_relative(hass, features, device_clas
     )
     assert len(calls_down) == 1
     assert calls_down[0].data == {ATTR_ENTITY_ID: state.entity_id}
+
+
+@pytest.mark.parametrize(
+    "instance,range_required",
+    [
+        (RangeCapabilityInstance.BRIGHTNESS, True),
+        (RangeCapabilityInstance.CHANNEL, False),
+        (RangeCapabilityInstance.HUMIDITY, True),
+        (RangeCapabilityInstance.OPEN, True),
+        (RangeCapabilityInstance.TEMPERATURE, True),
+        (RangeCapabilityInstance.VOLUME, False),
+    ],
+)
+async def test_capability_range_relative_only_parameters(hass, instance, range_required):
+    class MockCapability(StateRangeCapability, ABC):
+        @property
+        def supported(self) -> bool:
+            return True
+
+        async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
+            pass
+
+        def _get_value(self) -> float | None:
+            return None
+
+    class MockCapabilityRandom(MockCapability):
+        @property
+        def support_random_access(self) -> bool:
+            return True
+
+    class MockCapabilityRelative(MockCapability):
+        @property
+        def support_random_access(self) -> bool:
+            return False
+
+    cap_random = MockCapabilityRandom(hass, BASIC_ENTRY_DATA, State("switch.foo", STATE_OFF))
+    cap_relative = MockCapabilityRelative(hass, BASIC_ENTRY_DATA, State("switch.foo", STATE_OFF))
+    cap_random.instance = cap_relative.instance = instance
+
+    assert cap_random.parameters.range is not None
+    if range_required:
+        assert cap_relative.parameters.range is not None
+    else:
+        assert cap_relative.parameters.range is None
