@@ -4,12 +4,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
-from homeassistant.core import Context, HomeAssistant, callback
+from homeassistant.core import callback
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
 
 if TYPE_CHECKING:
+    from homeassistant.core import Context, HomeAssistant
+
     from .entry_data import ConfigEntryData
 
 STORE_CACHE_ATTRS = "attrs"

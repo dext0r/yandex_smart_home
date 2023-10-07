@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Any, Protocol, Self
 
 from homeassistant.components import binary_sensor, sensor
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
-from homeassistant.core import HomeAssistant, State
-from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
@@ -49,6 +47,9 @@ from .property_float import (
 )
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant, State
+    from homeassistant.helpers.typing import ConfigType
+
     from .entry_data import ConfigEntryData
 
 

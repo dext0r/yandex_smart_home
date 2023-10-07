@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 from aiohttp import ContentTypeError
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import CALLBACK_TYPE, Event, HassJob, HomeAssistant
+from homeassistant.core import HassJob
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_call_later
 
@@ -21,6 +21,8 @@ from . import const
 from .device import Device, DeviceCallbackState
 
 if TYPE_CHECKING:
+    from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant
+
     from .entry_data import ConfigEntryData
 
 _LOGGER = logging.getLogger(__name__)

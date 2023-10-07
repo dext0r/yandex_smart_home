@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Awaitable, Callable, Coroutine, TypeVar, 
 
 from aiohttp.web import HTTPServiceUnavailable, Request, Response, json_response
 from homeassistant.components.http import HomeAssistantView
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import callback
 
 from . import handlers
 from .const import DOMAIN
@@ -14,6 +14,8 @@ from .helpers import RequestData
 from .schema import DeviceList
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
     from . import YandexSmartHome
 
 _LOGGER = logging.getLogger(__name__)

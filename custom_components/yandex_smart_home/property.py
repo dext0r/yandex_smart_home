@@ -4,8 +4,6 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from homeassistant.core import HomeAssistant, State
-
 from .helpers import ListRegistry
 from .schema import (
     PropertyDescription,
@@ -17,6 +15,8 @@ from .schema import (
 )
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant, State
+
     from .entry_data import ConfigEntryData
 
 

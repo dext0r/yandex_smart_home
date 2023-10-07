@@ -29,10 +29,7 @@ from homeassistant.components import (
     water_heater,
 )
 from homeassistant.const import ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES, CONF_NAME, STATE_UNAVAILABLE
-from homeassistant.core import Context, HomeAssistant, State, callback
-from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
-from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
-from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
+from homeassistant.core import State, callback
 from homeassistant.helpers.template import Template
 
 from . import (  # noqa: F401
@@ -48,10 +45,10 @@ from . import (  # noqa: F401
     property_float,
 )
 from . import const  # noqa: F401
-from .capability import STATE_CAPABILITIES_REGISTRY, Capability
+from .capability import STATE_CAPABILITIES_REGISTRY
 from .capability_custom import get_custom_capability
 from .error import SmartHomeError, SmartHomeUserError
-from .property import STATE_PROPERTIES_REGISTRY, Property
+from .property import STATE_PROPERTIES_REGISTRY
 from .property_custom import get_custom_property
 from .schema import (
     CapabilityDescription,
@@ -69,7 +66,14 @@ from .schema import (
 )
 
 if TYPE_CHECKING:
+    from homeassistant.core import Context, HomeAssistant
+    from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
+    from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
+    from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
+
+    from .capability import Capability
     from .entry_data import ConfigEntryData
+    from .property import Property
 
 _DOMAIN_TO_DEVICE_TYPES: dict[str, DeviceType] = {
     air_quality.DOMAIN: DeviceType.SENSOR,
