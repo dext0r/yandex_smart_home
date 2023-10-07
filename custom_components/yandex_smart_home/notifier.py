@@ -1,3 +1,4 @@
+"""Implement the Yandex Smart Home events notifier."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -49,7 +50,10 @@ class NotifierConfig:
 
 
 class YandexNotifier(ABC):
+    """Base class for an event notifier."""
+
     def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, config: NotifierConfig):
+        """Initialize."""
         self._hass = hass
         self._entry_data = entry_data
         self._config = config
@@ -98,27 +102,33 @@ class YandexNotifier(ABC):
         return None
 
     async def async_send_state(self, devices: list[Any]) -> None:
+        """Send new device states to the Yandex."""
         return await self._async_send_callback(f"{self._base_url}/state", {"devices": devices})
 
     async def async_send_discovery(self, *_: Any) -> None:
+        """Send discovery request."""
         _LOGGER.debug(self._format_log_message("Device list update initiated"))
         return await self._async_send_callback(f"{self._base_url}/discovery", {})
 
     @property
     @abstractmethod
     def _base_url(self) -> str:
+        """Return base URL."""
         pass
 
     @property
     @abstractmethod
     def _request_headers(self) -> dict[str, str]:
+        """Return headers for a request."""
         pass
 
     def _format_log_message(self, message: str) -> str:
+        """Format and print a message."""
         return message
 
     @staticmethod
     def _log_request(url: str, data: dict[str, Any]) -> None:
+        """Log a request."""
         request_json = json.dumps(data)
         _LOGGER.debug(f"Request: {url} (POST data: {request_json})")
         return None
@@ -148,6 +158,7 @@ class YandexNotifier(ABC):
         return rv
 
     async def _async_report_states(self, *_: Any) -> None:
+        """Schedule new states report."""
         devices: dict[str, dict[str, Any]] = {}
         attrs = ["properties", "capabilities"]
 
@@ -169,6 +180,7 @@ class YandexNotifier(ABC):
 
     # noinspection PyBroadException
     async def _async_send_callback(self, url: str, payload: dict[str, Any]) -> None:
+        """Send a request to url with payload."""
         try:
             payload["user_id"] = self._config.user_id
             request_data = {"ts": time.time(), "payload": payload}
@@ -198,6 +210,7 @@ class YandexNotifier(ABC):
         return None
 
     async def _async_state_changed_event_handler(self, event: Event) -> None:
+        """State changes event handler."""
         event_entity_id = str(event.data.get(ATTR_ENTITY_ID))
         old_state = event.data.get("old_state")
         new_state = event.data.get("new_state")
@@ -245,6 +258,7 @@ class YandexNotifier(ABC):
         return None
 
     async def _async_initial_report(self, *_: Any) -> None:
+        """Schedule initial report."""
         _LOGGER.debug("Reporting initial states")
         for state in self._hass.states.async_all():
             device = Device(self._hass, self._entry_data, state.entity_id, state)
@@ -263,15 +277,23 @@ class YandexNotifier(ABC):
 
 
 class YandexDirectNotifier(YandexNotifier):
+    """Event notifier for direct connection."""
+
     @property
     def _base_url(self) -> str:
+        """Return base URL."""
+
         return f"https://dialogs.yandex.net/api/v1/skills/{self._config.skill_id}/callback"
 
     @property
     def _request_headers(self) -> dict[str, str]:
+        """Return headers for a request."""
+
         return {"Authorization": f"OAuth {self._config.token}"}
 
     def _format_log_message(self, message: str) -> str:
+        """Format and print a message."""
+
         if self._config.verbose_log:
             return f"{message} [{self._config.skill_id} | {self._config.token}]"
 
@@ -279,10 +301,16 @@ class YandexDirectNotifier(YandexNotifier):
 
 
 class YandexCloudNotifier(YandexNotifier):
+    """Event notifier for cloud connection."""
+
     @property
     def _base_url(self) -> str:
+        """Return base URL."""
+
         return "https://yaha-cloud.ru/api/home_assistant/v1/callback"
 
     @property
     def _request_headers(self) -> dict[str, str]:
+        """Return headers for a request."""
+
         return {"Authorization": f"Bearer {self._config.token}"}

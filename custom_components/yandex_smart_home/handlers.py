@@ -1,4 +1,4 @@
-"""Yandex Smart Home request handlers."""
+"""The Yandex Smart Home request handlers."""
 import logging
 from typing import Any, Callable, Coroutine
 

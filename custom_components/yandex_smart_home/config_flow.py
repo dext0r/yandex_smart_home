@@ -1,4 +1,4 @@
-"""Config flow for tne Yandex Smart Home integration."""
+"""Config flow for the Yandex Smart Home integration."""
 from __future__ import annotations
 
 import logging
