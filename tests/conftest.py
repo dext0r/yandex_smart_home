@@ -65,8 +65,8 @@ def config_entry_cloud():
         data={
             const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
             const.CONF_CLOUD_INSTANCE: {
-                const.CONF_CLOUD_INSTANCE_ID: "test",
-                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+                const.CONF_CLOUD_INSTANCE_ID: "i-test",
+                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "token-foo",
             },
         },
         options={const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]}},

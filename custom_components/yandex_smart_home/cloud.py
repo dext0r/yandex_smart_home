@@ -117,7 +117,7 @@ class CloudManager:
         data = RequestData(
             entry_data=self._entry_data,
             context=Context(user_id=self._entry_data.user_id),
-            request_user_id=self._entry_data.cloud_connection_token,
+            request_user_id=self._entry_data.cloud_instance_id,
             request_id=request.request_id,
         )
 

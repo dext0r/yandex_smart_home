@@ -396,7 +396,7 @@ async def test_remove_entry_direct(hass, config_entry_direct):
 async def test_remove_entry_cloud(hass, config_entry_cloud, aioclient_mock, caplog):
     await test_cloud.async_setup_entry(hass, config_entry_cloud, aiohttp_client=aioclient_mock)
 
-    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/test", status=500)
+    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/i-test", status=500)
     await hass.config_entries.async_remove(config_entry_cloud.entry_id)
     assert aioclient_mock.call_count == 1
     assert caplog.messages[-1] == "Failed to delete cloud instance, status code: 500"
@@ -407,10 +407,10 @@ async def test_remove_entry_cloud(hass, config_entry_cloud, aioclient_mock, capl
     await test_cloud.async_setup_entry(hass, config_entry_cloud, aiohttp_client=aioclient_mock)
     caplog.clear()
 
-    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/test", status=200)
+    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/i-test", status=200)
     await hass.config_entries.async_remove(config_entry_cloud.entry_id)
     (method, url, data, headers) = aioclient_mock.mock_calls[0]
-    assert headers == {"Authorization": "Bearer foo"}
+    assert headers == {"Authorization": "Bearer token-foo"}
 
     assert aioclient_mock.call_count == 1
     assert len(caplog.records) == 0

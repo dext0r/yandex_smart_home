@@ -94,7 +94,7 @@ async def test_cloud_connect(hass_platform, config_entry_cloud, aioclient_mock, 
     ) as mock_reconnect:
         await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_not_called()
-        assert session.ws.headers["Authorization"] == "Bearer foo"
+        assert session.ws.headers["Authorization"] == "Bearer token-foo"
         await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
     with patch(
@@ -252,7 +252,7 @@ async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclie
     assert json.loads(session.ws.send_queue[0]) == {
         "request_id": "req_user_devices",
         "payload": {
-            "user_id": "foo",
+            "user_id": "i-test",
             "devices": [
                 {
                     "id": "sensor.outside_temp",
