@@ -38,6 +38,8 @@ class CustomCapability(AbstractCapability, ABC):
         self.capability_config = capability_config
         self.state_entity_id = self.capability_config.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
         self.retrievable = bool(self.state_entity_id or self.state_value_attribute)
+        if not self.retrievable:
+            self.reportable = False
 
     @property
     def state_value_attribute(self) -> str | None:
