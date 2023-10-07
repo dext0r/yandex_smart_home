@@ -414,3 +414,28 @@ async def test_remove_entry_cloud(hass, config_entry_cloud, aioclient_mock, capl
 
     assert aioclient_mock.call_count == 1
     assert len(caplog.records) == 0
+
+
+async def test_remove_entry_direct_unloaded(hass, config_entry_direct):
+    config_entry_direct.add_to_hass(hass)
+    await hass.config_entries.async_remove(config_entry_direct.entry_id)
+
+
+async def test_remove_entry_cloud_unloaded(hass, config_entry_cloud, aioclient_mock):
+    config_entry_cloud.add_to_hass(hass)
+
+    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/i-test", status=200)
+    await hass.config_entries.async_remove(config_entry_cloud.entry_id)
+    (method, url, data, headers) = aioclient_mock.mock_calls[0]
+    assert headers == {"Authorization": "Bearer token-foo"}
+
+    assert aioclient_mock.call_count == 1
+
+
+async def test_remove_entry_unknown(hass):
+    await async_setup_component(hass, DOMAIN, {DOMAIN: {}})
+
+    entry = MockConfigEntry(domain=DOMAIN)
+    entry.add_to_hass(hass)
+
+    await hass.config_entries.async_remove(entry.entry_id)

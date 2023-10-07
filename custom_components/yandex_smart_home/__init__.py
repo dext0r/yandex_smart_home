@@ -232,11 +232,11 @@ class YandexSmartHome:
 
     async def async_remove_entry(self, entry: ConfigEntry) -> None:
         """Remove a config entry."""
-        data = self.get_entry_data(entry)
-        if data.connection_type == ConnectionType.CLOUD:
-            await delete_cloud_instance(self._hass, data)
+        try:
+            del self._entry_datas[entry.entry_id]
+        except KeyError:
+            pass
 
-        del self._entry_datas[entry.entry_id]
         return None
 
 
@@ -261,8 +261,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Remove a config entry."""
-    component: YandexSmartHome = hass.data[DOMAIN]
-    return await component.async_remove_entry(entry)
+    if entry.data.get(const.CONF_CONNECTION_TYPE) == ConnectionType.CLOUD:
+        await delete_cloud_instance(
+            hass,
+            instance_id=entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_ID],
+            token=entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN],
+        )
+
+    component: YandexSmartHome | None = hass.data.get(DOMAIN)
+    if component:
+        await component.async_remove_entry(entry)
+
+    return None
 
 
 async def _async_entry_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:

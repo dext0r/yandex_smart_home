@@ -160,13 +160,13 @@ async def register_cloud_instance(hass: HomeAssistant) -> CloudInstanceData:
     return CloudInstanceData.parse_raw(await response.text())
 
 
-async def delete_cloud_instance(hass: HomeAssistant, entry_data: ConfigEntryData) -> None:
+async def delete_cloud_instance(hass: HomeAssistant, instance_id: str, token: str) -> None:
     """Delete a cloud instance from the cloud."""
     session = async_create_clientsession(hass)
 
     response = await session.delete(
-        f"{BASE_API_URL}/instance/{entry_data.cloud_instance_id}",
-        headers={"Authorization": f"Bearer {entry_data.cloud_connection_token}"},
+        f"{BASE_API_URL}/instance/{instance_id}",
+        headers={"Authorization": f"Bearer {token}"},
     )
     if response.status != HTTPStatus.OK:
         _LOGGER.error(f"Failed to delete cloud instance, status code: {response.status}")
