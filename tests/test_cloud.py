@@ -1,21 +1,20 @@
-from __future__ import annotations
-
 from asyncio import TimeoutError
 import json
+from typing import Any
 from unittest.mock import patch
 
 from aiohttp import WSMessage, WSMsgType
 from homeassistant import core
 from homeassistant.components import switch
 from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import const
+from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome
 from custom_components.yandex_smart_home.cloud import CloudManager
-
-from . import MockConfig
 
 
 class MockWSConnection:
@@ -23,6 +22,7 @@ class MockWSConnection:
         self.headers = headers
         self.url = url
         self.close_code: int | None = kwargs.get("ws_close_code")
+        self.closed = False
         self.msg = kwargs.get("msg", []) or []
         self.send_queue = []
 
@@ -39,7 +39,7 @@ class MockWSConnection:
             raise StopAsyncIteration
 
     async def close(self):
-        pass
+        self.closed = True
 
     async def send_str(self, s):
         self.send_queue.append(s)
@@ -59,79 +59,112 @@ class MockSession:
         return self.ws
 
 
-@pytest.fixture
-def config():
-    entry = MockConfigEntry(
-        data={
-            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
-            const.CONF_CLOUD_INSTANCE: {
-                const.CONF_CLOUD_INSTANCE_ID: "test_instance",
-                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
-            },
-        }
-    )
-    return MockConfig(entry=entry)
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    session: MockSession | None = None,
+    aiohttp_client: Any | None = None,
+):
+    hass.data[DATA_CLIENTSESSION] = session or MockSession(aiohttp_client)
+
+    config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
 
 
-@pytest.fixture(autouse=True, name="mock_call_later")
+def _get_manager(hass: HomeAssistant, config_entry: MockConfigEntry) -> CloudManager:
+    component: YandexSmartHome = hass.data[DOMAIN]
+    entry_data = component.get_entry_data(config_entry)
+    # noinspection PyProtectedMember
+    return entry_data._cloud_manager
+
+
+@pytest.fixture(name="mock_call_later")
 def mock_call_later_fixture():
     with patch("custom_components.yandex_smart_home.cloud.async_call_later") as mock_call_later:
         yield mock_call_later
 
 
-# noinspection PyTypeChecker
-async def test_cloud_connect(hass_platform_cloud_connection, config, aioclient_mock, caplog):
-    hass = hass_platform_cloud_connection
+async def test_cloud_connect(hass_platform, config_entry_cloud, aioclient_mock, caplog):
+    hass = hass_platform
 
     session = MockSession(aioclient_mock)
-    manager = CloudManager(hass, config, session)
-    with patch.object(manager, "_try_reconnect", return_value=None) as mock_reconnect:
-        await manager.connect()
-
+    with patch(
+        "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
+    ) as mock_reconnect:
+        await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_not_called()
         assert session.ws.headers["Authorization"] == "Bearer foo"
+        await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
-    session = MockSession(aioclient_mock)
-    manager = CloudManager(hass, config, session)
-    with patch.object(session, "ws_connect", side_effect=Exception()), patch.object(
-        manager, "_try_reconnect", return_value=None
-    ) as mock_reconnect:
-        await manager.connect()
+    with patch(
+        "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
+    ) as mock_reconnect, patch.object(session, "ws_connect", side_effect=Exception()):
+        await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_called_once()
+        await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
     caplog.clear()
-    session = MockSession(aioclient_mock)
-    manager = CloudManager(hass, config, session)
-    with patch.object(session, "ws_connect", side_effect=TimeoutError()), patch.object(
-        manager, "_try_reconnect", return_value=None
+    with patch(
+        "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
+    ) as mock_reconnect, patch.object(session, "ws_connect", side_effect=TimeoutError()):
+        await async_setup_entry(hass, config_entry_cloud, session=session)
+        mock_reconnect.assert_called_once()
+        assert caplog.messages[-1] == "Failed to connect to Yandex Smart Home cloud"
+        await hass.config_entries.async_unload(config_entry_cloud.entry_id)
+
+    session = MockSession(aioclient_mock, ws_close_code=1000)
+    with patch(
+        "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
     ) as mock_reconnect:
-        await manager.connect()
+        await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_called_once()
-        assert "Failed to connect" in caplog.records[-1].message
+        await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
+
+async def test_cloud_disconnect_connected(hass_platform, config_entry_cloud, aioclient_mock):
+    hass = hass_platform
+    session = MockSession(aioclient_mock)
+    await async_setup_entry(hass, config_entry_cloud, session=session)
+    manager = _get_manager(hass, config_entry_cloud)
+    await hass.config_entries.async_unload(config_entry_cloud.entry_id)
+
+    assert session.ws.closed is True
+    assert manager._ws_active is False
+    assert manager._unsub_connect is None
+
+
+async def test_cloud_disconnect_scheduled(hass_platform, config_entry_cloud, aioclient_mock):
+    hass = hass_platform
+    session = MockSession(aioclient_mock, ws_close_code=1001)
+    await async_setup_entry(hass, config_entry_cloud, session=session)
+    manager = _get_manager(hass, config_entry_cloud)
+    assert manager._ws_active is True
+    assert manager._unsub_connect is not None
+
+    await hass.config_entries.async_unload(config_entry_cloud.entry_id)
+    await hass.async_block_till_done()
+
+    assert session.ws.closed is True
+    assert manager._ws_active is False
+    assert manager._unsub_connect is None
+
+
+async def test_cloud_try_reconnect(hass_platform, config_entry_cloud, aioclient_mock, mock_call_later):
+    hass = hass_platform
     session = MockSession(aioclient_mock, ws_close_code=1000)
-    manager = CloudManager(hass, config, session)
-    with patch.object(manager, "_try_reconnect", return_value=None) as mock_reconnect:
-        await manager.connect()
-        mock_reconnect.assert_called_once()
-
-
-# noinspection PyTypeChecker
-async def test_cloud_try_reconnect(hass_platform_cloud_connection, config, aioclient_mock, mock_call_later):
-    hass = hass_platform_cloud_connection
-
-    session = MockSession(aioclient_mock, ws_close_code=1000)
-    manager = CloudManager(hass, config, session)
 
     with patch.object(session, "ws_connect", side_effect=TimeoutError()):
-        await manager.connect()
-    mock_call_later.assert_called_once()
+        await async_setup_entry(hass, config_entry_cloud, session=session)
 
+    manager = _get_manager(hass, config_entry_cloud)
+
+    mock_call_later.assert_called_once()
     assert manager._ws_reconnect_delay == 4
 
     mock_call_later.reset_mock()
     with patch.object(session, "ws_connect", side_effect=TimeoutError()):
-        await manager.connect()
+        await manager.async_connect()
     mock_call_later.assert_called_once()
 
     assert manager._ws_reconnect_delay == 8
@@ -139,87 +172,87 @@ async def test_cloud_try_reconnect(hass_platform_cloud_connection, config, aiocl
     for _ in range(1, 10):
         mock_call_later.reset_mock()
         with patch.object(session, "ws_connect", side_effect=TimeoutError()):
-            await manager.connect()
+            await manager.async_connect()
         mock_call_later.assert_called_once()
 
     assert manager._ws_reconnect_delay == 180
 
     mock_call_later.reset_mock()
-    await manager.connect()
+    await manager.async_connect()
     mock_call_later.assert_called_once()
 
     assert manager._ws_reconnect_delay == 4
 
-    await manager.disconnect()
-    with patch.object(session, "ws_connect", return_value=None) as mock_ws_connect:
-        await manager.connect()
-        mock_ws_connect.assert_not_called()
+    mock_call_later.reset_mock()
+    await manager.async_disconnect()
+    manager._try_reconnect()
+    mock_call_later.assert_not_called()
 
 
-# noinspection PyTypeChecker
-async def test_cloud_fast_reconnect(hass_platform_cloud_connection, config, aioclient_mock, mock_call_later, caplog):
-    hass = hass_platform_cloud_connection
+async def test_cloud_fast_reconnect(hass_platform, config_entry_cloud, aioclient_mock, mock_call_later, caplog):
+    hass = hass_platform
+    session = MockSession(aioclient_mock, ws_close_code=1001)
+    await async_setup_entry(hass, config_entry_cloud, session=session)
+    manager = _get_manager(hass, config_entry_cloud)
 
-    session = MockSession(aioclient_mock, ws_close_code=1000)
-    manager = CloudManager(hass, config, session)
-
-    for _ in range(1, 5):
-        await manager.connect()
+    for _ in range(1, 4):
+        await manager.async_connect()
         assert manager._ws_reconnect_delay == 4
 
-    await manager.connect()
+    await manager.async_connect()
     assert manager._ws_reconnect_delay == 180
-    assert "too fast" in caplog.records[-2].message
+    assert caplog.messages[-2] == "Reconnecting too fast, next reconnection in 180 seconds"
 
 
-# noinspection PyTypeChecker
-async def test_cloud_messages_invalid_format(hass_platform_cloud_connection, config, aioclient_mock):
-    hass = hass_platform_cloud_connection
+async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, aioclient_mock):
+    hass = hass_platform
 
     requests = ["foo"]
     session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=r) for r in requests])
-    manager = CloudManager(hass, config, session)
-
-    with patch.object(manager, "_try_reconnect", return_value=None) as mock_reconnect:
-        await manager.connect()
+    with patch(
+        "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
+    ) as mock_reconnect:
+        await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_called_once()
+        await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
     requests = [json.dumps({"request_id": "req", "_action": "foo"})]
     session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=r) for r in requests])
-    manager = CloudManager(hass, config, session)
-
-    mock_reconnect.reset_mock()
-    with patch.object(manager, "_try_reconnect", return_value=None) as mock_reconnect:
-        await manager.connect()
+    with patch(
+        "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
+    ) as mock_reconnect:
+        await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_called_once()
+        await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
     requests = [json.dumps({"request_id": "req", "action": "/user/devices/query", "message": "not_{_json"})]
     session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=r) for r in requests])
-    manager = CloudManager(hass, config, session)
-
-    with patch.object(manager, "_try_reconnect", return_value=None) as mock_reconnect:
-        await manager.connect()
+    with patch(
+        "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
+    ) as mock_reconnect:
+        await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_not_called()
-    assert json.loads(session.ws.send_queue[0]) == {"payload": {"error_code": "INTERNAL_ERROR"}, "request_id": "req"}
+        await hass.config_entries.async_unload(config_entry_cloud.entry_id)
+        assert json.loads(session.ws.send_queue[0]) == {
+            "payload": {"error_code": "INTERNAL_ERROR"},
+            "request_id": "req",
+        }
 
 
-@pytest.mark.parametrize("expected_lingering_timers", [True])
-async def test_cloud_req_user_devices(
-    hass_platform_cloud_connection, config, aioclient_mock, expected_lingering_timers
-):
-    hass = hass_platform_cloud_connection
+async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclient_mock):
+    hass = hass_platform
+
     requests = [{"request_id": "req_user_devices", "action": "/user/devices"}]
     session = MockSession(
         aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=json.dumps(r)) for r in requests]
     )
-    # noinspection PyTypeChecker
-    manager = CloudManager(hass, config, session)
-    await manager.connect()
+    with patch("homeassistant.config_entries.ConfigEntries.async_update_entry"):  # prevent reloading after discovery
+        await async_setup_entry(hass, config_entry_cloud, session=session)
 
     assert json.loads(session.ws.send_queue[0]) == {
         "request_id": "req_user_devices",
         "payload": {
-            "user_id": "test_instance",
+            "user_id": "foo",
             "devices": [
                 {
                     "id": "sensor.outside_temp",
@@ -287,8 +320,9 @@ async def test_cloud_req_user_devices(
     }
 
 
-async def test_cloud_req_user_devices_query(hass_platform_cloud_connection, config, aioclient_mock):
-    hass = hass_platform_cloud_connection
+async def test_cloud_req_user_devices_query(hass_platform, config_entry_cloud, aioclient_mock):
+    hass = hass_platform
+
     requests = [
         {
             "request_id": "req_user_devices_query_1",
@@ -304,9 +338,7 @@ async def test_cloud_req_user_devices_query(hass_platform_cloud_connection, conf
     session = MockSession(
         aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=json.dumps(r)) for r in requests]
     )
-    # noinspection PyTypeChecker
-    manager = CloudManager(hass, config, session)
-    await manager.connect()
+    await async_setup_entry(hass, config_entry_cloud, session=session)
 
     assert json.loads(session.ws.send_queue[0]) == {
         "request_id": "req_user_devices_query_1",
@@ -328,8 +360,9 @@ async def test_cloud_req_user_devices_query(hass_platform_cloud_connection, conf
     }
 
 
-async def test_cloud_req_user_devices_action(hass_platform_cloud_connection, config, aioclient_mock):
-    hass = hass_platform_cloud_connection
+async def test_cloud_req_user_devices_action(hass_platform, config_entry_cloud, aioclient_mock):
+    hass = hass_platform
+
     requests = [
         {
             "request_id": "req_user_devices_action",
@@ -364,9 +397,9 @@ async def test_cloud_req_user_devices_action(hass_platform_cloud_connection, con
     session = MockSession(
         aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=json.dumps(r)) for r in requests]
     )
-    # noinspection PyTypeChecker
-    manager = CloudManager(hass, config, session)
-    await manager.connect()
+    await async_setup_entry(hass, config_entry_cloud, session=session)
+    await hass.async_block_till_done()
+
     assert json.loads(session.ws.send_queue[0]) == {
         "request_id": "req_user_devices_action",
         "payload": {
@@ -384,5 +417,4 @@ async def test_cloud_req_user_devices_action(hass_platform_cloud_connection, con
         },
     }
 
-    await hass.async_block_till_done()
     assert hass.states.get("switch.ac").state == "on"

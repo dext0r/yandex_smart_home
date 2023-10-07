@@ -21,7 +21,7 @@ from custom_components.yandex_smart_home.schema import (
     ModeCapabilityMode,
 )
 
-from . import BASIC_CONFIG, MockConfig
+from . import BASIC_ENTRY_DATA, MockConfigEntryData
 from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
 
 
@@ -64,17 +64,17 @@ class MockFallbackModeCapability(MockModeCapabilityA):
 
 async def test_capability_mode_unsupported(hass):
     state = State("switch.test", STATE_OFF)
-    cap = MockModeCapabilityA(hass, BASIC_CONFIG, state)
+    cap = MockModeCapabilityA(hass, BASIC_ENTRY_DATA, state)
     assert cap.supported is False
 
     state = State("switch.test", STATE_OFF, {"modes_list": ["foo", "bar"]})
-    cap = MockModeCapabilityA(hass, BASIC_CONFIG, state)
+    cap = MockModeCapabilityA(hass, BASIC_ENTRY_DATA, state)
     assert cap.supported is False
 
 
 async def test_capability_mode_auto_mapping(hass, caplog):
     state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3", "mode_4"]})
-    cap = MockModeCapabilityA(hass, BASIC_CONFIG, state)
+    cap = MockModeCapabilityA(hass, BASIC_ENTRY_DATA, state)
 
     assert cap.supported is True
     assert cap.supported_ha_modes == ["mode_1", "mode_3", "mode_4"]
@@ -121,7 +121,7 @@ async def test_capability_mode_auto_mapping(hass, caplog):
 
 async def test_capability_mode_custom_mapping(hass):
     state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_foo", "mode_bar"]})
-    config = MockConfig(
+    entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
                 const.CONF_ENTITY_MODE_MAP: {
@@ -133,7 +133,7 @@ async def test_capability_mode_custom_mapping(hass):
             }
         }
     )
-    cap = MockModeCapabilityA(hass, config, state)
+    cap = MockModeCapabilityA(hass, entry_data, state)
     assert cap.supported is True
     assert cap.supported_ha_modes == ["mode_1", "mode_foo", "mode_bar"]  # yeap, strange too
     assert cap.supported_yandex_modes == [ModeCapabilityMode.ECO, ModeCapabilityMode.LATTE]
@@ -141,7 +141,7 @@ async def test_capability_mode_custom_mapping(hass):
 
 async def test_capability_mode_fallback_index(hass):
     state = State("switch.test", STATE_OFF, {"modes_list": ["some", "mode_1", "foo"]})
-    cap = MockFallbackModeCapability(hass, BASIC_CONFIG, state)
+    cap = MockFallbackModeCapability(hass, BASIC_ENTRY_DATA, state)
     assert cap.supported is True
     assert cap.supported_ha_modes == ["some", "mode_1", "foo"]
     assert cap.supported_yandex_modes == [
@@ -155,12 +155,12 @@ async def test_capability_mode_fallback_index(hass):
     assert cap.get_yandex_mode_by_ha_mode("mode_1") == ModeCapabilityMode.FOWL
 
     state = State("switch.test", STATE_OFF, {"modes_list": [f"mode_{v}" for v in range(0, 11)]})
-    cap = MockFallbackModeCapability(hass, BASIC_CONFIG, state)
+    cap = MockFallbackModeCapability(hass, BASIC_ENTRY_DATA, state)
     assert cap.supported is True
     assert cap.get_yandex_mode_by_ha_mode("mode_9") == "ten"
     assert cap.get_yandex_mode_by_ha_mode("mode_11") is None
 
-    config = MockConfig(
+    entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
                 const.CONF_ENTITY_MODE_MAP: {
@@ -172,17 +172,17 @@ async def test_capability_mode_fallback_index(hass):
             }
         }
     )
-    cap = MockFallbackModeCapability(hass, config, state)
+    cap = MockFallbackModeCapability(hass, entry_data, state)
     assert cap.supported is True
     assert cap.supported_yandex_modes == ["baby_food", "americano"]
 
 
 async def test_capability_mode_get_value(hass, caplog):
     state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3"], "current_mode": "mode_1"})
-    cap = MockModeCapabilityA(hass, BASIC_CONFIG, state)
+    cap = MockModeCapabilityA(hass, BASIC_ENTRY_DATA, state)
     assert cap.get_value() == ModeCapabilityMode.FOWL
 
-    cap = MockModeCapability(hass, BASIC_CONFIG, state)
+    cap = MockModeCapability(hass, BASIC_ENTRY_DATA, state)
     assert cap.get_value() is None
     cap.state.state = "mode_3"
     assert cap.get_value() == ModeCapabilityMode.PUERH_TEA
@@ -190,10 +190,10 @@ async def test_capability_mode_get_value(hass, caplog):
 
 async def test_capability_mode_thermostat(hass):
     state = State("climate.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.THERMOSTAT)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.THERMOSTAT)
 
     state = State("climate.test", STATE_OFF, {climate.ATTR_HVAC_MODES: None})
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.THERMOSTAT)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.THERMOSTAT)
 
     state = State(
         "climate.test",
@@ -202,7 +202,7 @@ async def test_capability_mode_thermostat(hass):
     )
     cap = cast(
         StateModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.THERMOSTAT),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.THERMOSTAT),
     )
     assert cap.retrievable is True
     assert cap.parameters.dict() == {"instance": "thermostat", "modes": [{"value": "auto"}, {"value": "fan_only"}]}
@@ -222,7 +222,7 @@ async def test_capability_mode_thermostat(hass):
 
 async def test_capability_mode_swing(hass):
     state = State("climate.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.SWING)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.SWING)
 
     state = State(
         "climate.test",
@@ -231,7 +231,7 @@ async def test_capability_mode_swing(hass):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.SWING),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.SWING),
     )
     assert cap.retrievable is True
     assert cap.parameters.dict() == {"instance": "swing", "modes": [{"value": "horizontal"}, {"value": "vertical"}]}
@@ -248,7 +248,7 @@ async def test_capability_mode_swing(hass):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.SWING),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.SWING),
     )
     assert cap.get_value() == ModeCapabilityMode.VERTICAL
 
@@ -263,7 +263,7 @@ async def test_capability_mode_swing(hass):
 
 async def test_capability_mode_program_humidifier(hass):
     state = State("humidifier.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM)
 
     state = State(
         "humidifier.test",
@@ -275,7 +275,7 @@ async def test_capability_mode_program_humidifier(hass):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
     )
     assert cap.retrievable is True
     assert cap.parameters.dict() == {"instance": "program", "modes": [{"value": "eco"}, {"value": "medium"}]}
@@ -292,7 +292,7 @@ async def test_capability_mode_program_humidifier(hass):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
     )
     assert cap.get_value() == ModeCapabilityMode.ECO
 
@@ -307,7 +307,7 @@ async def test_capability_mode_program_humidifier(hass):
 
 async def test_capability_mode_program_fan(hass):
     state = State("fan.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM)
 
     state = State(
         "fan.test",
@@ -317,7 +317,7 @@ async def test_capability_mode_program_fan(hass):
             fan.ATTR_PRESET_MODES: ["Nature", "Normal"],
         },
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM)
 
     state = State(
         "fan.test",
@@ -330,7 +330,7 @@ async def test_capability_mode_program_fan(hass):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
     )
     assert cap.retrievable is True
     assert cap.parameters.dict() == {"instance": "program", "modes": [{"value": "quiet"}, {"value": "normal"}]}
@@ -348,7 +348,7 @@ async def test_capability_mode_program_fan(hass):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
     )
     assert cap.get_value() == ModeCapabilityMode.QUIET
 
@@ -363,11 +363,11 @@ async def test_capability_mode_program_fan(hass):
 
 async def test_capability_mode_input_source(hass, caplog):
     state = State("media_player.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
 
     state = State("media_player.test", STATE_ON)
-    config = MockConfig(entity_config={state.entity_id: {"features": ["select_source"]}})
-    assert_exact_one_capability(hass, config, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
+    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["select_source"]}})
+    assert_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
 
     state = State(
         "media_player.test",
@@ -379,7 +379,9 @@ async def test_capability_mode_input_source(hass, caplog):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE
+        ),
     )
     assert len(cap.supported_yandex_modes) == 10
 
@@ -393,7 +395,9 @@ async def test_capability_mode_input_source(hass, caplog):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE
+        ),
     )
     assert cap.retrievable is True
     assert cap.parameters.dict() == {
@@ -413,7 +417,9 @@ async def test_capability_mode_input_source(hass, caplog):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE
+        ),
     )
     assert cap.get_value() is None
     assert len(caplog.records) == 0
@@ -429,7 +435,9 @@ async def test_capability_mode_input_source(hass, caplog):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE
+        ),
     )
     assert cap.get_value() == ModeCapabilityMode.TWO
 
@@ -454,7 +462,9 @@ async def test_capability_mode_input_source_cache(hass, off_state):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE
+        ),
     )
     assert cap.supported_ha_modes == ["s1", "s2", "s3"]
 
@@ -468,7 +478,9 @@ async def test_capability_mode_input_source_cache(hass, off_state):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE
+        ),
     )
     assert cap.supported_ha_modes == ["s1", "s2", "s3"]
 
@@ -482,7 +494,9 @@ async def test_capability_mode_input_source_cache(hass, off_state):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE
+        ),
     )
     assert cap.supported_ha_modes == ["s1", "s2", "s3"]
 
@@ -495,7 +509,9 @@ async def test_capability_mode_input_source_cache(hass, off_state):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE
+        ),
     )
     assert cap.supported_ha_modes == ["s1", "s2", "s3"]
 
@@ -506,7 +522,7 @@ async def test_capability_mode_input_source_cache(hass, off_state):
             ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
         },
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
 
     state = State(
         "media_player.test",
@@ -515,7 +531,7 @@ async def test_capability_mode_input_source_cache(hass, off_state):
             ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
         },
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
 
 
 @pytest.mark.parametrize(
@@ -523,15 +539,15 @@ async def test_capability_mode_input_source_cache(hass, off_state):
 )
 async def test_capability_mode_fan_speed_fan_via_percentage(hass, features):
     state = State("fan.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, fan.ATTR_PERCENTAGE_STEP: 100})
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
 
     state = State("fan.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, fan.ATTR_PERCENTAGE_STEP: 100})
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
 
     state = State("fan.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, fan.ATTR_PERCENTAGE_STEP: 25})
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
 
     assert isinstance(cap, FanSpeedCapabilityFanViaPercentage)
@@ -549,7 +565,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage(hass, features):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     assert cap.get_value() == ModeCapabilityMode.NORMAL
 
@@ -581,12 +597,12 @@ async def test_capability_mode_fan_speed_fan_via_percentage(hass, features):
             },
         )
         if not mode_count:
-            assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
+            assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
         else:
             cap = cast(
                 ModeCapability,
                 get_exact_one_capability(
-                    hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED
+                    hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED
                 ),
             )
             assert len(cap.supported_ha_modes) == mode_count
@@ -602,7 +618,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
         STATE_OFF,
         {ATTR_SUPPORTED_FEATURES: features, fan.ATTR_PERCENTAGE_STEP: 25, fan.ATTR_PERCENTAGE: 50},
     )
-    config = MockConfig(
+    entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
                 const.CONF_ENTITY_MODE_MAP: {
@@ -616,7 +632,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
     )
     cap = cast(
         ModeCapabilityMode,
-        get_exact_one_capability(hass, config, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
 
     assert isinstance(cap, FanSpeedCapabilityFanViaPercentage)
@@ -631,7 +647,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, config, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     assert cap.get_value() is None
 
@@ -660,7 +676,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
         'Unsupported mode "low" for fan_speed instance of fan.test. Check "modes" setting for this entity'
     )
 
-    config = MockConfig(
+    entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
                 const.CONF_ENTITY_MODE_MAP: {
@@ -673,7 +689,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, config, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     with pytest.raises(SmartHomeError) as e:
         cap.get_value()
@@ -686,7 +702,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
 )
 async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
     state = State("fan.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features})
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
 
     state = State(
         "fan.test",
@@ -698,7 +714,7 @@ async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
     )
     cap = cast(
         ModeCapabilityMode,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     assert isinstance(cap, FanSpeedCapabilityFanViaPreset)
     assert cap.retrievable is True
@@ -716,7 +732,7 @@ async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     assert cap.get_value() == ModeCapabilityMode.TURBO
 
@@ -731,7 +747,7 @@ async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
 
 async def test_capability_mode_fan_speed_climate(hass, caplog):
     state = State("climate.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED)
 
     state = State(
         "climate.test",
@@ -743,7 +759,7 @@ async def test_capability_mode_fan_speed_climate(hass, caplog):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     assert cap.retrievable is True
     assert cap.parameters.dict() == {"instance": "fan_speed", "modes": [{"value": "medium"}, {"value": "low"}]}
@@ -760,7 +776,7 @@ async def test_capability_mode_fan_speed_climate(hass, caplog):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     assert cap.get_value() == ModeCapabilityMode.MEDIUM
 
@@ -776,7 +792,7 @@ async def test_capability_mode_fan_speed_climate(hass, caplog):
 
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     caplog.clear()
     assert cap.get_value() == ModeCapabilityMode.AUTO
@@ -793,7 +809,7 @@ async def test_capability_mode_fan_speed_climate(hass, caplog):
 
 async def test_capability_mode_cleanup_mode(hass):
     state = State("vacuum.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.CLEANUP_MODE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.CLEANUP_MODE)
 
     state = State(
         "vacuum.test",
@@ -805,7 +821,9 @@ async def test_capability_mode_cleanup_mode(hass):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.CLEANUP_MODE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.CLEANUP_MODE
+        ),
     )
     assert cap.retrievable is True
     assert cap.parameters.dict() == {"instance": "cleanup_mode", "modes": [{"value": "low"}, {"value": "min"}]}
@@ -822,7 +840,9 @@ async def test_capability_mode_cleanup_mode(hass):
     )
     cap = cast(
         ModeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.MODE, ModeCapabilityInstance.CLEANUP_MODE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.CLEANUP_MODE
+        ),
     )
     assert cap.get_value() == ModeCapabilityMode.MIN
 

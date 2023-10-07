@@ -77,9 +77,10 @@ class CloudStreamManager:
         self._stream = stream
         self._running_stream_id: str | None = None
         self._session = session
-        self._unsub_reconnect: CALLBACK_TYPE | None = None
         self._connected = asyncio.Event()
         self._ws: ClientWebSocketResponse | None = None
+        self._unsub_connect: CALLBACK_TYPE | None = None
+        self._unsub_keepalive: CALLBACK_TYPE | None = None
 
     @property
     def stream_url(self) -> str | None:
@@ -89,27 +90,26 @@ class CloudStreamManager:
 
         return f"{CLOUD_STREAM_BASE_URL}/{self._running_stream_id}/master_playlist.m3u8"
 
-    async def start(self) -> None:
+    async def async_start(self) -> None:
         """Start connection."""
         if self._ws or not self._stream.access_token:
             return
 
         self._running_stream_id = self._stream.access_token
-        self._hass.loop.create_task(self._connect())
+        self._hass.loop.create_task(self._async_connect())
 
         await asyncio.wait_for(self._connected.wait(), timeout=WAIT_FOR_CONNECTION_TIMEOUT)
-        await self._keepalive()
-        return None
+        return await self._async_keepalive()
 
-    async def _keepalive(self, *_: Any) -> None:
+    async def _async_keepalive(self, *_: Any) -> None:
         """Disconnect if stream is not active anymore."""
         if self._stream.access_token != self._running_stream_id:
-            return await self._disconnect()
+            return await self._async_disconnect()
 
-        async_call_later(self._hass, timedelta(seconds=1), HassJob(self._keepalive))
+        self._unsub_keepalive = async_call_later(self._hass, timedelta(seconds=1), HassJob(self._async_keepalive))
         return None
 
-    async def _connect(self, *_: Any) -> None:
+    async def _async_connect(self, *_: Any) -> None:
         """Connect to the cloud."""
         if not self._running_stream_id:
             return
@@ -140,19 +140,21 @@ class CloudStreamManager:
 
         return None
 
-    async def _disconnect(self, *_: Any) -> None:
+    async def _async_disconnect(self, *_: Any) -> None:
         """Disconnect from the cloud."""
-
         self._running_stream_id = None
         self._connected.clear()
-
-        if self._unsub_reconnect:
-            self._unsub_reconnect()
-            self._unsub_reconnect = None
 
         if self._ws:
             await self._ws.close()
             self._ws = None
+
+        for unsub in [self._unsub_connect, self._unsub_keepalive]:
+            if unsub:
+                unsub()
+
+        self._unsub_connect = None
+        self._unsub_keepalive = None
 
         return None
 
@@ -182,12 +184,11 @@ class CloudStreamManager:
         assert isinstance(r.body, bytes)
         meta = ResponseMeta(status_code=r.status, headers=dict(r.headers))
         response = bytes(meta.json(), "utf-8") + b"\r\n" + r.body
-        await self._ws.send_bytes(response, compress=False)
-        return None
+        return await self._ws.send_bytes(response, compress=False)
 
     def _try_reconnect(self) -> None:
         """Schedule reconnection to the cloud."""
 
         _LOGGER.debug(f"Trying to reconnect in {RECONNECTION_DELAY} seconds")
-        self._unsub_reconnect = async_call_later(self._hass, RECONNECTION_DELAY, HassJob(self._connect))
+        self._unsub_reconnect = async_call_later(self._hass, RECONNECTION_DELAY, HassJob(self._async_connect))
         return None

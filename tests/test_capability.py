@@ -8,19 +8,23 @@ from homeassistant.setup import async_setup_component
 
 from custom_components.yandex_smart_home.capability import STATE_CAPABILITIES_REGISTRY, StateCapability
 from custom_components.yandex_smart_home.device import Device
-from custom_components.yandex_smart_home.helpers import Config
+from custom_components.yandex_smart_home.entry_data import ConfigEntryData
 from custom_components.yandex_smart_home.schema import CapabilityInstance, CapabilityType
 
-from . import BASIC_CONFIG
+from . import BASIC_ENTRY_DATA
 
 
 def get_capabilities(
-    hass: HomeAssistant, config: Config, state: State, capability_type: CapabilityType, instance: CapabilityInstance
+    hass: HomeAssistant,
+    entry_data: ConfigEntryData,
+    state: State,
+    capability_type: CapabilityType,
+    instance: CapabilityInstance,
 ) -> list[StateCapability]:
     caps = []
 
     for CapabilityT in STATE_CAPABILITIES_REGISTRY:
-        capability = CapabilityT(hass, config, state)
+        capability = CapabilityT(hass, entry_data, state)
 
         if capability.type != capability_type or capability.instance != instance:
             continue
@@ -32,23 +36,35 @@ def get_capabilities(
 
 
 def get_exact_one_capability(
-    hass: HomeAssistant, config: Config, state: State, capability_type: CapabilityType, instance: CapabilityInstance
+    hass: HomeAssistant,
+    entry_data: ConfigEntryData,
+    state: State,
+    capability_type: CapabilityType,
+    instance: CapabilityInstance,
 ) -> StateCapability:
-    caps = get_capabilities(hass, config, state, capability_type, instance)
+    caps = get_capabilities(hass, entry_data, state, capability_type, instance)
     assert len(caps) == 1
     return caps[0]
 
 
 def assert_exact_one_capability(
-    hass: HomeAssistant, config: Config, state: State, capability_type: CapabilityType, instance: CapabilityInstance
+    hass: HomeAssistant,
+    entry_data: ConfigEntryData,
+    state: State,
+    capability_type: CapabilityType,
+    instance: CapabilityInstance,
 ):
-    assert len(get_capabilities(hass, config, state, capability_type, instance)) == 1
+    assert len(get_capabilities(hass, entry_data, state, capability_type, instance)) == 1
 
 
 def assert_no_capabilities(
-    hass: HomeAssistant, config: Config, state: State, capability_type: CapabilityType, instance: CapabilityInstance
+    hass: HomeAssistant,
+    entry_data: ConfigEntryData,
+    state: State,
+    capability_type: CapabilityType,
+    instance: CapabilityInstance,
 ):
-    assert len(get_capabilities(hass, config, state, capability_type, instance)) == 0
+    assert len(get_capabilities(hass, entry_data, state, capability_type, instance)) == 0
 
 
 async def test_capability_demo_platform(hass):
@@ -72,10 +88,10 @@ async def test_capability_demo_platform(hass):
         await hass.async_block_till_done()
 
     # for x in sorted(hass.states.async_all(), key=lambda e: e.entity_id):
-    #     d = Device(hass, BASIC_CONFIG, x.entity_id, x)
+    #     d = Device(hass, BASIC_ENTRY_DATA, x.entity_id, x)
     #     l = list((c.type.value, c.instance.value) for c in d.get_capabilities())
     #     print(f"state = hass.states.get('{x.entity_id}')")
-    #     print(f"device = Device(hass, BASIC_CONFIG, state.entity_id, state)")
+    #     print(f"device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)")
     #     if d.type is None:
     #         print(f"assert device.type is None")
     #     else:
@@ -85,13 +101,13 @@ async def test_capability_demo_platform(hass):
     #     print()
 
     state = hass.states.get("button.push")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.other"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("climate.ecobee")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.thermostat"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -102,7 +118,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("climate.heatpump")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.thermostat"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -112,7 +128,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("climate.hvac")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.thermostat"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -124,13 +140,13 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("cover.garage_door")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.openable.curtain"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("cover.hall_window")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.openable.curtain"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -140,13 +156,13 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("cover.kitchen_window")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.openable.curtain"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.toggle", "pause"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("cover.living_room_window")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.openable.curtain"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -156,19 +172,19 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("cover.pergola_roof")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.openable.curtain"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.ceiling_fan")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.living_room_fan")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -178,7 +194,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("fan.percentage_full_fan")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -188,31 +204,31 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("fan.percentage_limited_fan")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.preset_only_limited_fan")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("humidifier.dehumidifier")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.humidifier"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.range", "humidity"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("humidifier.humidifier")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.humidifier"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.range", "humidity"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("humidifier.hygrostat")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.humidifier"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -222,7 +238,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.bed_light")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -235,7 +251,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.ceiling_lights")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -247,7 +263,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.entrance_color_white_lights")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -259,7 +275,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.kitchen_lights")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -271,7 +287,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.living_room_rgbww_lights")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -282,7 +298,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("light.office_rgbw_lights")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.light"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -294,31 +310,31 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("lock.front_door")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.openable"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("lock.kitchen_door")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.openable"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("lock.openable_lock")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.openable"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("lock.poorly_installed_door")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.openable"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("media_player.bedroom")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -330,7 +346,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.bedroom_2")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -342,7 +358,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.kitchen")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -354,7 +370,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.kitchen_2")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -366,7 +382,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.living_room")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -378,7 +394,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.living_room_2")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -390,7 +406,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.lounge_room")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device.tv"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -401,7 +417,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.lounge_room_2")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device.tv"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -412,7 +428,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.walkman")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -424,7 +440,7 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("media_player.walkman_2")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
@@ -436,19 +452,19 @@ async def test_capability_demo_platform(hass):
     ]
 
     state = hass.states.get("switch.ac")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.socket"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("switch.decorative_lights")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.switch"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("zone.home")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type is None
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == []

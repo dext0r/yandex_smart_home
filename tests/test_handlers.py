@@ -6,11 +6,13 @@ from homeassistant.core import Context, State
 from homeassistant.helpers.template import Template
 from homeassistant.util.decorator import Registry
 
-from custom_components.yandex_smart_home import handlers
+from custom_components.yandex_smart_home import YandexSmartHome, handlers
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
-from custom_components.yandex_smart_home.const import ERR_INVALID_ACTION, EVENT_DEVICE_ACTION
+from custom_components.yandex_smart_home.const import DOMAIN, ERR_INVALID_ACTION, EVENT_DEVICE_ACTION
+from custom_components.yandex_smart_home.entry_data import CONF_DEVICES_DISCOVERED
 from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.handlers import PING_REQUEST_USER_ID
 from custom_components.yandex_smart_home.helpers import RequestData
 from custom_components.yandex_smart_home.schema import (
     GetStreamInstanceActionResultValue,
@@ -19,7 +21,7 @@ from custom_components.yandex_smart_home.schema import (
     ToggleCapabilityInstanceActionState,
 )
 
-from . import BASIC_DATA, REQ_ID, MockConfig, generate_entity_filter
+from . import BASIC_REQUEST_DATA, REQ_ID, MockConfigEntryData, generate_entity_filter
 
 
 async def test_handle_request(hass, caplog):
@@ -38,21 +40,21 @@ async def test_handle_request(hass, caplog):
         return None
 
     with patch("custom_components.yandex_smart_home.handlers.HANDLERS", r):
-        assert (await handlers.async_handle_request(hass, BASIC_DATA, "missing", "")).as_dict() == {
+        assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "missing", "")).as_dict() == {
             "request_id": REQ_ID,
             "payload": {"error_code": "INTERNAL_ERROR"},
         }
         assert caplog.messages == ["Unexpected action 'missing'"]
         caplog.clear()
 
-        assert (await handlers.async_handle_request(hass, BASIC_DATA, "error", "")).as_dict() == {
+        assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "error", "")).as_dict() == {
             "request_id": REQ_ID,
             "payload": {"error_code": "INVALID_ACTION"},
         }
         assert caplog.messages == ["foo (INVALID_ACTION)"]
         caplog.clear()
 
-        assert (await handlers.async_handle_request(hass, BASIC_DATA, "exception", "")).as_dict() == {
+        assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "exception", "")).as_dict() == {
             "request_id": REQ_ID,
             "payload": {"error_code": "INTERNAL_ERROR"},
         }
@@ -60,7 +62,7 @@ async def test_handle_request(hass, caplog):
         assert "boooo" in caplog.records[-1].exc_text
         caplog.clear()
 
-        assert (await handlers.async_handle_request(hass, BASIC_DATA, "none", "")).as_dict() == {
+        assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "none", "")).as_dict() == {
             "request_id": REQ_ID,
         }
 
@@ -73,8 +75,8 @@ async def test_handler_devices_query(hass, caplog):
     hass.states.async_set(switch_not_expose.entity_id, switch_not_expose.state, switch_not_expose.attributes)
     hass.states.async_set(sensor.entity_id, sensor.state, sensor.attributes)
 
-    config = MockConfig(entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]))
-    data = RequestData(config, Context(), "test", REQ_ID)
+    entry_data = MockConfigEntryData(entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]))
+    data = RequestData(entry_data, Context(), PING_REQUEST_USER_ID, REQ_ID)
     payload = json.dumps(
         {"devices": [{"id": switch_1.entity_id}, {"id": switch_not_expose.entity_id}, {"id": "invalid.foo"}]}
     )
@@ -95,7 +97,7 @@ async def test_handler_devices_query(hass, caplog):
         ]
     }
     assert (await handlers.async_device_list(hass, data, "")).as_dict() == {
-        "user_id": "test",
+        "user_id": "ping",
         "devices": [
             {
                 "id": "switch.test_1",
@@ -115,6 +117,27 @@ async def test_handler_devices_query(hass, caplog):
         "configuration or delete the device from Yandex.",
         "Missing capabilities and properties for sensor.test",
     ]
+
+
+async def test_handler_devices_discovery(hass_platform_direct):
+    hass = hass_platform_direct
+    component: YandexSmartHome = hass.data[DOMAIN]
+    entry_data = component.get_direct_connection_entry_data()
+    assert entry_data.entry.data.get(CONF_DEVICES_DISCOVERED) is None
+
+    with patch("homeassistant.config_entries.ConfigEntries.async_update_entry") as mock_update_entry:
+        await handlers.async_device_list(hass, RequestData(entry_data, Context(), PING_REQUEST_USER_ID, REQ_ID), "")
+        mock_update_entry.assert_not_called()
+
+        await handlers.async_device_list(hass, RequestData(entry_data, Context(), "foo", REQ_ID), "")
+        mock_update_entry.assert_called_once()
+
+    await handlers.async_device_list(hass, RequestData(entry_data, Context(), "foo", REQ_ID), "")
+    assert entry_data.entry.data.get(CONF_DEVICES_DISCOVERED) is True
+
+    with patch("homeassistant.config_entries.ConfigEntries.async_update_entry") as mock_update_entry:
+        await handlers.async_device_list(hass, RequestData(entry_data, Context(), "foo", REQ_ID), "")
+        mock_update_entry.assert_not_called()
 
 
 async def test_handler_devices_action(hass, caplog):
@@ -220,7 +243,7 @@ async def test_handler_devices_action(hass, caplog):
                 }
             }
         )
-        assert (await handlers.async_devices_action(hass, BASIC_DATA, payload)).as_dict() == {
+        assert (await handlers.async_devices_action(hass, BASIC_REQUEST_DATA, payload)).as_dict() == {
             "devices": [
                 {
                     "id": "switch.test_1",
@@ -338,7 +361,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
         async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
             pass
 
-    config = MockConfig(
+    entry_data = MockConfigEntryData(
         entity_config={
             "switch.test": {
                 "error_code_template": Template(
@@ -358,7 +381,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
             }
         }
     )
-    data = RequestData(config, Context(), "test", REQ_ID)
+    data = RequestData(entry_data, Context(), "test", REQ_ID)
 
     switch = State("switch.test", STATE_OFF)
     hass.states.async_set(switch.entity_id, switch.state, switch.attributes)

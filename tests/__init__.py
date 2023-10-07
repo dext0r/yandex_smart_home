@@ -1,41 +1,37 @@
 """Tests for yandex_smart_home integration."""
-from __future__ import annotations
-
 from typing import Any
 from unittest.mock import MagicMock
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import entityfilter
+from homeassistant.helpers.typing import ConfigType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import DOMAIN, const, get_config_entry_data_from_yaml_config
-from custom_components.yandex_smart_home.helpers import CacheStore, Config, RequestData
+from custom_components.yandex_smart_home import DOMAIN
+from custom_components.yandex_smart_home.entry_data import ConfigEntryData
+from custom_components.yandex_smart_home.helpers import STORE_CACHE_ATTRS, CacheStore, RequestData
 
 
-class MockConfig(Config):
+class MockConfigEntryData(ConfigEntryData):
     def __init__(
         self,
         hass: HomeAssistant | None = None,
         entry: ConfigEntry | None = None,
+        yaml_config: ConfigType | None = None,
         entity_config: dict[str, Any] | None = None,
         entity_filter: entityfilter.EntityFilter | None = None,
     ):
         if not entry:
-            data, options = get_config_entry_data_from_yaml_config({}, {}, None)
-            entry = MockConfigEntry(domain=DOMAIN, data=data, options=options)
+            entry = MockConfigEntry(domain=DOMAIN, data={}, options={})
 
-        super().__init__(hass, entry, entity_config, entity_filter)
+        super().__init__(hass, entry, yaml_config, entity_config, entity_filter)
 
         self.cache = MockCacheStore()
 
     @property
-    def is_reporting_state(self) -> bool:
+    def is_reporting_states(self) -> bool:
         return True
-
-    @property
-    def beta(self):
-        return False
 
 
 class MockStore:
@@ -50,7 +46,7 @@ class MockStore:
 class MockCacheStore(CacheStore):
     # noinspection PyMissingConstructor
     def __init__(self):
-        self._data = {const.STORE_CACHE_ATTRS: {}}
+        self._data = {STORE_CACHE_ATTRS: {}}
         self._store = MockStore()
 
 
@@ -69,6 +65,11 @@ def generate_entity_filter(include_entity_globs=None, exclude_entities=None) -> 
 
 REQ_ID: str = "5ca6622d-97b5-465c-a494-fd9954f7599a"
 
-BASIC_CONFIG: MockConfig = MockConfig(entity_filter=generate_entity_filter(include_entity_globs=["*"]))
+BASIC_ENTRY_DATA: MockConfigEntryData = MockConfigEntryData(
+    entry=MockConfigEntry(domain=DOMAIN, data={}, options={}),
+    entity_filter=generate_entity_filter(include_entity_globs=["*"]),
+)
 
-BASIC_DATA: RequestData = RequestData(config=BASIC_CONFIG, context=Context(), request_user_id="test", request_id=REQ_ID)
+BASIC_REQUEST_DATA: RequestData = RequestData(
+    entry_data=BASIC_ENTRY_DATA, context=Context(), request_user_id="test", request_id=REQ_ID
+)

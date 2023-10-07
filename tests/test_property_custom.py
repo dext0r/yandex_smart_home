@@ -16,7 +16,7 @@ from custom_components.yandex_smart_home.property_custom import (
 )
 from custom_components.yandex_smart_home.schema import EventPropertyInstance, FloatPropertyInstance, PropertyType
 
-from . import BASIC_CONFIG
+from . import BASIC_ENTRY_DATA
 
 ALL_INSTANCES = set(
     map(str, itertools.chain(*[v.__members__.values() for v in (EventPropertyInstance, FloatPropertyInstance)]))
@@ -52,13 +52,13 @@ async def test_property_custom(hass, domain, instance):
         "pm10_density",
     ]:
         with pytest.raises(SmartHomeError) as e:
-            get_custom_property(hass, BASIC_CONFIG, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
+            get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
 
         assert e.value.code == const.ERR_DEVICE_UNREACHABLE
         assert e.value.message == f"Unsupported entity {domain}.test for {instance} instance of {state.entity_id}"
         return
 
-    prop = get_custom_property(hass, BASIC_CONFIG, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
+    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
     if instance in ["vibration", "open", "button", "motion", "smoke", "gas", "water_leak"]:
         assert prop.type == PropertyType.EVENT
     else:
@@ -87,7 +87,7 @@ async def test_property_custom_get_value_button_event(hass):
 
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON,
         },
@@ -98,7 +98,7 @@ async def test_property_custom_get_value_button_event(hass):
     hass.states.async_set(state.entity_id, "", {"action": "foo"})
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON, const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "action"},
         state.entity_id,
     )
@@ -107,7 +107,7 @@ async def test_property_custom_get_value_button_event(hass):
     hass.states.async_set(state.entity_id, "", {"action": "long_click_press"})
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_BUTTON, const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "action"},
         state.entity_id,
     )
@@ -120,7 +120,7 @@ async def test_property_custom_get_value_binary_event(hass):
 
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_GAS,
         },
@@ -131,7 +131,7 @@ async def test_property_custom_get_value_binary_event(hass):
     hass.states.async_set(state.entity_id, STATE_ON)
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: const.EVENT_INSTANCE_GAS,
         },
@@ -146,7 +146,7 @@ async def test_property_custom_get_value_float(hass):
 
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
         },
@@ -167,7 +167,7 @@ async def test_property_custom_get_value_float(hass):
     with pytest.raises(SmartHomeError) as e:
         prop = get_custom_property(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {
                 const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
                 const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "value",
@@ -183,7 +183,7 @@ async def test_property_custom_get_value_float(hass):
     with pytest.raises(SmartHomeError) as e:
         get_custom_property(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {
                 const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
                 const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.test_2",
@@ -196,7 +196,7 @@ async def test_property_custom_get_value_float(hass):
     hass.states.async_set("sensor.test_2", "4.52")
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
             const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.test_2",
@@ -208,7 +208,7 @@ async def test_property_custom_get_value_float(hass):
     hass.states.async_set("sensor.test_2", "4.52", {"value": 9.99})
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_TEMPERATURE,
             const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.test_2",
@@ -225,7 +225,7 @@ async def test_property_custom_value_float_limit(hass):
 
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_BATTERY_LEVEL,
         },
@@ -252,7 +252,7 @@ async def test_property_custom_get_value_float_conversion(hass, instance, unit_o
 
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: instance,
             const.CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT: unit_of_measurement,
@@ -267,14 +267,14 @@ async def test_property_custom_get_value_float_conversion(hass, instance, unit_o
 
     state = State("sensor.test_with_uom", "100", {ATTR_UNIT_OF_MEASUREMENT: unit_of_measurement})
     hass.states.async_set(state.entity_id, state.state, state.attributes)
-    prop = get_custom_property(hass, BASIC_CONFIG, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
+    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
     assert prop.parameters.dict()["unit"] == unit
     assert prop.get_value() == value
 
     # ignore unit_of_measurement when use attribute
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: instance,
             const.CONF_ENTITY_PROPERTY_ENTITY: "climate.test",
@@ -288,7 +288,7 @@ async def test_property_custom_get_value_float_conversion(hass, instance, unit_o
     # override unit_of_measurement when use attribute
     prop = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_PROPERTY_TYPE: instance,
             const.CONF_ENTITY_PROPERTY_ENTITY: "climate.test",

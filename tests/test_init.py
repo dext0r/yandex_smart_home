@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
-from homeassistant.components import http
 from homeassistant.config import YAML_CONFIG_FILE
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import SERVICE_RELOAD
 from homeassistant.core import Context
 from homeassistant.exceptions import Unauthorized
@@ -11,18 +11,9 @@ from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture, patch_yaml_files
 
-from custom_components.yandex_smart_home import (
-    CLOUD_MANAGER,
-    CONFIG,
-    DOMAIN,
-    NOTIFIERS,
-    async_remove_entry,
-    async_setup,
-    async_setup_entry,
-    async_unload_entry,
-    cloud,
-    const,
-)
+from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome, cloud, const
+
+from . import test_cloud
 
 
 async def test_bad_config(hass):
@@ -244,14 +235,11 @@ yandex_smart_home:
     assert config[DOMAIN]["entity_config"] == {}
 
 
-async def test_reload(hass, hass_admin_user, hass_read_only_user, config_entry):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-    config_entry.add_to_hass(hass)
+async def test_reload_no_config_entry(hass, hass_admin_user):
+    await async_setup_component(hass, DOMAIN, {DOMAIN: {}})
 
-    assert await async_setup(hass, {})
-    assert await async_setup_entry(hass, config_entry)
-
-    assert not hass.data[DOMAIN][CONFIG].get_entity_config("sensor.not_existed")
+    component: YandexSmartHome = hass.data[DOMAIN]
+    assert component._yaml_config["entity_config"] == {}
 
     files = {
         YAML_CONFIG_FILE: """
@@ -261,32 +249,45 @@ yandex_smart_home:
       name: Test
 """
     }
-    with patch("custom_components.yandex_smart_home.async_setup", return_value=True), patch_yaml_files(files):
-        with pytest.raises(Unauthorized):
-            await hass.services.async_call(
-                DOMAIN,
-                SERVICE_RELOAD,
-                blocking=True,
-                context=Context(user_id=hass_read_only_user.id),
-            )
-
+    with patch_yaml_files(files):
         await hass.services.async_call(
-            DOMAIN,
-            SERVICE_RELOAD,
-            blocking=True,
-            context=Context(user_id=hass_admin_user.id),
+            DOMAIN, SERVICE_RELOAD, blocking=True, context=Context(user_id=hass_admin_user.id)
         )
         await hass.async_block_till_done()
 
-        assert hass.data[DOMAIN][CONFIG].get_entity_config("sensor.test").get("name") == "Test"
+    assert component._yaml_config["entity_config"]["sensor.test"]["name"] == "Test"
 
 
-async def test_reload_invalid(hass, hass_admin_user, hass_read_only_user, config_entry, caplog):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-    config_entry.add_to_hass(hass)
+async def test_reload_with_config_entry(hass, hass_admin_user, hass_read_only_user, config_entry_direct, caplog):
+    config_entry_direct.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry_direct.entry_id)
+    await hass.async_block_till_done()
 
-    assert await async_setup(hass, {})
-    assert await async_setup_entry(hass, config_entry)
+    component: YandexSmartHome = hass.data[DOMAIN]
+    assert component._yaml_config == {}
+
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    sensor.test:
+      name: Test
+"""
+    }
+    with patch_yaml_files(files):
+        with pytest.raises(Unauthorized):
+            await hass.services.async_call(
+                DOMAIN, SERVICE_RELOAD, blocking=True, context=Context(user_id=hass_read_only_user.id)
+            )
+
+        with patch("homeassistant.config_entries.ConfigEntries.async_reload") as mock_reload_entry:
+            await hass.services.async_call(
+                DOMAIN, SERVICE_RELOAD, blocking=True, context=Context(user_id=hass_admin_user.id)
+            )
+            await hass.async_block_till_done()
+            mock_reload_entry.assert_called_once()
+
+    assert component._yaml_config["entity_config"]["sensor.test"]["name"] == "Test"
 
     files = {
         YAML_CONFIG_FILE: """
@@ -294,46 +295,20 @@ yandex_smart_home:
   invalid: true
 """
     }
-    with patch("custom_components.yandex_smart_home.async_setup", return_value=True), patch_yaml_files(files):
+    with patch_yaml_files(files):
         await hass.services.async_call(
-            DOMAIN,
-            SERVICE_RELOAD,
-            blocking=True,
-            context=Context(user_id=hass_admin_user.id),
+            DOMAIN, SERVICE_RELOAD, blocking=True, context=Context(user_id=hass_admin_user.id)
         )
         await hass.async_block_till_done()
 
-        assert "Invalid config" in caplog.messages[-1]
+    assert component._yaml_config["entity_config"]["sensor.test"]["name"] == "Test"
+    assert "Invalid config" in caplog.messages[-1]
 
 
-async def test_setup_component(hass):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-
-    with patch_yaml_files({YAML_CONFIG_FILE: load_fixture("valid-config.yaml")}):
-        config = await async_integration_yaml_config(hass, DOMAIN)
-
-    with patch.object(hass.config_entries.flow, "async_init", return_value=None):
-        assert await async_setup(hass, config)
-
-    assert hass.data[DOMAIN][CONFIG] is None
-
-
-async def test_async_setup_entry(hass, config_entry_with_notifier):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-    config_entry_with_notifier.add_to_hass(hass)
-
-    assert await async_setup(hass, {})
-    assert await async_setup_entry(hass, config_entry_with_notifier)
-
-    assert len(hass.data[DOMAIN][CONFIG].notifier) == 0
-    assert const.CONF_PRESSURE_UNIT in config_entry_with_notifier.options
-
-
-async def test_async_setup_entry_filters(hass):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-
-    entry_with_filters = MockConfigEntry(
+async def test_setup_entry_filters(hass, hass_admin_user):
+    config_entry = MockConfigEntry(
         domain=DOMAIN,
+        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT},
         options={
             const.CONF_FILTER: {
                 "include_domains": [
@@ -344,23 +319,32 @@ async def test_async_setup_entry_filters(hass):
             },
         },
     )
-    entry_with_filters.add_to_hass(hass)
+    config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+
+    component: YandexSmartHome = hass.data[DOMAIN]
 
     with patch_yaml_files({YAML_CONFIG_FILE: ""}):
-        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
-        assert await async_setup_entry(hass, entry_with_filters)
+        await hass.services.async_call(
+            DOMAIN, SERVICE_RELOAD, blocking=True, context=Context(user_id=hass_admin_user.id)
+        )
+        await hass.async_block_till_done()
 
-        assert hass.data[DOMAIN][CONFIG].should_expose("media_player.test") is True
-        assert hass.data[DOMAIN][CONFIG].should_expose("climate.test") is True
-        assert hass.data[DOMAIN][CONFIG].should_expose("climate.front_gate") is False
+        entry_data = component.get_entry_data(config_entry)
+        assert entry_data.should_expose("media_player.test") is True
+        assert entry_data.should_expose("climate.test") is True
+        assert entry_data.should_expose("climate.front_gate") is False
 
     with patch_yaml_files({YAML_CONFIG_FILE: "yandex_smart_home:"}):
-        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
-        assert await async_setup_entry(hass, entry_with_filters)
+        await hass.services.async_call(
+            DOMAIN, SERVICE_RELOAD, blocking=True, context=Context(user_id=hass_admin_user.id)
+        )
+        await hass.async_block_till_done()
 
-        assert hass.data[DOMAIN][CONFIG].should_expose("media_player.test") is True
-        assert hass.data[DOMAIN][CONFIG].should_expose("climate.test") is True
-        assert hass.data[DOMAIN][CONFIG].should_expose("climate.front_gate") is False
+        entry_data = component.get_entry_data(config_entry)
+        assert entry_data.should_expose("media_player.test") is True
+        assert entry_data.should_expose("climate.test") is True
+        assert entry_data.should_expose("climate.front_gate") is False
 
     with patch_yaml_files(
         {
@@ -371,154 +355,62 @@ yandex_smart_home:
       - light"""
         }
     ):
-        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
-        assert await async_setup_entry(hass, entry_with_filters)
+        await hass.services.async_call(
+            DOMAIN, SERVICE_RELOAD, blocking=True, context=Context(user_id=hass_admin_user.id)
+        )
+        await hass.async_block_till_done()
 
-        assert hass.data[DOMAIN][CONFIG].should_expose("light.test") is True
-        assert hass.data[DOMAIN][CONFIG].should_expose("climate.test") is False
-
-
-async def test_async_setup_entry_cloud(hass, config_entry_cloud_connection):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-
-    assert await async_setup(hass, {})
-
-    with patch("custom_components.yandex_smart_home.cloud.BASE_API_URL", return_value=None):
-        assert await async_setup_entry(hass, config_entry_cloud_connection)
-
-    await hass.async_block_till_done()
-
-    # assert len(hass.data[DOMAIN][CONFIG].notifier) == 1  # TODO: fix
-    assert hass.data[DOMAIN][CLOUD_MANAGER] is not None
-
-    await async_unload_entry(hass, config_entry_cloud_connection)
-    await hass.async_block_till_done()
-
-    assert hass.data[DOMAIN][CLOUD_MANAGER] is None
+        entry_data = component.get_entry_data(config_entry)
+        assert entry_data.should_expose("light.test") is True
+        assert entry_data.should_expose("climate.test") is False
 
 
-async def test_async_unload_entry(hass, config_entry_with_notifier):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-    config_entry_with_notifier.add_to_hass(hass)
+async def test_unload_entry(hass, config_entry_direct):
+    config_entry_direct.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry_direct.entry_id)
 
-    assert await async_setup(hass, {})
-    assert await async_setup_entry(hass, config_entry_with_notifier)
-    await async_unload_entry(hass, config_entry_with_notifier)
+    component: YandexSmartHome = hass.data[DOMAIN]
+    entry_data = component.get_entry_data(config_entry_direct)
+    assert entry_data.entry.state == ConfigEntryState.LOADED
 
-    assert hass.data[DOMAIN][CONFIG] is None
-    assert len(hass.data[DOMAIN][NOTIFIERS]) == 0
+    with pytest.raises(ValueError):
+        assert entry_data.cloud_connection_token
+
+    with pytest.raises(ValueError):
+        assert entry_data.cloud_instance_id
+
+    await hass.config_entries.async_unload(config_entry_direct.entry_id)
+    assert entry_data.entry.state == ConfigEntryState.NOT_LOADED
 
 
-async def test_async_remove_entry_cloud(hass, config_entry_cloud_connection, aioclient_mock, caplog):
+async def test_remove_entry_direct(hass, config_entry_direct):
+    config_entry_direct.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry_direct.entry_id)
+
+    component: YandexSmartHome = hass.data[DOMAIN]
+    assert len(component._entry_datas) == 1
+    await hass.config_entries.async_remove(config_entry_direct.entry_id)
+    assert len(component._entry_datas) == 0
+
+
+async def test_remove_entry_cloud(hass, config_entry_cloud, aioclient_mock, caplog):
+    await test_cloud.async_setup_entry(hass, config_entry_cloud, aiohttp_client=aioclient_mock)
+
     aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/test", status=500)
-    await async_remove_entry(hass, config_entry_cloud_connection)
+    await hass.config_entries.async_remove(config_entry_cloud.entry_id)
     assert aioclient_mock.call_count == 1
-    assert len(caplog.records) == 1
-    assert "Failed to delete" in caplog.records[0].message
+    assert caplog.messages[-1] == "Failed to delete cloud instance, status code: 500"
 
     aioclient_mock.clear_requests()
     caplog.clear()
 
+    await test_cloud.async_setup_entry(hass, config_entry_cloud, aiohttp_client=aioclient_mock)
+    caplog.clear()
+
     aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/test", status=200)
-    await async_remove_entry(hass, config_entry_cloud_connection)
+    await hass.config_entries.async_remove(config_entry_cloud.entry_id)
     (method, url, data, headers) = aioclient_mock.mock_calls[0]
     assert headers == {"Authorization": "Bearer foo"}
 
     assert aioclient_mock.call_count == 1
     assert len(caplog.records) == 0
-
-
-@pytest.mark.parametrize("expected_lingering_timers", [True])
-async def test_async_setup_update_from_yaml(hass, hass_admin_user, expected_lingering_timers):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            const.CONF_NOTIFIER: [
-                {
-                    const.CONF_NOTIFIER_OAUTH_TOKEN: "entry",
-                    const.CONF_NOTIFIER_SKILL_ID: "entry",
-                    const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-                }
-            ],
-        },
-    )
-    entry.add_to_hass(hass)
-
-    assert await async_setup(hass, {})
-    assert await async_setup_entry(hass, entry)
-
-    assert entry.data == {
-        "connection_type": "direct",
-        "devices_discovered": True,
-    }
-    assert entry.options == {"beta": False, "cloud_stream": False, "pressure_unit": "mmHg"}
-
-    with patch_yaml_files(
-        {
-            YAML_CONFIG_FILE: f"""
-yandex_smart_home:
-  settings:
-    pressure_unit: Pa
-  notifier:
-    oauth_token: yaml
-    skill_id: yaml
-    user_id: {hass_admin_user.id}"""
-        }
-    ):
-        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
-        with patch("custom_components.yandex_smart_home.async_setup", return_value=True):
-            assert await async_setup_entry(hass, entry)
-
-    assert entry.data[const.CONF_NOTIFIER][0][const.CONF_NOTIFIER_OAUTH_TOKEN] == "yaml"
-    assert entry.options[const.CONF_PRESSURE_UNIT] == "Pa"
-
-
-async def test_async_setup_update_from_yaml_checksum(hass, hass_admin_user):
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-
-    entry = MockConfigEntry(domain=DOMAIN)
-    entry.add_to_hass(hass)
-
-    with patch_yaml_files(
-        {
-            YAML_CONFIG_FILE: """
-yandex_smart_home:
-  settings:
-    pressure_unit: Pa"""
-        }
-    ):
-        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
-        assert await async_setup_entry(hass, entry)
-
-    assert entry.data == {
-        "connection_type": "direct",
-        "devices_discovered": True,
-        "notifier": [],
-        "yaml_config_hash": "357c1abeae034ea7e10b10f1fc9070f6",
-    }
-    assert entry.options == {"beta": False, "cloud_stream": False, "pressure_unit": "Pa", "color_profile": {}}
-
-    with patch_yaml_files(
-        {
-            YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    switch.test:
-      turn_on:
-        service: switch.turn_on
-        data:
-          entity_id: 'switch.test_{{ 1 + 2 }}'
-  settings:
-    pressure_unit: mmHg
-"""
-        }
-    ):
-        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
-        with patch("custom_components.yandex_smart_home.async_setup", return_value=True):
-            assert await async_setup_entry(hass, entry)
-            await hass.async_block_till_done()
-
-    assert entry.options[const.CONF_PRESSURE_UNIT] == "mmHg"
-    assert entry.data[const.YAML_CONFIG_HASH] == "0eedd9f5ee18739bf910b36d2f9f1c6e"

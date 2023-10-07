@@ -1,106 +1,87 @@
 from http import HTTPStatus
-import logging
 from unittest.mock import patch
 
 from homeassistant import core
-from homeassistant.components import http, switch
+from homeassistant.components import switch
 from homeassistant.const import Platform
 from homeassistant.setup import async_setup_component
-import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
+from pytest_homeassistant_custom_component.common import MockUser
 
-from custom_components import yandex_smart_home
-from custom_components.yandex_smart_home import DOMAIN, const
+from custom_components.yandex_smart_home import DOMAIN
 from custom_components.yandex_smart_home.http import (
+    YandexSmartHomeAPIView,
     YandexSmartHomePingView,
     YandexSmartHomeUnauthorizedView,
-    YandexSmartHomeView,
 )
 
-from . import REQ_ID
+from . import REQ_ID, test_cloud
 
 
-@pytest.fixture(autouse=True)
-def debug_logging():
-    logging.getLogger("custom_components.yandex_smart_home.http").setLevel(logging.DEBUG)
-
-
-async def test_http_request(hass, aiohttp_client):
-    config_entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
-            const.CONF_CLOUD_INSTANCE: {
-                const.CONF_CLOUD_INSTANCE_ID: "test",
-                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
-            },
-        },
-        options={},
-    )
-
-    await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
-    await yandex_smart_home.async_setup(hass, {})
+async def test_http_request_with_yaml_config(hass, aiohttp_client):
+    await async_setup_component(hass, DOMAIN, {})
 
     http_client = await aiohttp_client(hass.http.app)
     response = await http_client.get(YandexSmartHomePingView.url)
     assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
-    assert await response.text() == "Error: Integration is not enabled"
+    assert await response.text() == "Error: Integration is not enabled or use cloud connection"
 
-    await yandex_smart_home.async_setup_entry(hass, config_entry)
+
+async def test_http_request_with_cloud(hass_platform, aiohttp_client, config_entry_cloud):
+    await test_cloud.async_setup_entry(hass_platform, config_entry_cloud, aiohttp_client=aiohttp_client)
+
+    http_client = await aiohttp_client(hass_platform.http.app)
     response = await http_client.get(YandexSmartHomePingView.url)
     assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
-    assert await response.text() == "Error: Integration uses cloud connection"
+    assert await response.text() == "Error: Integration is not enabled or use cloud connection"
 
 
-async def test_http_unauthorized_view(hass_platform, aiohttp_client, config_entry):
-    http_client = await aiohttp_client(hass_platform.http.app)
+async def test_http_unauthorized_view(hass_platform_direct, aiohttp_client, config_entry_direct):
+    http_client = await aiohttp_client(hass_platform_direct.http.app)
     response = await http_client.head(YandexSmartHomeUnauthorizedView.url)
     assert response.status == HTTPStatus.OK
 
-    await yandex_smart_home.async_unload_entry(hass_platform, config_entry)
+    await hass_platform_direct.config_entries.async_unload(config_entry_direct.entry_id)
     response = await http_client.head(YandexSmartHomeUnauthorizedView.url)
     assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
 
 
-@pytest.mark.parametrize("expected_lingering_timers", [True])
-async def test_http_ping_view(hass_platform, aiohttp_client, config_entry, expected_lingering_timers):
-    http_client = await aiohttp_client(hass_platform.http.app)
+async def test_http_ping_view(hass_platform_direct, aiohttp_client, config_entry_direct):
+    http_client = await aiohttp_client(hass_platform_direct.http.app)
     response = await http_client.get(YandexSmartHomePingView.url)
     assert response.status == HTTPStatus.OK
-    assert await response.text() == "OK: 2"
+    assert await response.text() == "OK: 3"
 
-    await yandex_smart_home.async_unload_entry(hass_platform, config_entry)
+    await hass_platform_direct.config_entries.async_unload(config_entry_direct.entry_id)
     response = await http_client.get(YandexSmartHomePingView.url)
     assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
 
 
-async def test_http_unloaded_config_entry(hass_platform, hass_client, config_entry):
+async def test_http_unloaded_config_entry(hass_platform_direct, hass_client, config_entry_direct):
     http_client = await hass_client()
 
-    await yandex_smart_home.async_unload_entry(hass_platform, config_entry)
-    response = await http_client.get(YandexSmartHomeView.url + "/user/unlink")
+    await hass_platform_direct.config_entries.async_unload(config_entry_direct.entry_id)
+    response = await http_client.get(YandexSmartHomeAPIView.url + "/user/unlink")
     assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
-    assert await response.text() == "Error: Integration is not enabled"
+    assert await response.text() == "Error: Integration is not enabled or use cloud connection"
 
 
-async def test_http_unauthorized(hass_platform, aiohttp_client, socket_enabled):
-    http_client = await aiohttp_client(hass_platform.http.app)
+async def test_http_unauthorized(hass_platform_direct, aiohttp_client):
+    http_client = await aiohttp_client(hass_platform_direct.http.app)
 
-    response = await http_client.get(YandexSmartHomeView.url + "/user/unlink")
+    response = await http_client.get(YandexSmartHomeAPIView.url + "/user/unlink")
     assert response.status == HTTPStatus.UNAUTHORIZED
 
 
-async def test_http_user_unlink(hass_platform, hass_client):
+async def test_http_user_unlink(hass_platform_direct, hass_client):
     http_client = await hass_client()
-    response = await http_client.post(YandexSmartHomeView.url + "/user/unlink", headers={"X-Request-Id": REQ_ID})
+    response = await http_client.post(YandexSmartHomeAPIView.url + "/user/unlink", headers={"X-Request-Id": REQ_ID})
     assert response.status == HTTPStatus.OK
     assert await response.json() == {"request_id": REQ_ID}
 
 
-@pytest.mark.parametrize("expected_lingering_timers", [True])
-async def test_http_user_devices(hass_platform, hass_client, hass_admin_user: MockUser, expected_lingering_timers):
+async def test_http_user_devices(hass_platform_direct, hass_client, hass_admin_user: MockUser):
     http_client = await hass_client()
-    response = await http_client.get(YandexSmartHomeView.url + "/user/devices", headers={"X-Request-Id": REQ_ID})
+    response = await http_client.get(YandexSmartHomeAPIView.url + "/user/devices", headers={"X-Request-Id": REQ_ID})
 
     assert response.status == HTTPStatus.OK
     assert await response.json() == {
@@ -123,6 +104,26 @@ async def test_http_user_devices(hass_platform, hass_client, hass_admin_user: Mo
                     ],
                     "device_info": {
                         "model": "sensor.outside_temp",
+                    },
+                },
+                {
+                    "id": "binary_sensor.front_door",
+                    "name": "Front Door",
+                    "type": "devices.types.sensor.open",
+                    "capabilities": [],
+                    "properties": [
+                        {
+                            "type": "devices.properties.event",
+                            "retrievable": True,
+                            "reportable": False,
+                            "parameters": {
+                                "instance": "open",
+                                "events": [{"value": "opened"}, {"value": "closed"}],
+                            },
+                        }
+                    ],
+                    "device_info": {
+                        "model": "binary_sensor.front_door",
                     },
                 },
                 {
@@ -159,10 +160,10 @@ async def test_http_user_devices(hass_platform, hass_client, hass_admin_user: Mo
     }
 
 
-async def test_http_user_devices_query(hass_platform, hass_client):
+async def test_http_user_devices_query(hass_platform_direct, hass_client):
     http_client = await hass_client()
     response = await http_client.post(
-        YandexSmartHomeView.url + "/user/devices/query",
+        YandexSmartHomeAPIView.url + "/user/devices/query",
         json={"devices": [{"id": "sensor.outside_temp"}]},
         headers={"X-Request-Id": REQ_ID},
     )
@@ -183,7 +184,7 @@ async def test_http_user_devices_query(hass_platform, hass_client):
     }
 
     response = await http_client.post(
-        YandexSmartHomeView.url + "/user/devices/query",
+        YandexSmartHomeAPIView.url + "/user/devices/query",
         json={"devices": [{"id": "sensor.not_existed"}]},
         headers={"X-Request-Id": REQ_ID},
     )
@@ -194,8 +195,8 @@ async def test_http_user_devices_query(hass_platform, hass_client):
     }
 
 
-async def test_http_user_devices_action(hass_platform, hass_client):
-    hass = hass_platform
+async def test_http_user_devices_action(hass_platform_direct, hass_client):
+    hass = hass_platform_direct
 
     with patch(
         "homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM",
@@ -222,7 +223,7 @@ async def test_http_user_devices_action(hass_platform, hass_client):
         }
     }
     response = await http_client.post(
-        YandexSmartHomeView.url + "/user/devices/action", json=payload, headers={"X-Request-Id": REQ_ID}
+        YandexSmartHomeAPIView.url + "/user/devices/action", json=payload, headers={"X-Request-Id": REQ_ID}
     )
     assert response.status == HTTPStatus.OK
     assert await response.json() == {

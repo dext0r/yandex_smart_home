@@ -1,9 +1,12 @@
 """Implement the Yandex Smart Home custom properties."""
-from typing import Any, Protocol, Self
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Protocol, Self
 
 from homeassistant.components import binary_sensor, sensor
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant, State
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
@@ -13,7 +16,7 @@ from .const import (
     ERR_DEVICE_UNREACHABLE,
 )
 from .error import SmartHomeError
-from .helpers import Config, DictRegistry
+from .helpers import DictRegistry
 from .property import Property
 from .property_event import (
     BatteryLevelEventProperty,
@@ -45,25 +48,28 @@ from .property_float import (
     WaterLevelPercentageProperty,
 )
 
+if TYPE_CHECKING:
+    from .entry_data import ConfigEntryData
+
 
 class CustomProperty(Property, Protocol):
     """Base class for a property that user can set up using yaml configuration."""
 
-    _property_config: dict[str, Any]
+    _config: ConfigType
     _native_value_source: State
 
     def __init__(
         self,
         hass: HomeAssistant,
-        config: Config,
-        property_config: dict[str, Any],
+        entry_data: ConfigEntryData,
+        config: ConfigType,
         device_id: str,
         native_value_source: State,
     ):
         """Initialize a custom property."""
         self._hass = hass
+        self._entry_data = entry_data
         self._config = config
-        self._property_config = property_config
         self._native_value_source = native_value_source
 
         self.device_id = device_id
@@ -75,7 +81,7 @@ class CustomProperty(Property, Protocol):
 
     def _get_native_value(self) -> str:
         """Return the current property value without conversion."""
-        value_attribute = self._property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
+        value_attribute = self._config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
 
         if value_attribute:
             if value_attribute not in self._native_value_source.attributes:
@@ -94,11 +100,11 @@ class CustomProperty(Property, Protocol):
     @property
     def value_entity_id(self) -> str:
         """Return id of entity the current value is based on."""
-        return self._property_config.get(CONF_ENTITY_PROPERTY_ENTITY, self._native_value_source.entity_id)
+        return self._config.get(CONF_ENTITY_PROPERTY_ENTITY, self._native_value_source.entity_id)
 
     def clone(self, native_value_source: State) -> Self:
         """Clone the property with new source of native value."""
-        return self.__class__(self._hass, self._config, self._property_config, self.device_id, native_value_source)
+        return self.__class__(self._hass, self._entry_data, self._config, self.device_id, native_value_source)
 
 
 class CustomEventProperty(CustomProperty, EventProperty[Any], Protocol):
@@ -167,10 +173,10 @@ class CustomFloatProperty(CustomProperty, FloatProperty, Protocol):
     @property
     def _native_unit_of_measurement(self) -> str | None:
         """Return the unit the native value is expressed in."""
-        if unit := self._property_config.get(CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT):
+        if unit := self._config.get(CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT):
             return str(unit)
 
-        if self._property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE):
+        if self._config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE):
             return None
 
         return self._native_value_source.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
@@ -250,11 +256,11 @@ class BatteryLevelCustomFloatProperty(BatteryLevelPercentageProperty, CustomFloa
 
 
 def get_custom_property(
-    hass: HomeAssistant, config: Config, property_config: dict[str, Any], device_id: str
+    hass: HomeAssistant, entry_data: ConfigEntryData, config: ConfigType, device_id: str
 ) -> CustomProperty:
     """Return initialized custom property based on property configuration."""
-    instance = property_config[CONF_ENTITY_PROPERTY_TYPE]
-    state_entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY, device_id)
+    instance = config[CONF_ENTITY_PROPERTY_TYPE]
+    state_entity_id = config.get(CONF_ENTITY_PROPERTY_ENTITY, device_id)
 
     native_value_source = hass.states.get(state_entity_id)
 
@@ -266,7 +272,7 @@ def get_custom_property(
 
     if native_value_source.domain == binary_sensor.DOMAIN:
         try:
-            return EVENT_PROPERTIES_REGISTRY[instance](hass, config, property_config, device_id, native_value_source)
+            return EVENT_PROPERTIES_REGISTRY[instance](hass, entry_data, config, device_id, native_value_source)
         except KeyError:
             raise SmartHomeError(
                 ERR_DEVICE_UNREACHABLE,
@@ -276,6 +282,6 @@ def get_custom_property(
     elif native_value_source.domain == sensor.DOMAIN:
         if instance not in FLOAT_PROPERTIES_REGISTRY and instance in EVENT_PROPERTIES_REGISTRY:
             # TODO: battery_level and water_level cannot be events for sensor domain
-            return EVENT_PROPERTIES_REGISTRY[instance](hass, config, property_config, device_id, native_value_source)
+            return EVENT_PROPERTIES_REGISTRY[instance](hass, entry_data, config, device_id, native_value_source)
 
-    return FLOAT_PROPERTIES_REGISTRY[instance](hass, config, property_config, device_id, native_value_source)
+    return FLOAT_PROPERTIES_REGISTRY[instance](hass, entry_data, config, device_id, native_value_source)

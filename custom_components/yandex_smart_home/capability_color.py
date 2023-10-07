@@ -1,17 +1,17 @@
 """Implement the Yandex Smart Home color_setting capability."""
+from __future__ import annotations
+
 from functools import cached_property
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID
-from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
 
 from .capability import STATE_CAPABILITIES_REGISTRY, StateCapability
 from .color import ColorConverter, ColorTemperatureConverter
 from .const import CONF_COLOR_PROFILE, CONF_ENTITY_MODE_MAP, ERR_INTERNAL_ERROR, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
-from .helpers import Config
 from .schema import (
     CapabilityParameterColorModel,
     CapabilityParameterColorScene,
@@ -26,6 +26,11 @@ from .schema import (
     TemperatureKInstanceActionState,
 )
 
+if TYPE_CHECKING:
+    from homeassistant.core import Context, HomeAssistant, State
+
+    from .entry_data import ConfigEntryData
+
 
 @STATE_CAPABILITIES_REGISTRY.register
 class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActionState]):
@@ -37,13 +42,13 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
     type = CapabilityType.COLOR_SETTING
     instance = ColorSettingCapabilityInstance.BASE
 
-    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, state: State):
         """Initialize a capability for the state."""
-        super().__init__(hass, config, state)
+        super().__init__(hass, entry_data, state)
 
-        self._color = RGBColorCapability(hass, config, state)
-        self._temperature = ColorTemperatureCapability(hass, config, state)
-        self._color_scene = ColorSceneCapability(hass, config, state)
+        self._color = RGBColorCapability(hass, entry_data, state)
+        self._temperature = ColorTemperatureCapability(hass, entry_data, state)
+        self._color_scene = ColorSceneCapability(hass, entry_data, state)
 
     @property
     def supported(self) -> bool:
@@ -155,7 +160,7 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
         """Return the color converter."""
         if color_profile_name := self._entity_config.get(CONF_COLOR_PROFILE):
             try:
-                return ColorConverter(self._config.color_profiles[color_profile_name])
+                return ColorConverter(self._entry_data.color_profiles[color_profile_name])
             except KeyError:
                 raise SmartHomeError(
                     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
@@ -291,7 +296,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
         """Return the color temperature converter."""
         if color_profile_name := self._entity_config.get(CONF_COLOR_PROFILE):
             try:
-                return ColorTemperatureConverter(self._config.color_profiles[color_profile_name], self.state)
+                return ColorTemperatureConverter(self._entry_data.color_profiles[color_profile_name], self.state)
 
             except KeyError:
                 raise SmartHomeError(

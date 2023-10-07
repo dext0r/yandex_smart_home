@@ -1,12 +1,14 @@
 """Implement the Yandex Smart Home base device capability."""
+from __future__ import annotations
+
 from abc import abstractmethod
 from functools import cached_property
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import Context, HomeAssistant, State
 
-from .helpers import CacheStore, Config, ListRegistry
+from .helpers import CacheStore, ListRegistry
 from .schema import (
     CapabilityDescription,
     CapabilityInstance,
@@ -18,6 +20,11 @@ from .schema import (
     CapabilityType,
 )
 
+if TYPE_CHECKING:
+    from homeassistant.helpers import ConfigType
+
+    from .entry_data import ConfigEntryData
+
 
 @runtime_checkable
 class Capability(Protocol[CapabilityInstanceActionState]):
@@ -28,7 +35,7 @@ class Capability(Protocol[CapabilityInstanceActionState]):
     instance: CapabilityInstance
 
     _hass: HomeAssistant
-    _config: Config
+    _entry_data: ConfigEntryData
 
     @property
     @abstractmethod
@@ -44,7 +51,7 @@ class Capability(Protocol[CapabilityInstanceActionState]):
     @property
     def reportable(self) -> bool:
         """Test if the capability can report changes."""
-        return self._config.is_reporting_state
+        return self._entry_data.is_reporting_states
 
     @property
     @abstractmethod
@@ -80,9 +87,9 @@ class Capability(Protocol[CapabilityInstanceActionState]):
         ...
 
     @cached_property
-    def _entity_config(self) -> dict[str, Any]:
+    def _entity_config(self) -> ConfigType:
         """Return additional configuration for the device."""
-        return self._config.get_entity_config(self.device_id)
+        return self._entry_data.get_entity_config(self.device_id)
 
     def __eq__(self, other: Any) -> bool:
         """Compare capabilities."""
@@ -113,10 +120,10 @@ class StateCapability(Capability[CapabilityInstanceActionState], Protocol):
 
     state: State
 
-    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, state: State):
         """Initialize a capability for the state."""
         self._hass = hass
-        self._config = config
+        self._entry_data = entry_data
 
         self.device_id = state.entity_id
         self.state = state
@@ -129,7 +136,7 @@ class StateCapability(Capability[CapabilityInstanceActionState], Protocol):
     @property
     def _cache(self) -> CacheStore:
         """Return cache storage."""
-        return self._config.cache
+        return self._entry_data.cache
 
 
 STATE_CAPABILITIES_REGISTRY = ListRegistry[type[StateCapability[Any]]]()

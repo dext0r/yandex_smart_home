@@ -12,7 +12,7 @@ from homeassistant.core import Context, HomeAssistant, State
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import const
+from custom_components.yandex_smart_home import YandexSmartHome, const
 from custom_components.yandex_smart_home.capability_video import VideoStreamCapability
 from custom_components.yandex_smart_home.const import DOMAIN
 from custom_components.yandex_smart_home.error import SmartHomeError
@@ -23,7 +23,7 @@ from custom_components.yandex_smart_home.schema import (
     VideoStreamCapabilityInstance,
 )
 
-from . import BASIC_CONFIG, MockConfig
+from . import BASIC_ENTRY_DATA, MockConfigEntryData
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 ACTION_STATE = GetStreamInstanceActionState(
@@ -88,7 +88,7 @@ async def test_capability_video_stream_supported(hass):
     cap = cast(
         VideoStreamCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
         ),
     )
     assert cap.parameters.dict() == {"protocols": ["hls"]}
@@ -98,19 +98,13 @@ async def test_capability_video_stream_supported(hass):
 
     state = State("camera.no_stream", camera.STATE_IDLE)
     assert_no_capabilities(
-        hass, BASIC_CONFIG, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
     )
 
 
 async def test_capability_video_stream_request_stream(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT},
-        options={const.CONF_CLOUD_STREAM: False},
-    )
-    config = MockConfig(entry=entry)
     state = State("camera.test", camera.STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
-    cap = VideoStreamCapability(hass, config, state)
+    cap = VideoStreamCapability(hass, BASIC_ENTRY_DATA, state)
 
     with patch(
         "custom_components.yandex_smart_home.capability_video._get_camera_from_entity_id",
@@ -128,27 +122,20 @@ async def test_capability_video_stream_request_stream(hass):
         assert e.value.message == "camera.test does not support play stream service"
 
 
-async def test_capability_video_stream_direct(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT},
-        options={const.CONF_CLOUD_STREAM: False},
-    )
-    config = MockConfig(entry=entry)
+async def test_capability_video_stream_direct(hass_platform_direct, config_entry_direct):
+    hass = hass_platform_direct
+    entry_data = MockConfigEntryData(entry=config_entry_direct)
     state = State("camera.test", camera.STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
 
     cap = cast(
         VideoStreamCapability,
         get_exact_one_capability(
-            hass, config, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
+            hass, entry_data, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
         ),
     )
     stream = MockStream(hass)
 
-    with patch(
-        "custom_components.yandex_smart_home.capability_video.VideoStreamCapability._async_request_stream",
-        return_value=stream,
-    ):
+    with patch.object(cap, "_async_request_stream", return_value=stream):
         with pytest.raises(SmartHomeError) as e:
             await cap.set_instance_state(Context(), ACTION_STATE)
         assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
@@ -159,10 +146,7 @@ async def test_capability_video_stream_direct(hass):
 
     await async_process_ha_core_config(hass, {"external_url": "https://example.com"})
 
-    with patch(
-        "custom_components.yandex_smart_home.capability_video.VideoStreamCapability._async_request_stream",
-        return_value=stream,
-    ):
+    with patch.object(cap, "_async_request_stream", return_value=stream):
         assert (await cap.set_instance_state(Context(), ACTION_STATE)).dict() == {
             "protocol": "hls",
             "stream_url": "https://example.com/foo",
@@ -170,39 +154,36 @@ async def test_capability_video_stream_direct(hass):
 
 
 @pytest.mark.parametrize("connection_type", [const.CONNECTION_TYPE_DIRECT, const.CONNECTION_TYPE_CLOUD])
-async def test_capability_video_stream_cloud(hass_platform, connection_type):
-    hass = hass_platform
-
-    entry = MockConfigEntry(
-        domain=DOMAIN, data={const.CONF_CONNECTION_TYPE: connection_type}, options={const.CONF_CLOUD_STREAM: True}
-    )
-    config = MockConfig(entry=entry)
+async def test_capability_video_stream_cloud(hass_platform_direct, connection_type):
+    hass = hass_platform_direct
+    component: YandexSmartHome = hass.data[DOMAIN]
+    entry = MockConfigEntry(domain=DOMAIN, data={const.CONF_CONNECTION_TYPE: connection_type})
+    entry_data = MockConfigEntryData(entry=entry, yaml_config={const.CONF_SETTINGS: {const.CONF_CLOUD_STREAM: True}})
     state = State("camera.test", camera.STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
 
     cap = cast(
         VideoStreamCapability,
         get_exact_one_capability(
-            hass, config, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
+            hass, entry_data, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
         ),
     )
     stream = MockStream(hass)
 
-    with patch(
-        "custom_components.yandex_smart_home.capability_video.VideoStreamCapability._async_request_stream",
-        return_value=stream,
-    ), patch("custom_components.yandex_smart_home.cloud_stream.CloudStreamManager.start") as mock_start_cloud_stream:
+    with patch.object(cap, "_async_request_stream", return_value=stream), patch(
+        "custom_components.yandex_smart_home.cloud_stream.CloudStreamManager.async_start"
+    ) as mock_start_cloud_stream:
         with pytest.raises(SmartHomeError) as e:
             await cap.set_instance_state(Context(), ACTION_STATE)
         assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
         assert e.value.message == "Failed to start stream"
         mock_start_cloud_stream.assert_called_once()
 
-        assert len(hass.data[DOMAIN][const.CLOUD_STREAMS]) == 1
-        cloud_stream = hass.data[DOMAIN][const.CLOUD_STREAMS][state.entity_id]
+        assert len(component.cloud_streams) == 1
+        cloud_stream = component.cloud_streams[state.entity_id]
         cloud_stream._running_stream_id = "foo"
         assert (await cap.set_instance_state(Context(), ACTION_STATE)).dict() == {
             "protocol": "hls",
             "stream_url": "https://stream.yaha-cloud.ru/foo/master_playlist.m3u8",
         }
 
-        assert hass.data[DOMAIN][const.CLOUD_STREAMS][state.entity_id] == cloud_stream
+        assert component.cloud_streams[state.entity_id] == cloud_stream

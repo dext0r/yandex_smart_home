@@ -1,55 +1,43 @@
-"""Config flow for Yandex Smart Home integration."""
+"""Config flow for tne Yandex Smart Home integration."""
+from __future__ import annotations
+
 import logging
-from typing import Any
+from typing import TYPE_CHECKING
 
 from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant.auth.const import GROUP_ID_READ_ONLY
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.config_entries import ConfigFlow, OptionsFlow
 from homeassistant.const import CONF_ENTITIES
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowHandler, FlowResult
+from homeassistant.core import callback
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
-from homeassistant.helpers.typing import ConfigType
 import voluptuous as vol
 
-from . import DOMAIN, FILTER_SCHEMA, YAML_CONFIG, const, get_config_entry_data_from_yaml_config
+from . import DOMAIN, FILTER_SCHEMA, const
 from .cloud import register_cloud_instance
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers import ConfigType
+
+    from . import YandexSmartHome
 
 _LOGGER = logging.getLogger(__name__)
 
 CONNECTION_TYPES = {const.CONNECTION_TYPE_CLOUD: "Через облако", const.CONNECTION_TYPE_DIRECT: "Напрямую"}
 
 
-class BaseFlowHandler(FlowHandler):
-    """Base class to handle a data entry flow."""
-
-    def __init__(self) -> None:
-        """Initialize a config flow handler."""
-        self._data: dict[str, Any] = {}
-        self._options: dict[str, Any] = {}
-
-    def _populate_data_from_yaml_config(self) -> None:
-        """Update config entry data from yaml configuration."""
-        yaml_config = None
-        if DOMAIN in self.hass.data:
-            yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
-
-        data, options = get_config_entry_data_from_yaml_config(self._data, self._options, yaml_config)
-        self._data.update(data)
-        self._options.update(options)
-        return None
-
-
-class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
+class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Yandex Smart Home."""
 
     def __init__(self) -> None:
         """Initialize a config flow handler."""
         super().__init__()
 
-        self._yaml_config: ConfigType | None = None
-        self._data: dict[str, Any] = {const.CONF_DEVICES_DISCOVERED: False}
+        self._data: ConfigType = {}
+        self._options: ConfigType = {}
 
     async def async_step_user(self, user_input: ConfigType | None = None) -> FlowResult:
         """Handle a flow initialized by the user."""
@@ -57,9 +45,8 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="single_instance_allowed")
 
         if DOMAIN in self.hass.data:
-            yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
-
-            if yaml_config and yaml_config.get(const.CONF_FILTER):
+            component: YandexSmartHome = self.hass.data[DOMAIN]
+            if component.yaml_config_has_filter():
                 return await self.async_step_filter_yaml()
 
         return await self.async_step_include_entities()
@@ -113,8 +100,6 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
                     entry_description_placeholders.update(self._data[const.CONF_CLOUD_INSTANCE])
 
             if not errors:
-                self._populate_data_from_yaml_config()
-
                 return self.async_create_entry(
                     title=const.CONFIG_ENTRY_TITLE,
                     description=entry_description,
@@ -142,7 +127,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         return OptionsFlowHandler(entry)
 
 
-class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
+class OptionsFlowHandler(OptionsFlow):
     """Handle a options flow for Yandex Smart Home."""
 
     def __init__(self, entry: ConfigEntry):
@@ -151,8 +136,8 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
         super().__init__()
 
         self._entry = entry
-        self._options: dict[str, Any] = dict(entry.options)
-        self._data: dict[str, Any] = dict(entry.data)
+        self._data: ConfigType = entry.data.copy()
+        self._options: ConfigType = entry.options.copy()
 
     async def async_step_init(self, _: ConfigType | None = None) -> FlowResult:
         """Show menu."""
@@ -174,9 +159,8 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
 
         errors = {}
         entities: set[str] = set()
-        yaml_config = self.hass.data[DOMAIN][YAML_CONFIG]
-
-        if yaml_config and yaml_config.get(const.CONF_FILTER):
+        component: YandexSmartHome = self.hass.data[DOMAIN]
+        if component.yaml_config_has_filter():
             return await self.async_step_filter_yaml()
 
         if const.CONF_FILTER in self._options:
@@ -231,9 +215,8 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
                     _LOGGER.exception("Failed to register instance in Yandex Smart Home cloud")
 
             if not errors:
-                self._populate_data_from_yaml_config()
                 self.hass.config_entries.async_update_entry(self._entry, data=self._data, options=self._options)
-                return self.async_create_entry(title="", data=self._options)
+                return self.async_create_entry(data=self._options)
 
         return self.async_show_form(
             step_id="connection_type",
@@ -280,7 +263,7 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
 
     async def async_step_done(self) -> FlowResult:
         """Finish the flow."""
-        return self.async_create_entry(title="", data=self._options)
+        return self.async_create_entry(data=self._options)
 
 
 async def _async_get_users(hass: HomeAssistant) -> dict[str, str]:

@@ -23,14 +23,13 @@ from homeassistant.const import (
 from homeassistant.core import State
 from homeassistant.exceptions import HomeAssistantError
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.property_float import PropertyType
 from custom_components.yandex_smart_home.schema import FloatPropertyInstance
 from custom_components.yandex_smart_home.unit_conversion import UnitOfPressure
 
-from . import BASIC_CONFIG, MockConfig
+from . import BASIC_ENTRY_DATA, MockConfigEntryData
 from .test_property import assert_no_properties, get_exact_one_property
 
 
@@ -62,9 +61,9 @@ async def test_property_float_humidity(hass, domain, device_class, attribute, su
 
     state = State(f"{domain}.test", value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.HUMIDITY)
+        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.HUMIDITY)
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.HUMIDITY)
+        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.HUMIDITY)
         return
 
     assert prop.retrievable is True
@@ -116,9 +115,11 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
 
     state = State(f"{domain}.test", value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
+        prop = get_exact_one_property(
+            hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE
+        )
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
+        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
         return
 
     assert prop.retrievable is True
@@ -149,7 +150,7 @@ async def test_property_float_temperature_convertion(hass):
             ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
         },
     )
-    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
 
     assert prop.retrievable is True
     assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.celsius"}
@@ -163,7 +164,7 @@ async def test_property_float_temperature_convertion(hass):
             ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.FAHRENHEIT,
         },
     )
-    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
 
     assert prop.retrievable is True
     assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.celsius"}
@@ -180,16 +181,18 @@ async def test_property_float_temperature_convertion(hass):
         (UnitOfPressure.BAR, "unit.pressure.bar", 0.99),
     ],
 )
-def test_property_float_pressure_from_mmhg(hass, device_class, unit_of_measurement, property_unit, v):
-    entry = MockConfigEntry(options={const.CONF_PRESSURE_UNIT: unit_of_measurement})
-    config = MockConfig(entry=entry)
-
+def test_property_float_pressure_from_mmhg(
+    hass, config_entry_direct, device_class, unit_of_measurement, property_unit, v
+):
+    entry_data = MockConfigEntryData(
+        entry=config_entry_direct, yaml_config={const.CONF_SETTINGS: {const.CONF_PRESSURE_UNIT: unit_of_measurement}}
+    )
     state = State(
         "sensor.test",
         "740",
         {ATTR_DEVICE_CLASS: device_class, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.MMHG},
     )
-    prop = get_exact_one_property(hass, config, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
+    prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
     assert prop.retrievable is True
     assert prop.parameters == {"instance": "pressure", "unit": property_unit}
     assert prop.get_value() == v
@@ -212,31 +215,33 @@ def test_property_float_pressure_from_mmhg(hass, device_class, unit_of_measureme
         (UnitOfPressure.BAR, "unit.pressure.bar", 1.07),
     ],
 )
-def test_property_float_pressure_from_psi(hass, device_class, unit_of_measurement, property_unit, v):
-    entry = MockConfigEntry(options={const.CONF_PRESSURE_UNIT: unit_of_measurement})
-    config = MockConfig(entry=entry)
-
+def test_property_float_pressure_from_psi(
+    hass, config_entry_direct, device_class, unit_of_measurement, property_unit, v
+):
+    entry_data = MockConfigEntryData(
+        entry=config_entry_direct, yaml_config={const.CONF_SETTINGS: {const.CONF_PRESSURE_UNIT: unit_of_measurement}}
+    )
     state = State(
         "sensor.test",
         "15.5",
         {ATTR_DEVICE_CLASS: device_class, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.PSI},
     )
-    prop = get_exact_one_property(hass, config, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
+    prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
     assert prop.retrievable is True
     assert prop.parameters == {"instance": "pressure", "unit": property_unit}
     assert prop.get_value() == v
 
 
-def test_property_float_pressure_unsupported_target(hass):
-    entry = MockConfigEntry(options={const.CONF_PRESSURE_UNIT: "kPa"})
-    config = MockConfig(entry=entry)
-
+def test_property_float_pressure_unsupported_target(hass, config_entry_direct):
+    entry_data = MockConfigEntryData(
+        entry=config_entry_direct, yaml_config={const.CONF_SETTINGS: {const.CONF_PRESSURE_UNIT: "kPa"}}
+    )
     state = State(
         "sensor.test",
         "15.5",
         {ATTR_DEVICE_CLASS: SensorDeviceClass.PRESSURE, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.PSI},
     )
-    prop = get_exact_one_property(hass, config, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
+    prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
     assert prop.retrievable is True
     with pytest.raises(ValueError):
         assert prop.parameters
@@ -271,9 +276,11 @@ async def test_property_float_illumination(hass, domain, device_class, attribute
 
     state = State(f"{domain}.test", value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.ILLUMINATION)
+        prop = get_exact_one_property(
+            hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.ILLUMINATION
+        )
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.ILLUMINATION)
+        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.ILLUMINATION)
         return
 
     assert prop.retrievable is True
@@ -304,11 +311,13 @@ async def test_property_float_illumination(hass, domain, device_class, attribute
 )
 async def test_property_float_water_level(hass, domain, attribute, supported):
     state = State(f"{domain}.test", STATE_ON, {attribute: "90"})
-    assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.EVENT, FloatPropertyInstance.WATER_LEVEL)
+    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, FloatPropertyInstance.WATER_LEVEL)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.WATER_LEVEL)
+        prop = get_exact_one_property(
+            hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.WATER_LEVEL
+        )
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.WATER_LEVEL)
+        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.WATER_LEVEL)
         return
 
     assert prop.retrievable is True
@@ -348,9 +357,11 @@ async def test_property_float_co2_level(hass, domain, device_class, attribute, s
 
     state = State(f"{domain}.test", value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.CO2_LEVEL)
+        prop = get_exact_one_property(
+            hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.CO2_LEVEL
+        )
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.CO2_LEVEL)
+        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.CO2_LEVEL)
         return
 
     assert prop.retrievable is True
@@ -382,7 +393,7 @@ async def test_property_float_co2_level(hass, domain, device_class, attribute, s
 )
 async def test_property_float_pm_density(hass, attribute, instance):
     state = State("air_quality.test", STATE_ON, {attribute: 300})
-    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance(instance))
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance(instance))
 
     assert prop.retrievable is True
     assert prop.parameters == {"instance": instance, "unit": "unit.density.mcg_m3"}
@@ -412,14 +423,14 @@ async def test_property_float_tvoc_concentration(hass, unit, v):
         "air_quality.test",
         STATE_ON,
     )
-    assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
+    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
 
     attributes = {"total_volatile_organic_compounds": 30}
     if unit:
         attributes[ATTR_UNIT_OF_MEASUREMENT] = unit
 
     state = State("air_quality.test", STATE_ON, attributes)
-    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
 
     assert prop.retrievable is True
     assert prop.parameters == {"instance": "tvoc", "unit": "unit.density.mcg_m3"}
@@ -462,9 +473,9 @@ async def test_property_electricity_sensor(
         attributes[ATTR_UNIT_OF_MEASUREMENT] = unit_of_measurement
     state = State(f"{domain}.test", "220.566", attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, instance)
+        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, instance)
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.FLOAT, instance)
+        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, instance)
         return
 
     assert prop.retrievable is True
@@ -514,9 +525,9 @@ async def test_property_electricity_attributes(
 
     state = State(f"{domain}.test", value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, instance)
+        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, instance)
     else:
-        assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.FLOAT, instance)
+        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, instance)
         return
 
     assert prop.retrievable is True
@@ -542,13 +553,15 @@ async def test_property_electricity_attributes(
 @pytest.mark.parametrize("domain", [switch.DOMAIN, sensor.DOMAIN, light.DOMAIN, cover.DOMAIN])
 async def test_property_float_battery_class(hass, domain):
     state = State(f"{domain}.test", "50", {ATTR_DEVICE_CLASS: SensorDeviceClass.BATTERY})
-    assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.EVENT, FloatPropertyInstance.BATTERY_LEVEL)
-    assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.BATTERY_LEVEL)
+    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, FloatPropertyInstance.BATTERY_LEVEL)
+    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.BATTERY_LEVEL)
 
     state = State(
         f"{domain}.test", "50", {ATTR_DEVICE_CLASS: SensorDeviceClass.BATTERY, ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE}
     )
-    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.BATTERY_LEVEL)
+    prop = get_exact_one_property(
+        hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.BATTERY_LEVEL
+    )
     assert prop.retrievable is True
     assert prop.parameters == {"instance": "battery_level", "unit": "unit.percent"}
     assert prop.get_value() == 50
@@ -575,8 +588,10 @@ async def test_property_float_battery_class(hass, domain):
 @pytest.mark.parametrize("domain", [switch.DOMAIN, sensor.DOMAIN, light.DOMAIN, cover.DOMAIN])
 async def test_property_float_battery_attr(hass, domain):
     state = State(f"{domain}.test", STATE_ON, {ATTR_BATTERY_LEVEL: 50})
-    assert_no_properties(hass, BASIC_CONFIG, state, PropertyType.EVENT, FloatPropertyInstance.BATTERY_LEVEL)
-    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PropertyType.FLOAT, FloatPropertyInstance.BATTERY_LEVEL)
+    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, FloatPropertyInstance.BATTERY_LEVEL)
+    prop = get_exact_one_property(
+        hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.BATTERY_LEVEL
+    )
     assert prop.retrievable is True
     assert prop.parameters == {"instance": "battery_level", "unit": "unit.percent"}
     assert prop.get_value() == 50

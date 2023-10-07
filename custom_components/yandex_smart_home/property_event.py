@@ -390,7 +390,7 @@ class ButtonPressStateEventProperty(StateEventProperty, ButtonPressEventProperty
         if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BUTTON:
             return True
 
-        if self._config.get_entity_config(self.device_id).get(CONF_DEVICE_CLASS) == DEVICE_CLASS_BUTTON:
+        if self._entry_data.get_entity_config(self.device_id).get(CONF_DEVICE_CLASS) == DEVICE_CLASS_BUTTON:
             return True
 
         possible_actions = self._supported_native_values

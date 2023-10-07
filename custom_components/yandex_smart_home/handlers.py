@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
 
-from .const import EVENT_DEVICE_ACTION, EVENT_DEVICE_DISCOVERY
+from .const import EVENT_DEVICE_ACTION
 from .device import Device
 from .error import SmartHomeError, SmartHomeUserError
 from .helpers import RequestData
@@ -40,6 +40,8 @@ HANDLERS: Registry[
     ],
 ] = Registry()
 
+PING_REQUEST_USER_ID = "ping"
+
 
 async def async_handle_request(hass: HomeAssistant, data: RequestData, action: str, payload: str) -> Response:
     """Handle incoming API request."""
@@ -71,10 +73,8 @@ async def async_device_list(hass: HomeAssistant, data: RequestData, _payload: st
     dev_reg = device_registry.async_get(hass)
     area_reg = area_registry.async_get(hass)
 
-    hass.bus.async_fire(EVENT_DEVICE_DISCOVERY, context=data.context)
-
     for state in hass.states.async_all():
-        device = Device(hass, data.config, state.entity_id, state)
+        device = Device(hass, data.entry_data, state.entity_id, state)
         if not device.should_expose:
             continue
 
@@ -82,6 +82,9 @@ async def async_device_list(hass: HomeAssistant, data: RequestData, _payload: st
             devices.append(description)
         else:
             _LOGGER.debug(f"Missing capabilities and properties for {device.id}")
+
+    if data.request_user_id != PING_REQUEST_USER_ID:
+        data.entry_data.discover_devices()
 
     assert data.request_user_id
     return DeviceList(user_id=data.request_user_id, devices=devices)
@@ -97,7 +100,7 @@ async def async_devices_query(hass: HomeAssistant, data: RequestData, payload: s
     states: list[DeviceState] = []
 
     for device_id in [rd.id for rd in request.devices]:
-        device = Device(hass, data.config, device_id, hass.states.get(device_id))
+        device = Device(hass, data.entry_data, device_id, hass.states.get(device_id))
         if not device.should_expose:
             _LOGGER.warning(
                 f"State requested for unexposed entity {device.id}. Please either expose the entity via "
@@ -119,7 +122,7 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
     results: list[ActionResultDevice] = []
 
     for device_id, actions in [(rd.id, rd.capabilities) for rd in request.payload.devices]:
-        device = Device(hass, data.config, device_id, hass.states.get(device_id))
+        device = Device(hass, data.entry_data, device_id, hass.states.get(device_id))
 
         if device.unavailable:
             results.append(

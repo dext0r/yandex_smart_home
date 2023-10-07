@@ -1,10 +1,12 @@
 """Implement the Yandex Smart Home base device property."""
+from __future__ import annotations
+
 from abc import abstractmethod
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from homeassistant.core import HomeAssistant, State
 
-from .helpers import Config, ListRegistry
+from .helpers import ListRegistry
 from .schema import (
     PropertyDescription,
     PropertyInstance,
@@ -13,6 +15,9 @@ from .schema import (
     PropertyParameters,
     PropertyType,
 )
+
+if TYPE_CHECKING:
+    from .entry_data import ConfigEntryData
 
 
 @runtime_checkable
@@ -24,7 +29,7 @@ class Property(Protocol):
     instance: PropertyInstance
 
     _hass: HomeAssistant
-    _config: Config
+    _entry_data: ConfigEntryData
 
     @property
     @abstractmethod
@@ -40,7 +45,7 @@ class Property(Protocol):
     @property
     def reportable(self) -> bool:
         """Test if the capability can report changes."""
-        return self._config.is_reporting_state
+        return self._entry_data.is_reporting_states
 
     @property
     def report_immediately(self) -> bool:
@@ -93,10 +98,10 @@ class StateProperty(Property, Protocol):
 
     state: State
 
-    def __init__(self, hass: HomeAssistant, config: Config, state: State):
+    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, state: State):
         """Initialize a property for the state."""
         self._hass = hass
-        self._config = config
+        self._entry_data = entry_data
 
         self.state = state
         self.device_id = state.entity_id

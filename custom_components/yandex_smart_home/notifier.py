@@ -3,59 +3,106 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import asyncio
 from collections import deque
+from dataclasses import dataclass
 import json
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from aiohttp import ContentTypeError
 from aiohttp.client_exceptions import ClientConnectionError
-from homeassistant.const import (
-    ATTR_ENTITY_ID,
-    EVENT_HOMEASSISTANT_STARTED,
-    EVENT_STATE_CHANGED,
-    STATE_UNAVAILABLE,
-    STATE_UNKNOWN,
-)
-from homeassistant.core import CALLBACK_TYPE, Event, HassJob, HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.core import CALLBACK_TYPE, Event, HassJob, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.event import async_call_later
 
 from . import const
-from .const import (
-    CONF_NOTIFIER_OAUTH_TOKEN,
-    CONF_NOTIFIER_SKILL_ID,
-    CONF_NOTIFIER_USER_ID,
-    CONFIG,
-    DOMAIN,
-    EVENT_CONFIG_CHANGED,
-    NOTIFIERS,
-)
 from .device import Device, DeviceCallbackState
-from .helpers import Config
+
+if TYPE_CHECKING:
+    from .entry_data import ConfigEntryData
 
 _LOGGER = logging.getLogger(__name__)
 
-DISCOVERY_REQUEST_DELAY = 15
-DISCOVERY_REQUEST_DELAY_ON_CONFIG_RELOAD = 5
-INITIAL_REPORT_DELAY = 5
+INITIAL_REPORT_DELAY = 15
+DISCOVERY_REQUEST_DELAY = 5
 REPORT_STATE_WINDOW = 1
 
 
+@dataclass
+class NotifierConfig:
+    """Hold configuration variables for a notifier."""
+
+    user_id: str
+    token: str
+    hass_user_id: str | None = None
+    skill_id: str | None = None
+    verbose_log: bool = False
+
+    async def async_validate(self, hass: HomeAssistant) -> None:
+        """Validates the configuration."""
+        if self.hass_user_id:
+            if await hass.auth.async_get_user(self.hass_user_id) is None:
+                raise ValueError(f"User {self.hass_user_id} does not exist")
+
+        return None
+
+
 class YandexNotifier(ABC):
-    def __init__(self, hass: HomeAssistant, user_id: str, token: str):
+    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, config: NotifierConfig):
         self._hass = hass
-        self._user_id = user_id
-        self._token = token
+        self._entry_data = entry_data
+        self._config = config
 
         self._property_entities = self._get_property_entities()
         self._session = async_create_clientsession(hass)
 
+        self._unsub_state_changed: CALLBACK_TYPE | None = None
+        self._unsub_initial_report: CALLBACK_TYPE | None = None
         self._unsub_pending: CALLBACK_TYPE | None = None
         self._unsub_send_discovery: CALLBACK_TYPE | None = None
+
         self._pending: deque[DeviceCallbackState] = deque()
-        self._report_states_job = HassJob(self._report_states)
+        self._report_states_job = HassJob(self._async_report_states)
+
+    async def async_setup(self) -> None:
+        """Set up the notifier."""
+        self._unsub_state_changed = self._hass.bus.async_listen(
+            EVENT_STATE_CHANGED, self._async_state_changed_event_handler
+        )
+        self._unsub_initial_report = async_call_later(
+            self._hass, INITIAL_REPORT_DELAY, HassJob(self._async_initial_report)
+        )
+        self._unsub_send_discovery = async_call_later(
+            self._hass, DISCOVERY_REQUEST_DELAY, HassJob(self.async_send_discovery)
+        )
+
+        return None
+
+    async def async_unload(self) -> None:
+        """Unload the notifier."""
+        for unsub in [
+            self._unsub_state_changed,
+            self._unsub_initial_report,
+            self._unsub_pending,
+            self._unsub_send_discovery,
+        ]:
+            if unsub:
+                unsub()
+
+        self._unsub_state_changed = None
+        self._unsub_initial_report = None
+        self._unsub_pending = None
+        self._unsub_send_discovery = None
+
+        return None
+
+    async def async_send_state(self, devices: list[Any]) -> None:
+        return await self._async_send_callback(f"{self._base_url}/state", {"devices": devices})
+
+    async def async_send_discovery(self, *_: Any) -> None:
+        _LOGGER.debug(self._format_log_message("Device list update initiated"))
+        return await self._async_send_callback(f"{self._base_url}/discovery", {})
 
     @property
     @abstractmethod
@@ -67,26 +114,19 @@ class YandexNotifier(ABC):
     def _request_headers(self) -> dict[str, str]:
         pass
 
-    @property
-    def _config(self) -> Config:
-        return self._hass.data[DOMAIN][CONFIG]
-
-    @property
-    def _ready(self) -> bool:
-        return self._config and self._config.devices_discovered
-
     def _format_log_message(self, message: str) -> str:
         return message
 
     @staticmethod
-    def _log_request(url: str, data: dict[str, Any]):
+    def _log_request(url: str, data: dict[str, Any]) -> None:
         request_json = json.dumps(data)
         _LOGGER.debug(f"Request: {url} (POST data: {request_json})")
+        return None
 
     def _get_property_entities(self) -> dict[str, list[str]]:
-        rv = {}
+        rv: dict[str, list[str]] = {}
 
-        for entity_id, entity_config in self._config.entity_config.items():
+        for entity_id, entity_config in self._entry_data.entity_config.items():
             for property_config in entity_config.get(const.CONF_ENTITY_PROPERTIES):
                 property_entity_id = property_config.get(const.CONF_ENTITY_PROPERTY_ENTITY)
                 if property_entity_id:
@@ -107,8 +147,8 @@ class YandexNotifier(ABC):
 
         return rv
 
-    async def _report_states(self, *_):
-        devices = {}
+    async def _async_report_states(self, *_: Any) -> None:
+        devices: dict[str, dict[str, Any]] = {}
         attrs = ["properties", "capabilities"]
 
         while len(self._pending):
@@ -125,26 +165,12 @@ class YandexNotifier(ABC):
         else:
             self._unsub_pending = None
 
-    async def async_send_state(self, devices: list):
-        await self._async_send_callback(f"{self._base_url}/state", {"devices": devices})
-
-    async def async_send_discovery(self, _=None):
-        if not self._ready:
-            return
-
-        _LOGGER.debug(self._format_log_message("Device list update initiated"))
-        await self._async_send_callback(f"{self._base_url}/discovery", {})
-
-    async def async_schedule_discovery(self, delay: int):
-        self._unsub_send_discovery = async_call_later(self._hass, delay, HassJob(self.async_send_discovery))
+        return None
 
     # noinspection PyBroadException
-    async def _async_send_callback(self, url: str, payload: dict[str, Any]):
-        if self._session.closed:
-            return
-
+    async def _async_send_callback(self, url: str, payload: dict[str, Any]) -> None:
         try:
-            payload["user_id"] = self._user_id
+            payload["user_id"] = self._config.user_id
             request_data = {"ts": time.time(), "payload": payload}
 
             self._log_request(url, request_data)
@@ -156,7 +182,7 @@ class YandexNotifier(ABC):
                 error_message = response_data["error_message"]
             except (AttributeError, ValueError, KeyError, ContentTypeError):
                 if r.status != 202:
-                    error_message = response_body[:100]
+                    error_message = str(response_body[:100])
 
             if r.status != 202 or error_message:
                 _LOGGER.warning(
@@ -169,11 +195,10 @@ class YandexNotifier(ABC):
         except Exception:
             _LOGGER.exception(self._format_log_message("Failed to send state notification"))
 
-    async def async_event_handler(self, event: Event):
-        if not self._ready:
-            return
+        return None
 
-        event_entity_id = event.data.get(ATTR_ENTITY_ID)
+    async def _async_state_changed_event_handler(self, event: Event) -> None:
+        event_entity_id = str(event.data.get(ATTR_ENTITY_ID))
         old_state = event.data.get("old_state")
         new_state = event.data.get("new_state")
 
@@ -182,7 +207,7 @@ class YandexNotifier(ABC):
         if not new_state or new_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
             return
 
-        reportable_entity_ids = {event_entity_id}
+        reportable_entity_ids: set[str] = {event_entity_id}
         if event_entity_id in self._property_entities.keys():
             reportable_entity_ids.update(self._property_entities.get(event_entity_id, {}))
 
@@ -191,16 +216,16 @@ class YandexNotifier(ABC):
             if entity_id != event_entity_id:
                 state = self._hass.states.get(entity_id)
                 if not state:
-                    continue
+                    continue  # pragma: no cover
 
-            device = Device(self._hass, self._config, state.entity_id, state)
+            device = Device(self._hass, self._entry_data, state.entity_id, state)
             if not device.should_expose:
                 continue
 
             callback_state = DeviceCallbackState(device, event_entity_id)
             if entity_id == event_entity_id and entity_id not in self._property_entities.keys():
                 callback_state.old_state = DeviceCallbackState(
-                    Device(self._hass, self._config, old_state.entity_id, old_state), event_entity_id
+                    Device(self._hass, self._entry_data, old_state.entity_id, old_state), event_entity_id
                 )
 
             if callback_state.should_report:
@@ -217,13 +242,12 @@ class YandexNotifier(ABC):
                     delay = 0 if callback_state.should_report_immediately else REPORT_STATE_WINDOW
                     self._unsub_pending = async_call_later(self._hass, delay, self._report_states_job)
 
-    async def async_initial_report(self):
-        if not self._ready:
-            return
+        return None
 
+    async def _async_initial_report(self, *_: Any) -> None:
         _LOGGER.debug("Reporting initial states")
         for state in self._hass.states.async_all():
-            device = Device(self._hass, self._config, state.entity_id, state)
+            device = Device(self._hass, self._entry_data, state.entity_id, state)
             if not device.should_expose:
                 continue
 
@@ -235,34 +259,23 @@ class YandexNotifier(ABC):
                 if self._unsub_pending is None:
                     self._unsub_pending = async_call_later(self._hass, 0, self._report_states_job)
 
-    async def async_unload(self):
-        if self._unsub_send_discovery:
-            self._unsub_send_discovery()
+        return None
 
 
 class YandexDirectNotifier(YandexNotifier):
-    def __init__(self, hass: HomeAssistant, user_id: str, token: str, skill_id: str):
-        self._skill_id = skill_id
-
-        super().__init__(hass, user_id, token)
-
     @property
     def _base_url(self) -> str:
-        return f"https://dialogs.yandex.net/api/v1/skills/{self._skill_id}/callback"
+        return f"https://dialogs.yandex.net/api/v1/skills/{self._config.skill_id}/callback"
 
     @property
     def _request_headers(self) -> dict[str, str]:
-        return {"Authorization": f"OAuth {self._token}"}
+        return {"Authorization": f"OAuth {self._config.token}"}
 
     def _format_log_message(self, message: str) -> str:
-        if len(self._hass.data[DOMAIN][NOTIFIERS]) > 1:
-            return f"[{self._skill_id} | {self._user_id}] {message}"
+        if self._config.verbose_log:
+            return f"{message} [{self._config.skill_id} | {self._config.token}]"
 
         return message
-
-    async def async_validate_config(self):
-        if await self._hass.auth.async_get_user(self._user_id) is None:
-            raise ValueError(f"User {self._user_id} does not exist")
 
 
 class YandexCloudNotifier(YandexNotifier):
@@ -272,70 +285,4 @@ class YandexCloudNotifier(YandexNotifier):
 
     @property
     def _request_headers(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self._token}"}
-
-
-@callback
-def async_setup_notifier(hass: HomeAssistant):
-    """Set up notifiers."""
-    unsub_initial_report: CALLBACK_TYPE | None = None
-
-    async def _state_change_listener(event: Event):
-        await asyncio.gather(*[n.async_event_handler(event) for n in hass.data[DOMAIN][NOTIFIERS]])
-
-    hass.bus.async_listen(EVENT_STATE_CHANGED, _state_change_listener)
-
-    async def _schedule_discovery(event: Event):
-        delay = DISCOVERY_REQUEST_DELAY
-        if event.event_type == EVENT_CONFIG_CHANGED:
-            delay = DISCOVERY_REQUEST_DELAY_ON_CONFIG_RELOAD
-
-        await asyncio.gather(*[n.async_schedule_discovery(delay) for n in hass.data[DOMAIN][NOTIFIERS]])
-
-    async def _schedule_initial_report(_: Event):
-        nonlocal unsub_initial_report
-
-        async def _initial_report(_: Event):
-            nonlocal unsub_initial_report
-            unsub_initial_report = None
-
-            await asyncio.gather(*[n.async_initial_report() for n in hass.data[DOMAIN][NOTIFIERS]])
-
-        if unsub_initial_report is None:
-            unsub_initial_report = async_call_later(hass, INITIAL_REPORT_DELAY, HassJob(_initial_report))
-
-    hass.bus.async_listen(EVENT_HOMEASSISTANT_STARTED, _schedule_discovery)
-    hass.bus.async_listen(EVENT_CONFIG_CHANGED, _schedule_discovery)
-    hass.bus.async_listen(const.EVENT_DEVICE_DISCOVERY, _schedule_initial_report)
-
-
-async def async_start_notifier(hass: HomeAssistant):
-    config = hass.data[DOMAIN][CONFIG]
-    if config.is_direct_connection:
-        if not hass.data[DOMAIN][CONFIG].notifier:
-            _LOGGER.debug("Notifier disabled: no config")
-
-        for conf in hass.data[DOMAIN][CONFIG].notifier:
-            try:
-                notifier = YandexDirectNotifier(
-                    hass,
-                    conf[CONF_NOTIFIER_USER_ID],
-                    conf[CONF_NOTIFIER_OAUTH_TOKEN],
-                    conf[CONF_NOTIFIER_SKILL_ID],
-                )
-                await notifier.async_validate_config()
-
-                hass.data[DOMAIN][NOTIFIERS].append(notifier)
-            except Exception as exc:
-                raise ConfigEntryNotReady from exc
-
-    if config.is_cloud_connection:
-        hass.data[DOMAIN][NOTIFIERS].append(
-            YandexCloudNotifier(hass, config.cloud_instance_id, config.cloud_connection_token)
-        )
-
-
-async def async_unload_notifier(hass: HomeAssistant):
-    await asyncio.gather(*[notifier.async_unload() for notifier in hass.data[DOMAIN][NOTIFIERS]])
-
-    hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []
+        return {"Authorization": f"Bearer {self._config.token}"}

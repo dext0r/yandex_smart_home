@@ -1,13 +1,14 @@
-from typing import Any, cast
+from typing import cast
 
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF
 from homeassistant.core import Context, HomeAssistant, State
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.util.color import RGBColor
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
+from pytest_homeassistant_custom_component.common import async_mock_service
 
-from custom_components.yandex_smart_home import DOMAIN, Config, const
+from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_color import (
     ColorSceneCapability,
     ColorSettingCapability,
@@ -15,6 +16,7 @@ from custom_components.yandex_smart_home.capability_color import (
     RGBColorCapability,
 )
 from custom_components.yandex_smart_home.color import ColorConverter, ColorName, rgb_to_int
+from custom_components.yandex_smart_home.entry_data import ConfigEntryData
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -25,27 +27,24 @@ from custom_components.yandex_smart_home.schema import (
     TemperatureKInstanceActionState,
 )
 
-from . import BASIC_CONFIG, MockConfig, generate_entity_filter
+from . import BASIC_ENTRY_DATA, MockConfigEntryData, generate_entity_filter
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 
-def _get_color_setting_capability(hass: HomeAssistant, config: Config, state: State) -> ColorSettingCapability:
+def _get_color_setting_capability(
+    hass: HomeAssistant, entry_data: ConfigEntryData, state: State
+) -> ColorSettingCapability:
     return cast(
         ColorSettingCapability,
         get_exact_one_capability(
-            hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
+            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
         ),
     )
 
 
-def _get_color_profile_config(entity_config: dict[str, Any]) -> MockConfig:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        options={const.CONF_COLOR_PROFILE: {"test": {"red": rgb_to_int(RGBColor(255, 191, 0)), "white": 4120}}},
-    )
-
-    return MockConfig(
-        entry=entry,
+def _get_color_profile_entry_data(entity_config: ConfigType) -> MockConfigEntryData:
+    return MockConfigEntryData(
+        yaml_config={const.CONF_COLOR_PROFILE: {"test": {"red": rgb_to_int(RGBColor(255, 191, 0)), "white": 4120}}},
         entity_config=entity_config,
         entity_filter=generate_entity_filter(include_entity_globs=["*"]),
     )
@@ -57,7 +56,8 @@ async def test_capability_color_setting(hass):
         STATE_OFF,
         {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.RGB]},
     )
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
+    assert cap_cs.get_value() is None
     with pytest.raises(SmartHomeError) as e:
         await cap_cs.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
     assert e.value.code == const.ERR_INTERNAL_ERROR
@@ -77,28 +77,32 @@ async def test_capability_color_setting(hass):
 @pytest.mark.parametrize("features", [light.SUPPORT_COLOR, 0])
 async def test_capability_color_setting_rgb(hass, color_modes, features):
     state = State("light.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
+    assert_no_capabilities(
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+    )
+    assert_no_capabilities(
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
+    )
 
     state = State(
         "light.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, light.ATTR_SUPPORTED_COLOR_MODES: color_modes}
     )
     if not color_modes and not features:
         assert_no_capabilities(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         )
         assert_no_capabilities(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
         )
         return
 
     cap_rgb = cast(
         RGBColorCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         ),
     )
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
 
     assert cap_cs.retrievable is True
     if light.ColorMode.RGBWW in color_modes or not color_modes:
@@ -121,7 +125,7 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
 
     state = State("light.test", STATE_OFF, attributes)
     cap_rgb = get_exact_one_capability(
-        hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
     )
     assert cap_rgb.get_value() == 255
 
@@ -135,7 +139,7 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
         },
     )
     cap_rgb = get_exact_one_capability(
-        hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
     )
     assert cap_rgb.get_value() is None
 
@@ -170,7 +174,7 @@ async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
     cap = cast(
         RGBColorCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         ),
     )
     assert cap.get_value() == moonlight_color
@@ -186,7 +190,7 @@ async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
     cap = cast(
         RGBColorCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         ),
     )
     assert cap.get_value() == moonlight_color
@@ -202,7 +206,7 @@ async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
     cap = cast(
         RGBColorCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         ),
     )
     assert cap.get_value() != moonlight_color
@@ -220,7 +224,7 @@ async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
 )
 @pytest.mark.parametrize("features", [light.SUPPORT_COLOR])
 async def test_capability_color_setting_rgb_with_profile(hass, color_modes, features):
-    config = _get_color_profile_config(
+    config = _get_color_profile_entry_data(
         {
             "light.test": {const.CONF_COLOR_PROFILE: "test"},
             "light.invalid": {const.CONF_COLOR_PROFILE: "invalid"},
@@ -275,7 +279,7 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
 )
 @pytest.mark.parametrize("features", [light.SUPPORT_COLOR])
 async def test_capability_color_setting_rgb_with_internal_profile(hass, color_modes, features):
-    config = _get_color_profile_config({"light.test": {const.CONF_COLOR_PROFILE: "natural"}})
+    config = _get_color_profile_entry_data({"light.test": {const.CONF_COLOR_PROFILE: "natural"}})
 
     attributes = {ATTR_SUPPORTED_FEATURES: features, light.ATTR_SUPPORTED_COLOR_MODES: color_modes}
     if light.ColorMode.HS in color_modes:
@@ -318,18 +322,20 @@ async def test_capability_color_setting_rgb_with_internal_profile(hass, color_mo
 async def test_capability_color_setting_temperature_k(hass, attributes, temp_range):
     state = State("light.test", STATE_OFF)
     assert_no_capabilities(
-        hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
+    assert_no_capabilities(
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
+    )
 
     state = State("light.test", STATE_OFF, attributes)
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     assert cap_cs.retrievable is True
     assert cap_cs.parameters.dict()["temperature_k"] == {"min": temp_range[0], "max": temp_range[1]}
     assert cap_temp.get_value() is None
@@ -339,7 +345,7 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
     cap = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     assert cap.get_value() == 2700
@@ -378,7 +384,7 @@ async def test_capability_color_setting_temprature_k_extend(hass):
             light.ATTR_MAX_COLOR_TEMP_KELVIN: 6500,
         },
     )
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     assert cap_cs.parameters.dict()["temperature_k"] == {"min": 2700, "max": 6500}
 
     # beyond range
@@ -391,7 +397,7 @@ async def test_capability_color_setting_temprature_k_extend(hass):
             light.ATTR_MAX_COLOR_TEMP_KELVIN: 12000,
         },
     )
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     assert cap_cs.parameters.dict()["temperature_k"] == {"min": 1500, "max": 9000}
 
     # no extend
@@ -404,7 +410,7 @@ async def test_capability_color_setting_temprature_k_extend(hass):
             light.ATTR_MAX_COLOR_TEMP_KELVIN: 6700,
         },
     )
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     assert cap_cs.parameters.dict()["temperature_k"] == {"min": 2700, "max": 6500}
 
     # narrow range
@@ -418,11 +424,11 @@ async def test_capability_color_setting_temprature_k_extend(hass):
             light.ATTR_MAX_COLOR_TEMP_KELVIN: 2008,
         },
     )
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     assert cap_cs.parameters.dict()["temperature_k"] == {"min": 4500, "max": 4500}
@@ -440,14 +446,14 @@ async def test_capability_color_setting_temprature_k_extend(hass):
         light.ATTR_MAX_COLOR_TEMP_KELVIN: 6800,
     }
     state = State("light.test", STATE_OFF, attributes)
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     assert cap_cs.parameters.dict()["temperature_k"] == {"min": 1500, "max": 7500}
 
     state = State("light.test", STATE_OFF, dict({light.ATTR_COLOR_TEMP_KELVIN: 2300}, **attributes))
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     assert cap_temp.get_value() == 1500
@@ -456,7 +462,7 @@ async def test_capability_color_setting_temprature_k_extend(hass):
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     assert cap_temp.get_value() == 7500
@@ -465,7 +471,7 @@ async def test_capability_color_setting_temprature_k_extend(hass):
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     assert cap_temp.get_value() == 6700
@@ -490,7 +496,7 @@ async def test_capability_color_setting_temprature_k_extend(hass):
     ],
 )
 async def test_capability_color_setting_temperature_k_with_profile(hass, attributes):
-    config = _get_color_profile_config(
+    config = _get_color_profile_entry_data(
         {
             "light.test": {const.CONF_COLOR_PROFILE: "test"},
             "light.invalid": {const.CONF_COLOR_PROFILE: "invalid"},
@@ -554,7 +560,7 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     assert cap_temp.get_value() == 4100
@@ -589,11 +595,11 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
 async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
     attributes = {light.ATTR_SUPPORTED_COLOR_MODES: color_modes}
     state = State("light.test", STATE_OFF, attributes)
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     assert cap_cs.retrievable is True
@@ -629,11 +635,11 @@ async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
 async def test_capability_color_setting_temperature_k_rgb_white(hass, color_modes):
     attributes = {light.ATTR_SUPPORTED_COLOR_MODES: color_modes + [light.ColorMode.WHITE]}
     state = State("light.test", STATE_OFF, attributes)
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     assert cap_cs.retrievable is True
@@ -683,11 +689,11 @@ async def test_capability_color_setting_temperature_k_rgb_white(hass, color_mode
 async def test_capability_color_setting_temperature_k_rgbw(hass):
     attributes = {light.ATTR_SUPPORTED_COLOR_MODES: [light.ColorMode.RGBW]}
     state = State("light.test", STATE_OFF, attributes)
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     assert cap_cs.retrievable is True
@@ -747,13 +753,13 @@ async def test_capability_color_mode_color_temp(hass):
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     cap_rgb = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         ),
     )
     assert cap_temp.get_value() == 3200
@@ -763,13 +769,13 @@ async def test_capability_color_mode_color_temp(hass):
     cap_temp = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
     cap_rgb = cast(
         ColorTemperatureCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         ),
     )
     assert cap_temp.get_value() == 3200
@@ -779,9 +785,11 @@ async def test_capability_color_mode_color_temp(hass):
 async def test_capability_color_setting_scene(hass):
     state = State("light.test", STATE_OFF)
     assert_no_capabilities(
-        hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
+    assert_no_capabilities(
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
+    )
 
     state = State(
         "light.test",
@@ -789,9 +797,11 @@ async def test_capability_color_setting_scene(hass):
         {ATTR_SUPPORTED_FEATURES: light.LightEntityFeature.EFFECT, light.ATTR_EFFECT_LIST: ["foo", "bar"]},
     )
     assert_no_capabilities(
-        hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
+    assert_no_capabilities(
+        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE
+    )
 
     state = State(
         "light.test",
@@ -802,12 +812,14 @@ async def test_capability_color_setting_scene(hass):
             light.ATTR_EFFECT: "foo",
         },
     )
-    config = MockConfig(entity_config={state.entity_id: {const.CONF_ENTITY_MODE_MAP: {"scene": {"garland": ["foo"]}}}})
-    cap_cs = _get_color_setting_capability(hass, config, state)
+    entry_data = MockConfigEntryData(
+        entity_config={state.entity_id: {const.CONF_ENTITY_MODE_MAP: {"scene": {"garland": ["foo"]}}}}
+    )
+    cap_cs = _get_color_setting_capability(hass, entry_data, state)
     cap_scene = cast(
         ColorSceneCapability,
         get_exact_one_capability(
-            hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
+            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
         ),
     )
     assert cap_cs.parameters.as_dict() == {"color_scene": {"scenes": [{"id": "alice"}, {"id": "garland"}]}}
@@ -819,11 +831,11 @@ async def test_capability_color_setting_scene(hass):
         light.ATTR_EFFECT_LIST: ["Leasure", "Rainbow"],
     }
     state = State("light.test", STATE_OFF, attributes)
-    cap_cs = _get_color_setting_capability(hass, BASIC_CONFIG, state)
+    cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     cap_scene = cast(
         ColorSceneCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
         ),
     )
     assert cap_cs.retrievable is True

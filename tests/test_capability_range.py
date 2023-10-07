@@ -27,7 +27,7 @@ from custom_components.yandex_smart_home.schema import (
     RangeCapabilityRange,
 )
 
-from . import BASIC_CONFIG, MockConfig
+from . import BASIC_ENTRY_DATA, MockConfigEntryData
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 
@@ -54,11 +54,11 @@ async def test_capability_range(hass, caplog):
         def support_random_access(self) -> bool:
             return True
 
-    cap = MockCapability(hass, BASIC_CONFIG, State("switch.test", STATE_ON))
+    cap = MockCapability(hass, BASIC_ENTRY_DATA, State("switch.test", STATE_ON))
     assert cap.retrievable is False
     assert cap.parameters == RangeCapabilityParameters(instance=RangeCapabilityInstance.VOLUME, random_access=False)
 
-    cap = MockCapabilityRandomAccess(hass, BASIC_CONFIG, State("switch.test", STATE_ON))
+    cap = MockCapabilityRandomAccess(hass, BASIC_ENTRY_DATA, State("switch.test", STATE_ON))
     assert cap.retrievable
     assert cap.support_random_access
     assert cap._range == RangeCapabilityRange(min=0.0, max=100.0, precision=1.0)
@@ -74,8 +74,10 @@ async def test_capability_range(hass, caplog):
                 if range_prec:
                     entity_range_config[const.CONF_ENTITY_RANGE_PRECISION] = range_prec
 
-                config = MockConfig(entity_config={"switch.test": {const.CONF_ENTITY_RANGE: entity_range_config}})
-                cap = MockCapabilityRandomAccess(hass, config, State("switch.test", STATE_ON))
+                entry_data = MockConfigEntryData(
+                    entity_config={"switch.test": {const.CONF_ENTITY_RANGE: entity_range_config}}
+                )
+                cap = MockCapabilityRandomAccess(hass, entry_data, State("switch.test", STATE_ON))
                 assert cap._range == RangeCapabilityRange(
                     min=range_min or cap._default_range.min,
                     max=range_max or cap._default_range.max,
@@ -130,12 +132,12 @@ async def test_capability_range(hass, caplog):
 
 async def test_capability_range_cover(hass):
     state = State("cover.test", cover.STATE_OPEN)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN)
 
     state = State("cover.test", cover.STATE_OPEN, {ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -157,7 +159,7 @@ async def test_capability_range_cover(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
     )
     assert cap.get_value() == 30
 
@@ -180,7 +182,7 @@ async def test_capability_range_cover(hass):
 
 async def test_capability_range_temperature_climate(hass):
     state = State("climate.test", climate.STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
 
     state = State(
         "climate.test",
@@ -194,7 +196,9 @@ async def test_capability_range_temperature_climate(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE
+        ),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -218,7 +222,9 @@ async def test_capability_range_temperature_climate(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE
+        ),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -252,7 +258,7 @@ async def test_capability_range_temperature_climate(hass):
 
 async def test_capability_range_temperature_water_heater(hass):
     state = State("water_heater.test", water_heater.STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
 
     state = State(
         "water_heater.test",
@@ -265,7 +271,9 @@ async def test_capability_range_temperature_water_heater(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE
+        ),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -289,7 +297,9 @@ async def test_capability_range_temperature_water_heater(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE
+        ),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -326,7 +336,7 @@ async def test_capability_range_humidity_humidifier(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -345,7 +355,7 @@ async def test_capability_range_humidity_humidifier(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
     )
     assert cap.get_value() == 30
 
@@ -371,12 +381,12 @@ async def test_capability_range_humidity_humidifier(hass):
 
 async def test_capability_range_humidity_fan(hass):
     state = State("fan.test", water_heater.STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY)
 
     state = State("fan.test", STATE_OFF, {const.ATTR_TARGET_HUMIDITY: 50, ATTR_MODEL: "zhimi.test.a"})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -410,12 +420,14 @@ async def test_capability_range_humidity_fan(hass):
 
 async def test_capability_range_brightness_legacy(hass):
     state = State("light.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS)
 
     state = State("light.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: light.SUPPORT_BRIGHTNESS})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS
+        ),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -432,7 +444,9 @@ async def test_capability_range_brightness_legacy(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS
+        ),
     )
     assert cap.get_value() == 50
 
@@ -446,7 +460,9 @@ async def test_capability_range_brightness(hass, color_mode):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS
+        ),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -461,7 +477,9 @@ async def test_capability_range_brightness(hass, color_mode):
     state = State("light.test", STATE_ON, {light.ATTR_SUPPORTED_COLOR_MODES: [color_mode], light.ATTR_BRIGHTNESS: 128})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS
+        ),
     )
     assert cap.get_value() == 50
 
@@ -487,10 +505,10 @@ async def test_capability_range_brightness(hass, color_mode):
 
 async def test_capability_range_volume(hass):
     state = State("media_player.test", STATE_ON)
-    config = MockConfig(entity_config={state.entity_id: {"features": ["volume_set"]}})
+    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["volume_set"]}})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, config, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.support_random_access is True
 
@@ -504,7 +522,7 @@ async def test_capability_range_volume(hass):
 )
 async def test_capability_range_volume_support_random(hass, features):
     state = State("media_player.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME)
 
     state = State(
         "media_player.test",
@@ -515,7 +533,7 @@ async def test_capability_range_volume_support_random(hass, features):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -531,7 +549,7 @@ async def test_capability_range_volume_support_random(hass, features):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.get_value() == 56
 
@@ -560,7 +578,7 @@ async def test_capability_range_volume_only_relative(hass, precision):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.support_random_access is False
 
@@ -568,10 +586,10 @@ async def test_capability_range_volume_only_relative(hass, precision):
     if precision:
         entity_config = {const.CONF_ENTITY_RANGE: {const.CONF_ENTITY_RANGE_PRECISION: precision}}
 
-    config = MockConfig(entity_config={state.entity_id: entity_config})
+    entry_data = MockConfigEntryData(entity_config={state.entity_id: entity_config})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, config, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
 
     calls_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_UP)
@@ -620,13 +638,13 @@ async def test_capability_range_volume_only_relative(hass, precision):
 
 async def test_capability_range_channel_via_features(hass):
     state = State("media_player.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
 
     state = State("media_player.test", STATE_ON)
-    config = MockConfig(entity_config={state.entity_id: {"features": ["next_previous_track"]}})
+    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["next_previous_track"]}})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, config, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.support_random_access is False
 
@@ -640,8 +658,8 @@ async def test_capability_range_channel_set_via_config(hass):
             ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV,
         },
     )
-    config = MockConfig(entity_config={state.entity_id: {const.CONF_SUPPORT_SET_CHANNEL: False}})
-    assert_no_capabilities(hass, config, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
+    entry_data = MockConfigEntryData(entity_config={state.entity_id: {const.CONF_SUPPORT_SET_CHANNEL: False}})
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
 
     state = State(
         "media_player.test",
@@ -656,7 +674,7 @@ async def test_capability_range_channel_set_via_config(hass):
 
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, config, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is False
     assert cap.support_random_access is False
@@ -672,7 +690,7 @@ async def test_capability_range_channel_set_random(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is False
     assert cap.support_random_access is False
@@ -687,7 +705,7 @@ async def test_capability_range_channel_set_random(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is False
     assert cap.support_random_access is False
@@ -702,7 +720,7 @@ async def test_capability_range_channel_set_random(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -752,7 +770,7 @@ async def test_capability_range_channel_set_not_supported(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -783,7 +801,7 @@ async def test_capability_range_channel_set_random_with_value(hass):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -829,7 +847,7 @@ async def test_capability_range_channel_value(hass, caplog):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.get_value() == 5
 
@@ -844,7 +862,7 @@ async def test_capability_range_channel_value(hass, caplog):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.get_value() is None
 
@@ -859,7 +877,7 @@ async def test_capability_range_channel_value(hass, caplog):
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.get_value() is None
     assert len(caplog.records) == 0
@@ -881,12 +899,12 @@ async def test_capability_range_channel_set_relative(hass, features, device_clas
     state = State(
         "media_player.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK}
     )
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
 
     state = State("media_player.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, ATTR_DEVICE_CLASS: device_class})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     if device_class == media_player.MediaPlayerDeviceClass.TV:
         assert cap.retrievable is bool(features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA)

@@ -169,7 +169,7 @@ class PressureProperty(FloatProperty, ABC):
     @property
     def unit_of_measurement(self) -> UnitOfPressure:
         """Return the unit the property value is expressed in."""
-        return UnitOfPressure(self._config.pressure_unit)
+        return UnitOfPressure(self._entry_data.pressure_unit)
 
     @property
     def _unit_converter(self) -> PressureConverter:

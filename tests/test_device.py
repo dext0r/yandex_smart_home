@@ -76,7 +76,7 @@ from custom_components.yandex_smart_home.schema import (
     ToggleCapabilityInstanceActionState,
 )
 
-from . import BASIC_CONFIG, MockConfig, generate_entity_filter
+from . import BASIC_ENTRY_DATA, MockConfigEntryData, generate_entity_filter
 
 
 @pytest.fixture
@@ -102,7 +102,7 @@ async def test_device_duplicate_capabilities(hass):
             return True
 
     state = State("switch.test", STATE_ON)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
 
     with patch(
         "custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY",
@@ -129,7 +129,7 @@ async def test_device_capabilities(hass):
     state = hass.states.get("light.test")
     state_sensor = State("sensor.test", "33")
     hass.states.async_set(state_sensor.entity_id, state_sensor.state)
-    config = MockConfig(
+    entry_data = MockConfigEntryData(
         entity_config={
             light.entity_id: {
                 const.CONF_ENTITY_MODE_MAP: {const.MODE_INSTANCE_DISHWASHING: {const.MODE_INSTANCE_MODE_ECO: [""]}},
@@ -155,7 +155,7 @@ async def test_device_capabilities(hass):
             }
         }
     )
-    device = Device(hass, config, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert [type(c) for c in device.get_capabilities()] == [
         CustomModeCapability,
         CustomToggleCapability,
@@ -185,7 +185,7 @@ async def test_device_duplicate_properties(hass):
             return True
 
     state = State("sensor.test", "33")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
 
     with patch(
         "custom_components.yandex_smart_home.device.STATE_PROPERTIES_REGISTRY",
@@ -208,7 +208,7 @@ async def test_device_properties(hass):
         },
     )
     hass.states.async_set(state.entity_id, state.state)
-    config = MockConfig(
+    entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
                 const.CONF_ENTITY_PROPERTIES: [
@@ -218,7 +218,7 @@ async def test_device_properties(hass):
             }
         }
     )
-    device = Device(hass, config, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert [type(c) for c in device.get_properties()] == [
         VoltageCustomFloatProperty,
         ButtonPressCustomEventProperty,
@@ -232,7 +232,7 @@ async def test_device_properties(hass):
             ATTR_DEVICE_CLASS: BinarySensorDeviceClass.DOOR,
         },
     )
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert [type(c) for c in device.get_properties()] == [OpenStateEventProperty]
 
 
@@ -246,7 +246,7 @@ async def test_device_info(hass, registries):
         config_entry_id="test_1",
     )
     ent_reg.async_get_or_create("switch", "test", "1", device_id=device.id)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     d = await device.describe(ent_reg, dev_reg, area_reg)
     assert d.id == "switch.test_1"
     assert d.device_info.as_dict() == {"model": "switch.test_1", "manufacturer": "Acme Inc."}
@@ -265,7 +265,7 @@ async def test_device_info(hass, registries):
         "2",
         device_id=device.id,
     )
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     d = await device.describe(ent_reg, dev_reg, area_reg)
     assert d.id == "switch.test_2"
     assert d.device_info.as_dict() == {
@@ -284,7 +284,7 @@ async def test_device_name_room(hass, registries):
     state = State("switch.test_1", STATE_ON)
     dev_entry = dev_reg.async_get_or_create(identifiers={"test_1"}, config_entry_id="test_1")
     entry = ent_reg.async_get_or_create("switch", "test", "1", device_id=dev_entry.id)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     d = await device.describe(ent_reg, dev_reg, area_reg)
     assert d.id == "switch.test_1"
     assert d.name == "test 1"
@@ -304,58 +304,58 @@ async def test_device_name_room(hass, registries):
     assert d.name == "Устройство"
     assert d.room == "Кладовка"
 
-    config = MockConfig(entity_config={"switch.test_1": {CONF_NAME: "Имя", CONF_ROOM: "Комната"}})
-    device = Device(hass, config, state.entity_id, state)
+    entry_data = MockConfigEntryData(entity_config={"switch.test_1": {CONF_NAME: "Имя", CONF_ROOM: "Комната"}})
+    device = Device(hass, entry_data, state.entity_id, state)
     d = await device.describe(ent_reg, dev_reg, area_reg)
     assert d.name == "Имя"
     assert d.room == "Комната"
 
 
 async def test_device_should_expose(hass):
-    device = Device(hass, BASIC_CONFIG, "group.all_locks", State("group.all_locks", STATE_ON))
+    device = Device(hass, BASIC_ENTRY_DATA, "group.all_locks", State("group.all_locks", STATE_ON))
     assert device.should_expose is False
 
-    device = Device(hass, BASIC_CONFIG, "fake.unsupported", State("fake.unsupported", STATE_ON))
+    device = Device(hass, BASIC_ENTRY_DATA, "fake.unsupported", State("fake.unsupported", STATE_ON))
     assert device.should_expose is False
 
-    config = MockConfig(entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]))
-    device = Device(hass, config, "switch.test", State("switch.test", STATE_ON))
+    entry_data = MockConfigEntryData(entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]))
+    device = Device(hass, entry_data, "switch.test", State("switch.test", STATE_ON))
     assert device.should_expose is True
-    device = Device(hass, config, "switch.test", State("switch.test", STATE_UNAVAILABLE))
+    device = Device(hass, entry_data, "switch.test", State("switch.test", STATE_UNAVAILABLE))
     assert device.should_expose is False
 
-    device = Device(hass, config, "switch.not_expose", State("switch.not_expose", STATE_ON))
+    device = Device(hass, entry_data, "switch.not_expose", State("switch.not_expose", STATE_ON))
     assert device.should_expose is False
 
 
 async def test_devoce_should_expose_empty_filters(hass):
-    config = MockConfig(entity_filter=generate_entity_filter())
+    entry_data = MockConfigEntryData(entity_filter=generate_entity_filter())
 
-    device = Device(hass, config, "switch.test", State("switch.test", STATE_ON))
+    device = Device(hass, entry_data, "switch.test", State("switch.test", STATE_ON))
     assert device.should_expose is False
 
 
 async def test_device_type(hass):
     state = State("input_number.test", "40")
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type is None
 
-    config = MockConfig(entity_config={state.entity_id: {CONF_TYPE: "devices.types.other"}})
-    device = Device(hass, config, state.entity_id, state)
+    entry_data = MockConfigEntryData(entity_config={state.entity_id: {CONF_TYPE: "devices.types.other"}})
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == DeviceType.OTHER
 
     state = State("switch.test_1", STATE_ON)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == DeviceType.SWITCH
 
-    config = MockConfig(
+    entry_data = MockConfigEntryData(
         entity_config={
             "switch.test_1": {
                 CONF_TYPE: "devices.types.openable.curtain",
             }
         }
     )
-    device = Device(hass, config, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == DeviceType.OPENABLE_CURTAIN
 
 
@@ -374,17 +374,17 @@ async def test_device_type_media_player(hass, device_class, device_type):
         attributes[ATTR_DEVICE_CLASS] = device_class
 
     state = State("media_player.tv", STATE_ON, attributes=attributes)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == device_type
 
 
 async def test_device_type_switch(hass):
     state = State("switch.test", STATE_ON)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == DeviceType.SWITCH
 
     state = State("switch.test", STATE_ON, attributes={ATTR_DEVICE_CLASS: switch.SwitchDeviceClass.OUTLET})
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == DeviceType.SOCKET
 
 
@@ -406,13 +406,13 @@ async def test_device_query(hass):
             pass
 
     state = State("switch.unavailable", STATE_UNAVAILABLE)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.query().as_dict() == {"id": state.entity_id, "error_code": ERR_DEVICE_UNREACHABLE}
 
     state = State("switch.test", STATE_ON)
     state_pause = State("input_boolean.pause", STATE_OFF)
-    cap_onoff = OnOffCapabilityBasic(hass, BASIC_CONFIG, state)
-    cap_pause = PauseCapability(hass, BASIC_CONFIG, state_pause)
+    cap_onoff = OnOffCapabilityBasic(hass, BASIC_ENTRY_DATA, state)
+    cap_pause = PauseCapability(hass, BASIC_ENTRY_DATA, state_pause)
 
     state_temp = State(
         "sensor.temp",
@@ -441,23 +441,23 @@ async def test_device_query(hass):
         },
     )
 
-    prop_temp = TemperatureSensor(hass, BASIC_CONFIG, state_temp)
+    prop_temp = TemperatureSensor(hass, BASIC_ENTRY_DATA, state_temp)
     prop_humidity_custom = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             CONF_ENTITY_PROPERTY_ENTITY: state_humidity.entity_id,
             CONF_ENTITY_PROPERTY_TYPE: const.FLOAT_INSTANCE_HUMIDITY,
         },
         state.entity_id,
     )
-    prop_voltage = VoltageSensor(hass, BASIC_CONFIG, state_voltage)
+    prop_voltage = VoltageSensor(hass, BASIC_ENTRY_DATA, state_voltage)
 
     state_button = State("binary_sensor.button", "", attributes={"action": "click"})
     hass.states.async_set(state_button.entity_id, state_button.state, state_button.attributes)
     prop_button = get_custom_property(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             CONF_ENTITY_PROPERTY_ENTITY: state_button.entity_id,
             CONF_ENTITY_PROPERTY_ATTRIBUTE: "action",
@@ -466,7 +466,7 @@ async def test_device_query(hass):
         state.entity_id,
     )
 
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
 
     with patch.object(Device, "get_capabilities", return_value=[cap_onoff, cap_pause]), patch.object(
         Device, "get_properties", return_value=[prop_temp, prop_voltage, prop_humidity_custom, prop_button]
@@ -551,7 +551,7 @@ async def test_device_query(hass):
 
 async def test_device_execute(hass, caplog):
     state = State("switch.test", STATE_ON)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     with pytest.raises(SmartHomeError) as e:
         await device.execute(
             Context(),
@@ -588,7 +588,7 @@ async def test_device_execute_exception(hass):
             raise SmartHomeError(ERR_INVALID_ACTION, "foo")
 
     state = State("switch.test", STATE_ON)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     with patch("custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY", [MockOnOffCapability]):
         with pytest.raises(SmartHomeError) as e:
             await device.execute(
@@ -604,7 +604,7 @@ async def test_device_execute_exception(hass):
         "Exception('fail set_state')"
     )
 
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     with patch("custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY", [MockBrightnessCapability]):
         with pytest.raises(SmartHomeError) as e:
             await device.execute(
@@ -620,7 +620,7 @@ async def test_device_execute_exception(hass):
 
 async def test_device_callback_state_unavailable(hass):
     state = State("switch.unavailable", STATE_UNAVAILABLE)
-    device = Device(hass, BASIC_CONFIG, state.entity_id, state)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     callback_state = DeviceCallbackState(device, state.entity_id)
     assert callback_state.capabilities == []
     assert callback_state.properties == []

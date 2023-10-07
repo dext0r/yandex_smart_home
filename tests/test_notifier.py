@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from unittest.mock import PropertyMock, patch
+from unittest.mock import patch
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.components.sensor import SensorDeviceClass
@@ -10,38 +10,26 @@ from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
     ATTR_VOLTAGE,
     EVENT_HOMEASSISTANT_STARTED,
-    EVENT_STATE_CHANGED,
     PERCENTAGE,
     STATE_ON,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
     TEMP_CELSIUS,
 )
-from homeassistant.core import Context, State
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.core import CoreState, State
+from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION
+from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import const, handlers
-from custom_components.yandex_smart_home.const import (
-    CONF_NOTIFIER_OAUTH_TOKEN,
-    CONF_NOTIFIER_SKILL_ID,
-    CONF_NOTIFIER_USER_ID,
-    CONFIG,
-    DOMAIN,
-    NOTIFIERS,
-)
+from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome, const
 from custom_components.yandex_smart_home.device import DeviceCallbackState
-from custom_components.yandex_smart_home.helpers import RequestData
-from custom_components.yandex_smart_home.notifier import (
-    YandexCloudNotifier,
-    YandexDirectNotifier,
-    async_setup_notifier,
-    async_start_notifier,
-    async_unload_notifier,
-)
+from custom_components.yandex_smart_home.entry_data import CONF_DEVICES_DISCOVERED
+from custom_components.yandex_smart_home.notifier import NotifierConfig, YandexCloudNotifier, YandexDirectNotifier
 
-from . import BASIC_CONFIG, REQ_ID, MockConfig, generate_entity_filter
+from . import BASIC_ENTRY_DATA, REQ_ID, MockConfigEntryData, generate_entity_filter, test_cloud
+
+BASIC_CONFIG = NotifierConfig(user_id="bread", token="xyz", skill_id="a-b-c")
 
 
 class MockDeviceCallbackState(DeviceCallbackState):
@@ -53,164 +41,176 @@ class MockDeviceCallbackState(DeviceCallbackState):
         self.properties = properties or []
 
 
-@pytest.fixture(autouse=True, name="mock_call_later")
+@pytest.fixture(name="mock_call_later")
 def mock_call_later_fixture():
     with patch("custom_components.yandex_smart_home.notifier.async_call_later") as mock_call_later:
         yield mock_call_later
 
 
-def _mock_entry_with_cloud_connection(_=None, devices_discovered=False) -> MockConfigEntry:
-    return MockConfigEntry(
+async def test_notifier_setup_config_invalid(hass, hass_admin_user, config_entry_direct, caplog):
+    yaml_config = {
+        const.CONF_NOTIFIER: [
+            {
+                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
+                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
+                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
+            },
+            {
+                const.CONF_NOTIFIER_USER_ID: "invalid",
+                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
+                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
+            },
+        ],
+    }
+    await async_setup_component(hass, DOMAIN, {DOMAIN: yaml_config})
+    config_entry_direct.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry_direct.entry_id)
+
+    component: YandexSmartHome = hass.data[DOMAIN]
+    with pytest.raises(KeyError):
+        component.get_entry_data(config_entry_direct)
+    assert (
+        caplog.messages[-1] == "Config entry 'Mock Title' for yandex_smart_home integration not ready yet: "
+        "User invalid does not exist; Retrying in background"
+    )
+
+
+async def test_notifier_setup_not_discovered(hass, hass_admin_user, aioclient_mock):
+    hass.data[DATA_CLIENTSESSION] = test_cloud.MockSession(aioclient_mock)
+
+    yaml_config = {
+        const.CONF_NOTIFIER: [
+            {
+                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
+                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
+                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
+            },
+        ],
+    }
+    await async_setup_component(hass, DOMAIN, {DOMAIN: yaml_config})
+    component: YandexSmartHome = hass.data[DOMAIN]
+
+    config_entry_direct = MockConfigEntry(
+        domain=DOMAIN, data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT}
+    )
+    config_entry_cloud = MockConfigEntry(
+        domain=DOMAIN,
         data={
             const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
-            const.CONF_DEVICES_DISCOVERED: devices_discovered,
             const.CONF_CLOUD_INSTANCE: {
-                const.CONF_CLOUD_INSTANCE_ID: "test_instance",
+                const.CONF_CLOUD_INSTANCE_ID: "test",
                 const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
-        }
+        },
     )
 
+    for config_entry in [config_entry_direct, config_entry_cloud]:
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
 
-def _mock_entry_with_direct_connection(hass_admin_user, devices_discovered=False) -> MockConfigEntry:
-    return MockConfigEntry(
+        assert len(component.get_entry_data(config_entry)._notifier_configs) == 1
+        assert len(component.get_entry_data(config_entry)._notifiers) == 0
+
+
+async def test_notifier_lifecycle_discovered(hass, hass_admin_user, aioclient_mock):
+    hass.data[DATA_CLIENTSESSION] = test_cloud.MockSession(aioclient_mock)
+
+    yaml_config = {
+        const.CONF_NOTIFIER: [
+            {
+                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
+                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
+                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
+            },
+            {
+                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
+                const.CONF_NOTIFIER_OAUTH_TOKEN: "token2",
+                const.CONF_NOTIFIER_SKILL_ID: "skill_id2",
+            },
+        ],
+    }
+
+    await async_setup_component(hass, DOMAIN, {DOMAIN: yaml_config})
+    component: YandexSmartHome = hass.data[DOMAIN]
+
+    config_entry_direct = MockConfigEntry(
+        domain=DOMAIN, data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT, CONF_DEVICES_DISCOVERED: True}
+    )
+    config_entry_cloud = MockConfigEntry(
+        domain=DOMAIN,
         data={
-            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT,
-            const.CONF_DEVICES_DISCOVERED: devices_discovered,
-            const.CONF_NOTIFIER: [
-                {
-                    CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-                    CONF_NOTIFIER_OAUTH_TOKEN: "foo",
-                    CONF_NOTIFIER_SKILL_ID: "",
-                }
-            ],
-        }
+            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_CLOUD,
+            const.CONF_CLOUD_INSTANCE: {
+                const.CONF_CLOUD_INSTANCE_ID: "test",
+                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+            },
+            CONF_DEVICES_DISCOVERED: True,
+        },
     )
 
+    for config_entry in [config_entry_direct, config_entry_cloud]:
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
 
-async def test_notifier_async_start_direct_invalid(hass, mock_call_later, hass_admin_user):
-    async_setup_notifier(hass)
+    assert len(component.get_entry_data(config_entry_direct)._notifier_configs) == 2
+    assert len(component.get_entry_data(config_entry_direct)._notifiers) == 2
+    assert len(component.get_entry_data(config_entry_cloud)._notifier_configs) == 1
+    assert len(component.get_entry_data(config_entry_cloud)._notifiers) == 1
 
-    entry = MockConfigEntry(
-        data={
-            const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT,
-            const.CONF_NOTIFIER: [
-                {
-                    CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-                    CONF_NOTIFIER_OAUTH_TOKEN: "token",
-                    CONF_NOTIFIER_SKILL_ID: "skill_id",
-                },
-                {
-                    CONF_NOTIFIER_USER_ID: "invalid",
-                    CONF_NOTIFIER_OAUTH_TOKEN: "token",
-                    CONF_NOTIFIER_SKILL_ID: "skill_id",
-                },
-            ],
-        }
+    for config_entry in [config_entry_direct, config_entry_cloud]:
+        for notifier in component.get_entry_data(config_entry)._notifiers:
+            assert notifier._unsub_state_changed is not None
+            assert notifier._unsub_initial_report is not None
+            assert notifier._unsub_send_discovery is not None
+            assert notifier._unsub_pending is None
+
+        await hass.config_entries.async_unload(config_entry.entry_id)
+
+        for notifier in component.get_entry_data(config_entry)._notifiers:
+            assert notifier._unsub_state_changed is None
+            assert notifier._unsub_initial_report is None
+            assert notifier._unsub_send_discovery is None
+            assert notifier._unsub_pending is None
+
+
+async def test_notifier_postponed_setup(hass, hass_admin_user):
+    yaml_config = {
+        const.CONF_NOTIFIER: [
+            {
+                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
+                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
+                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
+            }
+        ],
+    }
+    await async_setup_component(hass, DOMAIN, {DOMAIN: yaml_config})
+    component: YandexSmartHome = hass.data[DOMAIN]
+
+    config_entry = MockConfigEntry(
+        domain=DOMAIN, data={const.CONF_CONNECTION_TYPE: const.CONNECTION_TYPE_DIRECT, CONF_DEVICES_DISCOVERED: True}
     )
-    config = MockConfig(entry=entry)
-    hass.data[DOMAIN] = {
-        CONFIG: config,
-        NOTIFIERS: [],
-    }
-    with pytest.raises(ConfigEntryNotReady):
-        await async_start_notifier(hass)
-
-
-@pytest.mark.parametrize("entry", [_mock_entry_with_cloud_connection, _mock_entry_with_direct_connection])
-async def test_notifier_async_start(hass, entry, hass_admin_user):
-    async_setup_notifier(hass)
-
-    config = MockConfig(entry=entry(hass_admin_user))
-    hass.data[DOMAIN] = {
-        CONFIG: config,
-        NOTIFIERS: [],
-    }
-
-    with patch("custom_components.yandex_smart_home.notifier.YandexNotifier.async_event_handler") as mock_evh:
-        await async_start_notifier(hass)
+    with patch.object(hass, "state", return_value=CoreState.starting):
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        assert len(component.get_entry_data(config_entry)._notifiers) == 0
+        hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
         await hass.async_block_till_done()
-        assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-
-        hass.bus.async_fire(EVENT_STATE_CHANGED, {"test": True})
-        await hass.async_block_till_done()
-        mock_evh.assert_called_once()
-        assert mock_evh.call_args[0][0].data == {"test": True}
+        assert len(component.get_entry_data(config_entry)._notifiers) == 1
 
 
-async def test_notifier_schedule_discovery_on_start(hass, mock_call_later):
-    async_setup_notifier(hass)
-
-    entry = _mock_entry_with_cloud_connection(devices_discovered=True)
-    entry.add_to_hass(hass)
-
-    config = MockConfig(entry=entry)
-    hass.data[DOMAIN] = {
-        CONFIG: config,
-        NOTIFIERS: [],
-    }
-
-    await async_start_notifier(hass)
-
-    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-    notifier = hass.data[DOMAIN][NOTIFIERS][0]
-
-    assert notifier._unsub_send_discovery is None
-    hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
-    await hass.async_block_till_done()
-    assert notifier._unsub_send_discovery is not None
-
-    await async_unload_notifier(hass)
-    await hass.async_block_till_done()
-
-    # noinspection PyUnresolvedReferences
-    notifier._unsub_send_discovery.assert_called_once()
+async def test_notifier_format_log_message(hass):
+    direct = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x"))
+    directv = YandexDirectNotifier(
+        hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x", verbose_log=True)
+    )
+    cloud = YandexCloudNotifier(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x"))
+    assert direct._format_log_message("test") == "test"
+    assert directv._format_log_message("test") == "test [bar | x]"
+    assert cloud._format_log_message("test") == "test"
 
 
-async def test_notifier_schedule_discovery_on_config_change(hass, mock_call_later):
-    async_setup_notifier(hass)
-
-    entry = _mock_entry_with_cloud_connection(devices_discovered=True)
-    entry.add_to_hass(hass)
-
-    config = MockConfig(entry=entry)
-    hass.data[DOMAIN] = {
-        CONFIG: config,
-        NOTIFIERS: [],
-    }
-
-    await async_start_notifier(hass)
-
-    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-    with patch("custom_components.yandex_smart_home.notifier.YandexNotifier.async_schedule_discovery") as mock:
-        hass.bus.async_fire(const.EVENT_CONFIG_CHANGED)
-        await hass.async_block_till_done()
-        mock.assert_called_once_with(5)
-
-
-async def test_notifier_format_log_message(hass, hass_admin_user):
-    hass.data[DOMAIN] = {
-        CONFIG: BASIC_CONFIG,
-        NOTIFIERS: [],
-    }
-
-    n1 = YandexDirectNotifier(hass, hass_admin_user.id, "n1_token", "n1_skill_id")
-    n2 = YandexDirectNotifier(hass, hass_admin_user.id, "n2_token", "n2_skill_id")
-    hass.data[DOMAIN] = {
-        CONFIG: BASIC_CONFIG,
-        NOTIFIERS: [n1],
-    }
-    assert n1._format_log_message("test") == "test"
-
-    hass.data[DOMAIN] = {
-        CONFIG: BASIC_CONFIG,
-        NOTIFIERS: [n1, n2],
-    }
-    assert n1._format_log_message("test") == f"[n1_skill_id | {hass_admin_user.id}] test"
-
-
-async def test_notifier_property_entities(hass, hass_admin_user):
-    config = MockConfig(
+async def test_notifier_property_entities(hass):
+    entry_data = MockConfigEntryData(
         entity_config={
             "switch.test_1": {
                 const.CONF_ENTITY_CUSTOM_MODES: {
@@ -252,12 +252,8 @@ async def test_notifier_property_entities(hass, hass_admin_user):
             },
         }
     )
-    hass.data[DOMAIN] = {
-        CONFIG: config,
-        NOTIFIERS: [],
-    }
 
-    notifier = YandexDirectNotifier(hass, "", "", hass_admin_user.id)
+    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG)
     assert notifier._get_property_entities() == {
         "input_boolean.pause": ["switch.test_1"],
         "input_number.volume": ["switch.test_1"],
@@ -267,43 +263,8 @@ async def test_notifier_property_entities(hass, hass_admin_user):
     }
 
 
-@pytest.mark.parametrize("entry", [_mock_entry_with_cloud_connection, _mock_entry_with_direct_connection])
-async def test_notifier_event_handler_not_ready(hass, hass_admin_user, entry, mock_call_later):
-    async_setup_notifier(hass)
-
-    config = MockConfig(entry=entry(hass_admin_user, devices_discovered=False))
-    hass.data[DOMAIN] = {
-        CONFIG: config,
-        NOTIFIERS: [],
-    }
-    await async_start_notifier(hass)
-
-    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-
-    state_switch = State("switch.test", STATE_ON, attributes={ATTR_VOLTAGE: "3.5"})
-    hass.states.async_set(state_switch.entity_id, state_switch.state, state_switch.attributes)
-
-    mock_call_later.reset_mock()
-    hass.states.async_set(state_switch.entity_id, "off")
-    await hass.async_block_till_done()
-    mock_call_later.assert_not_called()
-
-    hass.data[DOMAIN][CONFIG] = MockConfig(
-        entry=entry(hass_admin_user, devices_discovered=True),
-        entity_filter=generate_entity_filter(include_entity_globs=["*"]),
-    )
-    hass.states.async_set(state_switch.entity_id, "on")
-    await hass.async_block_till_done()
-    mock_call_later.assert_called_once()
-    assert "_report_states" in str(mock_call_later.call_args[0][2].target)
-
-
-@pytest.mark.parametrize("entry", [_mock_entry_with_cloud_connection, _mock_entry_with_direct_connection])
-async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_later):
-    async_setup_notifier(hass)
-
-    config = MockConfig(
-        entry=entry(hass_admin_user, devices_discovered=True),
+async def test_notifier_event_handler(hass, mock_call_later):
+    entry_data = MockConfigEntryData(
         entity_config={
             "switch.test": {
                 const.CONF_ENTITY_CUSTOM_MODES: {},
@@ -319,14 +280,6 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
         },
         entity_filter=generate_entity_filter(exclude_entities=["sensor.not_expose"]),
     )
-    hass.data[DOMAIN] = {
-        CONFIG: config,
-        NOTIFIERS: [],
-    }
-    await async_start_notifier(hass)
-
-    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-    notifier = hass.data[DOMAIN][NOTIFIERS][0]
 
     state_switch = State("switch.test", STATE_ON, attributes={ATTR_VOLTAGE: "3.5"})
     state_temp = State(
@@ -355,8 +308,10 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
     )
     for s in state_switch, state_temp, state_humidity, state_not_expose:
         hass.states.async_set(s.entity_id, s.state, s.attributes)
-
     await hass.async_block_till_done()
+
+    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG)
+    await notifier.async_setup()
     assert len(notifier._pending) == 0
 
     for s in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
@@ -403,122 +358,54 @@ async def test_notifier_event_handler(hass, hass_admin_user, entry, mock_call_la
     assert len(notifier._pending) == 1
     notifier._pending.clear()
 
-    hass.states.async_remove(state_switch.entity_id)
-    hass.states.async_set(state_humidity.entity_id, "70", state_humidity.attributes)
-    await hass.async_block_till_done()
 
-    await async_unload_notifier(hass)
-
-
-async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connection, caplog):
-    hass = hass_platform_cloud_connection
-    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-    notifier = hass.data[DOMAIN][NOTIFIERS][0]
-
-    with patch("custom_components.yandex_smart_home.notifier.YandexNotifier._async_send_callback") as mock_send_cb:
-        await notifier.async_send_discovery(None)
-        mock_send_cb.assert_not_called()
-
-    with patch("custom_components.yandex_smart_home.cloud.CloudManager.connect", return_value=None):
-        await handlers.async_device_list(hass, RequestData(hass.data[DOMAIN][CONFIG], Context(), "foo", None), "")
-        await hass.async_block_till_done()
-
-    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-    notifier = hass.data[DOMAIN][NOTIFIERS][0]
-    with patch("custom_components.yandex_smart_home.notifier.YandexNotifier._async_send_callback") as mock_send_cb:
-        await notifier.async_send_discovery(None)
-        mock_send_cb.assert_called_once()
-
-
-async def test_notifier_schedule_initial_report(hass_platform_cloud_connection, mock_call_later):
-    hass = hass_platform_cloud_connection
-
-    hass.bus.async_fire(const.EVENT_DEVICE_DISCOVERY)
-    await hass.async_block_till_done()
-
-    assert len(mock_call_later.call_args_list) == 3
-
-    with patch("custom_components.yandex_smart_home.notifier.YandexNotifier.async_initial_report") as mock_ir:
-        await mock_call_later.call_args_list[0][0][2].target(None)
-        mock_ir.assert_called()
-
-
-async def test_notifier_send_initial_report(hass_platform_cloud_connection):
-    hass = hass_platform_cloud_connection
-    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-    notifier = hass.data[DOMAIN][NOTIFIERS][0]
-    hass.data[DOMAIN][CONFIG]._entity_filter = generate_entity_filter(
-        include_entity_globs=["*"], exclude_entities=["switch.test"]
+async def test_notifier_send_initial_report(hass_platform, mock_call_later):
+    entry_data = MockConfigEntryData(
+        entity_filter=generate_entity_filter(exclude_entities=["switch.test"]),
     )
+    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG)
 
-    hass.states.async_set("switch.test", "on")
-    await hass.async_block_till_done()
+    hass_platform.states.async_set("switch.test", "on")
+    await hass_platform.async_block_till_done()
 
-    with patch(
-        "custom_components.yandex_smart_home.notifier.YandexNotifier._ready",
-        new_callable=PropertyMock(return_value=False),
-    ):
-        await notifier.async_initial_report()
-        assert len(notifier._pending) == 0
-
-    with patch(
-        "custom_components.yandex_smart_home.notifier.YandexNotifier._ready",
-        new_callable=PropertyMock(return_value=True),
-    ):
-        await notifier.async_initial_report()
-        assert len(notifier._pending) == 2
-        assert notifier._pending[0].capabilities == []
-        assert notifier._pending[0].properties == [
-            {"state": {"instance": "temperature", "value": 15.6}, "type": "devices.properties.float"}
-        ]
-        print(notifier._pending[1].device_id)
-        assert notifier._pending[1].capabilities == [
-            {"state": {"instance": "temperature_k", "value": 4200}, "type": "devices.capabilities.color_setting"},
-            {"state": {"instance": "brightness", "value": 70}, "type": "devices.capabilities.range"},
-            {"state": {"instance": "on", "value": True}, "type": "devices.capabilities.on_off"},
-        ]
-        assert notifier._pending[1].properties == []
+    await notifier._async_initial_report()
+    assert len(notifier._pending) == 2
+    assert notifier._pending[0].capabilities == []
+    assert notifier._pending[0].properties == [
+        {"state": {"instance": "temperature", "value": 15.6}, "type": "devices.properties.float"}
+    ]
+    assert notifier._pending[1].capabilities == [
+        {"state": {"instance": "temperature_k", "value": 4200}, "type": "devices.capabilities.color_setting"},
+        {"state": {"instance": "brightness", "value": 70}, "type": "devices.capabilities.range"},
+        {"state": {"instance": "on", "value": True}, "type": "devices.capabilities.on_off"},
+    ]
+    assert notifier._pending[1].properties == []
 
 
-async def test_notifier_async_send_callback(hass_platform_cloud_connection, caplog):
-    hass = hass_platform_cloud_connection
-    assert len(hass.data[DOMAIN][NOTIFIERS]) == 1
-    notifier = hass.data[DOMAIN][NOTIFIERS][0]
+async def test_notifier_send_callback_exception(hass, caplog):
+    notifier = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG)
 
-    with patch.object(notifier, "_log_request", side_effect=ClientConnectionError()), patch(
-        "custom_components.yandex_smart_home.notifier.YandexNotifier._ready",
-        new_callable=PropertyMock(return_value=True),
-    ):
+    with patch.object(notifier, "_log_request", side_effect=ClientConnectionError()):
         caplog.clear()
-        await notifier.async_send_discovery(None)
-        assert len(caplog.records) == 2
-        assert "Failed to send state notification: ClientConnectionError()" in caplog.records[1].message
+        await notifier.async_send_discovery()
+        assert caplog.messages[-1] == "Failed to send state notification: ClientConnectionError()"
         assert caplog.records[1].levelno == logging.WARN
         caplog.clear()
 
-    with patch.object(notifier, "_log_request", side_effect=asyncio.TimeoutError()), patch(
-        "custom_components.yandex_smart_home.notifier.YandexNotifier._ready",
-        new_callable=PropertyMock(return_value=True),
-    ):
+    with patch.object(notifier, "_log_request", side_effect=asyncio.TimeoutError()):
         await notifier.async_send_state([])
-        assert len(caplog.records) == 1
-        assert "Failed to send state notification: TimeoutError()" in caplog.records[0].message
+        assert caplog.messages[-1] == "Failed to send state notification: TimeoutError()"
         assert caplog.records[0].levelno == logging.DEBUG
 
 
-async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
-    hass.data[DOMAIN] = {
-        CONFIG: BASIC_CONFIG,
-        NOTIFIERS: [],
-    }
-
-    notifier = YandexCloudNotifier(hass, hass_admin_user.id, "foo")
+async def test_notifier_report_states(hass, mock_call_later):
+    notifier = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG)
 
     notifier._pending.append(MockDeviceCallbackState("foo", properties=["prop"]))
     notifier._pending.append(MockDeviceCallbackState("bar", capabilities=["cap"]))
 
     with patch.object(notifier, "async_send_state") as mock_send_state:
-        await notifier._report_states(None)
+        await notifier._async_report_states()
         assert mock_send_state.call_args[0][0] == [
             {"id": "foo", "properties": ["prop"], "capabilities": []},
             {"id": "bar", "properties": [], "capabilities": ["cap"]},
@@ -531,10 +418,10 @@ async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
         "async_send_state",
         side_effect=lambda v: notifier._pending.append(MockDeviceCallbackState("test")),
     ) as mock_send_state:
-        await notifier._report_states(None)
+        await notifier._async_report_states()
         assert mock_send_state.call_args[0][0] == [{"id": "foo", "properties": ["prop"], "capabilities": []}]
         mock_call_later.assert_called_once()
-        assert "_report_states" in str(mock_call_later.call_args[0][2].target)
+        assert "_async_report_states" in str(mock_call_later.call_args[0][2].target)
 
     notifier._pending.clear()
     mock_call_later.reset_mock()
@@ -544,7 +431,7 @@ async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
     notifier._pending.append(MockDeviceCallbackState("bar", properties=["prop3"]))
 
     with patch.object(notifier, "async_send_state") as mock_send_state:
-        await notifier._report_states(None)
+        await notifier._async_report_states()
         assert mock_send_state.call_args[0][0] == [
             {"id": "foo", "properties": ["prop"], "capabilities": ["cap"]},
             {"id": "bar", "properties": ["prop3", "prop2", "prop1"], "capabilities": ["cap1"]},
@@ -552,17 +439,12 @@ async def test_notifier_report_states(hass, hass_admin_user, mock_call_later):
         mock_call_later.assert_not_called()
 
 
-async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
-    config = MockConfig(entry=_mock_entry_with_direct_connection(hass_admin_user, devices_discovered=True))
-    hass.data[DOMAIN] = {
-        CONFIG: config,
-        NOTIFIERS: [],
-    }
-
-    token = "7b3909b0-447c-4d36-9159-6908b06a1c32"
-    skill_id = "0aaa1468-602d-4232-a9e2-62a18f32760f"
+async def test_notifier_send_direct(hass, aioclient_mock, caplog):
+    notifier = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG)
+    token = BASIC_CONFIG.token
+    skill_id = BASIC_CONFIG.skill_id
+    user_id = BASIC_CONFIG.user_id
     now = time.time()
-    notifier = YandexDirectNotifier(hass, hass_admin_user.id, token, skill_id)
 
     aioclient_mock.post(
         f"https://dialogs.yandex.net/api/v1/skills/{skill_id}/callback/discovery",
@@ -571,10 +453,10 @@ async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
     )
 
     with patch("time.time", return_value=now):
-        await notifier.async_send_discovery(None)
+        await notifier.async_send_discovery()
 
     assert aioclient_mock.call_count == 1
-    assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"user_id": hass_admin_user.id}}
+    assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"user_id": user_id}}
     assert aioclient_mock.mock_calls[0][3] == {"Authorization": f"OAuth {token}"}
     aioclient_mock.clear_requests()
 
@@ -588,9 +470,10 @@ async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
         await notifier.async_send_state([])
 
     assert aioclient_mock.call_count == 1
-    assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"devices": [], "user_id": hass_admin_user.id}}
+    assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"devices": [], "user_id": user_id}}
     assert aioclient_mock.mock_calls[0][3] == {"Authorization": f"OAuth {token}"}
     aioclient_mock.clear_requests()
+    caplog.clear()
 
     aioclient_mock.post(
         f"https://dialogs.yandex.net/api/v1/skills/{skill_id}/callback/state",
@@ -603,9 +486,11 @@ async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
     assert aioclient_mock.call_count == 1
     assert aioclient_mock.mock_calls[0][2] == {
         "ts": now,
-        "payload": {"devices": ["err"], "user_id": hass_admin_user.id},
+        "payload": {"devices": ["err"], "user_id": user_id},
     }
+    assert caplog.messages[-1] == "Failed to send state notification: [400] some error"
     aioclient_mock.clear_requests()
+    caplog.clear()
 
     aioclient_mock.post(
         f"https://dialogs.yandex.net/api/v1/skills/{skill_id}/callback/state",
@@ -614,23 +499,21 @@ async def test_notifier_send_direct(hass, hass_admin_user, aioclient_mock):
     )
     await notifier.async_send_state(["err"])
     assert aioclient_mock.call_count == 1
+    assert caplog.messages[-1] == "Failed to send state notification: [500] ERROR"
     aioclient_mock.clear_requests()
+    caplog.clear()
 
-    with patch.object(YandexDirectNotifier, "_log_request", side_effect=Exception):
+    with patch.object(notifier, "_log_request", side_effect=Exception):
         await notifier.async_send_state([])
         assert aioclient_mock.call_count == 0
+    assert "Failed to send state notification" in caplog.messages[-1]
 
 
-async def test_notifier_send_cloud(hass, hass_admin_user, aioclient_mock):
-    config = MockConfig(entry=_mock_entry_with_cloud_connection(hass_admin_user, devices_discovered=True))
-    hass.data[DOMAIN] = {
-        CONFIG: config,
-        NOTIFIERS: [],
-    }
-
-    token = "foo"
+async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
+    notifier = YandexCloudNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG)
+    token = BASIC_CONFIG.token
+    user_id = BASIC_CONFIG.user_id
     now = time.time()
-    notifier = YandexCloudNotifier(hass, hass_admin_user.id, token)
 
     aioclient_mock.post(
         "https://yaha-cloud.ru/api/home_assistant/v1/callback/discovery",
@@ -642,7 +525,7 @@ async def test_notifier_send_cloud(hass, hass_admin_user, aioclient_mock):
         await notifier.async_send_discovery(None)
 
     assert aioclient_mock.call_count == 1
-    assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"user_id": hass_admin_user.id}}
+    assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"user_id": user_id}}
     assert aioclient_mock.mock_calls[0][3] == {"Authorization": f"Bearer {token}"}
     aioclient_mock.clear_requests()
 
@@ -656,9 +539,10 @@ async def test_notifier_send_cloud(hass, hass_admin_user, aioclient_mock):
         await notifier.async_send_state([])
 
     assert aioclient_mock.call_count == 1
-    assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"devices": [], "user_id": hass_admin_user.id}}
+    assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"devices": [], "user_id": user_id}}
     assert aioclient_mock.mock_calls[0][3] == {"Authorization": f"Bearer {token}"}
     aioclient_mock.clear_requests()
+    caplog.clear()
 
     aioclient_mock.post(
         "https://yaha-cloud.ru/api/home_assistant/v1/callback/state",
@@ -671,8 +555,9 @@ async def test_notifier_send_cloud(hass, hass_admin_user, aioclient_mock):
     assert aioclient_mock.call_count == 1
     assert aioclient_mock.mock_calls[0][2] == {
         "ts": now,
-        "payload": {"devices": ["err"], "user_id": hass_admin_user.id},
+        "payload": {"devices": ["err"], "user_id": user_id},
     }
+    assert caplog.messages[-1] == "Failed to send state notification: [400] some error"
     aioclient_mock.clear_requests()
 
     aioclient_mock.post(
@@ -682,14 +567,11 @@ async def test_notifier_send_cloud(hass, hass_admin_user, aioclient_mock):
     )
     await notifier.async_send_state(["err"])
     assert aioclient_mock.call_count == 1
+    assert caplog.messages[-1] == "Failed to send state notification: [500] ERROR"
     aioclient_mock.clear_requests()
+    caplog.clear()
 
-    with patch.object(YandexDirectNotifier, "_log_request", side_effect=Exception):
+    with patch.object(notifier, "_log_request", side_effect=Exception):
         await notifier.async_send_state([])
         assert aioclient_mock.call_count == 0
-
-    aioclient_mock.clear_requests()
-    await notifier._session.close()
-    await notifier.async_send_state([])
-
-    assert aioclient_mock.call_count == 0
+    assert "Failed to send state notification" in caplog.messages[-1]

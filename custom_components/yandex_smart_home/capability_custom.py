@@ -1,12 +1,13 @@
 """Implement the Yandex Smart Home user specific capabilities."""
+from __future__ import annotations
+
 import itertools
 import logging
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from homeassistant.const import STATE_OFF
-from homeassistant.core import Context, HomeAssistant, State
+from homeassistant.core import State
 from homeassistant.helpers.service import async_call_from_config
-from homeassistant.helpers.typing import ConfigType
 
 from .capability import Capability
 from .capability_mode import ModeCapability
@@ -33,7 +34,6 @@ from .const import (
     ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
 from .error import SmartHomeError
-from .helpers import Config
 from .schema import (
     CapabilityInstance,
     CapabilityType,
@@ -47,34 +47,38 @@ from .schema import (
     ToggleCapabilityInstanceActionState,
 )
 
+if TYPE_CHECKING:
+    from homeassistant.core import Context, HomeAssistant
+    from homeassistant.helpers import ConfigType
+
+    from .entry_data import ConfigEntryData
+
 _LOGGER = logging.getLogger(__name__)
 
 
 class CustomCapability(Capability[Any], Protocol):
     """Base class for a capability that user can set up using yaml configuration."""
 
-    _capability_config: dict[str, Any]
+    _config: ConfigType
     _value_source: State | None
 
     def __init__(
         self,
         hass: HomeAssistant,
-        config: Config,
-        capability_config: dict[str, Any],
+        entry_data: ConfigEntryData,
+        config: ConfigType,
         instance: CapabilityInstance,
         device_id: str,
         value_source: State | None,
     ):
         """Initialize a custom capability."""
         self._hass = hass
+        self._entry_data = entry_data
         self._config = config
-        self._capability_config = capability_config
         self._value_source = value_source
 
         self.device_id = device_id
         self.instance = instance
-
-        self._capability_config = capability_config
 
     # noinspection PyProtocol
     @property
@@ -84,7 +88,7 @@ class CustomCapability(Capability[Any], Protocol):
             CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE,
             CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
         ):
-            if self._capability_config.get(attr):
+            if self._config.get(attr):
                 return True
 
         return False
@@ -102,7 +106,7 @@ class CustomCapability(Capability[Any], Protocol):
         if self._value_source is None:
             return None
 
-        if value_attribute := self._capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE):
+        if value_attribute := self._config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE):
             return self._value_source.attributes.get(value_attribute)
 
         return self._value_source.state
@@ -132,7 +136,7 @@ class CustomModeCapability(CustomCapability, ModeCapability):
 
         await async_call_from_config(
             self._hass,
-            self._capability_config[CONF_ENTITY_CUSTOM_MODE_SET_MODE],
+            self._config[CONF_ENTITY_CUSTOM_MODE_SET_MODE],
             validate_config=False,
             variables={"mode": self.get_ha_mode_by_yandex_mode(state.value)},
             blocking=True,
@@ -163,8 +167,8 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
-        turn_on_config = self._capability_config[CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON]
-        turn_off_config = self._capability_config[CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF]
+        turn_on_config = self._config[CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON]
+        turn_off_config = self._config[CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF]
 
         await async_call_from_config(
             self._hass,
@@ -189,7 +193,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
     def support_random_access(self) -> bool:
         """Test if the capability accept arbitrary values to be set."""
         for key in [CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_MAX]:
-            if key not in self._capability_config.get(CONF_ENTITY_RANGE, {}):
+            if key not in self._config.get(CONF_ENTITY_RANGE, {}):
                 return False
 
         return self._set_value_service_config is not None
@@ -241,7 +245,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
         if value is None:
             if isinstance(self._value_source, State):
                 if (
-                    self._capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
+                    self._config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
                     and self._value_source.state == STATE_OFF
                 ):
                     raise SmartHomeError(ERR_DEVICE_OFF, f"Device {self._value_source.entity_id} probably turned off")
@@ -257,13 +261,9 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
     def _default_range(self) -> RangeCapabilityRange:
         """Return a default supporting range. Can be overrided by user."""
         return RangeCapabilityRange(
-            min=self._capability_config.get(CONF_ENTITY_RANGE, {}).get(
-                CONF_ENTITY_RANGE_MIN, super()._default_range.min
-            ),
-            max=self._capability_config.get(CONF_ENTITY_RANGE, {}).get(
-                CONF_ENTITY_RANGE_MAX, super()._default_range.max
-            ),
-            precision=self._capability_config.get(CONF_ENTITY_RANGE, {}).get(
+            min=self._config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, super()._default_range.min),
+            max=self._config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, super()._default_range.max),
+            precision=self._config.get(CONF_ENTITY_RANGE, {}).get(
                 CONF_ENTITY_RANGE_PRECISION, super()._default_range.precision
             ),
         )
@@ -271,23 +271,23 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
     @property
     def _set_value_service_config(self) -> ConfigType | None:
         """Return service configuration for setting value action."""
-        return self._capability_config.get(CONF_ENTITY_CUSTOM_RANGE_SET_VALUE)
+        return self._config.get(CONF_ENTITY_CUSTOM_RANGE_SET_VALUE)
 
     @property
     def _increase_value_service_config(self) -> ConfigType | None:
         """Return service configuration for setting increase value action."""
-        return self._capability_config.get(CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE)
+        return self._config.get(CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE)
 
     @property
     def _decrease_value_service_config(self) -> ConfigType | None:
         """Return service configuration for setting decrease value action."""
-        return self._capability_config.get(CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE)
+        return self._config.get(CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE)
 
 
 def get_custom_capability(
     hass: HomeAssistant,
-    config: Config,
-    capability_config: dict[str, Any],
+    entry_data: ConfigEntryData,
+    capability_config: ConfigType,
     capability_type: CapabilityType,
     instance: str,
     device_id: str,
@@ -312,15 +312,15 @@ def get_custom_capability(
     match capability_type:
         case CapabilityType.MODE:
             return CustomModeCapability(
-                hass, config, capability_config, ModeCapabilityInstance(instance), device_id, value_source
+                hass, entry_data, capability_config, ModeCapabilityInstance(instance), device_id, value_source
             )
         case CapabilityType.TOGGLE:
             return CustomToggleCapability(
-                hass, config, capability_config, ToggleCapabilityInstance(instance), device_id, value_source
+                hass, entry_data, capability_config, ToggleCapabilityInstance(instance), device_id, value_source
             )
         case CapabilityType.RANGE:
             return CustomRangeCapability(
-                hass, config, capability_config, RangeCapabilityInstance(instance), device_id, value_source
+                hass, entry_data, capability_config, RangeCapabilityInstance(instance), device_id, value_source
             )
 
     raise ValueError(f"Unsupported capability type: {capability_type}")

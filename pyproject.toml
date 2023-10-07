@@ -24,7 +24,8 @@ asyncio_mode = "auto"
 [tool.coverage.report]
 exclude_also = [
     "raise NotImplementedError",
-    "@abstractmethod"
+    "@abstractmethod",
+    "if TYPE_CHECKING:"
 ]
 omit = [
     "tests/*"
@@ -53,10 +54,6 @@ init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
 warn_untyped_fields = true
-
-[[tool.mypy.overrides]]
-module= "custom_components.yandex_smart_home.notifier"
-ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"

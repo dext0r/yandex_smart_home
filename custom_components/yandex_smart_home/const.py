@@ -1,12 +1,8 @@
 """Constants for Yandex Smart Home."""
+from enum import StrEnum
+
 DOMAIN = "yandex_smart_home"
-CONFIG = "config"
-YAML_CONFIG = "yaml_config"
-YAML_CONFIG_HASH = "yaml_config_hash"
 CONFIG_ENTRY_TITLE = "Yandex Smart Home"
-NOTIFIERS = "notifiers"
-CLOUD_MANAGER = "cloud_manager"
-CLOUD_STREAMS = "cloud_streams"
 
 CONF_SETTINGS = "settings"
 CONF_PRESSURE_UNIT = "pressure_unit"
@@ -22,7 +18,6 @@ CONF_CLOUD_INSTANCE_ID = "id"
 CONF_CLOUD_INSTANCE_PASSWORD = "password"
 CONF_CLOUD_INSTANCE_CONNECTION_TOKEN = "token"
 CONF_USER_ID = "user_id"
-CONF_DEVICES_DISCOVERED = "devices_discovered"
 CONF_COLOR_PROFILE = "color_profile"
 CONF_ENTITY_CONFIG = "entity_config"
 CONF_FILTER = "filter"
@@ -58,16 +53,18 @@ CONF_ENTITY_CUSTOM_RANGE_SET_VALUE = "set_value"
 CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE = "increase_value"
 CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE = "decrease_value"
 
-STORE_CACHE_ATTRS = "attrs"
-
 CONNECTION_TYPE_DIRECT = "direct"
 CONNECTION_TYPE_CLOUD = "cloud"
+
+
+class ConnectionType(StrEnum):
+    DIRECT = CONNECTION_TYPE_DIRECT
+    CLOUD = CONNECTION_TYPE_CLOUD
+
 
 CLOUD_BASE_URL = "https://yaha-cloud.ru"
 CLOUD_STREAM_BASE_URL = "https://stream.yaha-cloud.ru"
 EVENT_DEVICE_ACTION = "yandex_smart_home_device_action"
-EVENT_DEVICE_DISCOVERY = "yandex_smart_home_device_discovery"
-EVENT_CONFIG_CHANGED = "yandex_smart_home_config_changed"
 
 # Fake device class
 DEVICE_CLASS_BUTTON = "button"

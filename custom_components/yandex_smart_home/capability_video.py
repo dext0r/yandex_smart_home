@@ -1,14 +1,17 @@
 """Implement the Yandex Smart Home video_stream capabilities."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from homeassistant.components import camera
 from homeassistant.components.camera import StreamType, _get_camera_from_entity_id
 from homeassistant.components.stream import Stream
-from homeassistant.core import Context
 from homeassistant.helpers import network
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
 from .cloud_stream import CloudStreamManager
-from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+from .const import DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
 from .error import SmartHomeError
 from .schema import (
     CapabilityType,
@@ -17,6 +20,11 @@ from .schema import (
     VideoStreamCapabilityInstance,
     VideoStreamCapabilityParameters,
 )
+
+if TYPE_CHECKING:
+    from homeassistant.core import Context
+
+    from . import YandexSmartHome
 
 
 @STATE_CAPABILITIES_REGISTRY.register
@@ -40,16 +48,17 @@ class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStream
         self, context: Context, state: GetStreamInstanceActionState
     ) -> GetStreamInstanceActionResultValue:
         """Change capability instance state."""
+        component: YandexSmartHome = self._hass.data[DOMAIN]
         entity_id = self.state.entity_id
         stream = await self._async_request_stream(entity_id)
 
-        if self._config.use_cloud_stream:
-            cloud_stream = self._hass.data[DOMAIN][CLOUD_STREAMS].get(entity_id)
+        if self._entry_data.use_cloud_stream:
+            cloud_stream = component.cloud_streams.get(entity_id)
             if not cloud_stream:
                 cloud_stream = CloudStreamManager(self._hass, stream, async_get_clientsession(self._hass))
-                self._hass.data[DOMAIN][CLOUD_STREAMS][entity_id] = cloud_stream
+                component.cloud_streams[entity_id] = cloud_stream
 
-            await cloud_stream.start()
+            await cloud_stream.async_start()
             stream_url = cloud_stream.stream_url
             if not stream_url:
                 raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Failed to start stream")

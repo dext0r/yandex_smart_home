@@ -12,7 +12,7 @@ from custom_components.yandex_smart_home.schema import (
     ToggleCapabilityInstanceActionState,
 )
 
-from . import BASIC_CONFIG, MockConfig
+from . import BASIC_ENTRY_DATA, MockConfigEntryData
 from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
 
 
@@ -26,18 +26,18 @@ def _action_state_off(instance: ToggleCapabilityInstance) -> ToggleCapabilityIns
 
 async def test_capability_mute(hass):
     state = State("media_player.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE)
 
     state = State("media_player.test", STATE_ON)
-    config = MockConfig(entity_config={state.entity_id: {"features": ["volume_mute"]}})
-    assert_exact_one_capability(hass, config, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE)
+    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["volume_mute"]}})
+    assert_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE)
 
     state = State(
         "media_player.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_MUTE}
     )
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE),
     )
 
     assert cap.retrievable is False
@@ -63,7 +63,7 @@ async def test_capability_mute(hass):
     )
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE),
     )
     assert cap.retrievable is True
     assert cap.get_value() is True
@@ -80,11 +80,11 @@ async def test_capability_mute(hass):
 
 async def test_capability_pause_media_player(hass):
     state = State("media_player.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
     state = State("media_player.test", STATE_ON)
-    config = MockConfig(entity_config={state.entity_id: {"features": ["play_pause"]}})
-    assert_exact_one_capability(hass, config, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
+    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["play_pause"]}})
+    assert_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
     for s in [media_player.STATE_IDLE, media_player.STATE_OFF]:
         state = State(
@@ -97,7 +97,9 @@ async def test_capability_pause_media_player(hass):
         )
         cap = cast(
             ToggleCapability,
-            get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+            get_exact_one_capability(
+                hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE
+            ),
         )
         assert cap.retrievable is True
         assert cap.parameters.dict() == {"instance": "pause"}
@@ -113,7 +115,7 @@ async def test_capability_pause_media_player(hass):
     )
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
     )
     assert cap.get_value() is False
 
@@ -130,13 +132,15 @@ async def test_capability_pause_media_player(hass):
 
 async def test_capability_pause_cover(hass):
     state = State("cover.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
     for s in [cover.STATE_OPEN, cover.STATE_CLOSED, cover.STATE_CLOSING, cover.STATE_CLOSING]:
         state = State("cover.test", s, {ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.STOP})
         cap = cast(
             ToggleCapability,
-            get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+            get_exact_one_capability(
+                hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE
+            ),
         )
         assert cap.retrievable is False
         assert cap.reportable is False
@@ -153,13 +157,15 @@ async def test_capability_pause_cover(hass):
 
 async def test_capability_pause_vacuum(hass):
     state = State("vacuum.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
     for s in vacuum.STATES:
         state = State("vacuum.test", s, {ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.PAUSE})
         cap = cast(
             ToggleCapability,
-            get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+            get_exact_one_capability(
+                hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE
+            ),
         )
         assert cap.retrievable is True
         assert cap.parameters.dict() == {"instance": "pause"}
@@ -168,7 +174,7 @@ async def test_capability_pause_vacuum(hass):
     state = State("vacuum.test", vacuum.STATE_PAUSED, {ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.PAUSE})
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
     )
     assert cap.get_value() is True
 
@@ -185,13 +191,13 @@ async def test_capability_pause_vacuum(hass):
 
 async def test_capability_oscillation(hass):
     state = State("fan.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION)
+    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION)
 
     state = State("fan.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.OSCILLATE})
     cap = cast(
         ToggleCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION
         ),
     )
     assert cap.retrievable is True
@@ -204,7 +210,7 @@ async def test_capability_oscillation(hass):
     cap = cast(
         ToggleCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION
         ),
     )
     assert cap.get_value() is True
@@ -215,7 +221,7 @@ async def test_capability_oscillation(hass):
     cap = cast(
         ToggleCapability,
         get_exact_one_capability(
-            hass, BASIC_CONFIG, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION
         ),
     )
     assert cap.get_value() is False

@@ -25,7 +25,7 @@ from custom_components.yandex_smart_home.schema import (
     ToggleCapabilityInstanceActionState,
 )
 
-from . import BASIC_CONFIG, MockConfig
+from . import BASIC_ENTRY_DATA, MockConfigEntryData
 
 
 class MockCapability(CustomCapability):
@@ -47,7 +47,7 @@ class MockCapability(CustomCapability):
 
 
 async def test_capability_custom(hass):
-    cap = MockCapability(hass, BASIC_CONFIG, {}, OnOffCapabilityInstance.ON, "foo", None)
+    cap = MockCapability(hass, BASIC_ENTRY_DATA, {}, OnOffCapabilityInstance.ON, "foo", None)
     assert cap.retrievable is False
     assert cap.reportable is False
     assert cap.get_value() is None
@@ -55,7 +55,7 @@ async def test_capability_custom(hass):
     with pytest.raises(ValueError) as e:
         get_custom_capability(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {},
             CapabilityType.ON_OFF,
             ToggleCapabilityInstance.IONIZATION,
@@ -68,7 +68,7 @@ async def test_capability_custom_state_attr(hass):
     state = State("switch.test", STATE_ON, {"value": "foo"})
     cap = MockCapability(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE: "value"},
         OnOffCapabilityInstance.ON,
         "device_id",
@@ -86,7 +86,7 @@ async def test_capability_custom_state_entity(hass):
     with pytest.raises(SmartHomeError) as e:
         get_custom_capability(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_number.test"},
             CapabilityType.TOGGLE,
             ToggleCapabilityInstance.IONIZATION,
@@ -98,7 +98,7 @@ async def test_capability_custom_state_entity(hass):
     hass.states.async_set("input_number.test", "on")
     cap = get_custom_capability(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_number.test"},
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
@@ -108,7 +108,7 @@ async def test_capability_custom_state_entity(hass):
 
     cap = get_custom_capability(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_number.test",
             const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE: "value",
@@ -126,7 +126,7 @@ async def test_capability_custom_state_entity(hass):
 async def test_capability_custom_mode(hass):
     cap = get_custom_capability(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: None},
         CapabilityType.MODE,
         ModeCapabilityInstance.CLEANUP_MODE,
@@ -136,7 +136,7 @@ async def test_capability_custom_mode(hass):
 
     state = State("switch.test", "mode_1", {})
     hass.states.async_set(state.entity_id, state.state)
-    config = MockConfig(
+    entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
                 const.CONF_ENTITY_MODE_MAP: {
@@ -150,7 +150,7 @@ async def test_capability_custom_mode(hass):
     )
     cap = get_custom_capability(
         hass,
-        config,
+        entry_data,
         {
             const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {
                 CONF_SERVICE: "test.set_mode",
@@ -169,7 +169,7 @@ async def test_capability_custom_mode(hass):
 
     cap = get_custom_capability(
         hass,
-        config,
+        entry_data,
         {
             const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
             const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {
@@ -199,7 +199,7 @@ async def test_capability_custom_mode(hass):
 async def test_capability_custom_toggle(hass):
     cap = get_custom_capability(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: None, const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: None},
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
@@ -214,7 +214,7 @@ async def test_capability_custom_toggle(hass):
     hass.states.async_set(state.entity_id, state.state)
     cap = get_custom_capability(
         hass,
-        BASIC_CONFIG,
+        BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
             const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: {
@@ -262,7 +262,7 @@ async def test_capability_custom_range_random_access(hass):
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {
                 const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
                 const.CONF_ENTITY_RANGE: {
@@ -325,7 +325,7 @@ async def test_capability_custom_range_random_access(hass):
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {
                 const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
                 const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE: "foo",
@@ -362,7 +362,7 @@ async def test_capability_custom_range_random_access_no_state(hass):
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {
                 const.CONF_ENTITY_RANGE: {
                     const.CONF_ENTITY_RANGE_MIN: 10,
@@ -417,7 +417,7 @@ async def test_capability_custom_range_relative_override_no_state(hass):
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {
                 const.CONF_ENTITY_RANGE: {
                     const.CONF_ENTITY_RANGE_MIN: 10,
@@ -489,7 +489,7 @@ async def test_capability_custom_range_only_relative(hass):
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {
                 const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: {
                     CONF_SERVICE: "test.increase_value",
@@ -537,7 +537,7 @@ async def test_capability_custom_range_no_service(hass):
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_CONFIG,
+            BASIC_ENTRY_DATA,
             {},
             CapabilityType.RANGE,
             RangeCapabilityInstance.OPEN,

@@ -1,6 +1,8 @@
 """Yandex Smart Home user device."""
+from __future__ import annotations
+
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import (
     air_quality,
@@ -33,11 +35,22 @@ from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 from homeassistant.helpers.template import Template
 
-from . import const
+from . import (  # noqa: F401
+    capability_color,
+    capability_custom,
+    capability_mode,
+    capability_onoff,
+    capability_range,
+    capability_toggle,
+    capability_video,
+    property_custom,
+    property_event,
+    property_float,
+)
+from . import const  # noqa: F401
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability
 from .capability_custom import get_custom_capability
 from .error import SmartHomeError, SmartHomeUserError
-from .helpers import Config
 from .property import STATE_PROPERTIES_REGISTRY, Property
 from .property_custom import get_custom_property
 from .schema import (
@@ -54,6 +67,9 @@ from .schema import (
     PropertyInstanceState,
     ResponseCode,
 )
+
+if TYPE_CHECKING:
+    from .entry_data import ConfigEntryData
 
 _DOMAIN_TO_DEVICE_TYPES: dict[str, DeviceType] = {
     air_quality.DOMAIN: DeviceType.SENSOR,
@@ -121,18 +137,18 @@ def _alias_priority(text: str) -> tuple[int, str]:
 class Device:
     """Represent user device."""
 
-    __slots__ = ("_hass", "_state", "_config", "_integration_config", "id")
+    __slots__ = ("_hass", "_entry_data", "_state", "_config", "id")
 
     id: str
 
-    def __init__(self, hass: HomeAssistant, config: Config, device_id: str, state: State | None):
+    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, device_id: str, state: State | None):
         """Initialize a device for the state."""
         self.id = device_id
 
         self._hass = hass
+        self._entry_data = entry_data
         self._state = state or State(entity_id=device_id, state=STATE_UNAVAILABLE)
-        self._integration_config = config
-        self._config = self._integration_config.get_entity_config(self.id)
+        self._config = self._entry_data.get_entity_config(self.id)
 
     @callback
     def get_capabilities(self) -> list[Capability[Any]]:
@@ -148,7 +164,7 @@ class Device:
                 for instance in self._config[config_key]:
                     custom_capability = get_custom_capability(
                         self._hass,
-                        self._integration_config,
+                        self._entry_data,
                         self._config[config_key][instance],
                         capability_type,
                         instance,
@@ -159,7 +175,7 @@ class Device:
                         capabilities.append(custom_capability)
 
         for CapabilityT in STATE_CAPABILITIES_REGISTRY:
-            state_capability = CapabilityT(self._hass, self._integration_config, self._state)
+            state_capability = CapabilityT(self._hass, self._entry_data, self._state)
             if state_capability.supported and state_capability not in capabilities:
                 capabilities.append(state_capability)
 
@@ -171,13 +187,13 @@ class Device:
         properties: list[Property] = []
 
         for property_config in self._config.get(const.CONF_ENTITY_PROPERTIES, []):
-            custom_property = get_custom_property(self._hass, self._integration_config, property_config, self.id)
+            custom_property = get_custom_property(self._hass, self._entry_data, property_config, self.id)
 
             if custom_property.supported and custom_property not in properties:
                 properties.append(custom_property)
 
         for PropertyT in STATE_PROPERTIES_REGISTRY:
-            device_property = PropertyT(self._hass, self._integration_config, self._state)
+            device_property = PropertyT(self._hass, self._entry_data, self._state)
             if device_property.supported and device_property not in properties:
                 properties.append(device_property)
 
@@ -195,7 +211,7 @@ class Device:
         if self.id in CLOUD_NEVER_EXPOSED_ENTITIES:
             return False
 
-        return self._integration_config.should_expose(self.id)
+        return self._entry_data.should_expose(self.id)
 
     @property
     def unavailable(self) -> bool:

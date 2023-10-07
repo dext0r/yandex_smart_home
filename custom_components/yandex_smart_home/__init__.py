@@ -1,50 +1,29 @@
 """The Yandex Smart Home component."""
-import hashlib
-import logging
-from typing import Any
+from __future__ import annotations
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EVENT_HOMEASSISTANT_STOP, SERVICE_RELOAD
-from homeassistant.core import Event, HomeAssistant, callback
+import logging
+from typing import TYPE_CHECKING, Any
+
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
+from homeassistant.const import SERVICE_RELOAD
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA
 from homeassistant.helpers.reload import async_integration_yaml_config
-from homeassistant.helpers.typing import ConfigType
 import voluptuous as vol
 
-from . import (  # noqa: F401
-    capability_color,
-    capability_custom,
-    capability_mode,
-    capability_onoff,
-    capability_range,
-    capability_toggle,
-    capability_video,
-    config_validation as ycv,
-    const,
-    property_custom,
-    property_event,
-    property_float,
-)
-from .cloud import CloudManager, delete_cloud_instance
-from .cloud_stream import CloudStreamManager
-from .const import (
-    CLOUD_MANAGER,
-    CLOUD_STREAMS,
-    CONFIG,
-    DOMAIN,
-    EVENT_CONFIG_CHANGED,
-    EVENT_DEVICE_DISCOVERY,
-    NOTIFIERS,
-    YAML_CONFIG,
-)
-from .helpers import Config
+from . import config_validation as ycv, const
+from .cloud import delete_cloud_instance
+from .const import DOMAIN, ConnectionType
+from .entry_data import ConfigEntryData
 from .http import async_register_http
-from .notifier import YandexNotifier, async_setup_notifier, async_start_notifier, async_unload_notifier
+
+if TYPE_CHECKING:
+    from homeassistant.helpers import ConfigType
+
+    from .cloud_stream import CloudStreamManager
 
 _LOGGER = logging.getLogger(__name__)
-_PYTEST = False
 
 ENTITY_PROPERTY_SCHEMA = vol.All(
     cv.has_at_least_one_key(const.CONF_ENTITY_PROPERTY_ENTITY, const.CONF_ENTITY_PROPERTY_ATTRIBUTE),
@@ -187,159 +166,106 @@ YANDEX_SMART_HOME_SCHEMA = vol.All(
 CONFIG_SCHEMA = vol.Schema({DOMAIN: YANDEX_SMART_HOME_SCHEMA}, extra=vol.ALLOW_EXTRA)
 
 
+class YandexSmartHome:
+    """Yandex Smart Home component main class."""
+
+    def __init__(self, hass: HomeAssistant, yaml_config: ConfigType):
+        """Initialize the Yanex Smart Home from yaml configuration."""
+        self.cloud_streams: dict[str, CloudStreamManager] = {}
+        self._yaml_config = yaml_config
+
+        self._hass = hass
+        self._entry_datas: dict[str, ConfigEntryData] = {}
+
+        hass.helpers.service.async_register_admin_service(DOMAIN, SERVICE_RELOAD, self._handle_yaml_config_reload)
+
+    async def _handle_yaml_config_reload(self, _: Any) -> None:
+        """Handle yaml configuration reloading."""
+        if config := await async_integration_yaml_config(self._hass, DOMAIN):
+            self._yaml_config = config.get(DOMAIN, {})
+
+        for entry in self._hass.config_entries.async_entries(DOMAIN):
+            await _async_entry_update_listener(self._hass, entry)
+
+        return None
+
+    def get_entry_data(self, entry: ConfigEntry) -> ConfigEntryData:
+        """Return a config entry data for a config entry."""
+        return self._entry_datas[entry.entry_id]
+
+    def get_direct_connection_entry_data(self) -> ConfigEntryData | None:
+        """Return a config entry data for a config entry using direct connection."""
+        for data in self._entry_datas.values():
+            if data.connection_type == ConnectionType.DIRECT and data.entry.state == ConfigEntryState.LOADED:
+                return data
+
+        return None
+
+    def yaml_config_has_filter(self) -> bool:
+        """Test if yaml configuration has filters defined."""
+        return const.CONF_FILTER in self._yaml_config
+
+    async def async_setup_entry(self, entry: ConfigEntry) -> bool:
+        """Set up a config entry."""
+        entity_config = self._yaml_config.get(const.CONF_ENTITY_CONFIG)
+        entity_filter_config = self._yaml_config.get(const.CONF_FILTER, entry.options.get(const.CONF_FILTER))
+        entity_filter = FILTER_SCHEMA(entity_filter_config) if entity_filter_config else None
+
+        data = ConfigEntryData(
+            hass=self._hass,
+            entry=entry,
+            yaml_config=self._yaml_config,
+            entity_config=entity_config,
+            entity_filter=entity_filter,
+        )
+
+        self._entry_datas[entry.entry_id] = await data.async_setup()
+        entry.async_on_unload(entry.add_update_listener(_async_entry_update_listener))
+
+        return True
+
+    async def async_unload_entry(self, entry: ConfigEntry) -> bool:
+        """Unload a config entry."""
+        data = self.get_entry_data(entry)
+        await data.async_unload()
+        return True
+
+    async def async_remove_entry(self, entry: ConfigEntry) -> None:
+        """Remove a config entry."""
+        data = self.get_entry_data(entry)
+        if data.connection_type == ConnectionType.CLOUD:
+            await delete_cloud_instance(self._hass, data)
+
+        del self._entry_datas[entry.entry_id]
+        return None
+
+
 async def async_setup(hass: HomeAssistant, yaml_config: ConfigType) -> bool:
     """Activate Yandex Smart Home component."""
-    hass.data[DOMAIN] = {}
-    hass.data[DOMAIN][NOTIFIERS]: list[YandexNotifier] = []  # type: ignore
-    hass.data[DOMAIN][CONFIG]: Config | None = None  # type: ignore
-    hass.data[DOMAIN][YAML_CONFIG]: ConfigType | None = yaml_config.get(DOMAIN)  # type: ignore
-    hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None  # type: ignore
-    hass.data[DOMAIN][CLOUD_STREAMS]: dict[str, CloudStreamManager] = {}  # type: ignore
-
-    async_register_http(hass)
-    async_setup_notifier(hass)
-
-    def _device_discovery_listener(_: Event) -> None:
-        for entry in hass.config_entries.async_entries(DOMAIN):
-            if not entry.data[const.CONF_DEVICES_DISCOVERED]:
-                data = dict(entry.data)
-                data[const.CONF_DEVICES_DISCOVERED] = True
-
-                hass.config_entries.async_update_entry(entry, data=data, options=entry.options)
-
-        return None
-
-    hass.bus.async_listen(EVENT_DEVICE_DISCOVERY, _device_discovery_listener)
-
-    async def _handle_reload(*_: Any) -> None:
-        config = await async_integration_yaml_config(hass, DOMAIN)
-        if config:
-            hass.data[DOMAIN][YAML_CONFIG] = config.get(DOMAIN)
-            _update_config_entries(hass)
-
-        return None
-
-    hass.helpers.service.async_register_admin_service(DOMAIN, SERVICE_RELOAD, _handle_reload)
-
-    _update_config_entries(hass)
-
+    hass.data[DOMAIN] = component = YandexSmartHome(hass, yaml_config.get(DOMAIN, {}))
+    async_register_http(hass, component)
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-
-    yaml_config = hass.data[DOMAIN][YAML_CONFIG] or {}
-
-    entity_config = yaml_config.get(const.CONF_ENTITY_CONFIG)
-    entity_filter_config = yaml_config.get(const.CONF_FILTER, entry.options.get(const.CONF_FILTER))
-
-    config = Config(
-        hass=hass,
-        entry=entry,
-        entity_config=entity_config,
-        entity_filter=FILTER_SCHEMA(entity_filter_config) if entity_filter_config else None,
-    )
-    await config.async_init()
-    hass.data[DOMAIN][CONFIG] = config
-
-    if config.is_cloud_connection:
-        cloud_manager = CloudManager(hass, config, async_get_clientsession(hass))
-        hass.data[DOMAIN][CLOUD_MANAGER] = cloud_manager
-
-        # FIXME: mocking fails sometimes
-        if not _PYTEST:
-            hass.loop.create_task(cloud_manager.connect())  # pragma: no cover
-
-        entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, cloud_manager.disconnect))
-
-    await async_start_notifier(hass)
-
-    return True
+    """Set up a config entry."""
+    component: YandexSmartHome = hass.data[DOMAIN]
+    return await component.async_setup_entry(entry)
 
 
-async def async_unload_entry(hass: HomeAssistant, _: ConfigEntry) -> bool:
-    if hass.data[DOMAIN][CLOUD_MANAGER]:
-        hass.async_create_task(hass.data[DOMAIN][CLOUD_MANAGER].disconnect())
-
-    hass.data[DOMAIN][CONFIG]: Config | None = None  # type: ignore
-    hass.data[DOMAIN][CLOUD_MANAGER]: CloudManager | None = None  # type: ignore
-
-    await async_unload_notifier(hass)
-
-    return True
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    component: YandexSmartHome = hass.data[DOMAIN]
+    return await component.async_unload_entry(entry)
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    if entry.data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
-        await delete_cloud_instance(hass, entry)
+    """Remove a config entry."""
+    component: YandexSmartHome = hass.data[DOMAIN]
+    return await component.async_remove_entry(entry)
 
-    return None
 
-
-async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def _async_entry_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Handle config entry options update."""
     await hass.config_entries.async_reload(entry.entry_id)
-    hass.bus.async_fire(EVENT_CONFIG_CHANGED)
-
     return None
-
-
-def get_config_entry_data_from_yaml_config(
-    data: ConfigType, options: ConfigType, yaml_config: ConfigType | None
-) -> tuple[ConfigType, ConfigType]:
-    data.setdefault(const.CONF_CONNECTION_TYPE, const.CONNECTION_TYPE_DIRECT)
-    data.setdefault(const.CONF_DEVICES_DISCOVERED, True)  # <0.3 migration
-
-    for v in [
-        const.PRESSURE_UNIT_MMHG,
-        const.CONF_BETA,
-        const.CONF_CLOUD_STREAM,
-        const.CONF_NOTIFIER,
-        const.YAML_CONFIG_HASH,
-    ]:
-        if v in data:
-            del data[v]
-
-    for v in [const.CONF_COLOR_PROFILE]:
-        if v in options:
-            del options[v]
-
-    if yaml_config:
-        data.update(
-            {
-                const.CONF_NOTIFIER: yaml_config[const.CONF_NOTIFIER],
-                const.YAML_CONFIG_HASH: _yaml_config_checksum(yaml_config),
-            }
-        )
-        options.update(
-            {
-                const.CONF_COLOR_PROFILE: yaml_config[const.CONF_COLOR_PROFILE],
-            }
-        )
-        options.update(yaml_config[const.CONF_SETTINGS])
-    else:
-        options.update(SETTINGS_SCHEMA(data={}))
-
-    if data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
-        options[const.CONF_CLOUD_STREAM] = True
-
-    return data, options
-
-
-@callback
-def _update_config_entries(hass: HomeAssistant) -> None:
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        data, options = get_config_entry_data_from_yaml_config(
-            entry.data.copy(), entry.options.copy(), hass.data[DOMAIN][YAML_CONFIG]
-        )
-
-        hass.config_entries.async_update_entry(entry, data=data, options=options)
-
-    return None
-
-
-def _yaml_config_checksum(yaml_config: ConfigType) -> str:
-    def _order_dict(d: dict[str, Any]) -> dict[str, Any]:
-        return {k: _order_dict(v) if isinstance(v, dict) else v for k, v in sorted(d.items())}
-
-    return hashlib.md5(repr(_order_dict(yaml_config)).encode("utf8")).hexdigest()
