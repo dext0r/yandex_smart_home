@@ -671,6 +671,19 @@ CLEANUP_MODE_MAX = "max"
 CLEANUP_MODE_MAX_PLUS = "max_plus"
 CLEANUP_MODE_CUSTOM = "custom"
 
+
+class MediaPlayerFeature(StrEnum):
+    """Media player feature that user can force enable."""
+
+    VOLUME_MUTE = "volume_mute"
+    VOLUME_SET = "volume_set"
+    NEXT_PREVIOUS_TRACK = "next_previous_track"
+    SELECT_SOURCE = "select_source"
+    TURN_ON_OFF = "turn_on_off"
+    PLAY_PAUSE = "play_pause"
+    PLAY_MEDIA = "play_media"
+
+
 MEDIA_PLAYER_FEATURE_VOLUME_MUTE = "volume_mute"
 MEDIA_PLAYER_FEATURE_VOLUME_SET = "volume_set"
 MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK = "next_previous_track"
