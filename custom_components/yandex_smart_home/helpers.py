@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
 from homeassistant.core import callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
@@ -13,8 +14,29 @@ if TYPE_CHECKING:
     from homeassistant.core import Context, HomeAssistant
 
     from .entry_data import ConfigEntryData
+    from .schema import ResponseCode
 
 STORE_CACHE_ATTRS = "attrs"
+
+
+class APIError(HomeAssistantError):
+    """Base API error."""
+
+    def __init__(self, code: ResponseCode, message: str):
+        """Init the error."""
+
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
+
+class TemplatedError(HomeAssistantError):
+    """Error producted by user's template, no logging"""
+
+    def __init__(self, code: ResponseCode):
+        """Init the error."""
+
+        self.code = code
 
 
 class CacheStore:

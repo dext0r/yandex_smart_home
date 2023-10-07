@@ -25,9 +25,6 @@ from .const import (
     CONF_FEATURES,
     CONF_SUPPORT_SET_CHANNEL,
     DOMAIN_XIAOMI_AIRPURIFIER,
-    ERR_DEVICE_OFF,
-    ERR_INVALID_VALUE,
-    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
     MEDIA_PLAYER_FEATURE_NEXT_PREVIOUS_TRACK,
     MEDIA_PLAYER_FEATURE_PLAY_MEDIA,
     MEDIA_PLAYER_FEATURE_VOLUME_SET,
@@ -35,13 +32,14 @@ from .const import (
     SERVICE_FAN_SET_TARGET_HUMIDITY,
     STATE_NONE,
 )
-from .error import SmartHomeError
+from .helpers import APIError
 from .schema import (
     CapabilityType,
     RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
     RangeCapabilityParameters,
     RangeCapabilityRange,
+    ResponseCode,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -146,8 +144,8 @@ class RangeCapability(Capability[RangeCapabilityInstanceActionState], Protocol):
             return float(value)
         except (ValueError, TypeError):
             if strict:
-                raise SmartHomeError(
-                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                raise APIError(
+                    ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                     f"Unsupported value {value!r} for instance {self.instance} of {self.device_id}",
                 )
 
@@ -163,10 +161,10 @@ class StateRangeCapability(RangeCapability, StateCapability[RangeCapabilityInsta
 
         if value is None:
             if self.state.state == STATE_OFF:
-                raise SmartHomeError(ERR_DEVICE_OFF, f"Device {self.state.entity_id} probably turned off")
+                raise APIError(ResponseCode.DEVICE_OFF, f"Device {self.state.entity_id} probably turned off")
 
-            raise SmartHomeError(
-                ERR_INVALID_VALUE,
+            raise APIError(
+                ResponseCode.INVALID_VALUE,
                 f"Unable to get current value or {self.instance.value} instance of {self.device_id}",
             )
 
@@ -462,7 +460,7 @@ class VolumeCapability(StateRangeCapability):
 
         # absolute volume
         if not state.relative:
-            raise SmartHomeError(ERR_INVALID_VALUE, f"Failed to set absolute volume for {self.state.entity_id}")
+            raise APIError(ResponseCode.INVALID_VALUE, f"Failed to set absolute volume for {self.state.entity_id}")
 
         if state.value > 0:
             service = media_player.SERVICE_VOLUME_UP
@@ -565,8 +563,8 @@ class ChannelCapability(StateRangeCapability):
                 return
 
             if self.get_value() is None:
-                raise SmartHomeError(
-                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                raise APIError(
+                    ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                     f"Failed to set relative value for {self.instance.value} instance of {self.state.entity_id}.",
                 )
             else:
@@ -585,8 +583,8 @@ class ChannelCapability(StateRangeCapability):
                 context=context,
             )
         except ValueError as e:
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+            raise APIError(
+                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                 f"Failed to set channel for {self.state.entity_id}. "
                 f'Please change setting "support_set_channel" to "false" in entity_config '
                 f"if the device does not support channel selection. Error: {e!r}",

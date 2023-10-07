@@ -27,8 +27,8 @@ from homeassistant.util.unit_conversion import (
 )
 
 from . import const
-from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
-from .error import SmartHomeError
+from .const import STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .helpers import APIError
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .schema import (
     AmperageFloatPropertyParameters,
@@ -45,6 +45,7 @@ from .schema import (
     PowerFloatPropertyParameters,
     PressureFloatPropertyParameters,
     PropertyType,
+    ResponseCode,
     TemperatureFloatPropertyParameters,
     TemperatureUnit,
     TVOCFloatPropertyParameters,
@@ -85,8 +86,8 @@ class FloatProperty(Property, Protocol):
         try:
             float_value = float(value)
         except (ValueError, TypeError):
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+            raise APIError(
+                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                 f"Unsupported value {value!r} for instance {self.instance.value} of {self.device_id}",
             )
 

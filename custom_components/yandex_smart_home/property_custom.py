@@ -11,10 +11,8 @@ from .const import (
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
-    ERR_DEVICE_UNREACHABLE,
 )
-from .error import SmartHomeError
-from .helpers import DictRegistry
+from .helpers import APIError, DictRegistry
 from .property import Property
 from .property_event import (
     BatteryLevelEventProperty,
@@ -45,6 +43,7 @@ from .property_float import (
     VoltageProperty,
     WaterLevelPercentageProperty,
 )
+from .schema import ResponseCode
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant, State
@@ -86,8 +85,8 @@ class CustomProperty(Property, Protocol):
 
         if value_attribute:
             if value_attribute not in self._native_value_source.attributes:
-                raise SmartHomeError(
-                    ERR_DEVICE_UNREACHABLE,
+                raise APIError(
+                    ResponseCode.DEVICE_UNREACHABLE,
                     f"Attribute {value_attribute!r} not found in entity {self._native_value_source.entity_id} "
                     f"for {self.instance.value} instance of {self.device_id}",
                 )
@@ -266,8 +265,8 @@ def get_custom_property(
     native_value_source = hass.states.get(state_entity_id)
 
     if native_value_source is None:
-        raise SmartHomeError(
-            ERR_DEVICE_UNREACHABLE,
+        raise APIError(
+            ResponseCode.DEVICE_UNREACHABLE,
             f"Entity {state_entity_id} not found for {instance} instance of {device_id}",
         )
 
@@ -275,8 +274,8 @@ def get_custom_property(
         try:
             return EVENT_PROPERTIES_REGISTRY[instance](hass, entry_data, config, device_id, native_value_source)
         except KeyError:
-            raise SmartHomeError(
-                ERR_DEVICE_UNREACHABLE,
+            raise APIError(
+                ResponseCode.DEVICE_UNREACHABLE,
                 f"Unsupported entity {native_value_source.entity_id} for {instance} instance of {device_id}",
             )
 

@@ -13,12 +13,13 @@ from custom_components.yandex_smart_home.capability_mode import (
     ModeCapability,
     StateModeCapability,
 )
-from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     ModeCapabilityInstance,
     ModeCapabilityInstanceActionState,
     ModeCapabilityMode,
+    ResponseCode,
 )
 
 from . import BASIC_ENTRY_DATA, MockConfigEntryData
@@ -101,16 +102,16 @@ async def test_capability_mode_auto_mapping(hass, caplog):
 
     assert cap.get_yandex_mode_by_ha_mode("mode_1") == ModeCapabilityMode.FOWL
     assert cap.get_yandex_mode_by_ha_mode("mode_3") == ModeCapabilityMode.PUERH_TEA
-    with pytest.raises(SmartHomeError) as e:  # strange case o_O
+    with pytest.raises(APIError) as e:  # strange case o_O
         assert cap.get_yandex_mode_by_ha_mode("MODE_1")
-    assert e.value.code == const.ERR_INVALID_VALUE
+    assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
         """Unsupported HA mode "MODE_1" for swing instance of switch.test (not in ['mode_1', 'mode_3', 'mode_4'])"""
     )
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         assert cap.get_ha_mode_by_yandex_mode(ModeCapabilityMode.DEEP_FRYER) == ""
-    assert e.value.code == const.ERR_INVALID_VALUE
+    assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
         'Unsupported mode "deep_fryer" for swing instance of switch.test. Check "modes" setting for this entity'
     )
@@ -666,12 +667,12 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, fan.ATTR_PERCENTAGE: 50}
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, fan.ATTR_PERCENTAGE: 100}
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
             ModeCapabilityInstanceActionState(instance=ModeCapabilityInstance.FAN_SPEED, value=ModeCapabilityMode.LOW),
         )
-    assert e.value.code == const.ERR_INVALID_VALUE
+    assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
         'Unsupported mode "low" for fan_speed instance of fan.test. Check "modes" setting for this entity'
     )
@@ -691,9 +692,9 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
         ModeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         cap.get_value()
-    assert e.value.code == const.ERR_INVALID_VALUE
+    assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == "Unsupported speed value 'not-int' for fan_speed instance of fan.test."
 
 

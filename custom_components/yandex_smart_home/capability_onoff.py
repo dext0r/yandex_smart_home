@@ -37,20 +37,14 @@ from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.service import async_call_from_config
 
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
-from .const import (
-    CONF_FEATURES,
-    CONF_STATE_UNKNOWN,
-    CONF_TURN_OFF,
-    CONF_TURN_ON,
-    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
-    MEDIA_PLAYER_FEATURE_TURN_ON_OFF,
-)
-from .error import SmartHomeError
+from .const import CONF_FEATURES, CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON, MEDIA_PLAYER_FEATURE_TURN_ON_OFF
+from .helpers import APIError
 from .schema import (
     CapabilityType,
     OnOffCapabilityInstance,
     OnOffCapabilityInstanceActionState,
     OnOffCapabilityParameters,
+    ResponseCode,
 )
 
 
@@ -452,8 +446,9 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
 
         if not mode:
             target_state_text = "on" if state.value else "off"
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE, f"Unable to determine operation mode for {target_state_text} state"
+            raise APIError(
+                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
+                f"Unable to determine operation mode for {target_state_text} state",
             )
 
         await self._hass.services.async_call(

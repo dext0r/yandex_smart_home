@@ -12,7 +12,7 @@ from custom_components.yandex_smart_home.capability_custom import (
     CustomRangeCapability,
     get_custom_capability,
 )
-from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     ModeCapabilityInstance,
@@ -21,6 +21,7 @@ from custom_components.yandex_smart_home.schema import (
     OnOffCapabilityInstance,
     RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
+    ResponseCode,
     ToggleCapabilityInstance,
     ToggleCapabilityInstanceActionState,
 )
@@ -83,7 +84,7 @@ async def test_capability_custom_state_attr(hass):
 
 
 async def test_capability_custom_state_entity(hass):
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         get_custom_capability(
             hass,
             BASIC_ENTRY_DATA,
@@ -92,7 +93,7 @@ async def test_capability_custom_state_entity(hass):
             ToggleCapabilityInstance.IONIZATION,
             "foo",
         )
-    assert e.value.code == const.ERR_DEVICE_UNREACHABLE
+    assert e.value.code == ResponseCode.DEVICE_UNREACHABLE
     assert e.value.message == "Entity input_number.test not found for ionization instance of foo"
 
     hass.states.async_set("input_number.test", "on")
@@ -311,12 +312,12 @@ async def test_capability_custom_range_random_access(hass):
     assert calls[4].data["value"] == "value: 10"
 
     cap._value_source = State(state.entity_id, STATE_UNKNOWN)
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10, relative=True),
         )
-    assert e.value.code == const.ERR_INVALID_VALUE
+    assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == "Unable to get current value for open instance of foo"
 
     state = State("switch.test", STATE_OFF, {})
@@ -345,12 +346,12 @@ async def test_capability_custom_range_random_access(hass):
             "foo",
         ),
     )
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10, relative=True),
         )
-    assert e.value.code == const.ERR_INVALID_ACTION
+    assert e.value.code == ResponseCode.DEVICE_OFF
     assert e.value.message == "Device switch.test probably turned off"
 
 
@@ -401,12 +402,12 @@ async def test_capability_custom_range_random_access_no_state(hass):
     assert calls[1].data["value"] == "value: 100"
 
     for v in [10, -3, 50]:
-        with pytest.raises(SmartHomeError) as e:
+        with pytest.raises(APIError) as e:
             await cap.set_instance_state(
                 Context(),
                 RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=v, relative=True),
             )
-        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert e.value.message == (
             "Failed to set relative value for open instance of foo. No state source or service found."
         )
@@ -550,11 +551,11 @@ async def test_capability_custom_range_no_service(hass):
     assert cap.reportable is False
     assert cap.get_value() is None
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10),
         )
 
-    assert e.value.code == const.ERR_INTERNAL_ERROR
+    assert e.value.code == ResponseCode.INTERNAL_ERROR
     assert e.value.message == "Missing capability service"

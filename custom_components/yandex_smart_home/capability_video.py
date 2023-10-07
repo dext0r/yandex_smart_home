@@ -11,12 +11,13 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
 from .cloud_stream import CloudStreamManager
-from .const import DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
-from .error import SmartHomeError
+from .const import DOMAIN
+from .helpers import APIError
 from .schema import (
     CapabilityType,
     GetStreamInstanceActionResultValue,
     GetStreamInstanceActionState,
+    ResponseCode,
     VideoStreamCapabilityInstance,
     VideoStreamCapabilityParameters,
 )
@@ -61,13 +62,13 @@ class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStream
             await cloud_stream.async_start()
             stream_url = cloud_stream.stream_url
             if not stream_url:
-                raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, "Failed to start stream")
+                raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, "Failed to start stream")
         else:
             try:
                 external_url = network.get_url(self._hass, allow_internal=False)
             except network.NoURLAvailableError:
-                raise SmartHomeError(
-                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                raise APIError(
+                    ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                     "Unable to get Home Assistant external URL. "
                     "Have you set external URLs in Configuration -> General?",
                 )
@@ -82,7 +83,9 @@ class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStream
         stream = await camera_entity.async_create_stream()
 
         if not stream:
-            raise SmartHomeError(ERR_NOT_SUPPORTED_IN_CURRENT_MODE, f"{entity_id} does not support play stream service")
+            raise APIError(
+                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"{entity_id} does not support play stream service"
+            )
 
         stream.add_provider(StreamType.HLS)
 

@@ -16,11 +16,12 @@ from custom_components.yandex_smart_home import YandexSmartHome, const
 from custom_components.yandex_smart_home.capability_video import VideoStreamCapability
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.const import DOMAIN
-from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     GetStreamInstanceActionState,
     GetStreamInstanceActionStateValue,
+    ResponseCode,
     VideoStreamCapabilityInstance,
 )
 
@@ -117,9 +118,9 @@ async def test_capability_video_stream_request_stream(hass):
         "custom_components.yandex_smart_home.capability_video._get_camera_from_entity_id",
         return_value=MockCameraUnsupported(),
     ):
-        with pytest.raises(SmartHomeError) as e:
+        with pytest.raises(APIError) as e:
             await cap._async_request_stream(state.entity_id)
-        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert e.value.message == "camera.test does not support play stream service"
 
 
@@ -137,9 +138,9 @@ async def test_capability_video_stream_direct(hass_platform_direct, config_entry
     stream = MockStream(hass)
 
     with patch.object(cap, "_async_request_stream", return_value=stream):
-        with pytest.raises(SmartHomeError) as e:
+        with pytest.raises(APIError) as e:
             await cap.set_instance_state(Context(), ACTION_STATE)
-        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert (
             e.value.message == "Unable to get Home Assistant external URL. "
             "Have you set external URLs in Configuration -> General?"
@@ -175,9 +176,9 @@ async def test_capability_video_stream_cloud(hass_platform_direct, connection_ty
     with patch.object(cap, "_async_request_stream", return_value=stream), patch(
         "custom_components.yandex_smart_home.cloud_stream.CloudStreamManager.async_start"
     ) as mock_start_cloud_stream:
-        with pytest.raises(SmartHomeError) as e:
+        with pytest.raises(APIError) as e:
             await cap.set_instance_state(Context(), ACTION_STATE)
-        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert e.value.message == "Failed to start stream"
         mock_start_cloud_stream.assert_called_once()
 

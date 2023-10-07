@@ -19,13 +19,14 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_range import RangeCapability, StateRangeCapability
-from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
     RangeCapabilityParameters,
     RangeCapabilityRange,
+    ResponseCode,
 )
 
 from . import BASIC_ENTRY_DATA, MockConfigEntryData
@@ -100,9 +101,9 @@ async def test_capability_range(hass, caplog):
     for v in ["4", "5.5"]:
         assert cap._convert_to_float(v) == float(v)
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         assert cap._convert_to_float("foo")
-        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
 
     with patch.object(MockCapability, "_get_value", return_value=20):
         assert cap._get_absolute_value(10) == 30
@@ -119,15 +120,15 @@ async def test_capability_range(hass, caplog):
         "Value 101 is not in range [0.0, 100.0] for instance volume of switch.test",
     ]
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         cap._get_absolute_value(0)
-    assert e.value.code == const.ERR_INVALID_VALUE
+    assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == "Unable to get current value or volume instance of switch.test"
 
     cap.state.state = STATE_OFF
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         cap._get_absolute_value(0)
-    assert e.value.code == const.ERR_DEVICE_OFF
+    assert e.value.code == ResponseCode.DEVICE_OFF
     assert e.value.message == "Device switch.test probably turned off"
 
 
@@ -594,12 +595,12 @@ async def test_capability_range_volume_only_relative(hass, precision):
     )
 
     calls_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_UP)
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=15, relative=False),
         )
-    assert e.value.code == const.ERR_INVALID_VALUE
+    assert e.value.code == ResponseCode.INVALID_VALUE
 
     await cap.set_instance_state(
         Context(),
@@ -745,19 +746,19 @@ async def test_capability_range_channel_set_random(hass):
         media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
     }
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.CHANNEL, value=1, relative=True),
         )
-    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.CHANNEL, value=-1, relative=True),
         )
-        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
 
 
 async def test_capability_range_channel_set_not_supported(hass):
@@ -777,12 +778,12 @@ async def test_capability_range_channel_set_not_supported(hass):
     assert cap.support_random_access is True
 
     with patch.object(cap._hass.services, "async_call", side_effect=ValueError("nope")):
-        with pytest.raises(SmartHomeError) as e:
+        with pytest.raises(APIError) as e:
             await cap.set_instance_state(
                 Context(),
                 RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.CHANNEL, value=15),
             )
-        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert e.value.message == (
             'Failed to set channel for media_player.test. Please change setting "support_set_channel" to "false" in '
             "entity_config if the device does not support channel selection. Error: ValueError('nope')"

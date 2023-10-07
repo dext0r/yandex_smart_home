@@ -47,7 +47,7 @@ from . import (  # noqa: F401
 from . import const  # noqa: F401
 from .capability import STATE_CAPABILITIES_REGISTRY
 from .capability_custom import get_custom_capability
-from .error import SmartHomeError, SmartHomeUserError
+from .helpers import APIError, TemplatedError
 from .property import STATE_PROPERTIES_REGISTRY
 from .property_custom import get_custom_property
 from .schema import (
@@ -308,26 +308,28 @@ class Device:
                 break
 
         if not target_capability:
-            raise SmartHomeError(
-                const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+            raise APIError(
+                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                 f"Capability not found for instance {action.state.instance.value} ({action.type.value}) of "
                 f"{self.id}",
             )
 
         if error_code_template := self._error_code_template:
             if error_code := error_code_template.async_render(capability=action.as_dict(), parse_result=False):
-                if error_code not in const.ERROR_CODES:
-                    raise SmartHomeError(const.ERR_INTERNAL_ERROR, f"Invalid error code for {self.id}: {error_code!r}")
+                try:
+                    ResponseCode(error_code)
+                except ValueError:
+                    raise APIError(ResponseCode.INTERNAL_ERROR, f"Invalid error code for {self.id}: {error_code!r}")
 
-                raise SmartHomeUserError(error_code)
+                raise TemplatedError(error_code)
 
         try:
             return await target_capability.set_instance_state(context, action.state)
-        except SmartHomeError:
+        except APIError:
             raise
         except Exception as e:
-            raise SmartHomeError(
-                const.ERR_INTERNAL_ERROR,
+            raise APIError(
+                ResponseCode.INTERNAL_ERROR,
                 f"Failed to execute action for instance {action.state.instance.value} ({action.type.value}) of "
                 f"{self.id}: {e!r}",
             )

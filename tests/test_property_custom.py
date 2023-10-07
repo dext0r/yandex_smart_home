@@ -7,14 +7,18 @@ from homeassistant.core import State
 import pytest
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.error import SmartHomeError
-from custom_components.yandex_smart_home.helpers import DictRegistry
+from custom_components.yandex_smart_home.helpers import APIError, DictRegistry
 from custom_components.yandex_smart_home.property_custom import (
     EVENT_PROPERTIES_REGISTRY,
     FLOAT_PROPERTIES_REGISTRY,
     get_custom_property,
 )
-from custom_components.yandex_smart_home.schema import EventPropertyInstance, FloatPropertyInstance, PropertyType
+from custom_components.yandex_smart_home.schema import (
+    EventPropertyInstance,
+    FloatPropertyInstance,
+    PropertyType,
+    ResponseCode,
+)
 
 from . import BASIC_ENTRY_DATA
 
@@ -51,10 +55,10 @@ async def test_property_custom(hass, domain, instance):
         "pm2.5_density",
         "pm10_density",
     ]:
-        with pytest.raises(SmartHomeError) as e:
+        with pytest.raises(APIError) as e:
             get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
 
-        assert e.value.code == const.ERR_DEVICE_UNREACHABLE
+        assert e.value.code == ResponseCode.DEVICE_UNREACHABLE
         assert e.value.message == f"Unsupported entity {domain}.test for {instance} instance of {state.entity_id}"
         return
 
@@ -159,12 +163,12 @@ async def test_property_custom_get_value_float(hass):
         assert prop.get_value() is None
 
     prop = prop.clone(State(state.entity_id, "not-a-number"))
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         prop.get_value()
-    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Unsupported value 'not-a-number' for instance temperature of sensor.test"
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         prop = get_custom_property(
             hass,
             BASIC_ENTRY_DATA,
@@ -175,12 +179,12 @@ async def test_property_custom_get_value_float(hass):
             state.entity_id,
         )
         prop.get_value()
-    assert e.value.code == const.ERR_DEVICE_UNREACHABLE
+    assert e.value.code == ResponseCode.DEVICE_UNREACHABLE
     assert (
         e.value.message == "Attribute 'value' not found in entity sensor.test for temperature instance of sensor.test"
     )
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         get_custom_property(
             hass,
             BASIC_ENTRY_DATA,
@@ -190,7 +194,7 @@ async def test_property_custom_get_value_float(hass):
             },
             state.entity_id,
         )
-    assert e.value.code == const.ERR_DEVICE_UNREACHABLE
+    assert e.value.code == ResponseCode.DEVICE_UNREACHABLE
     assert e.value.message == "Entity sensor.test_2 not found for temperature instance of sensor.test"
 
     hass.states.async_set("sensor.test_2", "4.52")

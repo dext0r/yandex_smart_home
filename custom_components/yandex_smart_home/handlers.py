@@ -9,8 +9,7 @@ from homeassistant.util.decorator import Registry
 
 from .const import EVENT_DEVICE_ACTION
 from .device import Device
-from .error import SmartHomeError, SmartHomeUserError
-from .helpers import RequestData
+from .helpers import APIError, RequestData, TemplatedError
 from .schema import (
     ActionRequest,
     ActionResult,
@@ -54,7 +53,7 @@ async def async_handle_request(hass: HomeAssistant, data: RequestData, action: s
     # noinspection PyBroadException
     try:
         return Response(request_id=data.request_id, payload=await handler(hass, data, payload))
-    except SmartHomeError as err:
+    except APIError as err:
         _LOGGER.error(f"{err.message} ({err.code})")
         return Response(request_id=data.request_id, payload=Error(error_code=ResponseCode(err.code)))
     except Exception:
@@ -136,9 +135,9 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
         for action in actions:
             try:
                 value = await device.execute(data.context, action)
-            except (SmartHomeError, SmartHomeUserError) as err:
-                if isinstance(err, SmartHomeError):
-                    _LOGGER.error(f"{err.message} ({err.code})")
+            except (APIError, TemplatedError) as err:
+                if isinstance(err, APIError):
+                    _LOGGER.error(f"{err.message} ({err.code.value})")
 
                 capability_results.append(
                     ActionResultCapability(

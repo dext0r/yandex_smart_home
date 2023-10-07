@@ -9,18 +9,13 @@ from homeassistant.util.decorator import Registry
 from custom_components.yandex_smart_home import YandexSmartHome, handlers
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
-from custom_components.yandex_smart_home.const import (
-    CONF_DEVICES_DISCOVERED,
-    DOMAIN,
-    ERR_INVALID_ACTION,
-    EVENT_DEVICE_ACTION,
-)
-from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.const import CONF_DEVICES_DISCOVERED, DOMAIN, EVENT_DEVICE_ACTION
 from custom_components.yandex_smart_home.handlers import PING_REQUEST_USER_ID
-from custom_components.yandex_smart_home.helpers import RequestData
+from custom_components.yandex_smart_home.helpers import APIError, RequestData
 from custom_components.yandex_smart_home.schema import (
     GetStreamInstanceActionResultValue,
     OnOffCapabilityInstanceActionState,
+    ResponseCode,
     ToggleCapabilityInstance,
     ToggleCapabilityInstanceActionState,
 )
@@ -33,7 +28,7 @@ async def test_handle_request(hass, caplog):
 
     @r.register("error")
     async def error(*_, **__):
-        raise SmartHomeError(ERR_INVALID_ACTION, "foo")
+        raise APIError(ResponseCode.INVALID_ACTION, "foo")
 
     @r.register("exception")
     async def exception(*_, **__):

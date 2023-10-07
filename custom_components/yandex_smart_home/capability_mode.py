@@ -11,14 +11,15 @@ from homeassistant.util.percentage import ordered_list_item_to_percentage, perce
 
 from . import const
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
-from .const import CONF_ENTITY_MODE_MAP, ERR_INVALID_VALUE, STATE_NONE
-from .error import SmartHomeError
+from .const import CONF_ENTITY_MODE_MAP, STATE_NONE
+from .helpers import APIError
 from .schema import (
     CapabilityType,
     ModeCapabilityInstance,
     ModeCapabilityInstanceActionState,
     ModeCapabilityMode,
     ModeCapabilityParameters,
+    ResponseCode,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -104,7 +105,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                 f"(not in {self.supported_ha_modes!r})"
             )
 
-            raise SmartHomeError(ERR_INVALID_VALUE, err)
+            raise APIError(ResponseCode.INVALID_VALUE, err)
 
         if rv is None and not hide_warnings:
             if str(ha_mode).lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
@@ -130,8 +131,8 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                 if yandex_mode_idx == yandex_mode:
                     return self.supported_ha_modes[ha_idx]
 
-        raise SmartHomeError(
-            ERR_INVALID_VALUE,
+        raise APIError(
+            ResponseCode.INVALID_VALUE,
             f'Unsupported mode "{yandex_mode.value}" for {self.instance.value} instance of {self.device_id}. '
             f'Check "modes" setting for this entity',
         )
@@ -713,8 +714,8 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         if self.modes_map:
             ha_modes = self.modes_map.get(state.value)
             if not ha_modes:
-                raise SmartHomeError(
-                    ERR_INVALID_VALUE,
+                raise APIError(
+                    ResponseCode.INVALID_VALUE,
                     f'Unsupported mode "{state.value.value}" for {self.instance.value} instance of '
                     f'{self.state.entity_id}. Check "modes" setting for this entity',
                 )
@@ -740,8 +741,8 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         try:
             return int(value.replace("%", ""))
         except ValueError:
-            raise SmartHomeError(
-                ERR_INVALID_VALUE,
+            raise APIError(
+                ResponseCode.INVALID_VALUE,
                 f"Unsupported speed value {value!r} for {self.instance.value} instance of {self.state.entity_id}.",
             )
 

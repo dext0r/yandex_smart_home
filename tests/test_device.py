@@ -45,13 +45,9 @@ from custom_components.yandex_smart_home.const import (
     CONF_NAME,
     CONF_ROOM,
     CONF_TYPE,
-    ERR_DEVICE_UNREACHABLE,
-    ERR_INTERNAL_ERROR,
-    ERR_INVALID_ACTION,
-    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
 from custom_components.yandex_smart_home.device import Device, DeviceCallbackState
-from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.property_custom import (
     ButtonPressCustomEventProperty,
     VoltageCustomFloatProperty,
@@ -71,6 +67,7 @@ from custom_components.yandex_smart_home.schema import (
     RangeCapabilityInstance,
     RangeCapabilityInstanceAction,
     RangeCapabilityInstanceActionState,
+    ResponseCode,
     ToggleCapabilityInstance,
     ToggleCapabilityInstanceAction,
     ToggleCapabilityInstanceActionState,
@@ -407,7 +404,7 @@ async def test_device_query(hass):
 
     state = State("switch.unavailable", STATE_UNAVAILABLE)
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.query().as_dict() == {"id": state.entity_id, "error_code": ERR_DEVICE_UNREACHABLE}
+    assert device.query().as_dict() == {"id": state.entity_id, "error_code": ResponseCode.DEVICE_UNREACHABLE}
 
     state = State("switch.test", STATE_ON)
     state_pause = State("input_boolean.pause", STATE_OFF)
@@ -552,7 +549,7 @@ async def test_device_query(hass):
 async def test_device_execute(hass, caplog):
     state = State("switch.test", STATE_ON)
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await device.execute(
             Context(),
             ToggleCapabilityInstanceAction(
@@ -560,7 +557,7 @@ async def test_device_execute(hass, caplog):
             ),
         )
 
-    assert e.value.code == ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Capability not found for instance pause (devices.capabilities.toggle) of switch.test"
 
     off_calls = async_mock_service(hass, state.domain, SERVICE_TURN_OFF)
@@ -585,12 +582,12 @@ async def test_device_execute_exception(hass):
             return True
 
         async def set_instance_state(self, *_, **__):
-            raise SmartHomeError(ERR_INVALID_ACTION, "foo")
+            raise APIError(ResponseCode.INVALID_ACTION, "foo")
 
     state = State("switch.test", STATE_ON)
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     with patch("custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY", [MockOnOffCapability]):
-        with pytest.raises(SmartHomeError) as e:
+        with pytest.raises(APIError) as e:
             await device.execute(
                 Context(),
                 OnOffCapabilityInstanceAction(
@@ -598,7 +595,7 @@ async def test_device_execute_exception(hass):
                 ),
             )
 
-    assert e.value.code == ERR_INTERNAL_ERROR
+    assert e.value.code == ResponseCode.INTERNAL_ERROR
     assert e.value.message == (
         "Failed to execute action for instance on (devices.capabilities.on_off) of switch.test: "
         "Exception('fail set_state')"
@@ -606,7 +603,7 @@ async def test_device_execute_exception(hass):
 
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     with patch("custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY", [MockBrightnessCapability]):
-        with pytest.raises(SmartHomeError) as e:
+        with pytest.raises(APIError) as e:
             await device.execute(
                 Context(),
                 RangeCapabilityInstanceAction(
@@ -614,7 +611,7 @@ async def test_device_execute_exception(hass):
                 ),
             )
 
-    assert e.value.code == ERR_INVALID_ACTION
+    assert e.value.code == ResponseCode.INVALID_ACTION
     assert e.value.message == "foo"
 
 

@@ -10,8 +10,8 @@ from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
 
 from .capability import STATE_CAPABILITIES_REGISTRY, StateCapability
 from .color import ColorConverter, ColorTemperatureConverter
-from .const import CONF_COLOR_PROFILE, CONF_ENTITY_MODE_MAP, ERR_INTERNAL_ERROR, ERR_NOT_SUPPORTED_IN_CURRENT_MODE
-from .error import SmartHomeError
+from .const import CONF_COLOR_PROFILE, CONF_ENTITY_MODE_MAP
+from .helpers import APIError
 from .schema import (
     CapabilityParameterColorModel,
     CapabilityParameterColorScene,
@@ -21,6 +21,7 @@ from .schema import (
     ColorSettingCapabilityInstance,
     ColorSettingCapabilityInstanceActionState,
     ColorSettingCapabilityParameters,
+    ResponseCode,
     RGBInstanceActionState,
     SceneInstanceActionState,
     TemperatureKInstanceActionState,
@@ -74,7 +75,7 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
 
     async def set_instance_state(self, context: Context, state: ColorSettingCapabilityInstanceActionState) -> None:
         """Change the capability state."""
-        raise SmartHomeError(ERR_INTERNAL_ERROR, "No instance")
+        raise APIError(ResponseCode.INTERNAL_ERROR, "No instance")
 
     @property
     def _capabilities(self) -> list[StateCapability[Any]]:
@@ -162,8 +163,8 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
             try:
                 return ColorConverter(self._entry_data.color_profiles[color_profile_name])
             except KeyError:
-                raise SmartHomeError(
-                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                raise APIError(
+                    ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                     f"Color profile {color_profile_name!r} not found for instance {self.instance} "
                     f"of {self.state.entity_id}",
                 )
@@ -286,8 +287,8 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
                 light.DOMAIN, light.SERVICE_TURN_ON, service_data, blocking=True, context=context
             )
         else:
-            raise SmartHomeError(
-                ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+            raise APIError(
+                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                 f"Unsupported value {state.value!r} for instance {self.instance} of {self.state.entity_id}",
             )
 
@@ -299,8 +300,8 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
                 return ColorTemperatureConverter(self._entry_data.color_profiles[color_profile_name], self.state)
 
             except KeyError:
-                raise SmartHomeError(
-                    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                raise APIError(
+                    ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                     f"Color profile {color_profile_name!r} not found for instance {self.instance} "
                     f"of {self.state.entity_id}",
                 )

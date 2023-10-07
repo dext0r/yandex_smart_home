@@ -35,11 +35,12 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
-from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     OnOffCapabilityInstance,
     OnOffCapabilityInstanceActionState,
+    ResponseCode,
 )
 
 from . import BASIC_ENTRY_DATA, MockConfigEntryData
@@ -660,10 +661,10 @@ async def test_capability_onoff_water_heater_set_unsupported_op_mode(hass):
     assert cap.get_value() is True
 
     for v in [True, False]:
-        with pytest.raises(SmartHomeError) as e:
+        with pytest.raises(APIError) as e:
             await cap.set_instance_state(
                 Context(), OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=v)
             )
 
-        assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert "Unable to determine operation mode " in e.value.message

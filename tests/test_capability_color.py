@@ -17,11 +17,12 @@ from custom_components.yandex_smart_home.capability_color import (
 )
 from custom_components.yandex_smart_home.color import ColorConverter, ColorName, rgb_to_int
 from custom_components.yandex_smart_home.entry_data import ConfigEntryData
-from custom_components.yandex_smart_home.error import SmartHomeError
+from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     ColorScene,
     ColorSettingCapabilityInstance,
+    ResponseCode,
     RGBInstanceActionState,
     SceneInstanceActionState,
     TemperatureKInstanceActionState,
@@ -58,9 +59,9 @@ async def test_capability_color_setting(hass):
     )
     cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     assert cap_cs.get_value() is None
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap_cs.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
-    assert e.value.code == const.ERR_INTERNAL_ERROR
+    assert e.value.code == ResponseCode.INTERNAL_ERROR
 
 
 @pytest.mark.parametrize(
@@ -256,14 +257,14 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
         RGBColorCapability,
         get_exact_one_capability(hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB),
     )
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         assert cap.get_value() == 16714250
-    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Color profile 'invalid' not found for instance rgb of light.invalid"
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
-    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Color profile 'invalid' not found for instance rgb of light.invalid"
 
 
@@ -364,12 +365,12 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
         },
     )
     cap.state = state
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
             TemperatureKInstanceActionState(value=6500),
         )
-    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Unsupported value 6500 for instance temperature_k of light.test"
 
 
@@ -577,17 +578,17 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
             hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
         ),
     )
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         cap_temp.get_value()
-    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Color profile 'invalid' not found for instance temperature_k of light.invalid"
 
-    with pytest.raises(SmartHomeError) as e:
+    with pytest.raises(APIError) as e:
         await cap_temp.set_instance_state(
             Context(),
             TemperatureKInstanceActionState(value=4100),
         )
-    assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Color profile 'invalid' not found for instance temperature_k of light.invalid"
 
 

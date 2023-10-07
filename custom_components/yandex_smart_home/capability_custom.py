@@ -27,13 +27,8 @@ from .const import (
     CONF_ENTITY_RANGE_MAX,
     CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION,
-    ERR_DEVICE_OFF,
-    ERR_DEVICE_UNREACHABLE,
-    ERR_INTERNAL_ERROR,
-    ERR_INVALID_VALUE,
-    ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
 )
-from .error import SmartHomeError
+from .helpers import APIError
 from .schema import (
     CapabilityInstance,
     CapabilityType,
@@ -43,6 +38,7 @@ from .schema import (
     RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
     RangeCapabilityRange,
+    ResponseCode,
     ToggleCapabilityInstance,
     ToggleCapabilityInstanceActionState,
 )
@@ -211,8 +207,8 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                     config = self._decrease_value_service_config
             else:
                 if not self.retrievable:
-                    raise SmartHomeError(
-                        ERR_NOT_SUPPORTED_IN_CURRENT_MODE,
+                    raise APIError(
+                        ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                         f"Failed to set relative value for {self.instance.value} instance of {self.device_id}. "
                         f"No state source or service found.",
                     )
@@ -220,7 +216,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                 value = self._get_absolute_value(state.value)
 
         if not config:
-            raise SmartHomeError(ERR_INTERNAL_ERROR, "Missing capability service")
+            raise APIError(ResponseCode.INTERNAL_ERROR, "Missing capability service")
 
         await async_call_from_config(
             self._hass,
@@ -248,10 +244,12 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                     self._config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
                     and self._value_source.state == STATE_OFF
                 ):
-                    raise SmartHomeError(ERR_DEVICE_OFF, f"Device {self._value_source.entity_id} probably turned off")
+                    raise APIError(
+                        ResponseCode.DEVICE_OFF, f"Device {self._value_source.entity_id} probably turned off"
+                    )
 
-            raise SmartHomeError(
-                ERR_INVALID_VALUE,
+            raise APIError(
+                ResponseCode.INVALID_VALUE,
                 f"Unable to get current value for {self.instance.value} instance of {self.device_id}",
             )
 
@@ -302,8 +300,8 @@ def get_custom_capability(
 
         state = hass.states.get(value_source_entity_id)
         if not state:
-            raise SmartHomeError(
-                ERR_DEVICE_UNREACHABLE,
+            raise APIError(
+                ResponseCode.DEVICE_UNREACHABLE,
                 f"Entity {value_source_entity_id} not found for {instance} instance of {device_id}",
             )
 
