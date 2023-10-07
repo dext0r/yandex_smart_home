@@ -248,6 +248,11 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
         await delete_cloud_instance(hass, entry)
 
 
+async def async_migrate_entry(_: HomeAssistant, entry: ConfigEntry) -> bool:
+    entry.version = 1
+    return True
+
+
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
     await hass.config_entries.async_reload(entry.entry_id)
     hass.bus.async_fire(EVENT_CONFIG_CHANGED)

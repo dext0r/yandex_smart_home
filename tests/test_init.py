@@ -623,3 +623,18 @@ yandex_smart_home:
 
     assert entry.options[const.CONF_PRESSURE_UNIT] == 'mmHg'
     assert entry.data[const.YAML_CONFIG_HASH] == 'cbe26e947d35ed6222f97e493b32d94f'
+
+
+async def test_migrate_entity(hass):
+    entity = MockConfigEntry(
+        domain=DOMAIN,
+        version=99,
+        data={'bar': 'foo'},
+        options={'foo': 'bar'}
+    )
+    entity.add_to_hass(hass)
+    await hass.config_entries.async_setup(entity.entry_id)
+    await hass.async_block_till_done()
+    assert entity.version == 1
+    assert entity.data == {'bar': 'foo', 'connection_type': 'direct', 'devices_discovered': True}
+    assert entity.options == {'beta': False, 'cloud_stream': False, 'foo': 'bar', 'pressure_unit': 'mmHg'}
