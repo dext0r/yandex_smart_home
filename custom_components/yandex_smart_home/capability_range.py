@@ -72,27 +72,26 @@ class RangeCapability(AbstractCapability, ABC):
 
     def parameters(self) -> dict[str, Any]:
         """Return parameters for a devices request."""
-        if self.support_random_access:
-            range_min, range_max, range_precision = self.range
-            rv = {
-                'instance': self.instance,
-                'random_access': True,
-                'range': {
-                    'min': range_min,
-                    'max': range_max,
-                    'precision': range_precision
-                }
+        range_min, range_max, range_precision = self.range
+        rv = {
+            'instance': self.instance,
+            'random_access': self.support_random_access
+        }
+
+        if self.instance in const.RANGE_INSTANCE_TO_UNITS:
+            rv['unit'] = const.RANGE_INSTANCE_TO_UNITS[self.instance]
+
+        if self.instance in [const.RANGE_INSTANCE_BRIGHTNESS,
+                             const.RANGE_INSTANCE_HUMIDITY,
+                             const.RANGE_INSTANCE_OPEN,
+                             const.RANGE_INSTANCE_TEMPERATURE] or self.support_random_access:
+            rv['range'] = {
+                'min': range_min,
+                'max': range_max,
+                'precision': range_precision
             }
 
-            if self.instance in const.RANGE_INSTANCE_TO_UNITS:
-                rv['unit'] = const.RANGE_INSTANCE_TO_UNITS[self.instance]
-
-            return rv
-
-        return {
-            'instance': self.instance,
-            'random_access': False,
-        }
+        return rv
 
     def get_value(self) -> float | str | bool | None:
         value = self._value
