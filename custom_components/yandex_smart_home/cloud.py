@@ -7,15 +7,15 @@ from http import HTTPStatus
 import logging
 from typing import TYPE_CHECKING, Any, AsyncIterable, cast
 
-from aiohttp import ClientConnectorError, ClientResponseError, ClientWebSocketResponse, WSMessage, WSMsgType
+from aiohttp import ClientConnectorError, ClientResponseError, ClientWebSocketResponse, WSMessage, WSMsgType, hdrs
 from homeassistant.core import Context, HassJob
-from homeassistant.helpers.aiohttp_client import async_create_clientsession, async_get_clientsession
+from homeassistant.helpers.aiohttp_client import SERVER_SOFTWARE, async_create_clientsession, async_get_clientsession
 from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt
 from pydantic import BaseModel
 
 from . import handlers
-from .const import CLOUD_BASE_URL
+from .const import CLOUD_BASE_URL, DOMAIN
 from .helpers import RequestData
 
 if TYPE_CHECKING:
@@ -74,7 +74,10 @@ class CloudManager:
                 self._url,
                 heartbeat=45,
                 compress=15,
-                headers={"Authorization": f"Bearer {self._entry_data.cloud_connection_token}"},
+                headers={
+                    hdrs.AUTHORIZATION: f"Bearer {self._entry_data.cloud_connection_token}",
+                    hdrs.USER_AGENT: f"{SERVER_SOFTWARE} {DOMAIN}/{self._entry_data.version}",
+                },
             )
 
             _LOGGER.debug("Connection to Yandex Smart Home cloud established")
@@ -166,7 +169,7 @@ async def delete_cloud_instance(hass: HomeAssistant, instance_id: str, token: st
 
     response = await session.delete(
         f"{BASE_API_URL}/instance/{instance_id}",
-        headers={"Authorization": f"Bearer {token}"},
+        headers={hdrs.AUTHORIZATION: f"Bearer {token}"},
     )
     if response.status != HTTPStatus.OK:
         _LOGGER.error(f"Failed to delete cloud instance, status code: {response.status}")

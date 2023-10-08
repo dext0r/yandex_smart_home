@@ -512,7 +512,10 @@ async def test_notifier_send_direct(hass, aioclient_mock, caplog):
 
 
 async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
-    notifier = YandexCloudNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG)
+    await async_setup_component(hass, DOMAIN, {})
+    entry_data = MockConfigEntryData(hass, BASIC_ENTRY_DATA.entry)
+
+    notifier = YandexCloudNotifier(hass, entry_data, BASIC_CONFIG)
     token = BASIC_CONFIG.token
     user_id = BASIC_CONFIG.user_id
     now = time.time()
@@ -528,7 +531,8 @@ async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
 
     assert aioclient_mock.call_count == 1
     assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"user_id": user_id}}
-    assert aioclient_mock.mock_calls[0][3] == {"Authorization": f"Bearer {token}"}
+    assert aioclient_mock.mock_calls[0][3]["Authorization"] == f"Bearer {token}"
+    assert "yandex_smart_home/" in aioclient_mock.mock_calls[0][3]["User-Agent"]
     aioclient_mock.clear_requests()
 
     aioclient_mock.post(
@@ -542,7 +546,7 @@ async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
 
     assert aioclient_mock.call_count == 1
     assert aioclient_mock.mock_calls[0][2] == {"ts": now, "payload": {"devices": [], "user_id": user_id}}
-    assert aioclient_mock.mock_calls[0][3] == {"Authorization": f"Bearer {token}"}
+    assert aioclient_mock.mock_calls[0][3]["Authorization"] == f"Bearer {token}"
     aioclient_mock.clear_requests()
     caplog.clear()
 

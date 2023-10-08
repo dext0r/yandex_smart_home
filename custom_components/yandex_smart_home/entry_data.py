@@ -10,11 +10,12 @@ from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entityfilter import EntityFilter
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import DATA_CUSTOM_COMPONENTS
 
 from . import const
 from .cloud import CloudManager
 from .color import ColorProfiles
-from .const import ConnectionType
+from .const import DOMAIN, ConnectionType
 from .helpers import CacheStore
 from .notifier import NotifierConfig, YandexCloudNotifier, YandexDirectNotifier, YandexNotifier
 
@@ -143,6 +144,14 @@ class ConfigEntryData:
         data[const.CONF_DEVICES_DISCOVERED] = True
 
         return self._hass.config_entries.async_update_entry(self.entry, data=data, options=self.entry.options)
+
+    @property
+    def version(self) -> str:
+        """Return component version."""
+        try:
+            return str(self._hass.data[DATA_CUSTOM_COMPONENTS][DOMAIN].version)
+        except KeyError:
+            return "unknown"
 
     async def _async_setup_notifiers(self, *_: Any) -> None:
         """Set up notifiers."""

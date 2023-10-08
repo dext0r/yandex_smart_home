@@ -95,6 +95,7 @@ async def test_cloud_connect(hass_platform, config_entry_cloud, aioclient_mock, 
         await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_not_called()
         assert session.ws.headers["Authorization"] == "Bearer token-foo"
+        assert "yandex_smart_home/" in session.ws.headers["User-Agent"]
         await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
     with patch(

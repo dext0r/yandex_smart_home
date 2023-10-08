@@ -10,14 +10,14 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
-from aiohttp import ContentTypeError
+from aiohttp import ContentTypeError, hdrs
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HassJob
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.helpers.aiohttp_client import SERVER_SOFTWARE, async_create_clientsession
 from homeassistant.helpers.event import async_call_later
 
-from . import const
+from . import DOMAIN, const
 from .device import Device, DeviceCallbackState
 
 if TYPE_CHECKING:
@@ -291,7 +291,7 @@ class YandexDirectNotifier(YandexNotifier):
     def _request_headers(self) -> dict[str, str]:
         """Return headers for a request."""
 
-        return {"Authorization": f"OAuth {self._config.token}"}
+        return {hdrs.AUTHORIZATION: f"OAuth {self._config.token}"}
 
     def _format_log_message(self, message: str) -> str:
         """Format and print a message."""
@@ -315,4 +315,7 @@ class YandexCloudNotifier(YandexNotifier):
     def _request_headers(self) -> dict[str, str]:
         """Return headers for a request."""
 
-        return {"Authorization": f"Bearer {self._config.token}"}
+        return {
+            hdrs.AUTHORIZATION: f"Bearer {self._config.token}",
+            hdrs.USER_AGENT: f"{SERVER_SOFTWARE} {DOMAIN}/{self._entry_data.version}",
+        }

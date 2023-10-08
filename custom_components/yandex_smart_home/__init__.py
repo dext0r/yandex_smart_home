@@ -168,9 +168,9 @@ class YandexSmartHome:
     def __init__(self, hass: HomeAssistant, yaml_config: ConfigType):
         """Initialize the Yanex Smart Home from yaml configuration."""
         self.cloud_streams: dict[str, CloudStreamManager] = {}
-        self._yaml_config = yaml_config
 
         self._hass = hass
+        self._yaml_config = yaml_config
         self._entry_datas: dict[str, ConfigEntryData] = {}
 
         hass.helpers.service.async_register_admin_service(DOMAIN, SERVICE_RELOAD, self._handle_yaml_config_reload)
