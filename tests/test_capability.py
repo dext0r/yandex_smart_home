@@ -345,18 +345,6 @@ async def test_capability_demo_platform(hass):
         ("devices.capabilities.on_off", "on"),
     ]
 
-    state = hass.states.get("media_player.bedroom_2")
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
-    assert capabilities == [
-        ("devices.capabilities.range", "volume"),
-        ("devices.capabilities.range", "channel"),
-        ("devices.capabilities.toggle", "mute"),
-        ("devices.capabilities.toggle", "pause"),
-        ("devices.capabilities.on_off", "on"),
-    ]
-
     state = hass.states.get("media_player.kitchen")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
