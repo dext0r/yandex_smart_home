@@ -28,6 +28,7 @@ jobs:
       matrix:
         include:
           - ha-version: '2023.7'
+          - ha-version: '2023.10'
             latest: true
     steps:
       - uses: actions/checkout@v3
