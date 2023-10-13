@@ -81,8 +81,8 @@ class DeviceDescription(APIModel):
     description: str | None
     room: str | None
     type: DeviceType
-    capabilities: list[CapabilityDescription]
-    properties: list[PropertyDescription]
+    capabilities: list[CapabilityDescription] | None
+    properties: list[PropertyDescription] | None
     device_info: DeviceInfo | None
 
 

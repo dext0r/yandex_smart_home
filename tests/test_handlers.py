@@ -103,7 +103,6 @@ async def test_handler_devices_query(hass, caplog):
                 "name": "test 1",
                 "type": "devices.types.switch",
                 "capabilities": [{"type": "devices.capabilities.on_off", "retrievable": True, "reportable": True}],
-                "properties": [],
                 "device_info": {"model": "switch.test_1"},
             }
         ],

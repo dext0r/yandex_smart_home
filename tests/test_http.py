@@ -93,7 +93,6 @@ async def test_http_user_devices(hass_platform_direct, hass_client, hass_admin_u
                     "id": "sensor.outside_temp",
                     "name": "Температура за бортом",
                     "type": "devices.types.sensor.climate",
-                    "capabilities": [],
                     "properties": [
                         {
                             "type": "devices.properties.float",
@@ -110,7 +109,6 @@ async def test_http_user_devices(hass_platform_direct, hass_client, hass_admin_u
                     "id": "binary_sensor.front_door",
                     "name": "Front Door",
                     "type": "devices.types.sensor.open",
-                    "capabilities": [],
                     "properties": [
                         {
                             "type": "devices.properties.event",
@@ -150,7 +148,6 @@ async def test_http_user_devices(hass_platform_direct, hass_client, hass_admin_u
                         },
                         {"type": "devices.capabilities.on_off", "retrievable": True, "reportable": False},
                     ],
-                    "properties": [],
                     "device_info": {
                         "model": "light.kitchen",
                     },

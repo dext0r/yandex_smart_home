@@ -259,7 +259,6 @@ async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclie
                     "id": "sensor.outside_temp",
                     "name": "Температура за бортом",
                     "type": "devices.types.sensor.climate",
-                    "capabilities": [],
                     "properties": [
                         {
                             "type": "devices.properties.float",
@@ -276,7 +275,6 @@ async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclie
                     "id": "binary_sensor.front_door",
                     "name": "Front Door",
                     "type": "devices.types.sensor.open",
-                    "capabilities": [],
                     "properties": [
                         {
                             "type": "devices.properties.event",
@@ -311,7 +309,6 @@ async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclie
                         },
                         {"type": "devices.capabilities.on_off", "retrievable": True, "reportable": True},
                     ],
-                    "properties": [],
                     "device_info": {
                         "model": "light.kitchen",
                     },

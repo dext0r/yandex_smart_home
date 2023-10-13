@@ -298,8 +298,8 @@ class Device:
             name=self._get_name(entity_entry).strip(),
             room=room,
             type=self.type,
-            capabilities=capabilities,
-            properties=properties,
+            capabilities=capabilities or None,
+            properties=properties or None,
             device_info=device_info,
         )
 
