@@ -1,6 +1,7 @@
 """Yandex Smart Home user device."""
 from __future__ import annotations
 
+import logging
 import re
 from typing import TYPE_CHECKING, Any
 
@@ -75,6 +76,7 @@ if TYPE_CHECKING:
     from .entry_data import ConfigEntryData
     from .property import Property, StateProperty
 
+_LOGGER = logging.getLogger(__name__)
 
 _DOMAIN_TO_DEVICE_TYPES: dict[str, DeviceType] = {
     air_quality.DOMAIN: DeviceType.SENSOR,
@@ -201,7 +203,11 @@ class Device:
         properties: list[Property] = []
 
         for property_config in self._config.get(const.CONF_ENTITY_PROPERTIES, []):
-            custom_property = get_custom_property(self._hass, self._entry_data, property_config, self.id)
+            try:
+                custom_property = get_custom_property(self._hass, self._entry_data, property_config, self.id)
+            except APIError as e:
+                _LOGGER.error(e)
+                continue
 
             if custom_property.supported and custom_property not in properties:
                 properties.append(custom_property)

@@ -466,10 +466,7 @@ async def test_notifier_initial_report(hass_platform, mock_call_later, caplog):
     ]
 
     assert notifier._pending.empty is True
-    assert caplog.messages[-1:] == [
-        "Failed to send initial report for properties: Unsupported entity binary_sensor.foo for temperature "
-        "instance of light.kitchen"
-    ]
+    assert caplog.messages[-1:] == ["Unsupported entity binary_sensor.foo for temperature instance of light.kitchen"]
 
 
 async def test_notifier_send_callback_exception(hass, caplog):

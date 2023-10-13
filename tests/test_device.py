@@ -196,7 +196,7 @@ async def test_device_duplicate_properties(hass):
         assert isinstance(props[2], MockPropertyWE)
 
 
-async def test_device_properties(hass):
+async def test_device_properties(hass, caplog):
     state = State(
         "sensor.temp",
         "5",
@@ -212,6 +212,10 @@ async def test_device_properties(hass):
                 const.CONF_ENTITY_PROPERTIES: [
                     {const.CONF_ENTITY_PROPERTY_TYPE: "voltage"},
                     {const.CONF_ENTITY_PROPERTY_TYPE: "button"},
+                    {
+                        const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
+                        const.CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.foo",
+                    },
                 ]
             }
         }
@@ -232,6 +236,7 @@ async def test_device_properties(hass):
     )
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert [type(c) for c in device.get_properties()] == [OpenStateEventProperty]
+    assert caplog.messages[-1] == "Unsupported entity binary_sensor.foo for temperature instance of sensor.temp"
 
 
 async def test_device_info(hass, registries):
