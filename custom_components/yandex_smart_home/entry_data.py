@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Any, Self
+from typing import Any, Self, cast
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT_STOP, UnitOfPressure
@@ -130,7 +130,7 @@ class ConfigEntryData:
 
     def get_entity_config(self, entity_id: str) -> ConfigType:
         """Return configuration for the entity."""
-        return self.entity_config.get(entity_id, {})
+        return cast(ConfigType, self.entity_config.get(entity_id, {}))
 
     def should_expose(self, entity_id: str) -> bool:
         """Test if the entity should be exposed."""

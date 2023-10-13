@@ -383,7 +383,7 @@ class TemperatureSensor(StateProperty, TemperatureProperty):
     @property
     def _native_unit_of_measurement(self) -> str:
         """Return the unit the native value is expressed in."""
-        return self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfTemperature.CELSIUS)
+        return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfTemperature.CELSIUS))
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -431,9 +431,9 @@ class PressureSensor(StateProperty, PressureProperty):
         return self.state.state
 
     @property
-    def _native_unit_of_measurement(self) -> str | None:
+    def _native_unit_of_measurement(self) -> str:
         """Return the unit the native value is expressed in."""
-        return self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement)
+        return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement))
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -580,7 +580,7 @@ class TVOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
     @property
     def _native_unit_of_measurement(self) -> str:
         """Return the unit the native value is expressed in."""
-        return self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, CONCENTRATION_MICROGRAMS_PER_CUBIC_METER)
+        return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, CONCENTRATION_MICROGRAMS_PER_CUBIC_METER))
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -606,10 +606,10 @@ class VoltageSensor(StateProperty, VoltageProperty):
         return self.state.attributes.get(ATTR_VOLTAGE)
 
     @property
-    def _native_unit_of_measurement(self) -> str:
+    def _native_unit_of_measurement(self) -> str | None:
         """Return the unit the native value is expressed in."""
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement)
+            return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement))
 
         return self.unit_of_measurement
 
@@ -640,7 +640,7 @@ class ElectricCurrentSensor(StateProperty, ElectricCurrentProperty):
     def _native_unit_of_measurement(self) -> str:
         """Return the unit the native value is expressed in."""
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement)
+            return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement))
 
         return self.unit_of_measurement
 
@@ -675,7 +675,7 @@ class ElectricPowerSensor(StateProperty, ElectricPowerProperty):
     def _native_unit_of_measurement(self) -> str:
         """Return the unit the native value is expressed in."""
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement)
+            return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement))
 
         return self.unit_of_measurement
 
