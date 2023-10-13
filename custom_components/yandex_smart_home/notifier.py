@@ -401,10 +401,7 @@ class YandexNotifier(ABC):
                 continue
 
             await self._pending.async_add(device.get_capabilities(), [])
-            try:
-                await self._pending.async_add([p for p in device.get_properties() if p.report_on_startup], [])
-            except APIError as e:
-                _LOGGER.warning(f"Failed to send initial report for properties: {e}")
+            await self._pending.async_add([p for p in device.get_properties() if p.report_on_startup], [])
 
         return self._schedule_report_states()
 
