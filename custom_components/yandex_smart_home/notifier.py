@@ -1,27 +1,44 @@
-"""Implement the Yandex Smart Home events notifier."""
+"""Implement the Yandex Smart Home event notification service (notifier)."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import asyncio
-from collections import deque
+from contextlib import suppress
 from dataclasses import dataclass
-import json
+import itertools
 import logging
-import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Mapping, Protocol, Self, Sequence
 
-from aiohttp import ContentTypeError, hdrs
+from aiohttp import JsonPayload, hdrs
 from aiohttp.client_exceptions import ClientConnectionError
-from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED
 from homeassistant.core import HassJob
 from homeassistant.helpers.aiohttp_client import SERVER_SOFTWARE, async_create_clientsession
-from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.event import TrackTemplate, async_call_later, async_track_template_result
+from homeassistant.helpers.template import Template
+from pydantic import ValidationError
 
 from . import DOMAIN, const
-from .device import Device, DeviceCallbackState
+from .capability import Capability
+from .device import Device
+from .helpers import APIError
+from .property import Property
+from .schema import (
+    CallbackDiscoveryRequest,
+    CallbackDiscoveryRequestPayload,
+    CallbackRequest,
+    CallbackResponse,
+    CallbackStatesRequest,
+    CallbackStatesRequestPayload,
+    CapabilityInstanceState,
+    DeviceState,
+    PropertyInstanceState,
+)
 
 if TYPE_CHECKING:
-    from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant
+    from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, State
+    from homeassistant.helpers.event import EventStateChangedData, TrackTemplateResult, TrackTemplateResultInfo
+    from homeassistant.helpers.typing import EventType
 
     from .entry_data import ConfigEntryData
 
@@ -51,37 +68,143 @@ class NotifierConfig:
         return None
 
 
-class YandexNotifier(ABC):
-    """Base class for an event notifier."""
+class ReportableDeviceState(Protocol):
+    """Protocol type for device capabilities and properties."""
 
-    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, config: NotifierConfig):
+    device_id: str
+
+    @property
+    @abstractmethod
+    def time_sensitive(self) -> bool:
+        """Test if value changes should be reported immediately."""
+        ...
+
+    @abstractmethod
+    def check_value_change(self, other: Self | None) -> bool:
+        """Test if the state value differs from other state."""
+        ...
+
+    @abstractmethod
+    def get_value(self) -> Any:
+        """Return the current state value."""
+        ...
+
+    @abstractmethod
+    def get_instance_state(self) -> CapabilityInstanceState | PropertyInstanceState | None:
+        """Return a state for a state query request."""
+        ...
+
+
+class ReportableTemplateDeviceState(ReportableDeviceState, Protocol):
+    """Protocol type for custom properties and capabilities."""
+
+    @abstractmethod
+    def new_with_value_template(self, value_template: Template) -> Self:
+        """Return copy of the state with new value template."""
+        ...
+
+
+class PendingStates:
+    """Hold states that about to be reported."""
+
+    def __init__(self) -> None:
+        """Initialize."""
+        self._device_states: dict[str, list[ReportableDeviceState]] = {}
+        self._lock = asyncio.Lock()
+
+    async def async_add(
+        self,
+        new_states: Sequence[ReportableDeviceState],
+        old_states: Sequence[ReportableDeviceState],
+    ) -> list[ReportableDeviceState]:
+        """Add changed states to pending and return list of them."""
+        scheduled_states: list[ReportableDeviceState] = []
+
+        async with self._lock:
+            for state in new_states:
+                try:
+                    old_state = old_states[old_states.index(state)]
+                except ValueError:
+                    old_state = None
+                try:
+                    if state.check_value_change(old_state):
+                        device_states = self._device_states.setdefault(state.device_id, [])
+                        with suppress(ValueError):
+                            device_states.remove(state)
+
+                        device_states.append(state)
+                        scheduled_states.append(state)
+                except APIError as e:
+                    _LOGGER.warning(e)
+
+        return scheduled_states
+
+    async def async_get_all(self) -> dict[str, list[ReportableDeviceState]]:
+        """Return all states and clear pending."""
+        async with self._lock:
+            states = self._device_states.copy()
+            self._device_states.clear()
+            return states
+
+    @property
+    def empty(self) -> bool:
+        """Test if pending states exist."""
+        return not bool(self._device_states)
+
+    @property
+    def time_sensitive(self) -> bool:
+        """Test if pending states should be sent immediately."""
+        for state in itertools.chain(*self._device_states.values()):
+            if state.time_sensitive:
+                return True
+
+        return False
+
+
+class YandexNotifier(ABC):
+    """Base class for a notifier."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry_data: ConfigEntryData,
+        config: NotifierConfig,
+        track_templates: Mapping[Template, Sequence[ReportableTemplateDeviceState]],
+    ):
         """Initialize."""
         self._hass = hass
         self._entry_data = entry_data
         self._config = config
-
-        self._property_entities = self._get_property_entities()
         self._session = async_create_clientsession(hass)
+
+        self._pending = PendingStates()
+        self._report_states_job = HassJob(self._async_report_states)
+
+        self._track_templates = track_templates
+        self._template_changes_tracker: TrackTemplateResultInfo | None = None
 
         self._unsub_state_changed: CALLBACK_TYPE | None = None
         self._unsub_initial_report: CALLBACK_TYPE | None = None
-        self._unsub_pending: CALLBACK_TYPE | None = None
-        self._unsub_send_discovery: CALLBACK_TYPE | None = None
-
-        self._pending: deque[DeviceCallbackState] = deque()
-        self._report_states_job = HassJob(self._async_report_states)
+        self._unsub_report_states: CALLBACK_TYPE | None = None
+        self._unsub_discovery: CALLBACK_TYPE | None = None
 
     async def async_setup(self) -> None:
         """Set up the notifier."""
-        self._unsub_state_changed = self._hass.bus.async_listen(
-            EVENT_STATE_CHANGED, self._async_state_changed_event_handler
-        )
+        self._unsub_state_changed = self._hass.bus.async_listen(EVENT_STATE_CHANGED, self._async_state_changed)
         self._unsub_initial_report = async_call_later(
             self._hass, INITIAL_REPORT_DELAY, HassJob(self._async_initial_report)
         )
-        self._unsub_send_discovery = async_call_later(
+        self._unsub_discovery = async_call_later(
             self._hass, DISCOVERY_REQUEST_DELAY, HassJob(self.async_send_discovery)
         )
+
+        if self._track_templates:
+            self._template_changes_tracker = async_track_template_result(
+                self._hass,
+                [TrackTemplate(t, None) for t in self._track_templates],
+                self._async_template_result_changed,
+            )
+            self._template_changes_tracker.async_refresh()
 
         return None
 
@@ -90,27 +213,28 @@ class YandexNotifier(ABC):
         for unsub in [
             self._unsub_state_changed,
             self._unsub_initial_report,
-            self._unsub_pending,
-            self._unsub_send_discovery,
+            self._unsub_report_states,
+            self._unsub_discovery,
         ]:
             if unsub:
                 unsub()
 
         self._unsub_state_changed = None
         self._unsub_initial_report = None
-        self._unsub_pending = None
-        self._unsub_send_discovery = None
+        self._unsub_report_states = None
+        self._unsub_discovery = None
+
+        if self._template_changes_tracker is not None:
+            self._template_changes_tracker.async_remove()
+            self._template_changes_tracker = None
 
         return None
 
-    async def async_send_state(self, devices: list[Any]) -> None:
-        """Send new device states to the Yandex."""
-        return await self._async_send_callback(f"{self._base_url}/state", {"devices": devices})
-
     async def async_send_discovery(self, *_: Any) -> None:
-        """Send discovery request."""
-        _LOGGER.debug(self._format_log_message("Device list update initiated"))
-        return await self._async_send_callback(f"{self._base_url}/discovery", {})
+        """Send notification about change of devices' parameters."""
+        _LOGGER.debug(self._format_log_message("Sending discovery request"))
+        request = CallbackDiscoveryRequest(payload=CallbackDiscoveryRequestPayload(user_id=self._config.user_id))
+        return await self._async_send_request(f"{self._base_url}/discovery", request)
 
     @property
     @abstractmethod
@@ -125,139 +249,148 @@ class YandexNotifier(ABC):
         pass
 
     def _format_log_message(self, message: str) -> str:
-        """Format and print a message."""
+        """Format a message."""
         return message
 
-    @staticmethod
-    def _log_request(url: str, data: dict[str, Any]) -> None:
-        """Log a request."""
-        request_json = json.dumps(data)
-        _LOGGER.debug(f"Request: {url} (POST data: {request_json})")
-        return None
-
-    def _get_property_entities(self) -> dict[str, list[str]]:
-        rv: dict[str, list[str]] = {}
-
-        for entity_id, entity_config in self._entry_data.entity_config.items():
-            for property_config in entity_config.get(const.CONF_ENTITY_PROPERTIES):
-                property_entity_id = property_config.get(const.CONF_ENTITY_PROPERTY_ENTITY)
-                if property_entity_id:
-                    rv.setdefault(property_entity_id, [])
-                    if entity_id not in rv[property_entity_id]:
-                        rv[property_entity_id].append(entity_id)
-
-            for custom_capabilities_config in [
-                entity_config.get(const.CONF_ENTITY_CUSTOM_MODES),
-                entity_config.get(const.CONF_ENTITY_CUSTOM_TOGGLES),
-                entity_config.get(const.CONF_ENTITY_CUSTOM_RANGES),
-            ]:
-                for custom_capability in custom_capabilities_config.values():
-                    state_entity_id = custom_capability.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
-                    if state_entity_id:
-                        rv.setdefault(state_entity_id, [])
-                        rv[state_entity_id].append(entity_id)
-
-        return rv
-
     async def _async_report_states(self, *_: Any) -> None:
-        """Schedule new states report."""
-        devices: dict[str, dict[str, Any]] = {}
-        attrs = ["properties", "capabilities"]
+        """Send notification about device state change."""
+        states: list[DeviceState] = []
 
-        while len(self._pending):
-            state = self._pending.popleft()
+        for device_id, device_states in (await self._pending.async_get_all()).items():
+            capabilities: list[CapabilityInstanceState] = []
+            properties: list[PropertyInstanceState] = []
 
-            devices.setdefault(state.device_id, dict({attr: [] for attr in attrs}, **{"id": state.device_id}))
-            for attr in attrs:
-                devices[state.device_id][attr][:0] = getattr(state, attr)
+            for c in [c for c in device_states if isinstance(c, Capability)]:
+                try:
+                    if (capability_state := c.get_instance_state()) is not None:
+                        capabilities.append(capability_state)
+                except APIError as e:
+                    _LOGGER.warning(e)
 
-        await self.async_send_state(list(devices.values()))
+            for p in [p for p in device_states if isinstance(p, Property)]:
+                try:
+                    if (property_state := p.get_instance_state()) is not None:
+                        properties.append(property_state)
+                except APIError as e:
+                    _LOGGER.warning(e)
 
-        if len(self._pending):
-            self._unsub_pending = async_call_later(self._hass, REPORT_STATE_WINDOW, self._report_states_job)
+            if capabilities or properties:
+                states.append(
+                    DeviceState(
+                        id=device_id,
+                        capabilities=capabilities or None,
+                        properties=properties or None,
+                    )
+                )
+
+        if states:
+            request = CallbackStatesRequest(
+                payload=CallbackStatesRequestPayload(user_id=self._config.user_id, devices=states)
+            )
+
+            asyncio.create_task(self._async_send_request(f"{self._base_url}/state", request))
+
+        if self._pending.empty:
+            self._unsub_report_states = None
         else:
-            self._unsub_pending = None
+            self._unsub_report_states = async_call_later(
+                self._hass,
+                delay=0 if self._pending.time_sensitive else REPORT_STATE_WINDOW,
+                action=self._report_states_job,
+            )
 
         return None
 
     # noinspection PyBroadException
-    async def _async_send_callback(self, url: str, payload: dict[str, Any]) -> None:
-        """Send a request to url with payload."""
+    async def _async_send_request(self, url: str, request: CallbackRequest) -> None:
+        """Send a request to the url."""
         try:
-            payload["user_id"] = self._config.user_id
-            request_data = {"ts": time.time(), "payload": payload}
+            _LOGGER.debug(f"Request: {url} (POST data: {request.as_json()})")
 
-            self._log_request(url, request_data)
-            r = await self._session.post(url, headers=self._request_headers, json=request_data, timeout=5)
+            r = await self._session.post(
+                url,
+                headers=self._request_headers,
+                data=JsonPayload(request.as_json(), dumps=lambda p: p),
+                timeout=5,
+            )
 
             response_body, error_message = await r.read(), ""
             try:
-                response_data = await r.json()
-                error_message = response_data["error_message"]
-            except (AttributeError, ValueError, KeyError, ContentTypeError):
-                if r.status != 202:
-                    error_message = str(response_body[:100])
+                response = CallbackResponse.parse_raw(response_body)
+                if response.error_message:
+                    error_message = response.error_message
+            except ValidationError:
+                error_message = response_body.decode("utf-8").strip()[:100]
 
             if r.status != 202 or error_message:
-                _LOGGER.warning(
-                    self._format_log_message(f"Failed to send state notification: [{r.status}] {error_message}")
-                )
+                _LOGGER.warning(self._format_log_message(f"Notification request failed: {error_message or r.status}"))
         except ClientConnectionError as e:
-            _LOGGER.warning(self._format_log_message(f"Failed to send state notification: {e!r}"))
+            _LOGGER.warning(self._format_log_message(f"Notification request failed: {e!r}"))
         except asyncio.TimeoutError as e:
-            _LOGGER.debug(self._format_log_message(f"Failed to send state notification: {e!r}"))
+            _LOGGER.debug(self._format_log_message(f"Notification request failed: {e!r}"))
         except Exception:
-            _LOGGER.exception(self._format_log_message("Failed to send state notification"))
+            _LOGGER.exception(self._format_log_message("Unexpected exception"))
 
         return None
 
-    async def _async_state_changed_event_handler(self, event: Event) -> None:
-        """State changes event handler."""
-        event_entity_id = str(event.data.get(ATTR_ENTITY_ID))
-        old_state = event.data.get("old_state")
-        new_state = event.data.get("new_state")
+    async def _async_template_result_changed(
+        self,
+        event_type: EventType[EventStateChangedData] | None,
+        updates: list[TrackTemplateResult],
+    ) -> None:
+        """Handle track template changes."""
+        if event_type is None:  # update during setup
+            return None
 
-        if not old_state or old_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
-            return
-        if not new_state or new_state.state in [STATE_UNAVAILABLE, STATE_UNKNOWN, None]:
-            return
+        for result in updates:
+            old_value_template = Template(str(result.last_result), self._hass)
+            new_value_template = Template(str(result.result), self._hass)
 
-        reportable_entity_ids: set[str] = {event_entity_id}
-        if event_entity_id in self._property_entities.keys():
-            reportable_entity_ids.update(self._property_entities.get(event_entity_id, {}))
+            for state in self._track_templates[result.template]:
+                old_state = state.new_with_value_template(old_value_template)
+                new_state = state.new_with_value_template(new_value_template)
 
-        for entity_id in sorted(reportable_entity_ids):
-            state = new_state
-            if entity_id != event_entity_id:
-                state = self._hass.states.get(entity_id)
-                if not state:
-                    continue  # pragma: no cover
+                for pending_state in await self._pending.async_add([new_state], [old_state]):
+                    _LOGGER.debug(
+                        self._format_log_message(
+                            f"State report with value '{pending_state.get_value()!s}' scheduled for {pending_state}"
+                        )
+                    )
 
-            device = Device(self._hass, self._entry_data, state.entity_id, state)
-            if not device.should_expose:
-                continue
+        return self._schedule_report_states()
 
-            callback_state = DeviceCallbackState(device, event_entity_id)
-            if entity_id == event_entity_id and entity_id not in self._property_entities.keys():
-                callback_state.old_state = DeviceCallbackState(
-                    Device(self._hass, self._entry_data, old_state.entity_id, old_state), event_entity_id
+    async def _async_state_changed(self, event: Event) -> None:
+        """Handle state changes."""
+        device_id = str(event.data.get(ATTR_ENTITY_ID))
+        old_state: State | None = event.data.get("old_state")
+        new_state: State | None = event.data.get("new_state")
+
+        if not new_state:
+            return None
+
+        new_device = Device(self._hass, self._entry_data, device_id, new_state)
+        if not new_device.should_expose:
+            return None
+
+        old_states: list[ReportableDeviceState] = []
+        new_states: list[ReportableDeviceState] = []
+
+        new_states.extend(new_device.get_state_capabilities())
+        new_states.extend(new_device.get_state_properties())
+
+        if old_state:
+            old_device = Device(self._hass, self._entry_data, device_id, old_state)
+            old_states.extend(old_device.get_state_capabilities())
+            old_states.extend(old_device.get_state_properties())
+
+        for pending_state in await self._pending.async_add(new_states, old_states):
+            _LOGGER.debug(
+                self._format_log_message(
+                    f"State report with value '{pending_state.get_value()!s}' scheduled for {pending_state}"
                 )
+            )
 
-            if callback_state.should_report:
-                entity_text = entity_id
-                if entity_id != event_entity_id:
-                    entity_text = f"{entity_text} => {event_entity_id}"
-
-                _LOGGER.debug(
-                    self._format_log_message(f"Scheduling report state to Yandex for {entity_text}: {new_state.state}")
-                )
-                self._pending.append(callback_state)
-
-                if self._unsub_pending is None:
-                    delay = 0 if callback_state.should_report_immediately else REPORT_STATE_WINDOW
-                    self._unsub_pending = async_call_later(self._hass, delay, self._report_states_job)
-
-        return None
+        return self._schedule_report_states()
 
     async def _async_initial_report(self, *_: Any) -> None:
         """Schedule initial report."""
@@ -267,54 +400,60 @@ class YandexNotifier(ABC):
             if not device.should_expose:
                 continue
 
-            callback_state = DeviceCallbackState(device, event_entity_id=state.entity_id, initial_report=True)
+            await self._pending.async_add(device.get_capabilities(), [])
+            try:
+                await self._pending.async_add([p for p in device.get_properties() if p.report_on_startup], [])
+            except APIError as e:
+                _LOGGER.warning(f"Failed to send initial report for properties: {e}")
 
-            if callback_state.should_report:
-                self._pending.append(callback_state)
+        return self._schedule_report_states()
 
-                if self._unsub_pending is None:
-                    self._unsub_pending = async_call_later(self._hass, 0, self._report_states_job)
+    def _schedule_report_states(self) -> None:
+        """Schedule run report states job if there are pending states."""
+        if self._pending.empty or self._unsub_report_states:
+            return None
+
+        self._unsub_report_states = async_call_later(
+            self._hass,
+            delay=0 if self._pending.time_sensitive else REPORT_STATE_WINDOW,
+            action=self._report_states_job,
+        )
 
         return None
 
 
 class YandexDirectNotifier(YandexNotifier):
-    """Event notifier for direct connection."""
+    """Notifier for direct connection."""
 
     @property
     def _base_url(self) -> str:
         """Return base URL."""
-
         return f"https://dialogs.yandex.net/api/v1/skills/{self._config.skill_id}/callback"
 
     @property
     def _request_headers(self) -> dict[str, str]:
         """Return headers for a request."""
-
         return {hdrs.AUTHORIZATION: f"OAuth {self._config.token}"}
 
     def _format_log_message(self, message: str) -> str:
-        """Format and print a message."""
-
+        """Format a message."""
         if self._config.verbose_log:
-            return f"{message} [{self._config.skill_id} | {self._config.token}]"
+            return f"{message} ({self._config.user_id }@{self._config.skill_id})"
 
         return message
 
 
 class YandexCloudNotifier(YandexNotifier):
-    """Event notifier for cloud connection."""
+    """Notifier for cloud connection."""
 
     @property
     def _base_url(self) -> str:
         """Return base URL."""
-
         return f"{const.CLOUD_BASE_URL}/api/home_assistant/v1/callback"
 
     @property
     def _request_headers(self) -> dict[str, str]:
         """Return headers for a request."""
-
         return {
             hdrs.AUTHORIZATION: f"Bearer {self._config.token}",
             hdrs.USER_AGENT: f"{SERVER_SOFTWARE} {DOMAIN}/{self._entry_data.version}",

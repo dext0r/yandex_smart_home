@@ -47,7 +47,7 @@ from custom_components.yandex_smart_home.const import (
     CONF_ROOM,
     CONF_TYPE,
 )
-from custom_components.yandex_smart_home.device import Device, DeviceCallbackState
+from custom_components.yandex_smart_home.device import Device
 from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.property_custom import (
     ButtonPressCustomEventProperty,
@@ -484,49 +484,6 @@ async def test_device_query(hass):
             ],
         }
 
-        # TODO: move to dedicated test
-        callback_state = DeviceCallbackState(device, "switch.test")
-        assert callback_state.properties == []
-        assert callback_state.capabilities == [
-            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
-            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
-        ]
-
-        callback_state = DeviceCallbackState(device, "sensor.voltage")
-        assert callback_state.properties == [
-            {"type": "devices.properties.float", "state": {"instance": "voltage", "value": 220.0}}
-        ]
-        assert callback_state.capabilities == [
-            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
-            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
-        ]
-
-        callback_state = DeviceCallbackState(device, "sensor.humidity")
-        assert callback_state.properties == [
-            {"type": "devices.properties.float", "state": {"instance": "humidity", "value": 95.0}}
-        ]
-        assert callback_state.capabilities == [
-            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
-            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
-        ]
-
-        with patch.object(VoltageSensor, "reportable", PropertyMock(return_value=False)):
-            callback_state = DeviceCallbackState(device, "sensor.voltage")
-            assert callback_state.properties == []
-            assert callback_state.capabilities == [
-                {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
-                {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
-            ]
-
-        callback_state = DeviceCallbackState(device, "binary_sensor.button")
-        assert callback_state.properties == [
-            {"type": "devices.properties.event", "state": {"instance": "button", "value": "click"}}
-        ]
-        assert callback_state.capabilities == [
-            {"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}},
-            {"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": False}},
-        ]
-
         with patch.object(PauseCapability, "retrievable", PropertyMock(return_value=None)), patch.object(
             TemperatureSensor, "retrievable", PropertyMock(return_value=False)
         ):
@@ -541,7 +498,7 @@ async def test_device_query(hass):
 
         state_pause.state = STATE_UNAVAILABLE
         state_voltage.state = STATE_UNAVAILABLE
-        prop_humidity_custom._native_value_source.state = STATE_UNAVAILABLE
+        hass.states.async_set(state_humidity.entity_id, STATE_UNAVAILABLE)
         assert device.query().as_dict() == {
             "id": "switch.test",
             "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
@@ -616,12 +573,3 @@ async def test_device_execute_exception(hass):
 
     assert e.value.code == ResponseCode.INVALID_ACTION
     assert e.value.message == "foo"
-
-
-async def test_device_callback_state_unavailable(hass):
-    state = State("switch.unavailable", STATE_UNAVAILABLE)
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    callback_state = DeviceCallbackState(device, state.entity_id)
-    assert callback_state.capabilities == []
-    assert callback_state.properties == []
-    assert callback_state.should_report is False

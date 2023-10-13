@@ -1,6 +1,6 @@
 """Implement the Yandex Smart Home float properties."""
 from abc import ABC, abstractmethod
-from typing import Protocol
+from typing import Protocol, Self
 
 from homeassistant.components import air_quality, climate, fan, humidifier, light, sensor, switch, water_heater
 from homeassistant.components.sensor import SensorDeviceClass
@@ -103,6 +103,20 @@ class FloatProperty(Property, Protocol):
             return upper_limit
 
         return round(float_value, 2)
+
+    def check_value_change(self, other: Self | None) -> bool:
+        """Test if the property value differs from other property."""
+        if other is None:
+            return True
+
+        value, other_value = self.get_value(), other.get_value()
+        if value is None:
+            return False
+
+        if other_value is None or value != other_value:
+            return True
+
+        return False
 
     @property
     def unit_of_measurement(self) -> str | None:

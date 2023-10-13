@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import itertools
 import logging
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, Self
 
-from homeassistant.const import STATE_OFF
-from homeassistant.core import State
+from homeassistant.const import STATE_OFF, STATE_UNKNOWN
+from homeassistant.core import callback
 from homeassistant.helpers.service import async_call_from_config
+from homeassistant.helpers.template import Template, forgiving_boolean
 
 from .capability import Capability
 from .capability_mode import ModeCapability
@@ -56,7 +57,7 @@ class CustomCapability(Capability[Any], Protocol):
     """Base class for a capability that user can set up using yaml configuration."""
 
     _config: ConfigType
-    _value_source: State | None
+    _value_template: Template | None
 
     def __init__(
         self,
@@ -65,13 +66,15 @@ class CustomCapability(Capability[Any], Protocol):
         config: ConfigType,
         instance: CapabilityInstance,
         device_id: str,
-        value_source: State | None,
+        value_template: Template | None,
     ):
         """Initialize a custom capability."""
         self._hass = hass
         self._entry_data = entry_data
         self._config = config
-        self._value_source = value_source
+        self._value_template = value_template
+        if self._value_template:
+            self._value_template.hass = hass
 
         self.device_id = device_id
         self.instance = instance
@@ -80,32 +83,37 @@ class CustomCapability(Capability[Any], Protocol):
     @property
     def retrievable(self) -> bool:
         """Test if the capability can return the current value."""
-        for attr in (
-            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE,
-            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
-        ):
-            if self._config.get(attr):
-                return True
-
-        return False
+        return self._value_template is not None
 
     @property
     def reportable(self) -> bool:
-        """Test if the capability can report changes."""
+        """Test if the capability can report value changes."""
         if not self.retrievable:
             return False
 
         return super().reportable
 
+    def new_with_value_template(self, value_template: Template) -> Self:
+        """Return copy of the capability with new value template."""
+        return self.__class__(self._hass, self._entry_data, self._config, self.instance, self.device_id, value_template)
+
+    @callback
     def _get_source_value(self) -> Any:
         """Return the current capability value (unprocessed)."""
-        if self._value_source is None:
+        if self._value_template is None:
             return None
 
-        if value_attribute := self._config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE):
-            return self._value_source.attributes.get(value_attribute)
+        return self._value_template.async_render()
 
-        return self._value_source.state
+    def __repr__(self) -> str:
+        """Return the representation."""
+        return (
+            f"<{self.__class__.__name__}"
+            f" device_id={self.device_id }"
+            f" instance={self.instance}"
+            f" value_template={self._value_template}"
+            f">"
+        )
 
 
 class CustomModeCapability(CustomCapability, ModeCapability):
@@ -159,7 +167,7 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
         if value is None:
             return None
 
-        return value not in [STATE_OFF, False]
+        return forgiving_boolean(value, None)
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -210,7 +218,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                     raise APIError(
                         ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                         f"Failed to set relative value for {self.instance.value} instance of {self.device_id}. "
-                        f"No state source or service found.",
+                        f"No current value source or service found.",
                     )
 
                 value = self._get_absolute_value(state.value)
@@ -239,17 +247,17 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
         value = self._get_value()
 
         if value is None:
-            if isinstance(self._value_source, State):
-                if (
-                    self._config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
-                    and self._value_source.state == STATE_OFF
-                ):
-                    raise APIError(
-                        ResponseCode.DEVICE_OFF, f"Device {self._value_source.entity_id} probably turned off"
-                    )
+            if self._value_template is not None:
+                info = self._value_template.async_render_to_info()
+                for entity_id in info.entities:
+                    state = self._hass.states.get(entity_id)
+                    if state is None:
+                        raise APIError(ResponseCode.DEVICE_OFF, f"Entity {entity_id} not found")
+                    elif state.state in (STATE_OFF, STATE_UNKNOWN):
+                        raise APIError(ResponseCode.DEVICE_OFF, f"Device {entity_id} probably turned off")
 
             raise APIError(
-                ResponseCode.INVALID_VALUE,
+                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
                 f"Unable to get current value for {self.instance.value} instance of {self.device_id}",
             )
 
@@ -291,34 +299,33 @@ def get_custom_capability(
     device_id: str,
 ) -> CustomCapability:
     """Return initialized custom capability based on parameters."""
-    value_source: State | None = None
-    value_source_entity_id = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
-    value_source_attribute = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
-
-    if value_source_entity_id or value_source_attribute:
-        value_source_entity_id = value_source_entity_id or device_id
-
-        state = hass.states.get(value_source_entity_id)
-        if not state:
-            raise APIError(
-                ResponseCode.DEVICE_UNREACHABLE,
-                f"Entity {value_source_entity_id} not found for {instance} instance of {device_id}",
-            )
-
-        value_source = state
+    value_template = get_value_template(device_id, capability_config)
 
     match capability_type:
         case CapabilityType.MODE:
             return CustomModeCapability(
-                hass, entry_data, capability_config, ModeCapabilityInstance(instance), device_id, value_source
+                hass, entry_data, capability_config, ModeCapabilityInstance(instance), device_id, value_template
             )
         case CapabilityType.TOGGLE:
             return CustomToggleCapability(
-                hass, entry_data, capability_config, ToggleCapabilityInstance(instance), device_id, value_source
+                hass, entry_data, capability_config, ToggleCapabilityInstance(instance), device_id, value_template
             )
         case CapabilityType.RANGE:
             return CustomRangeCapability(
-                hass, entry_data, capability_config, RangeCapabilityInstance(instance), device_id, value_source
+                hass, entry_data, capability_config, RangeCapabilityInstance(instance), device_id, value_template
             )
 
-    raise ValueError(f"Unsupported capability type: {capability_type}")
+    raise APIError(ResponseCode.INTERNAL_ERROR, f"Unsupported capability type: {capability_type}")
+
+
+def get_value_template(device_id: str, capability_config: ConfigType) -> Template | None:
+    """Return capability value template from capability configuration."""
+    entity_id = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
+    attribute = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
+
+    if attribute:
+        return Template("{{ state_attr('%s', '%s') }}" % (entity_id or device_id, attribute))
+    elif entity_id:
+        return Template("{{ states('%s') }}" % entity_id)
+
+    return None

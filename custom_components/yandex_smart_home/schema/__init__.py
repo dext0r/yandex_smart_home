@@ -1,4 +1,5 @@
 """Yandex Smart Home API schemas."""
+from .callback import *  # noqa: F403
 from .capability import *  # noqa: F403
 from .capability_color import *  # noqa: F403
 from .capability_mode import *  # noqa: F403

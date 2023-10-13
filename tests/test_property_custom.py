@@ -58,7 +58,7 @@ async def test_property_custom(hass, domain, instance):
         with pytest.raises(APIError) as e:
             get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
 
-        assert e.value.code == ResponseCode.DEVICE_UNREACHABLE
+        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert e.value.message == f"Unsupported entity {domain}.test for {instance} instance of {state.entity_id}"
         return
 
@@ -159,45 +159,29 @@ async def test_property_custom_get_value_float(hass):
     assert prop.get_value() == 3.36
 
     for s in ["", "-", "none", "unknown"]:
-        prop = prop.clone(State(state.entity_id, s.upper()))
+        hass.states.async_set(state.entity_id, s)
         assert prop.get_value() is None
 
-    prop = prop.clone(State(state.entity_id, "not-a-number"))
+    hass.states.async_set(state.entity_id, "not-a-number")
     with pytest.raises(APIError) as e:
         prop.get_value()
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
     assert e.value.message == "Unsupported value 'not-a-number' for instance temperature of sensor.test"
 
-    with pytest.raises(APIError) as e:
-        prop = get_custom_property(
-            hass,
-            BASIC_ENTRY_DATA,
-            {
-                const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
-                const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "value",
-            },
-            state.entity_id,
-        )
-        prop.get_value()
-    assert e.value.code == ResponseCode.DEVICE_UNREACHABLE
-    assert (
-        e.value.message == "Attribute 'value' not found in entity sensor.test for temperature instance of sensor.test"
+    prop = get_custom_property(
+        hass,
+        BASIC_ENTRY_DATA,
+        {
+            const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
+            const.CONF_ENTITY_PROPERTY_ATTRIBUTE: "value",
+        },
+        state.entity_id,
     )
+    prop.get_value()
+    assert prop.get_value() is None
+    hass.states.async_set(state.entity_id, "not-a-number", {"value": "55"})
+    assert prop.get_value() == 55
 
-    with pytest.raises(APIError) as e:
-        get_custom_property(
-            hass,
-            BASIC_ENTRY_DATA,
-            {
-                const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
-                const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.test_2",
-            },
-            state.entity_id,
-        )
-    assert e.value.code == ResponseCode.DEVICE_UNREACHABLE
-    assert e.value.message == "Entity sensor.test_2 not found for temperature instance of sensor.test"
-
-    hass.states.async_set("sensor.test_2", "4.52")
     prop = get_custom_property(
         hass,
         BASIC_ENTRY_DATA,
@@ -207,6 +191,8 @@ async def test_property_custom_get_value_float(hass):
         },
         state.entity_id,
     )
+    assert prop.get_value() is None
+    hass.states.async_set("sensor.test_2", "4.52")
     assert prop.get_value() == 4.52
 
     hass.states.async_set("sensor.test_2", "4.52", {"value": 9.99})
@@ -266,7 +252,7 @@ async def test_property_custom_get_value_float_conversion(hass, instance, unit_o
     assert prop.parameters.dict()["unit"] == unit
     assert prop.get_value() == value
 
-    prop = prop.clone(State(state.entity_id, STATE_UNAVAILABLE))
+    hass.states.async_set(state.entity_id, STATE_UNAVAILABLE)
     assert prop.get_value() is None
 
     state = State("sensor.test_with_uom", "100", {ATTR_UNIT_OF_MEASUREMENT: unit_of_measurement})

@@ -98,7 +98,7 @@ def hass_platform(hass):
         device_class=BinarySensorDeviceClass.DOOR,
     )
     demo_binary_sensor.hass = hass
-    demo_binary_sensor.entity_id = "binary_sensor.front_Door"
+    demo_binary_sensor.entity_id = "binary_sensor.front_door"
     demo_binary_sensor._attr_name = "Front Door"
 
     demo_light = DemoLight(

@@ -1,8 +1,17 @@
 from typing import Any, cast
 
-from homeassistant.const import ATTR_ENTITY_ID, CONF_SERVICE, CONF_SERVICE_DATA, STATE_OFF, STATE_ON, STATE_UNKNOWN
+from homeassistant.const import (
+    ATTR_ENTITY_ID,
+    CONF_SERVICE,
+    CONF_SERVICE_DATA,
+    STATE_OFF,
+    STATE_ON,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import Context, State
 from homeassistant.helpers.config_validation import dynamic_template
+from homeassistant.helpers.template import Template
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
@@ -53,7 +62,7 @@ async def test_capability_custom(hass):
     assert cap.reportable is False
     assert cap.get_value() is None
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(APIError) as e:
         get_custom_capability(
             hass,
             BASIC_ENTRY_DATA,
@@ -62,66 +71,47 @@ async def test_capability_custom(hass):
             ToggleCapabilityInstance.IONIZATION,
             "foo",
         )
-    assert e.value.args[0] == "Unsupported capability type: devices.capabilities.on_off"
+    assert e.value.message == "Unsupported capability type: devices.capabilities.on_off"
 
 
-async def test_capability_custom_state_attr(hass):
-    state = State("switch.test", STATE_ON, {"value": "foo"})
-    cap = MockCapability(
-        hass,
-        BASIC_ENTRY_DATA,
-        {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE: "value"},
-        OnOffCapabilityInstance.ON,
-        "device_id",
-        state,
-    )
-    assert cap.retrievable is True
-    assert cap.reportable is True
-    assert cap.get_value() == "foo"
+async def test_capability_custom_value(hass):
+    hass.states.async_set("switch.state_value", STATE_ON)
+    hass.states.async_set("switch.attr_value", STATE_UNKNOWN, {"value": "46"})
 
-    cap._value_source = State("switch.test", STATE_ON)
-    assert cap.get_value() is None
-
-
-async def test_capability_custom_state_entity(hass):
-    with pytest.raises(APIError) as e:
-        get_custom_capability(
-            hass,
-            BASIC_ENTRY_DATA,
-            {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_number.test"},
-            CapabilityType.TOGGLE,
-            ToggleCapabilityInstance.IONIZATION,
-            "foo",
-        )
-    assert e.value.code == ResponseCode.DEVICE_UNREACHABLE
-    assert e.value.message == "Entity input_number.test not found for ionization instance of foo"
-
-    hass.states.async_set("input_number.test", "on")
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
-        {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_number.test"},
+        {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "switch.state_value"},
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
         "foo",
     )
+    assert cap.retrievable is True
     assert cap.get_value() is True
+    hass.states.async_set("switch.state_value", STATE_OFF)
+    assert cap.get_value() is False
 
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "input_number.test",
+            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "switch.attr_value",
             const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE: "value",
         },
-        CapabilityType.TOGGLE,
-        ToggleCapabilityInstance.IONIZATION,
+        CapabilityType.RANGE,
+        RangeCapabilityInstance.HUMIDITY,
         "foo",
     )
+    assert cap.retrievable is True
+    assert cap.get_value() == 46.0
+    hass.states.async_set("switch.attr_value", STATE_UNKNOWN, {"value": "75"})
+    assert cap.get_value() == 75
 
+    cap = get_custom_capability(
+        hass, BASIC_ENTRY_DATA, {}, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY, "foo"
+    )
+    assert cap.retrievable is False
     assert cap.get_value() is None
-    cap._value_source = State("input_number.test", "off", {"value": "on"})
-    assert cap.get_value() is True
 
 
 async def test_capability_custom_mode(hass):
@@ -196,6 +186,9 @@ async def test_capability_custom_mode(hass):
     assert len(calls) == 1
     assert calls[0].data == {"service_mode": "mode: mode_1", ATTR_ENTITY_ID: "switch.test"}
 
+    for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
+        assert cap.new_with_value_template(Template(t)).get_value() is None
+
 
 async def test_capability_custom_toggle(hass):
     cap = get_custom_capability(
@@ -236,7 +229,7 @@ async def test_capability_custom_toggle(hass):
     assert cap.reportable is True
     assert cap.get_value() is True
 
-    cap._value_source = State(state.entity_id, STATE_OFF)
+    hass.states.async_set(state.entity_id, STATE_OFF)
     assert cap.get_value() is False
 
     calls_on = async_mock_service(hass, "test", "turn_on")
@@ -254,6 +247,15 @@ async def test_capability_custom_toggle(hass):
     )
     assert len(calls_off) == 1
     assert calls_off[0].data == {ATTR_ENTITY_ID: "switch.test2"}
+
+    for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
+        assert cap.new_with_value_template(Template(t)).get_value() is None
+
+    for t in ("True", "on", "1"):
+        assert cap.new_with_value_template(Template(t)).get_value() is True
+
+    for t in ("False", "off", "0"):
+        assert cap.new_with_value_template(Template(t)).get_value() is False
 
 
 async def test_capability_custom_range_random_access(hass):
@@ -289,10 +291,10 @@ async def test_capability_custom_range_random_access(hass):
     assert cap.get_value() == 30
 
     for v in ["55", "5"]:
-        cap._value_source = State(state.entity_id, v)
+        hass.states.async_set(state.entity_id, v)
         assert cap.get_value() is None
 
-    cap._value_source = State(state.entity_id, "30")
+    hass.states.async_set(state.entity_id, "30")
 
     calls = async_mock_service(hass, "test", "set_value")
     for value, relative in ((40, False), (100, False), (10, True), (-3, True), (-50, True)):
@@ -311,41 +313,10 @@ async def test_capability_custom_range_random_access(hass):
     assert calls[3].data["value"] == "value: 27"
     assert calls[4].data["value"] == "value: 10"
 
-    cap._value_source = State(state.entity_id, STATE_UNKNOWN)
-    with pytest.raises(APIError) as e:
-        await cap.set_instance_state(
-            Context(),
-            RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10, relative=True),
-        )
-    assert e.value.code == ResponseCode.INVALID_VALUE
-    assert e.value.message == "Unable to get current value for open instance of foo"
+    for t in ("False", "None", STATE_UNKNOWN, STATE_UNAVAILABLE):
+        assert cap.new_with_value_template(Template(t)).get_value() is None
 
-    state = State("switch.test", STATE_OFF, {})
-    hass.states.async_set(state.entity_id, state.state)
-    cap = cast(
-        CustomRangeCapability,
-        get_custom_capability(
-            hass,
-            BASIC_ENTRY_DATA,
-            {
-                const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
-                const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE: "foo",
-                const.CONF_ENTITY_RANGE: {
-                    const.CONF_ENTITY_RANGE_MIN: 10,
-                    const.CONF_ENTITY_RANGE_MAX: 50,
-                    const.CONF_ENTITY_RANGE_PRECISION: 3,
-                },
-                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {
-                    CONF_SERVICE: "test.set_value",
-                    ATTR_ENTITY_ID: "input_number.test",
-                    CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
-                },
-            },
-            CapabilityType.RANGE,
-            RangeCapabilityInstance.OPEN,
-            "foo",
-        ),
-    )
+    hass.states.async_set(state.entity_id, STATE_UNKNOWN)
     with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
@@ -353,6 +324,24 @@ async def test_capability_custom_range_random_access(hass):
         )
     assert e.value.code == ResponseCode.DEVICE_OFF
     assert e.value.message == "Device switch.test probably turned off"
+
+    hass.states.async_set(state.entity_id, STATE_UNAVAILABLE)
+    with pytest.raises(APIError) as e:
+        await cap.set_instance_state(
+            Context(),
+            RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10, relative=True),
+        )
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.message == "Unable to get current value for open instance of foo"
+
+    hass.states.async_remove(state.entity_id)
+    with pytest.raises(APIError) as e:
+        await cap.set_instance_state(
+            Context(),
+            RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10, relative=True),
+        )
+    assert e.value.code == ResponseCode.DEVICE_OFF
+    assert e.value.message == "Entity switch.test not found"
 
 
 async def test_capability_custom_range_random_access_no_state(hass):
@@ -409,7 +398,7 @@ async def test_capability_custom_range_random_access_no_state(hass):
             )
         assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert e.value.message == (
-            "Failed to set relative value for open instance of foo. No state source or service found."
+            "Failed to set relative value for open instance of foo. No current value source or service found."
         )
 
 

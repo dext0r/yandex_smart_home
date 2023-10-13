@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol, Self
 
-from homeassistant.components import binary_sensor, sensor
+from homeassistant.components import binary_sensor
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
+from homeassistant.core import split_entity_id
+from homeassistant.helpers.template import Template
 
 from .const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
@@ -43,10 +45,10 @@ from .property_float import (
     VoltageProperty,
     WaterLevelPercentageProperty,
 )
-from .schema import ResponseCode
+from .schema import PropertyType, ResponseCode
 
 if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant, State
+    from homeassistant.core import HomeAssistant
     from homeassistant.helpers.typing import ConfigType
 
     from .entry_data import ConfigEntryData
@@ -56,7 +58,7 @@ class CustomProperty(Property, Protocol):
     """Base class for a property that user can set up using yaml configuration."""
 
     _config: ConfigType
-    _native_value_source: State
+    _value_template: Template
 
     def __init__(
         self,
@@ -64,13 +66,14 @@ class CustomProperty(Property, Protocol):
         entry_data: ConfigEntryData,
         config: ConfigType,
         device_id: str,
-        native_value_source: State,
+        value_template: Template,
     ):
         """Initialize a custom property."""
         self._hass = hass
         self._entry_data = entry_data
         self._config = config
-        self._native_value_source = native_value_source
+        self._value_template = value_template
+        self._value_template.hass = hass
 
         self.device_id = device_id
 
@@ -81,30 +84,21 @@ class CustomProperty(Property, Protocol):
 
     def _get_native_value(self) -> str:
         """Return the current property value without conversion."""
-        value_attribute = self._config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
+        return str(self._value_template.async_render())
 
-        if value_attribute:
-            if value_attribute not in self._native_value_source.attributes:
-                raise APIError(
-                    ResponseCode.DEVICE_UNREACHABLE,
-                    f"Attribute {value_attribute!r} not found in entity {self._native_value_source.entity_id} "
-                    f"for {self.instance.value} instance of {self.device_id}",
-                )
+    def new_with_value_template(self, value_template: Template) -> Self:
+        """Return copy of the property with new value template."""
+        return self.__class__(self._hass, self._entry_data, self._config, self.device_id, value_template)
 
-            value = self._native_value_source.attributes[value_attribute]
-        else:
-            value = self._native_value_source.state
-
-        return str(value)
-
-    @property
-    def value_entity_id(self) -> str:
-        """Return id of entity the current value is based on."""
-        return self._config.get(CONF_ENTITY_PROPERTY_ENTITY, self._native_value_source.entity_id)
-
-    def clone(self, native_value_source: State) -> Self:
-        """Clone the property with new source of native value."""
-        return self.__class__(self._hass, self._entry_data, self._config, self.device_id, native_value_source)
+    def __repr__(self) -> str:
+        """Return the representation."""
+        return (
+            f"<{self.__class__.__name__}"
+            f" device_id={self.device_id }"
+            f" instance={self.instance}"
+            f" value_template={self._value_template}"
+            f">"
+        )
 
 
 class CustomEventProperty(CustomProperty, EventProperty[Any], Protocol):
@@ -176,10 +170,18 @@ class CustomFloatProperty(CustomProperty, FloatProperty, Protocol):
         if unit := self._config.get(CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT):
             return str(unit)
 
-        if self._config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE):
-            return None
+        for s in ("state_attr(", ".attributes"):
+            if s in self._value_template.template:
+                return None
 
-        return self._native_value_source.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+        info = self._value_template.async_render_to_info()
+        if len(info.entities) == 1:
+            entity_id = next(iter(info.entities))
+            state = self._hass.states.get(entity_id)
+            if state:
+                return state.attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+
+        return None
 
 
 FLOAT_PROPERTIES_REGISTRY = DictRegistry[type[CustomFloatProperty]]()
@@ -259,29 +261,45 @@ def get_custom_property(
     hass: HomeAssistant, entry_data: ConfigEntryData, config: ConfigType, device_id: str
 ) -> CustomProperty:
     """Return initialized custom property based on property configuration."""
-    instance = config[CONF_ENTITY_PROPERTY_TYPE]
-    state_entity_id = config.get(CONF_ENTITY_PROPERTY_ENTITY, device_id)
+    instance: str = config[CONF_ENTITY_PROPERTY_TYPE]
+    value_template = get_value_template(device_id, config)
+    value_template.hass = hass
 
-    native_value_source = hass.states.get(state_entity_id)
+    # TODO: battery_level and water_level can be events only for binary_sensor domain
+    if instance not in FLOAT_PROPERTIES_REGISTRY and instance in EVENT_PROPERTIES_REGISTRY:
+        property_type = PropertyType.EVENT
+    else:
+        property_type = PropertyType.FLOAT
 
-    if native_value_source is None:
-        raise APIError(
-            ResponseCode.DEVICE_UNREACHABLE,
-            f"Entity {state_entity_id} not found for {instance} instance of {device_id}",
-        )
+    info = value_template.async_render_to_info()
+    if len(info.entities) == 1:
+        entity_id = next(iter(info.entities))
+        domain, _ = split_entity_id(entity_id)
 
-    if native_value_source.domain == binary_sensor.DOMAIN:
-        try:
-            return EVENT_PROPERTIES_REGISTRY[instance](hass, entry_data, config, device_id, native_value_source)
-        except KeyError:
-            raise APIError(
-                ResponseCode.DEVICE_UNREACHABLE,
-                f"Unsupported entity {native_value_source.entity_id} for {instance} instance of {device_id}",
-            )
+        if domain == binary_sensor.DOMAIN:
+            if instance not in EVENT_PROPERTIES_REGISTRY:
+                raise APIError(
+                    ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
+                    f"Unsupported entity {entity_id} for {instance} instance of {device_id}",
+                )
 
-    elif native_value_source.domain == sensor.DOMAIN:
-        if instance not in FLOAT_PROPERTIES_REGISTRY and instance in EVENT_PROPERTIES_REGISTRY:
-            # TODO: battery_level and water_level cannot be events for sensor domain
-            return EVENT_PROPERTIES_REGISTRY[instance](hass, entry_data, config, device_id, native_value_source)
+            property_type = PropertyType.EVENT
 
-    return FLOAT_PROPERTIES_REGISTRY[instance](hass, entry_data, config, device_id, native_value_source)
+    cls: type[CustomEventProperty] | type[CustomFloatProperty]
+    if property_type == PropertyType.EVENT:
+        cls = EVENT_PROPERTIES_REGISTRY[instance]
+    else:
+        cls = FLOAT_PROPERTIES_REGISTRY[instance]
+
+    return cls(hass, entry_data, config, device_id, value_template)
+
+
+def get_value_template(device_id: str, property_config: ConfigType) -> Template:
+    """Return property value template from property configuration."""
+    entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY, device_id)
+    attribute = property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
+
+    if attribute:
+        return Template("{{ state_attr('%s', '%s') }}" % (entity_id, attribute))
+
+    return Template("{{ states('%s') }}" % entity_id)

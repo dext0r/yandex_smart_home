@@ -71,9 +71,10 @@ if TYPE_CHECKING:
     from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
     from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 
-    from .capability import Capability
+    from .capability import Capability, StateCapability
     from .entry_data import ConfigEntryData
-    from .property import Property
+    from .property import Property, StateProperty
+
 
 _DOMAIN_TO_DEVICE_TYPES: dict[str, DeviceType] = {
     air_quality.DOMAIN: DeviceType.SENSOR,
@@ -156,7 +157,7 @@ class Device:
 
     @callback
     def get_capabilities(self) -> list[Capability[Any]]:
-        """Return capabilities of the device."""
+        """Return all capabilities of the device."""
         capabilities: list[Capability[Any]] = []
 
         for capability_type, config_key in (
@@ -178,6 +179,15 @@ class Device:
                     if custom_capability.supported and custom_capability not in capabilities:
                         capabilities.append(custom_capability)
 
+        capabilities.extend(self.get_state_capabilities())
+
+        return capabilities
+
+    @callback
+    def get_state_capabilities(self) -> list[StateCapability[Any]]:
+        """Return capabilities of the device based on the state."""
+        capabilities: list[StateCapability[Any]] = []
+
         for CapabilityT in STATE_CAPABILITIES_REGISTRY:
             state_capability = CapabilityT(self._hass, self._entry_data, self._state)
             if state_capability.supported and state_capability not in capabilities:
@@ -187,7 +197,7 @@ class Device:
 
     @callback
     def get_properties(self) -> list[Property]:
-        """Return properties for the device."""
+        """Return all properties for the device."""
         properties: list[Property] = []
 
         for property_config in self._config.get(const.CONF_ENTITY_PROPERTIES, []):
@@ -195,6 +205,15 @@ class Device:
 
             if custom_property.supported and custom_property not in properties:
                 properties.append(custom_property)
+
+        properties.extend(self.get_state_properties())
+
+        return properties
+
+    @callback
+    def get_state_properties(self) -> list[StateProperty]:
+        """Return properties for the devic based on the state."""
+        properties: list[StateProperty] = []
 
         for PropertyT in STATE_PROPERTIES_REGISTRY:
             device_property = PropertyT(self._hass, self._entry_data, self._state)
@@ -396,45 +415,3 @@ class Device:
             template.hass = self._hass
 
         return template
-
-
-class DeviceCallbackState:
-    def __init__(self, device: Device, event_entity_id: str, initial_report: bool = False):
-        self.old_state: DeviceCallbackState | None = None
-        self.device_id = device.id
-
-        self.capabilities: list[dict[str, Any]] = []
-        self.properties: list[dict[str, Any]] = []
-        self.should_report_immediately = False
-
-        if device.unavailable:
-            return
-
-        for device_capability in [c for c in device.get_capabilities() if c.reportable]:
-            if (capability_state := device_capability.get_instance_state()) is not None:
-                self.capabilities.append(capability_state.as_dict())
-
-        for device_property in [c for c in device.get_properties() if c.reportable]:
-            if device_property.value_entity_id != event_entity_id:
-                continue
-
-            if initial_report and not device_property.report_on_startup:
-                continue
-
-            if device_property.report_immediately:
-                self.should_report_immediately = True
-
-            property_state = device_property.get_instance_state()
-            if property_state is not None:
-                self.properties.append(property_state.as_dict())
-
-    @property
-    def should_report(self) -> bool:
-        if not self.capabilities and not self.properties:
-            return False
-
-        if self.old_state:
-            if self.properties == self.old_state.properties and self.capabilities == self.old_state.capabilities:
-                return False
-
-        return True

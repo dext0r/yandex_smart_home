@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, Self, runtime_checkable
 
 from .helpers import ListRegistry
 from .schema import (
@@ -44,18 +44,18 @@ class Property(Protocol):
 
     @property
     def reportable(self) -> bool:
-        """Test if the capability can report changes."""
+        """Test if the property can report value changes."""
         return self._entry_data.is_reporting_states
-
-    @property
-    def report_immediately(self) -> bool:
-        """Test if property changes should be reported without debounce."""
-        return False
 
     @property
     def report_on_startup(self) -> bool:
         """Test if property value should be reported on startup."""
         return True
+
+    @property
+    def time_sensitive(self) -> bool:
+        """Test if value changes should be reported immediately."""
+        return False
 
     @property
     @abstractmethod
@@ -82,15 +82,29 @@ class Property(Protocol):
 
         return None
 
-    @property
     @abstractmethod
-    def value_entity_id(self) -> str:
-        """Return id of entity the current value is based on."""
+    def check_value_change(self, other: Self | None) -> bool:
+        """Test if the property value differs from other property."""
         ...
+
+    def __repr__(self) -> str:
+        """Return the representation."""
+        return (
+            f"<{self.__class__.__name__}"
+            f" device_id={self.device_id }"
+            f" type={self.type}"
+            f" instance={self.instance}"
+            f">"
+        )
 
     def __eq__(self, other: Any) -> bool:
         """Compare properties."""
-        return bool(isinstance(other, self.__class__) and self.type == other.type and self.instance == other.instance)
+        return bool(
+            isinstance(other, Property)
+            and self.type == other.type
+            and self.instance == other.instance
+            and self.device_id == other.device_id
+        )
 
 
 class StateProperty(Property, Protocol):
@@ -105,11 +119,6 @@ class StateProperty(Property, Protocol):
 
         self.state = state
         self.device_id = state.entity_id
-
-    @property
-    def value_entity_id(self) -> str:
-        """Return id of entity the current value is based on."""
-        return self.state.entity_id
 
 
 STATE_PROPERTIES_REGISTRY = ListRegistry[type[StateProperty]]()

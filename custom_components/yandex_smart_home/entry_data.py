@@ -9,15 +9,19 @@ from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT
 from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entityfilter import EntityFilter
+from homeassistant.helpers.template import Template
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import DATA_CUSTOM_COMPONENTS
 
-from . import const
+from . import capability_custom, const, property_custom
+from .capability_custom import CustomCapability, get_custom_capability
 from .cloud import CloudManager
 from .color import ColorProfiles
 from .const import DOMAIN, ConnectionType
-from .helpers import CacheStore
+from .helpers import APIError, CacheStore
 from .notifier import NotifierConfig, YandexCloudNotifier, YandexDirectNotifier, YandexNotifier
+from .property_custom import CustomProperty, get_custom_property
+from .schema import CapabilityType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -158,12 +162,13 @@ class ConfigEntryData:
         if not self.entry.data.get(const.CONF_DEVICES_DISCOVERED) or not self._notifier_configs:
             return
 
+        track_templates = self._get_trackable_states()
         for config in self._notifier_configs:
             match self.connection_type:
                 case ConnectionType.CLOUD:
-                    self._notifiers.append(YandexCloudNotifier(self._hass, self, config))
+                    self._notifiers.append(YandexCloudNotifier(self._hass, self, config, track_templates))
                 case ConnectionType.DIRECT:
-                    self._notifiers.append(YandexDirectNotifier(self._hass, self, config))
+                    self._notifiers.append(YandexDirectNotifier(self._hass, self, config, track_templates))
 
         await asyncio.wait([asyncio.create_task(n.async_setup()) for n in self._notifiers])
 
@@ -205,3 +210,48 @@ class ConfigEntryData:
                 raise ConfigEntryNotReady from exc
 
         return configs
+
+    def _get_trackable_states(self) -> dict[Template, list[CustomCapability | CustomProperty]]:
+        """Return states with their value templates."""
+        templates: dict[Template, list[CustomCapability | CustomProperty]] = {}
+
+        for device_id, entity_config in self.entity_config.items():
+            if not self.should_expose(device_id):
+                continue
+
+            for capability_type, config_key in (
+                (CapabilityType.MODE, const.CONF_ENTITY_CUSTOM_MODES),
+                (CapabilityType.TOGGLE, const.CONF_ENTITY_CUSTOM_TOGGLES),
+                (CapabilityType.RANGE, const.CONF_ENTITY_CUSTOM_RANGES),
+            ):
+                if config_key in entity_config:
+                    for instance in entity_config[config_key]:
+                        capability_config = entity_config[config_key][instance]
+                        try:
+                            capability = get_custom_capability(
+                                self._hass,
+                                self,
+                                capability_config,
+                                capability_type,
+                                instance,
+                                device_id,
+                            )
+                        except APIError as e:
+                            _LOGGER.debug(f"Failed to track custom capability: {e}")
+                            continue
+
+                        template = capability_custom.get_value_template(device_id, capability_config)
+
+                        if template:
+                            templates.setdefault(template, [])
+                            templates[template].append(capability)
+
+            for property_config in entity_config.get(const.CONF_ENTITY_PROPERTIES):
+                try:
+                    template = property_custom.get_value_template(device_id, property_config)
+                    templates.setdefault(template, [])
+                    templates[template].append(get_custom_property(self._hass, self, property_config, device_id))
+                except APIError as e:
+                    _LOGGER.debug(f"Failed to track custom property: {e}")
+
+        return templates

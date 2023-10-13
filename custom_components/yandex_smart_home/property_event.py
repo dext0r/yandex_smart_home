@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
 from itertools import chain
-from typing import Any, Protocol
+from typing import Any, Protocol, Self
 
 from homeassistant.components import binary_sensor, sensor
 from homeassistant.const import (
@@ -68,14 +68,14 @@ class EventProperty(Property, Protocol[EventInstanceEvent]):
         )
 
     @property
-    def report_immediately(self) -> bool:
-        """Test if property changes should be reported without debounce."""
-        return True
-
-    @property
     def report_on_startup(self) -> bool:
         """Test if property value should be reported on startup."""
         return False
+
+    @property
+    def time_sensitive(self) -> bool:
+        """Test if value changes should be reported immediately."""
+        return True
 
     def get_value(self) -> EventInstanceEvent | None:
         """Return the current property value."""
@@ -101,7 +101,37 @@ class EventProperty(Property, Protocol[EventInstanceEvent]):
         return list(chain.from_iterable(self._event_map.values()))
 
 
-class OpenEventProperty(EventProperty[OpenInstanceEvent], ABC):
+class SensorEventProperty(EventProperty[Any], ABC):
+    """Represent a binary-like property with stable current value."""
+
+    def check_value_change(self, other: Self | None) -> bool:
+        """Test if the property value differs from other property."""
+        if other is None:
+            return False
+
+        value, other_value = self.get_value(), other.get_value()
+        if value is None or other_value is None:
+            return False
+
+        return bool(value != other_value)
+
+
+class ReactiveEventProperty(EventProperty[Any], ABC):
+    """Represent a button-like event property."""
+
+    def check_value_change(self, other: Self | None) -> bool:
+        """Test if the property value differs from other property."""
+        if other is None:
+            return True
+
+        value, other_value = self.get_value(), other.get_value()
+        if value == other_value:
+            return False
+
+        return value is not None
+
+
+class OpenEventProperty(SensorEventProperty, EventProperty[OpenInstanceEvent], ABC):
     """Base class for event property that detect opening of something."""
 
     instance = EventPropertyInstance.OPEN
@@ -117,7 +147,7 @@ class OpenEventProperty(EventProperty[OpenInstanceEvent], ABC):
         return OpenEventPropertyParameters()
 
 
-class MotionEventProperty(EventProperty[MotionInstanceEvent], ABC):
+class MotionEventProperty(SensorEventProperty, EventProperty[MotionInstanceEvent], ABC):
     """Base class for event property that detect motion, presence or occupancy."""
 
     instance = EventPropertyInstance.MOTION
@@ -133,7 +163,7 @@ class MotionEventProperty(EventProperty[MotionInstanceEvent], ABC):
         return MotionEventPropertyParameters()
 
 
-class GasEventProperty(EventProperty[GasInstanceEvent], ABC):
+class GasEventProperty(SensorEventProperty, EventProperty[GasInstanceEvent], ABC):
     """Base class for event property that detect gas presence."""
 
     instance = EventPropertyInstance.GAS
@@ -150,7 +180,7 @@ class GasEventProperty(EventProperty[GasInstanceEvent], ABC):
         return GasEventPropertyParameters()
 
 
-class SmokeEventProperty(EventProperty[SmokeInstanceEvent], ABC):
+class SmokeEventProperty(SensorEventProperty, EventProperty[SmokeInstanceEvent], ABC):
     """Base class for event property that detect smoke presence."""
 
     instance = EventPropertyInstance.SMOKE
@@ -167,7 +197,7 @@ class SmokeEventProperty(EventProperty[SmokeInstanceEvent], ABC):
         return SmokeEventPropertyParameters()
 
 
-class BatteryLevelEventProperty(EventProperty[BatteryLevelInstanceEvent], ABC):
+class BatteryLevelEventProperty(SensorEventProperty, EventProperty[BatteryLevelInstanceEvent], ABC):
     """Base class for event property that detect low level of a battery."""
 
     instance = EventPropertyInstance.BATTERY_LEVEL
@@ -184,7 +214,7 @@ class BatteryLevelEventProperty(EventProperty[BatteryLevelInstanceEvent], ABC):
         return BatteryLevelEventPropertyParameters()
 
 
-class WaterLevelEventProperty(EventProperty[WaterLevelInstanceEvent], ABC):
+class WaterLevelEventProperty(SensorEventProperty, EventProperty[WaterLevelInstanceEvent], ABC):
     """Base class for event property that detect low level of water."""
 
     instance = EventPropertyInstance.WATER_LEVEL
@@ -201,7 +231,7 @@ class WaterLevelEventProperty(EventProperty[WaterLevelInstanceEvent], ABC):
         return WaterLevelEventPropertyParameters()
 
 
-class WaterLeakEventProperty(EventProperty[WaterLeakInstanceEvent], ABC):
+class WaterLeakEventProperty(SensorEventProperty, EventProperty[WaterLeakInstanceEvent], ABC):
     """Base class for event property that detect water leakage."""
 
     instance = EventPropertyInstance.WATER_LEAK
@@ -217,7 +247,7 @@ class WaterLeakEventProperty(EventProperty[WaterLeakInstanceEvent], ABC):
         return WaterLeakEventPropertyParameters()
 
 
-class ButtonPressEventProperty(EventProperty[ButtonInstanceEvent], ABC):
+class ButtonPressEventProperty(ReactiveEventProperty, EventProperty[ButtonInstanceEvent], ABC):
     """Base class for event property that detect a button interaction."""
 
     instance = EventPropertyInstance.BUTTON
@@ -239,7 +269,7 @@ class ButtonPressEventProperty(EventProperty[ButtonInstanceEvent], ABC):
         return ButtonEventPropertyParameters()
 
 
-class VibrationEventProperty(EventProperty[VibrationInstanceEvent], ABC):
+class VibrationEventProperty(ReactiveEventProperty, EventProperty[VibrationInstanceEvent], ABC):
     """Base class for event property that detect vibration."""
 
     instance = EventPropertyInstance.VIBRATION
