@@ -29,7 +29,7 @@ from .const import (
     CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION,
 )
-from .helpers import APIError
+from .helpers import ActionNotAllowed, APIError
 from .schema import (
     CapabilityInstance,
     CapabilityType,
@@ -137,10 +137,13 @@ class CustomModeCapability(CustomCapability, ModeCapability):
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
+        service_config = self._config.get(CONF_ENTITY_CUSTOM_MODE_SET_MODE)
+        if not service_config:
+            raise ActionNotAllowed
 
         await async_call_from_config(
             self._hass,
-            self._config[CONF_ENTITY_CUSTOM_MODE_SET_MODE],
+            service_config,
             validate_config=False,
             variables={"mode": self.get_ha_mode_by_yandex_mode(state.value)},
             blocking=True,
@@ -171,12 +174,17 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
-        turn_on_config = self._config[CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON]
-        turn_off_config = self._config[CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF]
+        if state.value:
+            service_config = self._config.get(CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON)
+        else:
+            service_config = self._config.get(CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF)
+
+        if not service_config:
+            raise ActionNotAllowed
 
         await async_call_from_config(
             self._hass,
-            turn_on_config if state.value else turn_off_config,
+            service_config,
             validate_config=False,
             blocking=True,
             context=context,
@@ -204,15 +212,15 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
-        config = self._set_value_service_config
+        service_config = self._set_value_service_config
         value = state.value
 
         if state.relative:
             if self._increase_value_service_config or self._decrease_value_service_config:
                 if state.value >= 0:
-                    config = self._increase_value_service_config
+                    service_config = self._increase_value_service_config
                 else:
-                    config = self._decrease_value_service_config
+                    service_config = self._decrease_value_service_config
             else:
                 if not self.retrievable:
                     raise APIError(
@@ -223,12 +231,12 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
 
                 value = self._get_absolute_value(state.value)
 
-        if not config:
-            raise APIError(ResponseCode.INTERNAL_ERROR, "Missing capability service")
+        if not service_config:
+            raise ActionNotAllowed
 
         await async_call_from_config(
             self._hass,
-            config,
+            service_config,
             validate_config=False,
             variables={"value": value},
             blocking=True,

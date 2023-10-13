@@ -13,7 +13,9 @@ from custom_components.yandex_smart_home.const import CONF_DEVICES_DISCOVERED, D
 from custom_components.yandex_smart_home.handlers import PING_REQUEST_USER_ID
 from custom_components.yandex_smart_home.helpers import APIError, RequestData
 from custom_components.yandex_smart_home.schema import (
+    CapabilityType,
     GetStreamInstanceActionResultValue,
+    OnOffCapabilityInstance,
     OnOffCapabilityInstanceActionState,
     ResponseCode,
     ToggleCapabilityInstance,
@@ -493,3 +495,48 @@ async def test_handler_devices_action_error_template(hass, caplog):
                 }
             ]
         }
+
+
+async def test_handler_devices_action_not_allowed(hass, caplog):
+    entry_data = MockConfigEntryData(entity_config={"switch.test": {"turn_on": False}})
+    data = RequestData(entry_data, Context(), "test", REQ_ID)
+
+    switch = State("switch.test", STATE_OFF)
+    hass.states.async_set(switch.entity_id, switch.state, switch.attributes)
+
+    payload = json.dumps(
+        {
+            "payload": {
+                "devices": [
+                    {
+                        "id": switch.entity_id,
+                        "capabilities": [
+                            {
+                                "type": CapabilityType.ON_OFF,
+                                "state": {"instance": OnOffCapabilityInstance.ON, "value": True},
+                            },
+                        ],
+                    }
+                ]
+            }
+        }
+    )
+
+    assert (await handlers.async_devices_action(hass, data, payload)).as_dict() == {
+        "devices": [
+            {
+                "id": "switch.test",
+                "capabilities": [
+                    {
+                        "type": "devices.capabilities.on_off",
+                        "state": {
+                            "instance": "on",
+                            "action_result": {"error_code": "REMOTE_CONTROL_DISABLED", "status": "ERROR"},
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    assert len([m for m in caplog.messages if "Bus:Handling" not in m]) == 0

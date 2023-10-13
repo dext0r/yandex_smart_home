@@ -21,7 +21,7 @@ from custom_components.yandex_smart_home.capability_custom import (
     CustomRangeCapability,
     get_custom_capability,
 )
-from custom_components.yandex_smart_home.helpers import APIError
+from custom_components.yandex_smart_home.helpers import ActionNotAllowed, APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     ModeCapabilityInstance,
@@ -139,6 +139,30 @@ async def test_capability_custom_mode(hass):
             }
         }
     )
+
+    cap = get_custom_capability(
+        hass,
+        entry_data,
+        {
+            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
+        },
+        CapabilityType.MODE,
+        ModeCapabilityInstance.CLEANUP_MODE,
+        state.entity_id,
+    )
+    assert cap.supported is True
+    assert cap.retrievable is True
+    assert cap.reportable is True
+    assert cap.get_value() == "one"
+
+    with pytest.raises(ActionNotAllowed):
+        await cap.set_instance_state(
+            Context(),
+            ModeCapabilityInstanceActionState(
+                instance=ModeCapabilityInstance.CLEANUP_MODE, value=ModeCapabilityMode.ONE
+            ),
+        )
+
     cap = get_custom_capability(
         hass,
         entry_data,
@@ -206,6 +230,29 @@ async def test_capability_custom_toggle(hass):
 
     state = State("switch.test", STATE_ON, {})
     hass.states.async_set(state.entity_id, state.state)
+    cap = get_custom_capability(
+        hass,
+        BASIC_ENTRY_DATA,
+        {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id},
+        CapabilityType.TOGGLE,
+        ToggleCapabilityInstance.IONIZATION,
+        "foo",
+    )
+    assert cap.supported is True
+    assert cap.retrievable is True
+    assert cap.reportable is True
+    assert cap.get_value() is True
+    with pytest.raises(ActionNotAllowed):
+        await cap.set_instance_state(
+            Context(),
+            ToggleCapabilityInstanceActionState(instance=ToggleCapabilityInstance.IONIZATION, value=True),
+        )
+    with pytest.raises(ActionNotAllowed):
+        await cap.set_instance_state(
+            Context(),
+            ToggleCapabilityInstanceActionState(instance=ToggleCapabilityInstance.IONIZATION, value=False),
+        )
+
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
@@ -540,11 +587,8 @@ async def test_capability_custom_range_no_service(hass):
     assert cap.reportable is False
     assert cap.get_value() is None
 
-    with pytest.raises(APIError) as e:
+    with pytest.raises(ActionNotAllowed):
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10),
         )
-
-    assert e.value.code == ResponseCode.INTERNAL_ERROR
-    assert e.value.message == "Missing capability service"

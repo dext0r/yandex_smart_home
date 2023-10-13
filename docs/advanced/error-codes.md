@@ -13,6 +13,8 @@
 
 Список допустимых кодов ошибок **фиксирован** ([полный список](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/response-codes.html)).
 
+Для безусловного запрета включения или отключения устройства задайте параметры `turn_on` и/или `turn_off` в [параметрах устройства](../config/entity.md#turn_on-off).
+
 ## Примеры { id=examples }
 
 ### Мало воды в чайнике { id=not-enough-water }

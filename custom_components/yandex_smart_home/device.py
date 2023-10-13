@@ -48,7 +48,7 @@ from . import (  # noqa: F401
 from . import const  # noqa: F401
 from .capability import STATE_CAPABILITIES_REGISTRY
 from .capability_custom import get_custom_capability
-from .helpers import APIError, TemplatedError
+from .helpers import ActionNotAllowed, APIError
 from .property import STATE_PROPERTIES_REGISTRY
 from .property_custom import get_custom_property
 from .schema import (
@@ -349,11 +349,11 @@ class Device:
                 except ValueError:
                     raise APIError(ResponseCode.INTERNAL_ERROR, f"Invalid error code for {self.id}: {error_code!r}")
 
-                raise TemplatedError(code)
+                raise ActionNotAllowed(code)
 
         try:
             return await target_capability.set_instance_state(context, action.state)
-        except APIError:
+        except (APIError, ActionNotAllowed):
             raise
         except Exception as e:
             raise APIError(

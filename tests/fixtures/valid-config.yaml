@@ -146,3 +146,21 @@ yandex_smart_home:
     input_text.button:
       name: Кнопка на автоматизации
       device_class: button
+    lock.front_door:
+      turn_on: false
+    climate.ac:
+      turn_on:
+        service: climate.turn_on
+        entity_id: climate.ac
+        data:
+          mode: cool
+    switch.water_valve:
+      custom_ranges:
+        open:
+          state_entity_id: sensor.water_valve_angel
+      custom_toggles:
+        backlight:
+          state_entity_id: sensor.water_valve_led
+      custom_modes:
+        input_source:
+          state_entity_id: sensor.water_valve_input_source

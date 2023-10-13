@@ -9,12 +9,12 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
+from .schema import ResponseCode
 
 if TYPE_CHECKING:
     from homeassistant.core import Context, HomeAssistant
 
     from .entry_data import ConfigEntryData
-    from .schema import ResponseCode
 
 STORE_CACHE_ATTRS = "attrs"
 
@@ -30,10 +30,10 @@ class APIError(HomeAssistantError):
         self.message = message
 
 
-class TemplatedError(HomeAssistantError):
-    """Error producted by user's template, no logging"""
+class ActionNotAllowed(HomeAssistantError):
+    """Error producted when change capability state is not allowed, no logging."""
 
-    def __init__(self, code: ResponseCode):
+    def __init__(self, code: ResponseCode = ResponseCode.REMOTE_CONTROL_DISABLED):
         """Init the error."""
 
         self.code = code

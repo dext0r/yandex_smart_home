@@ -54,7 +54,7 @@ ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema(
     {
         vol.All(cv.string, ycv.mode_instance): vol.Schema(
             {
-                vol.Required(const.CONF_ENTITY_CUSTOM_MODE_SET_MODE): cv.SERVICE_SCHEMA,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_MODE_SET_MODE): cv.SERVICE_SCHEMA,
                 vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
                 vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
             }
@@ -65,11 +65,6 @@ ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema(
 ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema(
     {
         vol.All(cv.string, ycv.range_instance): vol.All(
-            cv.has_at_least_one_key(
-                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE,
-                const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE,
-                const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
-            ),
             vol.Schema(
                 {
                     vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE): vol.Any(cv.SERVICE_SCHEMA),
@@ -89,8 +84,8 @@ ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema(
     {
         vol.All(cv.string, ycv.toggle_instance): vol.Schema(
             {
-                vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON): cv.SERVICE_SCHEMA,
-                vol.Required(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF): cv.SERVICE_SCHEMA,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON): cv.SERVICE_SCHEMA,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF): cv.SERVICE_SCHEMA,
                 vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
                 vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
             }
@@ -105,8 +100,8 @@ ENTITY_SCHEMA = vol.All(
             vol.Optional(const.CONF_NAME): cv.string,
             vol.Optional(const.CONF_ROOM): cv.string,
             vol.Optional(const.CONF_TYPE): vol.All(cv.string, ycv.device_type),
-            vol.Optional(const.CONF_TURN_ON): cv.SERVICE_SCHEMA,
-            vol.Optional(const.CONF_TURN_OFF): cv.SERVICE_SCHEMA,
+            vol.Optional(const.CONF_TURN_ON): vol.Any(cv.SERVICE_SCHEMA, cv.boolean),
+            vol.Optional(const.CONF_TURN_OFF): vol.Any(cv.SERVICE_SCHEMA, cv.boolean),
             vol.Optional(const.CONF_DEVICE_CLASS): vol.In(const.DEVICE_CLASS_BUTTON),
             vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, ycv.entity_features),
             vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],

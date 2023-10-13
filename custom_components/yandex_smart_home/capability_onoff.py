@@ -38,7 +38,7 @@ from homeassistant.helpers.service import async_call_from_config
 
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
 from .const import CONF_FEATURES, CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON, MediaPlayerFeature
-from .helpers import APIError
+from .helpers import ActionNotAllowed, APIError
 from .schema import (
     CapabilityType,
     OnOffCapabilityInstance,
@@ -86,6 +86,9 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
         """Change the capability state."""
         for key, call in ((CONF_TURN_ON, state.value), (CONF_TURN_OFF, not state.value)):
             if key in self._entity_config and call:
+                if self._entity_config[key] is False:
+                    raise ActionNotAllowed
+
                 await async_call_from_config(self._hass, self._entity_config[key], blocking=True, context=context)
                 return
 

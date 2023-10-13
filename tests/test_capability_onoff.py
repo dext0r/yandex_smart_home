@@ -35,7 +35,7 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
-from custom_components.yandex_smart_home.helpers import APIError
+from custom_components.yandex_smart_home.helpers import ActionNotAllowed, APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     OnOffCapabilityInstance,
@@ -516,6 +516,8 @@ async def test_capability_onoff_custom_service(hass):
     state_switch = State("switch.test", STATE_ON)
     state_media = State("media_player.test", STATE_ON)
     state_vacuum = State("vacuum.test", STATE_ON)
+    state_lock = State("lock.test", STATE_OFF)
+    state_water_heater = State("water_heater.test", STATE_ON)
     entry_data = MockConfigEntryData(
         entity_config={
             state_media.entity_id: {
@@ -529,6 +531,8 @@ async def test_capability_onoff_custom_service(hass):
             state_vacuum.entity_id: {
                 const.CONF_TURN_ON: {CONF_SERVICE: turn_on_service, CONF_ENTITY_ID: turn_on_off_entity_id}
             },
+            state_lock.entity_id: {const.CONF_TURN_ON: False},
+            state_water_heater.entity_id: {const.CONF_TURN_OFF: False},
         }
     )
     cap_media = cast(
@@ -538,6 +542,16 @@ async def test_capability_onoff_custom_service(hass):
     cap_switch = cast(
         OnOffCapability,
         get_exact_one_capability(hass, entry_data, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    cap_lock = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, entry_data, state_lock, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    cap_water_heater = cast(
+        OnOffCapability,
+        get_exact_one_capability(
+            hass, entry_data, state_water_heater, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
+        ),
     )
     assert_exact_one_capability(hass, entry_data, state_vacuum, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
@@ -554,6 +568,18 @@ async def test_capability_onoff_custom_service(hass):
     assert len(off_calls) == 2
     assert off_calls[0].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
     assert off_calls[1].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
+
+    lock_off_calls = async_mock_service(hass, "lock", "lock")
+    with pytest.raises(ActionNotAllowed):
+        await cap_lock.set_instance_state(Context(), ACTION_STATE_ON)
+    await cap_lock.set_instance_state(Context(), ACTION_STATE_OFF)
+    assert len(lock_off_calls) == 1
+
+    water_heater_on_calls = async_mock_service(hass, "water_heater", "turn_on")
+    with pytest.raises(ActionNotAllowed):
+        await cap_water_heater.set_instance_state(Context(), ACTION_STATE_OFF)
+    await cap_water_heater.set_instance_state(Context(), ACTION_STATE_ON)
+    assert len(water_heater_on_calls) == 1
 
 
 async def test_capability_onoff_water_heater(hass):

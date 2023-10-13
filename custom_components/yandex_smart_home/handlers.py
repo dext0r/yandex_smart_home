@@ -9,7 +9,7 @@ from homeassistant.util.decorator import Registry
 
 from .const import ATTR_CAPABILITY, ATTR_ERROR_CODE, EVENT_DEVICE_ACTION
 from .device import Device
-from .helpers import APIError, RequestData, TemplatedError
+from .helpers import ActionNotAllowed, APIError, RequestData
 from .schema import (
     ActionRequest,
     ActionResult,
@@ -146,7 +146,7 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
                     {ATTR_ENTITY_ID: device_id, ATTR_CAPABILITY: action.as_dict()},
                     context=data.context,
                 )
-            except (APIError, TemplatedError) as err:
+            except (APIError, ActionNotAllowed) as err:
                 if isinstance(err, APIError):
                     _LOGGER.error(f"{err.message} ({err.code.value})")
 

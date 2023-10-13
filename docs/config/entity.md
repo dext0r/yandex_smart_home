@@ -66,6 +66,17 @@
             entity_id: switch.tv_outlet
     ```
 
+Для запрета включения или отключения устройства установите `turn_on` или `turn_off` равным `false` (без кавычек).
+Альтернативный способ повлиять на управление устройством - [коды ошибок](../advanced/error-codes.md).
+
+!!! example "Запрет открытия замка из УДЯ (закрывать по-прежнему можно)"
+    ```yaml
+      yandex_smart_home:
+        entity_config:
+          lock.front_door:
+            turn_on: false
+    ```
+
 ## Поддерживаемые функции (media_player) { id=features }
 > Параметр: `features` (только для `media_player`)
 
