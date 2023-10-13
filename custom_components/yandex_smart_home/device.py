@@ -345,11 +345,11 @@ class Device:
         if error_code_template := self._error_code_template:
             if error_code := error_code_template.async_render(capability=action.as_dict(), parse_result=False):
                 try:
-                    ResponseCode(error_code)
+                    code = ResponseCode(error_code)
                 except ValueError:
                     raise APIError(ResponseCode.INTERNAL_ERROR, f"Invalid error code for {self.id}: {error_code!r}")
 
-                raise TemplatedError(error_code)
+                raise TemplatedError(code)
 
         try:
             return await target_capability.set_instance_state(context, action.state)

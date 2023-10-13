@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
 
-from .const import EVENT_DEVICE_ACTION
+from .const import ATTR_CAPABILITY, ATTR_ERROR_CODE, EVENT_DEVICE_ACTION
 from .device import Device
 from .helpers import APIError, RequestData, TemplatedError
 from .schema import (
@@ -124,6 +124,12 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
         device = Device(hass, data.entry_data, device_id, hass.states.get(device_id))
 
         if device.unavailable:
+            hass.bus.async_fire(
+                EVENT_DEVICE_ACTION,
+                {ATTR_ENTITY_ID: device_id, ATTR_ERROR_CODE: ResponseCode.DEVICE_UNREACHABLE.value},
+                context=data.context,
+            )
+
             results.append(
                 ActionResultDevice(
                     id=device_id, action_result=FailedActionResult(error_code=ResponseCode.DEVICE_UNREACHABLE)
@@ -135,9 +141,20 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
         for action in actions:
             try:
                 value = await device.execute(data.context, action)
+                hass.bus.async_fire(
+                    EVENT_DEVICE_ACTION,
+                    {ATTR_ENTITY_ID: device_id, ATTR_CAPABILITY: action.as_dict()},
+                    context=data.context,
+                )
             except (APIError, TemplatedError) as err:
                 if isinstance(err, APIError):
                     _LOGGER.error(f"{err.message} ({err.code.value})")
+
+                hass.bus.async_fire(
+                    EVENT_DEVICE_ACTION,
+                    {ATTR_ENTITY_ID: device_id, ATTR_CAPABILITY: action.as_dict(), ATTR_ERROR_CODE: err.code.value},
+                    context=data.context,
+                )
 
                 capability_results.append(
                     ActionResultCapability(
@@ -149,12 +166,6 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
                     )
                 )
                 continue
-
-            hass.bus.async_fire(
-                EVENT_DEVICE_ACTION,
-                {ATTR_ENTITY_ID: device_id, "capability": action.as_dict()},
-                context=data.context,
-            )
 
             capability_results.append(
                 ActionResultCapability(

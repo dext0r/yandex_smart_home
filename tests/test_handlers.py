@@ -295,7 +295,7 @@ async def test_handler_devices_action(hass, caplog):
 
         await hass.async_block_till_done()
 
-        assert device_action_event.call_count == 2
+        assert device_action_event.call_count == 7
         args, _ = device_action_event.call_args_list[0]
         assert args[0].as_dict()["data"] == {
             "entity_id": "switch.test_1",
@@ -308,7 +308,21 @@ async def test_handler_devices_action(hass, caplog):
             "capability": {"state": {"instance": "backlight", "value": True}, "type": "devices.capabilities.toggle"},
         }
 
-        assert caplog.messages[-3:] == [
+        args, _ = device_action_event.call_args_list[2]
+        assert args[0].as_dict()["data"] == {
+            "entity_id": "switch.test_1",
+            "capability": {"state": {"instance": "ionization", "value": True}, "type": "devices.capabilities.toggle"},
+            "error_code": "INTERNAL_ERROR",
+        }
+
+        args, _ = device_action_event.call_args_list[6]
+        assert args[0].as_dict()["data"] == {
+            "entity_id": "foo.not_exist",
+            "error_code": "DEVICE_UNREACHABLE",
+        }
+
+        filtered_messages = [m for m in caplog.messages if "Bus:Handling" not in m]
+        assert filtered_messages == [
             "Failed to execute action for instance ionization (devices.capabilities.toggle) of switch.test_1: "
             "Exception('fail set_state') (INTERNAL_ERROR)",
             "Capability not found for instance keep_warm (devices.capabilities.toggle) of switch.test_2 "
@@ -442,7 +456,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
             ]
         }
 
-        assert caplog.records[-1].message == "Invalid error code for switch.test: 'WAT?' (INTERNAL_ERROR)"
+        assert caplog.records[-2].message == "Invalid error code for switch.test: 'WAT?' (INTERNAL_ERROR)"
 
         hass.states.async_set("sensor.foo", "bar")
         payload = json.dumps(
