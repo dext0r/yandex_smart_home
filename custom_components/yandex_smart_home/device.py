@@ -319,6 +319,9 @@ class Device:
             if (property_state := p.get_instance_state()) is not None:
                 properties.append(property_state)
 
+        if not capabilities and not properties:
+            return DeviceState(id=self.id, error_code=ResponseCode.DEVICE_UNREACHABLE)
+
         return DeviceState(id=self.id, capabilities=capabilities, properties=properties)
 
     async def execute(

@@ -510,6 +510,10 @@ async def test_device_query(hass):
             "properties": [{"type": "devices.properties.float", "state": {"instance": "temperature", "value": 5.0}}],
         }
 
+        state_temp.state = STATE_UNAVAILABLE
+        with patch.object(Device, "get_capabilities", return_value=[cap_pause]):
+            assert device.query().as_dict() == {"id": "switch.test", "error_code": "DEVICE_UNREACHABLE"}
+
 
 async def test_device_execute(hass, caplog):
     state = State("switch.test", STATE_ON)
