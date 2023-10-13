@@ -246,7 +246,7 @@ class ConfigEntryData:
                             templates.setdefault(template, [])
                             templates[template].append(capability)
 
-            for property_config in entity_config.get(const.CONF_ENTITY_PROPERTIES):
+            for property_config in entity_config.get(const.CONF_ENTITY_PROPERTIES, []):
                 try:
                     template = property_custom.get_value_template(device_id, property_config)
                     templates.setdefault(template, [])

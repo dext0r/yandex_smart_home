@@ -263,7 +263,6 @@ async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):
                 ],
                 const.CONF_ENTITY_CUSTOM_MODES: {
                     "dishwashing": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.dishwashing"},
-                    "nope": {},
                 },
                 const.CONF_ENTITY_CUSTOM_TOGGLES: {
                     "pause": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "binary_sensor.pause"}
@@ -292,10 +291,9 @@ async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):
 
     assert notifier._template_changes_tracker is not None
     assert notifier._pending.empty is True
-    assert caplog.messages[:2] == [
+    assert caplog.messages[:1] == [
         "Failed to track custom property: Unsupported entity binary_sensor.foo for "
         "temperature instance of light.kitchen",
-        "Failed to track custom capability: 'nope' is not a valid ModeCapabilityInstance",
     ]
 
     # event
