@@ -220,6 +220,7 @@ async def test_valid_config(hass):
     }
 
     assert entity_config["lock.front_door"] == {
+        "type": "devices.types.openable",
         "turn_on": False,
         "custom_toggles": {},
         "properties": [],

@@ -96,7 +96,7 @@ yandex_smart_home:
     climate.ac_living_room:
       name: Кондиционер
       room: Гостиная
-      type: devices.types.thermostat.ac
+      type: thermostat.ac
       custom_toggles:
         ionization:
           state_entity_id: switch.ac_ionizer
@@ -147,6 +147,7 @@ yandex_smart_home:
       name: Кнопка на автоматизации
       device_class: button
     lock.front_door:
+      type: openable
       turn_on: false
     climate.ac:
       turn_on:

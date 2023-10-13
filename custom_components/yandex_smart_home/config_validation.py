@@ -117,15 +117,18 @@ def entity_features(value: list[str]) -> list[str]:
 
 def device_type(value: str) -> str:
     try:
-        DeviceType(value)
+        return str(DeviceType(value))
     except ValueError:
-        _LOGGER.error(
-            f"Device type {value!r} is not supported. "
-            f"See valid device types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html"
-        )
-        raise vol.Invalid(f"Device type {value!r} is not supported.")
+        try:
+            return DeviceType(f"devices.types.{value}")
+        except ValueError:
+            pass
 
-    return value
+    _LOGGER.error(
+        f"Device type {value!r} is not supported. "
+        f"See valid device types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html"
+    )
+    raise vol.Invalid(f"Device type {value!r} is not supported.")
 
 
 def pressure_unit(value: str) -> str:

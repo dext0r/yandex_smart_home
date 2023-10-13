@@ -135,7 +135,7 @@ yandex_smart_home:
 yandex_smart_home:
   entity_config:
     fan.ochistitel_vozdukha:
-      type: devices.types.purifier
+      type: purifier
       properties:
         - type: pm2.5_density
           entity: sensor.ochistitel_vozdukha_pm2_5
@@ -171,7 +171,7 @@ yandex_smart_home:
 yandex_smart_home:
   entity_config:
     fan.mi_air_purifier_3c:
-      type: devices.types.purifier
+      type: purifier
       properties:
         - type: pm2.5_density
           entity: sensor.mi_air_purifier_3c_pm2_5
@@ -228,7 +228,7 @@ yandex_smart_home:
     switch.rk_g200s_power:
       name: Чайник
       room: Кухня
-      type: devices.types.cooking.kettle
+      type: cooking.kettle
       properties:
         - type: temperature
           entity: sensor.rk_g200s_temperature
@@ -272,7 +272,7 @@ yandex_smart_home:
     water_heater.skykettle_rk_m216s:
       name: Чайник
       room: Кухня
-      type: devices.types.cooking.kettle
+      type: cooking.kettle
       properties:
         - type: temperature
           entity: water_heater.skykettle_rk_m216s
@@ -487,7 +487,7 @@ yandex_smart_home:
   entity_config:
     climate.tasmota_ac:
       name: Кондиционер
-      type: devices.types.thermostat.ac
+      type: thermostat.ac
       custom_toggles:
         backlight: # подсветка
           state_attribute: light

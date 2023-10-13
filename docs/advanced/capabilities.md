@@ -91,7 +91,7 @@
     yandex_smart_home:
       entity_config:
         climate.hotcoffee:
-          type: devices.types.cooking.coffee_maker
+          type: cooking.coffee_maker
           modes:
             coffee_mode:
               cappuccino: ['cappuccino']
