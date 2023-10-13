@@ -56,7 +56,10 @@ CONF_DEVICES_DISCOVERED = "devices_discovered"
 
 CLOUD_BASE_URL = "https://yaha-cloud.ru"
 CLOUD_STREAM_BASE_URL = "https://stream.yaha-cloud.ru"
+
 EVENT_DEVICE_ACTION = "yandex_smart_home_device_action"
+ATTR_CAPABILITY = "capability"
+ATTR_ERROR_CODE = "error_code"
 
 # Fake device class
 DEVICE_CLASS_BUTTON = "button"
