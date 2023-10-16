@@ -278,6 +278,15 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.config_entries.async_update_entry(entry, data=data, options=options)
         _LOGGER.debug(f"Migration to version {version} successful")
 
+    if version == 2:
+        from .config_flow import DEFAULT_CONFIG_ENTRY_TITLE, config_entry_title
+
+        if entry.title == DEFAULT_CONFIG_ENTRY_TITLE:
+            hass.config_entries.async_update_entry(entry, title=config_entry_title(data))
+
+        version = entry.version = 3
+        _LOGGER.debug(f"Migration to version {version} successful")
+
     return True
 
 

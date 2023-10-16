@@ -468,6 +468,7 @@ async def test_migrate_entity_v1(hass):
     entity = MockConfigEntry(
         domain=DOMAIN,
         version=1,
+        title="Yandex Smart Home Test",
         data={
             "devices_discovered": False,
             "connection_type": "direct",
@@ -490,7 +491,8 @@ async def test_migrate_entity_v1(hass):
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 2
+    assert entity.version == 3
+    assert entity.title == "Yandex Smart Home Test"
     assert entity.data == {
         "cloud_instance": {"id": "foo", "password": "bar", "token": "xxx"},
         "connection_type": "direct",
@@ -501,14 +503,55 @@ async def test_migrate_entity_v1(hass):
     entity = MockConfigEntry(
         domain=DOMAIN,
         version=1,
+        title="Yandex Smart Home Test",
     )
     entity.add_to_hass(hass)
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 2
+    assert entity.version == 3
+    assert entity.title == "Yandex Smart Home Test"
     assert entity.data == {
         "connection_type": "direct",
         "devices_discovered": True,
     }
     assert entity.options == {}
+
+
+@pytest.mark.parametrize(
+    "source_title,connection_type,expected_title",
+    [
+        ("Yandex Smart Home", "cloud", "Yaha Cloud (12345678)"),
+        ("Yandex Smart Home Foo", "cloud", "Yandex Smart Home Foo"),
+        ("Foo", "cloud", "Foo"),
+        ("Yandex Smart Home", "direct", "YSH: Direct"),
+        ("Yandex Smart Home Foo", "direct", "Yandex Smart Home Foo"),
+        ("Foo", "direct", "Foo"),
+    ],
+)
+async def test_migrate_entity_v2(hass, source_title, connection_type, expected_title):
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=2,
+        title=source_title,
+        data={
+            "connection_type": connection_type,
+            "cloud_instance": {"id": "1234567890", "password": "bar", "token": "xxx"},
+            "bar": "foo",
+        },
+        options={"foo": "bar"},
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.yandex_smart_home.entry_data.ConfigEntryData._async_setup_cloud_connection"):
+        await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.version == 3
+    assert entry.title == expected_title
+    assert entry.data == {
+        "connection_type": connection_type,
+        "cloud_instance": {"id": "1234567890", "password": "bar", "token": "xxx"},
+        "bar": "foo",
+    }
+    assert entry.options == {"foo": "bar"}
+    await hass.config_entries.async_unload(entry.entry_id)

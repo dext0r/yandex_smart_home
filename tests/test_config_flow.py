@@ -9,7 +9,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, patch_yaml_files
 
 from custom_components.yandex_smart_home import ConnectionType, YandexSmartHome, cloud, const
-from custom_components.yandex_smart_home.config_flow import DOMAIN, ConfigFlowHandler
+from custom_components.yandex_smart_home.config_flow import DOMAIN, ConfigFlowHandler, config_entry_title
 
 from . import test_cloud
 
@@ -97,7 +97,7 @@ async def test_config_flow_cloud(hass, aioclient_mock):
     aioclient_mock.post(
         f"{cloud.BASE_API_URL}/instance/register",
         status=202,
-        json={"id": "test", "password": "simple", "connection_token": "foo"},
+        json={"id": "1234567890", "password": "simple", "connection_token": "foo"},
     )
 
     result5 = await hass.config_entries.flow.async_configure(
@@ -106,11 +106,11 @@ async def test_config_flow_cloud(hass, aioclient_mock):
     await hass.async_block_till_done()
 
     assert result5["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert result5["title"] == "Yandex Smart Home"
+    assert result5["title"] == "Yaha Cloud (12345678)"
     assert result5["description"] == "cloud"
     assert result5["data"] == {
         "connection_type": "cloud",
-        "cloud_instance": {"id": "test", "password": "simple", "token": "foo"},
+        "cloud_instance": {"id": "1234567890", "password": "simple", "token": "foo"},
         "devices_discovered": False,
     }
     assert result5["options"] == {
@@ -139,7 +139,7 @@ async def test_config_flow_direct(hass):
     await hass.async_block_till_done()
 
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert result3["title"] == "Yandex Smart Home"
+    assert result3["title"] == "YSH: Direct"
     assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
     assert result3["options"] == {
         "filter": {"include_entities": ["foo.bar", "script.test"]},
@@ -177,7 +177,7 @@ yandex_smart_home:
     await hass.async_block_till_done()
 
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert result3["title"] == "Yandex Smart Home"
+    assert result3["title"] == "YSH: Direct"
     assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
     assert result3["options"] == {"filter": {"include_entities": ["foo.bar", "script.test"]}}
 
@@ -212,7 +212,7 @@ yandex_smart_home:
     await hass.async_block_till_done()
 
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert result3["title"] == "Yandex Smart Home"
+    assert result3["title"] == "YSH: Direct"
     assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
     assert result3["options"] == {}
 
@@ -498,3 +498,7 @@ async def test_options_flow_filter_no_entities(hass, connection_type):
 
     result3 = await hass.config_entries.options.async_configure(result["flow_id"], user_input={"entities": []})
     assert result3["errors"]["base"] == "entities_not_selected"
+
+
+async def test_config_entry_title_default():
+    assert config_entry_title({}) == "Yandex Smart Home"

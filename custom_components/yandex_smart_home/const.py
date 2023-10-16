@@ -2,7 +2,6 @@
 from enum import StrEnum
 
 DOMAIN = "yandex_smart_home"
-CONFIG_ENTRY_TITLE = "Yandex Smart Home"
 
 CONF_SETTINGS = "settings"
 CONF_PRESSURE_UNIT = "pressure_unit"

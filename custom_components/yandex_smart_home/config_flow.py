@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Mapping
 
 from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant.auth.const import GROUP_ID_READ_ONLY
@@ -28,12 +28,13 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 CONNECTION_TYPES = {ConnectionType.CLOUD: "Через облако", ConnectionType.DIRECT: "Напрямую"}
+DEFAULT_CONFIG_ENTRY_TITLE = "Yandex Smart Home"
 
 
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Yandex Smart Home."""
 
-    VERSION = 2
+    VERSION = 3
 
     def __init__(self) -> None:
         """Initialize a config flow handler."""
@@ -104,7 +105,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
             if not errors:
                 return self.async_create_entry(
-                    title=const.CONFIG_ENTRY_TITLE,
+                    title=config_entry_title(self._data),
                     description=entry_description,
                     description_placeholders=entry_description_placeholders,
                     data=self._data,
@@ -275,3 +276,15 @@ async def _async_get_users(hass: HomeAssistant) -> dict[str, str]:
         users[user.id] = user.name or user.id
 
     return users
+
+
+def config_entry_title(data: Mapping[str, Any]) -> str:
+    """Return config entry title."""
+    match data.get(const.CONF_CONNECTION_TYPE):
+        case ConnectionType.CLOUD:
+            instance_id = data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_ID]
+            return f"Yaha Cloud ({instance_id[:8]})"
+        case ConnectionType.DIRECT:
+            return "YSH: Direct"  # ready for Marusia support
+
+    return DEFAULT_CONFIG_ENTRY_TITLE
