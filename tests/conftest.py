@@ -12,6 +12,8 @@ from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers import entityfilter
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
+from syrupy import SnapshotAssertion
 
 from custom_components.yandex_smart_home import DOMAIN, ConnectionType, const
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
@@ -48,6 +50,12 @@ def socket_enabled(socket_enabled):
 def aiohttp_client(aiohttp_client, socket_enabled):
     """Return aiohttp_client and allow opening sockets."""
     return aiohttp_client
+
+
+@pytest.fixture
+def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
+    """Return snapshot assertion fixture with the Home Assistant extension."""
+    return snapshot.use_extension(HomeAssistantSnapshotExtension)
 
 
 @pytest.fixture
