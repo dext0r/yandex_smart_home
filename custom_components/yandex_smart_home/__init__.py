@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import SERVICE_RELOAD, UnitOfPressure
 from homeassistant.core import HomeAssistant
@@ -161,7 +162,7 @@ class YandexSmartHome:
     """Yandex Smart Home component main class."""
 
     def __init__(self, hass: HomeAssistant, yaml_config: ConfigType):
-        """Initialize the Yanex Smart Home from yaml configuration."""
+        """Initialize the Yandex Smart Home from yaml configuration."""
         self.cloud_streams: dict[str, CloudStreamManager] = {}
 
         self._hass = hass
@@ -191,6 +192,10 @@ class YandexSmartHome:
                 return data
 
         return None
+
+    def get_diagnostics(self) -> ConfigType:
+        """Return diagnostics for the component."""
+        return {"yaml_config": async_redact_data(self._yaml_config, [const.CONF_NOTIFIER])}
 
     def yaml_config_has_filter(self) -> bool:
         """Test if yaml configuration has filters defined."""

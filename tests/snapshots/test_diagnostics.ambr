@@ -1,0 +1,228 @@
+# serializer version: 1
+# name: test_diagnostics
+  dict({
+    'data': dict({
+      'devices': dict({
+        'binary_sensor.front_door': dict({
+          'device_info': dict({
+            'model': 'binary_sensor.front_door',
+          }),
+          'id': 'binary_sensor.front_door',
+          'name': 'Front Door',
+          'properties': list([
+            dict({
+              'parameters': dict({
+                'events': list([
+                  dict({
+                    'value': 'opened',
+                  }),
+                  dict({
+                    'value': 'closed',
+                  }),
+                ]),
+                'instance': 'open',
+              }),
+              'reportable': True,
+              'retrievable': True,
+              'type': 'devices.properties.event',
+            }),
+          ]),
+          'type': 'devices.types.sensor.open',
+        }),
+        'light.kitchen': dict({
+          'capabilities': list([
+            dict({
+              'parameters': dict({
+                'color_model': 'rgb',
+                'temperature_k': dict({
+                  'max': 6500,
+                  'min': 1500,
+                }),
+              }),
+              'reportable': True,
+              'retrievable': True,
+              'type': 'devices.capabilities.color_setting',
+            }),
+            dict({
+              'parameters': dict({
+                'instance': 'brightness',
+                'random_access': True,
+                'range': dict({
+                  'max': 100.0,
+                  'min': 1.0,
+                  'precision': 1.0,
+                }),
+                'unit': 'unit.percent',
+              }),
+              'reportable': True,
+              'retrievable': True,
+              'type': 'devices.capabilities.range',
+            }),
+            dict({
+              'reportable': True,
+              'retrievable': True,
+              'type': 'devices.capabilities.on_off',
+            }),
+          ]),
+          'device_info': dict({
+            'model': 'light.kitchen',
+          }),
+          'id': 'light.kitchen',
+          'name': 'Kitchen Light',
+          'properties': list([
+            dict({
+              'parameters': dict({
+                'instance': 'temperature',
+                'unit': 'unit.temperature.celsius',
+              }),
+              'reportable': True,
+              'retrievable': True,
+              'type': 'devices.properties.float',
+            }),
+          ]),
+          'type': 'devices.types.light',
+        }),
+        'sensor.outside_temp': dict({
+          'device_info': dict({
+            'model': 'sensor.outside_temp',
+          }),
+          'id': 'sensor.outside_temp',
+          'name': 'Температура за бортом',
+          'properties': list([
+            dict({
+              'parameters': dict({
+                'instance': 'temperature',
+                'unit': 'unit.temperature.celsius',
+              }),
+              'reportable': True,
+              'retrievable': True,
+              'type': 'devices.properties.float',
+            }),
+          ]),
+          'type': 'devices.types.sensor.climate',
+        }),
+      }),
+      'entry': dict({
+        'data': dict({
+          'cloud_instance': '**REDACTED**',
+          'connection_type': 'direct',
+        }),
+        'disabled_by': None,
+        'domain': 'yandex_smart_home',
+        'entry_id': 'fe76008998bdad631c33d60ef044b9ac',
+        'options': dict({
+          'filter': dict({
+            'include_entity_globs': list([
+              '*',
+            ]),
+          }),
+        }),
+        'pref_disable_new_entities': False,
+        'pref_disable_polling': False,
+        'source': 'user',
+        'title': 'Mock Title',
+        'unique_id': None,
+        'version': 3,
+      }),
+      'states': dict({
+        'binary_sensor.front_door': dict({
+          'capabilities': list([
+          ]),
+          'id': 'binary_sensor.front_door',
+          'properties': list([
+            dict({
+              'state': dict({
+                'instance': 'open',
+                'value': 'opened',
+              }),
+              'type': 'devices.properties.event',
+            }),
+          ]),
+        }),
+        'light.kitchen': dict({
+          '__type': "<class 'custom_components.yandex_smart_home.helpers.APIError'>",
+          'repr': 'APIError("Unsupported value \'foo\' for instance temperature of light.kitchen")',
+        }),
+        'sensor.outside_temp': dict({
+          'capabilities': list([
+          ]),
+          'id': 'sensor.outside_temp',
+          'properties': list([
+            dict({
+              'state': dict({
+                'instance': 'temperature',
+                'value': 15.6,
+              }),
+              'type': 'devices.properties.float',
+            }),
+          ]),
+        }),
+      }),
+      'yaml_config': dict({
+        'color_profile': dict({
+        }),
+        'entity_config': dict({
+          'light.kitchen': dict({
+            'custom_modes': dict({
+            }),
+            'custom_ranges': dict({
+            }),
+            'custom_toggles': dict({
+            }),
+            'modes': dict({
+            }),
+            'properties': list([
+              dict({
+                'entity': 'sensor.invalid',
+                'type': 'temperature',
+              }),
+            ]),
+            'range': dict({
+            }),
+          }),
+          'switch.with_template': dict({
+            'custom_modes': dict({
+            }),
+            'custom_ranges': dict({
+            }),
+            'custom_toggles': dict({
+            }),
+            'error_code_template': dict({
+              '__type': "<class 'homeassistant.helpers.template.Template'>",
+              'repr': 'Template<template=({{ "a" + "b" }}) renders=0>',
+            }),
+            'modes': dict({
+            }),
+            'properties': list([
+            ]),
+            'range': dict({
+            }),
+          }),
+        }),
+        'filter': dict({
+          'exclude_domains': list([
+          ]),
+          'exclude_entities': list([
+          ]),
+          'exclude_entity_globs': list([
+          ]),
+          'include_domains': list([
+            'light',
+            'sensor',
+            'binary_sensor',
+          ]),
+          'include_entities': list([
+          ]),
+          'include_entity_globs': list([
+          ]),
+        }),
+        'notifier': '**REDACTED**',
+        'settings': dict({
+          'beta': False,
+          'cloud_stream': False,
+          'pressure_unit': 'mmHg',
+        }),
+      }),
+    }),
+  })
+# ---
