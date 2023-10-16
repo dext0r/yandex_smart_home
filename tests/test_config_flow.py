@@ -27,6 +27,7 @@ def _mock_config_entry(data: ConfigType):
     return MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
+        title=config_entry_title(data),
         data=data,
         options={
             "filter": {
@@ -267,6 +268,7 @@ async def test_options_step_connection_type_no_change(hass, connection_type):
 async def test_options_step_connection_type_change_to_direct(hass):
     config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD, "foo": "bar"})
     config_entry.add_to_hass(hass)
+    assert config_entry.title == "Yaha Cloud (test)"
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
@@ -285,6 +287,7 @@ async def test_options_step_connection_type_change_to_direct(hass):
     await hass.async_block_till_done()
 
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert config_entry.title == "YSH: Direct"
     assert dict(config_entry.data) == {
         "connection_type": "direct",
         "cloud_instance": {"id": "test", "password": "secret", "token": "foo"},
@@ -295,6 +298,7 @@ async def test_options_step_connection_type_change_to_direct(hass):
 async def test_options_step_connection_type_change_to_cloud(hass, aioclient_mock):
     config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT})
     config_entry.add_to_hass(hass)
+    assert config_entry.title == "YSH: Direct"
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
@@ -334,6 +338,7 @@ async def test_options_step_connection_type_change_to_cloud(hass, aioclient_mock
     )
 
     assert result4["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert config_entry.title == "Yaha Cloud (test)"
     assert dict(config_entry.data) == {
         "connection_type": "cloud",
         "cloud_instance": {"id": "test", "password": "change_to_cloud", "token": "foo"},
@@ -370,6 +375,7 @@ async def test_options_step_connection_type_change_to_cloud_again(hass, aioclien
     )
 
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert config_entry.title == "Yaha Cloud (again)"
     assert dict(config_entry.data) == {
         "connection_type": "cloud",
         "cloud_instance": {"id": "again", "password": "secret", "token": "foo"},

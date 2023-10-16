@@ -215,7 +215,9 @@ class OptionsFlowHandler(OptionsFlow):
                     _LOGGER.exception("Failed to register instance in Yandex Smart Home cloud")
 
             if not errors:
-                self.hass.config_entries.async_update_entry(self._entry, data=self._data, options=self._options)
+                self.hass.config_entries.async_update_entry(
+                    self._entry, title=config_entry_title(self._data), data=self._data, options=self._options
+                )
                 return self.async_create_entry(data=self._options)
 
         return self.async_show_form(
