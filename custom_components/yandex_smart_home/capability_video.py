@@ -91,7 +91,7 @@ class VideoStreamCapability(AbstractCapability):
 
         stream.add_provider(StreamType.HLS)
 
-        if MAJOR_VERSION == 2022 and MINOR_VERSION >= 7:
+        if (MAJOR_VERSION == 2022 and MINOR_VERSION >= 7) or MAJOR_VERSION >= 2023:
             await stream.start()
         else:
             # noinspection PyAsyncCall
