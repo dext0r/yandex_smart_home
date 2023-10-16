@@ -4,11 +4,10 @@ from typing import Any, Callable, Coroutine
 
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.util.decorator import Registry
 
 from .const import ATTR_CAPABILITY, ATTR_ERROR_CODE, EVENT_DEVICE_ACTION
-from .device import Device
+from .device import Device, async_get_device_states, async_get_devices
 from .helpers import ActionNotAllowed, APIError, RequestData
 from .schema import (
     ActionRequest,
@@ -16,9 +15,7 @@ from .schema import (
     ActionResultCapability,
     ActionResultCapabilityState,
     ActionResultDevice,
-    DeviceDescription,
     DeviceList,
-    DeviceState,
     DeviceStates,
     Error,
     FailedActionResult,
@@ -38,8 +35,6 @@ HANDLERS: Registry[
         Coroutine[Any, Any, ResponsePayload | None],
     ],
 ] = Registry()
-
-PING_REQUEST_USER_ID = "ping"
 
 
 async def async_handle_request(hass: HomeAssistant, data: RequestData, action: str, payload: str) -> Response:
@@ -67,25 +62,9 @@ async def async_device_list(hass: HomeAssistant, data: RequestData, _payload: st
 
     https://yandex.ru/dev/dialogs/smart-home/doc/reference/get-devices.html
     """
-    devices: list[DeviceDescription] = []
-    ent_reg = entity_registry.async_get(hass)
-    dev_reg = device_registry.async_get(hass)
-    area_reg = area_registry.async_get(hass)
-
-    for state in hass.states.async_all():
-        device = Device(hass, data.entry_data, state.entity_id, state)
-        if not device.should_expose:
-            continue
-
-        if (description := await device.describe(ent_reg, dev_reg, area_reg)) is not None:
-            devices.append(description)
-        else:
-            _LOGGER.debug(f"Missing capabilities and properties for {device.id}")
-
-    if data.request_user_id != PING_REQUEST_USER_ID:
-        data.entry_data.discover_devices()
-
     assert data.request_user_id
+    devices = await async_get_devices(hass, data.entry_data)
+    data.entry_data.discover_devices()
     return DeviceList(user_id=data.request_user_id, devices=devices)
 
 
@@ -96,18 +75,7 @@ async def async_devices_query(hass: HomeAssistant, data: RequestData, payload: s
     https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-devices-query.html
     """
     request = StatesRequest.parse_raw(payload)
-    states: list[DeviceState] = []
-
-    for device_id in [rd.id for rd in request.devices]:
-        device = Device(hass, data.entry_data, device_id, hass.states.get(device_id))
-        if not device.should_expose:
-            _LOGGER.warning(
-                f"State requested for unexposed entity {device.id}. Please either expose the entity via "
-                f"filters in component configuration or delete the device from Yandex."
-            )
-
-        states.append(device.query())
-
+    states = await async_get_device_states(hass, data.entry_data, [rd.id for rd in request.devices])
     return DeviceStates(devices=states)
 
 

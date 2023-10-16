@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Coroutine, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Coroutine, TypeVar
 
 from aiohttp.web import HTTPServiceUnavailable, Request, Response, json_response
 from homeassistant.components.http import HomeAssistantView
@@ -10,8 +10,8 @@ from homeassistant.core import callback
 
 from . import handlers
 from .const import DOMAIN
+from .device import async_get_devices
 from .helpers import RequestData
-from .schema import DeviceList
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -93,9 +93,8 @@ class YandexSmartHomePingView(YandexSmartHomeView):
     @async_http_request
     async def get(self, hass: HomeAssistant, _request: Request, data: RequestData) -> Response:
         """Handle Yandex Smart Home GET requests."""
-        data.request_user_id = handlers.PING_REQUEST_USER_ID
-        dl = cast(DeviceList, await handlers.async_device_list(hass, data, ""))
-        return Response(text=f"OK: {len(dl.devices)}", status=200)
+        devices = await async_get_devices(hass, data.entry_data)
+        return Response(text=f"OK: {len(devices)}", status=200)
 
 
 class YandexSmartHomeAPIView(YandexSmartHomeView):

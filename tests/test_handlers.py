@@ -10,7 +10,6 @@ from custom_components.yandex_smart_home import YandexSmartHome, handlers
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
 from custom_components.yandex_smart_home.const import CONF_DEVICES_DISCOVERED, DOMAIN, EVENT_DEVICE_ACTION
-from custom_components.yandex_smart_home.handlers import PING_REQUEST_USER_ID
 from custom_components.yandex_smart_home.helpers import APIError, RequestData
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -77,7 +76,7 @@ async def test_handler_devices_query(hass, caplog):
     hass.states.async_set(sensor.entity_id, sensor.state, sensor.attributes)
 
     entry_data = MockConfigEntryData(entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]))
-    data = RequestData(entry_data, Context(), PING_REQUEST_USER_ID, REQ_ID)
+    data = RequestData(entry_data, Context(), "user", REQ_ID)
     payload = json.dumps(
         {"devices": [{"id": switch_1.entity_id}, {"id": switch_not_expose.entity_id}, {"id": "invalid.foo"}]}
     )
@@ -97,18 +96,20 @@ async def test_handler_devices_query(hass, caplog):
             {"id": "invalid.foo", "error_code": "DEVICE_UNREACHABLE"},
         ]
     }
-    assert (await handlers.async_device_list(hass, data, "")).as_dict() == {
-        "user_id": "ping",
-        "devices": [
-            {
-                "id": "switch.test_1",
-                "name": "test 1",
-                "type": "devices.types.switch",
-                "capabilities": [{"type": "devices.capabilities.on_off", "retrievable": True, "reportable": True}],
-                "device_info": {"model": "switch.test_1"},
-            }
-        ],
-    }
+
+    with patch.object(entry_data, "discover_devices"):
+        assert (await handlers.async_device_list(hass, data, "")).as_dict() == {
+            "user_id": "user",
+            "devices": [
+                {
+                    "id": "switch.test_1",
+                    "name": "test 1",
+                    "type": "devices.types.switch",
+                    "capabilities": [{"type": "devices.capabilities.on_off", "retrievable": True, "reportable": True}],
+                    "device_info": {"model": "switch.test_1"},
+                }
+            ],
+        }
 
     assert caplog.messages[-3:] == [
         "State requested for unexposed entity switch.not_expose. Please either expose the entity via filters in "
@@ -126,9 +127,6 @@ async def test_handler_devices_discovery(hass_platform_direct):
     assert entry_data.entry.data.get(CONF_DEVICES_DISCOVERED) is None
 
     with patch("homeassistant.config_entries.ConfigEntries.async_update_entry") as mock_update_entry:
-        await handlers.async_device_list(hass, RequestData(entry_data, Context(), PING_REQUEST_USER_ID, REQ_ID), "")
-        mock_update_entry.assert_not_called()
-
         await handlers.async_device_list(hass, RequestData(entry_data, Context(), "foo", REQ_ID), "")
         mock_update_entry.assert_called_once()
 

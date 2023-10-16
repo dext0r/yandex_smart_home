@@ -31,6 +31,7 @@ from homeassistant.components import (
 )
 from homeassistant.const import ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES, CONF_NAME, STATE_UNAVAILABLE
 from homeassistant.core import State, callback
+from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.helpers.template import Template
 
 from . import (  # noqa: F401
@@ -424,3 +425,42 @@ class Device:
             template.hass = self._hass
 
         return template
+
+
+async def async_get_devices(hass: HomeAssistant, entry_data: ConfigEntryData) -> list[DeviceDescription]:
+    """Return list of supported user devices."""
+    devices: list[DeviceDescription] = []
+    ent_reg = entity_registry.async_get(hass)
+    dev_reg = device_registry.async_get(hass)
+    area_reg = area_registry.async_get(hass)
+
+    for state in hass.states.async_all():
+        device = Device(hass, entry_data, state.entity_id, state)
+        if not device.should_expose:
+            continue
+
+        if (description := await device.describe(ent_reg, dev_reg, area_reg)) is not None:
+            devices.append(description)
+        else:
+            _LOGGER.debug(f"Missing capabilities and properties for {device.id}")
+
+    return devices
+
+
+async def async_get_device_states(
+    hass: HomeAssistant, entry_data: ConfigEntryData, device_ids: list[str]
+) -> list[DeviceState]:
+    """Return list of the states of user devices."""
+    states: list[DeviceState] = []
+
+    for device_id in device_ids:
+        device = Device(hass, entry_data, device_id, hass.states.get(device_id))
+        if not device.should_expose:
+            _LOGGER.warning(
+                f"State requested for unexposed entity {device.id}. Please either expose the entity via "
+                f"filters in component configuration or delete the device from Yandex."
+            )
+
+        states.append(device.query())
+
+    return states
