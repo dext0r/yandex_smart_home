@@ -50,6 +50,8 @@ theme:
   features:
     - navigation.tracking
     - navigation.top
+    - navigation.footer
+    - content.code.copy
 
 extra:
   social:
