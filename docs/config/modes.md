@@ -16,7 +16,7 @@
 Для их устранения задайте соответствия режимов УДЯ <--> HA используя пример ниже, 
 или напишите в [чат](https://t.me/yandex_smart_home) в Telegram, и эта ошибка будет устранена в следующей версии.
 
-!!! example "Пример"
+!!! example "Пример сопоставления режимов"
     ```yaml
     yandex_smart_home:
       entity_config:
@@ -41,31 +41,32 @@
               stationary: ['OFF']
     ```
 
-* `scene`, `fan_speed`, `swing` - режим/функция со стороны УДЯ ([все функции](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html) + `scene` для светильников)
-* `auto`, `stationary`, `alarm` - значение режима со стороны УДЯ ([возможные значения режимов](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html), [возможные значения сцен](#scene))
+* `scene`, `fan_speed`, `swing` - режим/функция со стороны УДЯ ([все функции](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html) + `scene` для светильников `light.X`)
+* `auto`, `stationary` - значение режима со стороны УДЯ ([возможные значения](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html))
+* `sunrise`, `alarm`, `fantasy` - (только для функции `scene`) название сцены со стороны УДЯ ([возможные значения](#scene))
 * Списки значений (`Wake Up`, `Swing` и т.п.) - значения атрибута объекта в Home Assistant, которое соответствует значению режима в УДЯ.
-  Задавать лучше строками в кавычках.
+  Задавать лучше строками в кавычках. Узнать все поддерживаемые режимы можно в атрибутах объекта через (Панель разработчика --> [Состояния](https://my.home-assistant.io/redirect/developer_states/)).
 
-Ниже детальная информация по поддерживаемым режимам и их значениям.
+## Автоматически определяемые режимы { id=internal }
 
 ### thermostat
 Установка температурного режима работы климатической техники, например, в кондиционере.
 
-* Поддерживаемые домены: `climate`
+* Домены: `climate`
 * Рекомендуемые значения режимов: `heat`, `cool`, `auto`, `dry`, `fan_only`
 * Атрибут в Home Assistant: `hvac_modes`
 
 ### swing
 Установка направления воздуха в климатической технике.
 
-* Поддерживаемые домены: `climate`
+* Домены: `climate`
 * Рекомендуемые значение режимов: `vertical`, `horizontal`, `stationary`, `auto`
 * Атрибут в Home Assistant: `swing_modes`
 
 ### program
 Установка какой-либо программы работы.
 
-* Поддерживаемые домены: `humidifier`, `fan`
+* Домены: `humidifier`, `fan`
 * Рекомендуемые значения режимов: `normal`, `eco`, `min`, `turbo`, `medium`, `max`, `quiet`, `auto`, `high`
 * Атрибут в Home Assistant:
     * `humidifier`: `available_modes`
@@ -74,7 +75,7 @@
 ### fan_speed
 Установка режима работы скорости вентиляции, например, в кондиционере, вентиляторе или обогревателе.
 
-* Поддерживаемые домены: `fan`, `climate`
+* Домены: `fan`, `climate`
 * Рекомендуемые значения режимов: `auto`, `quiet`, `low`, `medium`, `high`, `turbo`
 * Атрибут в Home Assistant:
     * `fan`: `preset_modes` (если не поддерживается установка скорости в процентах, сервис `fan.set_speed_percentage`)
@@ -102,21 +103,21 @@
 ### cleanup_mode
 Установка режима уборки.
 
-* Поддерживаемые домены: `vacuum`
+* Домены: `vacuum`
 * Рекомендуемые значения режимов: `auto`, `turbo`, `min`, `max`, `express`, `normal`, `quiet`
 * Атрибут в Home Assistant: `fan_speed_list`
 
 ### input_source
 Установка источника сигнала.
 
-* Поддерживаемые домены: `media_player`
+* Домены: `media_player`
 * Рекомендуемые значения режимов: `one`, `two`, `three`, `four`, `five`, `six`, `seven`, `eight`, `nine`, `ten`
 * Атрибут в Home Assistant: `source_list`
 
 ### scene
-Изменение режима работы светящихся элементов устройства в соответствии с предустановленными темами и сценариями освещения.
+Изменение режима работы светящихся элементов устройства в соответствии с предустановленными темами и сценариями освещения ([подробнее](../devices/light.md#scene)).
 
-* Поддерживаемые домены: `light`
+* Домены: `light`
 * Атрибут в Home Assistant: `effect_list`
 * Значения режимов:
 

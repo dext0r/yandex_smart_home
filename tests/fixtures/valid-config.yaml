@@ -165,3 +165,13 @@ yandex_smart_home:
       custom_modes:
         input_source:
           state_entity_id: sensor.water_valve_input_source
+    switch.templates:
+      custom_ranges:
+        open:
+          state_template: foo
+      custom_toggles:
+        backlight:
+          state_template: bar
+      custom_modes:
+        input_source:
+          state_template: buz

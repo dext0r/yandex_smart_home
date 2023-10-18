@@ -53,12 +53,14 @@ ENTITY_RANGE_SCHEMA = vol.Schema(
 
 ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema(
     {
-        vol.All(cv.string, ycv.mode_instance): vol.Schema(
+        vol.All(cv.string, ycv.mode_instance): vol.All(
             {
                 vol.Optional(const.CONF_ENTITY_CUSTOM_MODE_SET_MODE): cv.SERVICE_SCHEMA,
                 vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
                 vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-            }
+                vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE): cv.template,
+            },
+            ycv.custom_capability_state,
         )
     }
 )
@@ -66,16 +68,16 @@ ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema(
 ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema(
     {
         vol.All(cv.string, ycv.range_instance): vol.All(
-            vol.Schema(
-                {
-                    vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE): vol.Any(cv.SERVICE_SCHEMA),
-                    vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
-                    vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
-                    vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
-                    vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-                    vol.Optional(const.CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
-                }
-            ),
+            {
+                vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE): vol.Any(cv.SERVICE_SCHEMA),
+                vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
+                vol.Optional(const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE): vol.Any(cv.SERVICE_SCHEMA),
+                vol.Optional(const.CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
+                vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE): cv.template,
+            },
+            ycv.custom_capability_state,
         )
     }
 )
@@ -83,13 +85,15 @@ ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema(
 
 ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema(
     {
-        vol.All(cv.string, ycv.toggle_instance): vol.Schema(
+        vol.All(cv.string, ycv.toggle_instance): vol.All(
             {
                 vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON): cv.SERVICE_SCHEMA,
                 vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF): cv.SERVICE_SCHEMA,
                 vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
                 vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-            }
+                vol.Optional(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE): cv.template,
+            },
+            ycv.custom_capability_state,
         )
     }
 )

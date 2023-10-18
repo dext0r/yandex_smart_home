@@ -31,6 +31,7 @@ nav:
   - Квазар и "Дом с Алисой": quasar.md
   - Поддерживаемые устройства: supported-devices.md
   - Часто задаваемые вопросы: faq.md
+  - Обратная совместимость: breaking-changes.md
   - Рецепты: recipes.md
 
 theme:

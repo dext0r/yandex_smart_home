@@ -373,6 +373,49 @@ async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):
     assert notifier._template_changes_tracker is None
 
 
+async def test_notifier_track_templates_exception(hass_platform, mock_call_later, caplog):
+    hass = hass_platform
+    entry_data = MockConfigEntryData(
+        hass=hass,
+        entity_config={
+            "light.kitchen": {
+                const.CONF_ENTITY_CUSTOM_RANGES: {
+                    "volume": {
+                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template(
+                            "{{ 100 / states('sensor.v')|int(10) }}"
+                        )
+                    }
+                },
+            },
+        },
+        entity_filter=generate_entity_filter(include_entity_globs=["*"]),
+    )
+
+    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_states())
+    await notifier.async_setup()
+
+    caplog.clear()
+    assert notifier._pending.empty is True
+    hass.states.async_set("sensor.v", "5")
+    await hass.async_block_till_done()
+    pending = await notifier._pending.async_get_all()
+    assert len(pending.keys()) == 1
+
+    caplog.clear()
+    hass.states.async_set("sensor.v", "0")
+    await hass.async_block_till_done()
+    assert notifier._pending.empty is True
+    assert caplog.messages[-1] == "Error while processing template: {{ 100 / states('sensor.v')|int(10) }}"
+
+    caplog.clear()
+    hass.states.async_set("sensor.v", "6")
+    await hass.async_block_till_done()
+    pending = await notifier._pending.async_get_all()
+    assert len(pending.keys()) == 1
+
+    await notifier.async_unload()
+
+
 async def test_notifier_state_changed(hass_platform, mock_call_later, caplog):
     hass = hass_platform
     entry_data = MockConfigEntryData(

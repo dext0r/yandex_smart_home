@@ -7,40 +7,128 @@
 
 Поддерживается несколько видов пользовательских умений:
 
-* Режимы (`mode`) - переключение режимов работы устройства (режим работы кондиционера, уборки, источника сигнала и т.п.).
+* [Режимы](#custom-modes) (`mode`) - переключение режимов работы устройства (режим работы кондиционера, уборки, источника сигнала и т.п.).
   Настраиваются через словарь `custom_modes`.
-* Переключатели (`toggle`) - управление функциями, которые включаются и выключаются (пауза, вращение вентилятора, ионизация и т.п.).
+* [Переключатели](#custom-toggles) (`toggle`) - управление функциями, которые включаются и выключаются (пауза, вращение вентилятора, ионизация и т.п.).
   Настраиваются через словарь `custom_toggles`.
-* Выбор из диапазона (`range`) - управление параметрами устройства, которые имеют диапазон (яркость лампы, громкость звука, температура нагревателя).
+* [Выбор из диапазона](#custom-ranges) (`range`) - управление параметрами устройства, которые имеют диапазон (яркость лампы, громкость звука, температура нагревателя).
   Настраиваются через словарь `custom_ranges`.
 
 В каждое умение входит ряд функций (например функция `volume` в умении `range`). 
-Для одного устройства может быть **несколько** функций в разных умениях (или в одном). 
+У одного устройства может быть **несколько** функций в разных умениях (или в одном). 
 Дубликаты функций невозможны (т.е. `volume` может быть только одна для одного устройства).
 
-Функции никак не привязаны к типу устройства, а это значит, что функция "громкость" может быть, например, у выключателя или увлажнителя. 
+Функции никак не привязаны к типу устройства, а это значит, что функцию "громкость" можно назначить, например, для выключателя или увлажнителя. 
 Это позволяет реализовывать **[безумный набор умений](../assets/images/crazy-caps.png)** в одном устройстве.
 
-Для всех умений есть общие и специфичные параметрами. Специфичные параметры смотрите в разделе посвящённому конкретному умению.
+!!! example "Пример настройки пользовательских умений"
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        media_player.tv:
+          custom_ranges:
+            channel:
+              set_value:
+                service: media_player.play_media
+                entity_id: media_player.tv
+                data:
+                  media_content_type: channel
+                  media_content_id: '{{ value }}'
+            volume:
+              increase_value:
+                service: script.increase_volume
+              decrease_value:
+                service: script.decrease_volume
+        climate.room_ac:
+          custom_toggles:
+            backlight:
+              state_entity_id: climate.room_ac
+              state_attribute: backlight
+            mute:
+              state_template: '{{ is_state("switch.room_ac_beeper", "off") }}'
+              turn_on:
+                service: switch.turn_off
+                entity_id: switch.room_ac_beeper
+              turn_off:
+                service: switch.turn_on
+                entity_id: switch.room_ac_beeper
+        media_player.tv:
+          modes:
+            input_source:
+              one: ['HW1'] 
+              two: ['HW2']
+          custom_modes:
+            input_source:
+              state_entity_id: sensor.tv_input_source
+              set_mode:
+                service: script.change_tv_input_source
+                data:
+                  input_source: '{{ mode }}'
+    ```
 
-## Общие параметры { id=parameters }
-* `state_entity_id`: Объект в состоянии или атрибуте которого хранится текущее значение умения (громкость, яркость, режим и т.п.).
-  По умолчанию тот, для которого настраивается пользовательское умение.
-* `state_attribute`: Атрибут, в котором хранится текущее значение умения. Если не задан - значение берётся из состояния объекта.
+## Текущее состояние умения { id=state }
+Желательно, чтобы УДЯ знал о текущем состоянии умения. В противном случае состояние не будет отражено в приложении "Дом с Алисой", а Алиса не озвучит его на вопрос "Что с устройством". Отсутствие текущего состояния не влияет на возможность управления умением.
 
-Допускается одновременное использование `state_entity_id` и `state_attribute`. Если ни один из этих параметров не задан - текущее значение функции передаваться не будет.
+Способы задать источник состояния:
+
+* `state_entity_id`: Объект, состояние которого содержит состояние умения
+!!! example "Пример использования state_entity_id"
+    ```yaml
+    # Состояние функции "Блокировка управления" определяется из состояния switch.air_purifier_child_lock
+    yandex_smart_home:
+      entity_config:
+        fan.air_purifier:
+          custom_toggles:
+            controls_locked: 
+              state_entity_id: switch.air_purifier_child_lock
+              turn_on: ...
+              turn_off: ...
+    ``` 
+  
+* `state_entity_id` + `state_attribute`: Атрибут объекта `state_entity_id`, значение которого содержит состояния умения
+!!! example "Пример использования state_entity_id + state_attribute"
+    ```yaml
+    # Состояние функции "Скорость работы" определяется из значения атрибута water_level объекта vacuum.mop
+    yandex_smart_home:
+      entity_config:
+        vacuum.mop:
+          modes:
+            work_speed: 
+              eco: ['V1']
+              medium: ['V2']
+          custom_modes:
+            work_speed:
+              state_entity_id: vacuum.mop 
+              state_attribute: water_level
+              set_mode: ... 
+    ```
+    Примечание: `state_entity_id` может быть опущен, если его значение совпадает с объектом, для которого настраивается умение. Во всех примерах `state_entity_id`  указывается явно для избежания путаницы.
+
+* `state_template`: Для определения состояния умения используется результат вычисления шаблона
+!!! example "Пример использования state_template"
+    ```yaml
+    # Состояние функции "Отключение звука" определяется из инвертированного состояния switch.kettle_beeper 
+    yandex_smart_home:
+      entity_config:
+        water_heater.kettle:
+          custom_toggles:
+            mute:
+              state_template: '{{ is_state("switch.kettle_beeper", "off") }}'
+              turn_on: ...
+              turn_off: ...
+    ```
 
 ## Умения "Режимы работы" (custom_modes) { id=custom-modes }
-Выбирает режим работы устройства, при изменении которого будут выполняться произвольные сервисы. Смотрите список **[всех доступных функций](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html)**.
+Выбирает режим работы устройства, при изменении которого будет вызываться определённый сервис. Смотрите список **[всех доступных функций](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html)**.
 
 Примеры: кофеварка, которая варит кофе скриптом `script.makemeonecupofcoffee` или моющий пылесос Xiaomi, в котором хочется управлять количеством подаваемой воды через сервис `xiaomi_vacuum.set_water_level`.
 
 Для пользовательского режима автоматического связывание между значениями УДЯ и Home Assistant не производится. Вам нужно
 вручную [задать соответствия](../config/modes.md) через `modes`!
 
-Специфичные параметры:
+Параметры:
 
-* `set_mode`: Вызываемый сервис при выборе режима в УДЯ. В переменной `mode` - значение режима на стороне Home Assistant. Если не задан - устройство управляться не будет.
+* `set_mode`: Вызываемый сервис при выборе режима в УДЯ. В переменной `mode` - значение режима на стороне Home Assistant. Если не задан - режим из УДЯ меняться не будет.
     
     !!! example "Пример"
         ```yaml
@@ -54,7 +142,7 @@
 ### Примеры { id=custom-modes-examples }
 #### Моющий пылесос { id=custom-modes-example-vacuum }
 Моющий пылесос Xiaomi (`vacuum.xiaomi_mop`), переключение `set_water_level` через функцию "Скорость работы"
-!!! summary "Атрибуты"
+!!! summary "Атрибуты у vacuum.xiaomi_mop"
     ```yaml
     water_level: High
     water_level_list:
@@ -75,6 +163,7 @@
               max: ['High']
           custom_modes:
             work_speed:
+              state_entity_id: vacuum.xiaomi_mop
               state_attribute: water_level
               set_mode:
                 service: xiaomi_vacuum.set_water_level
@@ -103,9 +192,9 @@
     ```
 
 ## Умения "Переключатели" (custom_toggles) { id=custom-toggles }
-Управление функциями устройств, которые включаются и выключаются. Смотрите список **[всех доступных функций](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html)**.
+Управление функциями устройств, которые включаются и выключаются. Смотрите список **[всех доступных функций](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html)**. В [состоянии](#state) ожидается логическое значение (`on/off/yes/no/True/False/1/0`).
 
-Специфичные параметры:
+Параметры:
 
 * `turn_on` и `turn_off`: Вызываемые сервисы при включении/выключении функции в УДЯ. Если не задан один или несколько сервисов - соответствующее действие выполняться не будет.
     
@@ -123,7 +212,7 @@
 #### Бризер { id=custom-toggles-example-breezer }
 Управление функцией подогрева для бризера Xiaomi (`fan.xiaomi_airfresh_va4`) через функцию "Поддержание тепла"
 
-!!! summary "Атрибуты"
+!!! summary "Атрибуты fan.xiaomi_airfresh_va4"
     ```yaml
     model: zhimi.airfresh.va4
     ptc: false  # а может быть true (on/off тоже подходит)
@@ -136,6 +225,7 @@
         fan.xiaomi_airfresh_va4:
           custom_toggles:
             keep_warm:
+              state_entity_id: fan.xiaomi_airfresh_va4
               state_attribute: ptc
               turn_on:
                 service: xiaomi_miio_airpurifier.fan_set_ptc_on
@@ -146,7 +236,7 @@
     ```
 
 ## Умения "Выбор значения из диапазона" (custom_ranges) { id=custom-ranges }
-Управление параметрами устройства, которые имеют диапазон регулировки (громкость, яркость, температура). Смотрите список **[всех доступных функций](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html)**.
+Управление параметрами устройства, которые имеют диапазон регулировки (громкость, яркость, температура). Смотрите список **[всех доступных функций](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html)**. В [состоянии](#state) ожидается числовое значение.
 
 Специфичные параметры:
 
@@ -179,13 +269,13 @@
 Для устройств, поддерживающих установку абсолютного значения, достаточно задать только `set_value`.
 А для устройств с поддержкой только относительного (например IR пульт) - `increase_value` и `decrease_value`.
 
-Если ни один сервис не задан - устройство управляться не будет.
+Если ни один сервис не задан - умение из УДЯ управляться не будет.
 
 ### Примеры { id=custom-ranges-examples }
 #### Бризер { id=custom-ranges-example-breezer }
 Изменение параметра `favorit_speed` на бризере Xiaomi (`fan.xiaomi_airfresh_a1`)
 
-!!! summary "Атрибуты"
+!!! summary "Атрибуты fan.xiaomi_airfresh_a1"
     ```yaml
     model: dmaker.airfresh.a1
     favorite_speed: 80
@@ -198,6 +288,7 @@
         fan.xiaomi_airfresh_a1:
           custom_ranges:
             volume:  # как самое подходящее
+              state_entity_id: fan.xiaomi_airfresh_a1 
               state_attribute: favorit_speed
               set_value:
                 service: xiaomi_miio_airpurifier.fan_set_favorite_speed

@@ -47,7 +47,7 @@ async def test_valid_config(hass):
     }
 
     entity_config = config[DOMAIN]["entity_config"]
-    assert len(entity_config) == 14
+    assert len(entity_config) == 15
 
     assert entity_config["switch.kitchen"] == {
         "name": "Выключатель",
@@ -168,6 +168,12 @@ async def test_valid_config(hass):
 
     assert entity_config["climate.ac"] == {
         "turn_on": {"data": {"mode": "cool"}, "entity_id": ["climate.ac"], "service": "climate.turn_on"},
+    }
+
+    assert entity_config["switch.templates"] == {
+        "custom_modes": {"input_source": {"state_template": Template("buz", hass)}},
+        "custom_ranges": {"open": {"state_template": Template("foo", hass)}},
+        "custom_toggles": {"backlight": {"state_template": Template("bar", hass)}},
     }
 
 

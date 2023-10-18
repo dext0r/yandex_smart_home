@@ -113,6 +113,38 @@ async def test_capability_custom_value(hass):
     assert cap.retrievable is False
     assert cap.get_value() is None
 
+    cap = get_custom_capability(
+        hass,
+        BASIC_ENTRY_DATA,
+        {
+            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1 + 2 }}"),
+        },
+        CapabilityType.RANGE,
+        RangeCapabilityInstance.HUMIDITY,
+        "foo",
+    )
+    assert cap.retrievable is True
+    assert cap.get_value() == 3
+
+    cap = get_custom_capability(
+        hass,
+        BASIC_ENTRY_DATA,
+        {
+            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1/0 }}"),
+        },
+        CapabilityType.RANGE,
+        RangeCapabilityInstance.HUMIDITY,
+        "foo",
+    )
+    assert cap.retrievable is True
+    with pytest.raises(APIError) as e:
+        cap.get_value()
+    assert e.value.code == ResponseCode.INVALID_VALUE
+    assert (
+        e.value.message == "Unable to get current value for humidity instance of foo: "
+        "TemplateError('ZeroDivisionError: division by zero')"
+    )
+
 
 async def test_capability_custom_mode(hass):
     cap = get_custom_capability(

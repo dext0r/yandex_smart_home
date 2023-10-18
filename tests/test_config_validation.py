@@ -1,5 +1,6 @@
 from homeassistant.config import YAML_CONFIG_FILE
 from homeassistant.helpers.reload import async_integration_yaml_config
+import pytest
 from pytest_homeassistant_custom_component.common import patch_yaml_files
 
 from custom_components.yandex_smart_home import DOMAIN
@@ -189,3 +190,61 @@ yandex_smart_home:
     with patch_yaml_files(files):
         await async_integration_yaml_config(hass, DOMAIN)
         assert "Property type 'button' is not supported" in caplog.messages[-1]
+
+
+@pytest.mark.parametrize(
+    "key,instance",
+    [
+        ("custom_ranges", "volume"),
+        ("custom_toggles", "mute"),
+        ("custom_modes", "swing"),
+    ],
+)
+async def test_custom_capability_state(hass, key, instance, caplog):
+    files = {
+        YAML_CONFIG_FILE: f"""
+yandex_smart_home:
+  entity_config:
+    media_player.test:
+      {key}:
+        {instance}:
+          state_entity_id: sensor.x   
+          state_template: foo
+"""
+    }
+    with patch_yaml_files(files):
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+    assert "state_entity_id/state_attribute and state_template are mutually exclusive" in caplog.messages[-1]
+
+    files = {
+        YAML_CONFIG_FILE: f"""
+yandex_smart_home:
+  entity_config:
+    media_player.test:
+      {key}:
+        {instance}:
+          state_attribute: bar  
+          state_template: foo
+"""
+    }
+    with patch_yaml_files(files):
+        caplog.clear()
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+    assert "state_entity_id/state_attribute and state_template are mutually exclusive" in caplog.messages[-1]
+
+    files = {
+        YAML_CONFIG_FILE: f"""
+yandex_smart_home:
+  entity_config:
+    media_player.test:
+      {key}:
+        {instance}:
+          state_entity_id: sensor.x   
+          state_attribute: bar
+          state_template: foo
+"""
+    }
+    with patch_yaml_files(files):
+        caplog.clear()
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+    assert "state_entity_id/state_attribute and state_template are mutually exclusive" in caplog.messages[-1]

@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import itertools
 import logging
-from typing import TYPE_CHECKING, Any, Protocol, Self
+from typing import TYPE_CHECKING, Any, Protocol, Self, cast
 
 from homeassistant.const import STATE_OFF, STATE_UNKNOWN
 from homeassistant.core import callback
+from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.service import async_call_from_config
 from homeassistant.helpers.template import Template, forgiving_boolean
 
@@ -17,6 +18,7 @@ from .capability_toggle import ToggleCapability
 from .const import (
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE,
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE,
     CONF_ENTITY_CUSTOM_MODE_SET_MODE,
     CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
     CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE,
@@ -103,7 +105,13 @@ class CustomCapability(Capability[Any], Protocol):
         if self._value_template is None:
             return None
 
-        return self._value_template.async_render()
+        try:
+            return self._value_template.async_render()
+        except TemplateError as exc:
+            raise APIError(
+                ResponseCode.INVALID_VALUE,
+                f"Unable to get current value for {self.instance.value} instance of {self.device_id}: {exc!r}",
+            )
 
     def __repr__(self) -> str:
         """Return the representation."""
@@ -330,8 +338,11 @@ def get_value_template(device_id: str, capability_config: ConfigType) -> Templat
     """Return capability value template from capability configuration."""
     entity_id = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
     attribute = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
+    template = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE)
 
-    if attribute:
+    if template:
+        return cast(Template, template)
+    elif attribute:
         return Template("{{ state_attr('%s', '%s') }}" % (entity_id or device_id, attribute))
     elif entity_id:
         return Template("{{ states('%s') }}" % entity_id)

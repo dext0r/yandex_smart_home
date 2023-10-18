@@ -1,10 +1,13 @@
 """Helpers for config validation using voluptuous."""
+from __future__ import annotations
+
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.util.color import RGBColor
 import voluptuous as vol
 
+from . import const
 from .color import ColorName, rgb_to_int
 from .const import MediaPlayerFeature
 from .schema import (
@@ -19,6 +22,9 @@ from .schema import (
     ToggleCapabilityInstance,
 )
 from .unit_conversion import UnitOfPressure
+
+if TYPE_CHECKING:
+    from homeassistant.helpers import ConfigType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -161,3 +167,15 @@ def color_value(value: list[Any] | int) -> int:
         return rgb_to_int(RGBColor(*[int(v) for v in value]))
 
     raise vol.Invalid(f"Invalid value: {value!r}")
+
+
+def custom_capability_state(value: ConfigType) -> ConfigType:
+    """Validate keys for custom capability."""
+    state_entity_id = value.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
+    state_attribute = value.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
+    state_template = value.get(const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE)
+
+    if state_template and (state_entity_id or state_attribute):
+        raise vol.Invalid("state_entity_id/state_attribute and state_template are mutually exclusive")
+
+    return value

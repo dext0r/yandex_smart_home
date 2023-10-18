@@ -13,6 +13,7 @@ from aiohttp import JsonPayload, hdrs
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED
 from homeassistant.core import HassJob
+from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.aiohttp_client import SERVER_SOFTWARE, async_create_clientsession
 from homeassistant.helpers.event import TrackTemplate, async_call_later, async_track_template_result
 from homeassistant.helpers.template import Template
@@ -343,6 +344,12 @@ class YandexNotifier(ABC):
             return None
 
         for result in updates:
+            if isinstance(result.result, TemplateError):
+                _LOGGER.warning(f"Error while processing template: {result.template.template}", exc_info=result.result)
+                continue
+            if isinstance(result.last_result, TemplateError):
+                result.last_result = None
+
             old_value_template = Template(str(result.last_result), self._hass)
             new_value_template = Template(str(result.result), self._hass)
 

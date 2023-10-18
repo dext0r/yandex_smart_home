@@ -26,7 +26,7 @@ yandex_smart_home:
             service: switch.turn_off
             entity_id: switch.smartmi_humidifier_child_lock
         backlight: # подсветка
-          state_entity_id: select.smartmi_humidifier_led_brightness
+          state_template: '{{ not is_state("select.smartmi_humidifier_led_brightness", "off") }}'
           turn_on:
             service: select.select_option
             entity_id: select.smartmi_humidifier_led_brightness
@@ -55,7 +55,6 @@ yandex_smart_home:
       custom_toggles:
         backlight:
           state_entity_id: light.deerma_jsq2w_2976_indicator_light
-          state_attribute: indicator_light.on
           turn_on:
             service: light.turn_on
             entity_id: light.deerma_jsq2w_2976_indicator_light
@@ -63,8 +62,7 @@ yandex_smart_home:
             service: light.turn_off
             entity_id: light.deerma_jsq2w_2976_indicator_light
         mute:
-          state_entity_id: switch.deerma_jsq2w_2976_alarm
-          state_attribute: alarm
+          state_template: '{( is_state("switch.deerma_jsq2w_2976_alarm", "off") }}'
           turn_on:
             service: switch.turn_off
             entity_id: switch.deerma_jsq2w_2976_alarm
@@ -185,7 +183,7 @@ yandex_smart_home:
             service: switch.turn_off
             entity_id: switch.mi_air_purifier_3c_child_lock
         mute: # Звук
-          state_entity_id: switch.mi_air_purifier_3c_buzzer
+          state_template: '{( is_state("switch.mi_air_purifier_3c_buzzer", "off") }}'
           turn_on:
             service: switch.turn_off
             entity_id: switch.mi_air_purifier_3c_buzzer
@@ -206,6 +204,7 @@ yandex_smart_home:
             max: 100
             precision: 10
         volume: # Сохранённая скорость
+          state_entity_id: fan.mi_air_purifier_3c
           state_attribute: favorit_speed
           set_value:
             service: number.set_value
@@ -296,6 +295,7 @@ yandex_smart_home:
             entity_id: switch.skykettle_rk_m216s_enable_sound
       custom_ranges:
         temperature:
+          state_entity_id: water_heater.skykettle_rk_m216s
           state_attribute: temperature
           set_value:
             service: water_heater.set_temperature
@@ -490,6 +490,7 @@ yandex_smart_home:
       type: thermostat.ac
       custom_toggles:
         backlight: # подсветка
+          state_entity_id: climate.tasmota_ac
           state_attribute: light
           turn_on:
             service: tasmota_irhvac.set_light
