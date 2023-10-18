@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.const import SERVICE_RELOAD, UnitOfPressure
+from homeassistant.const import SERVICE_RELOAD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA
@@ -105,16 +105,16 @@ ENTITY_SCHEMA = vol.All(
             vol.Optional(const.CONF_TURN_OFF): vol.Any(cv.SERVICE_SCHEMA, cv.boolean),
             vol.Optional(const.CONF_DEVICE_CLASS): vol.In(const.DEVICE_CLASS_BUTTON),
             vol.Optional(const.CONF_FEATURES): vol.All(cv.ensure_list, ycv.entity_features),
-            vol.Optional(const.CONF_ENTITY_PROPERTIES, default=[]): [ENTITY_PROPERTY_SCHEMA],
+            vol.Optional(const.CONF_ENTITY_PROPERTIES): [ENTITY_PROPERTY_SCHEMA],
             vol.Optional(const.CONF_SUPPORT_SET_CHANNEL): cv.boolean,
             vol.Optional(const.CONF_STATE_UNKNOWN): cv.boolean,
             vol.Optional(const.CONF_COLOR_PROFILE): cv.string,
             vol.Optional(const.CONF_ERROR_CODE_TEMPLATE): cv.template,
-            vol.Optional(const.CONF_ENTITY_RANGE, default={}): ENTITY_RANGE_SCHEMA,
-            vol.Optional(const.CONF_ENTITY_MODE_MAP, default={}): ENTITY_MODE_MAP_SCHEMA,
-            vol.Optional(const.CONF_ENTITY_CUSTOM_MODES, default={}): ENTITY_CUSTOM_MODE_SCHEMA,
-            vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLES, default={}): ENTITY_CUSTOM_TOGGLE_SCHEMA,
-            vol.Optional(const.CONF_ENTITY_CUSTOM_RANGES, default={}): ENTITY_CUSTOM_RANGE_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_MODE_MAP): ENTITY_MODE_MAP_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_CUSTOM_MODES): ENTITY_CUSTOM_MODE_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_CUSTOM_TOGGLES): ENTITY_CUSTOM_TOGGLE_SCHEMA,
+            vol.Optional(const.CONF_ENTITY_CUSTOM_RANGES): ENTITY_CUSTOM_RANGE_SCHEMA,
         }
     )
 )
@@ -130,11 +130,9 @@ NOTIFIER_SCHEMA = vol.Schema(
 
 SETTINGS_SCHEMA = vol.Schema(
     {
-        vol.Optional(const.CONF_PRESSURE_UNIT, default=UnitOfPressure.MMHG.value): vol.Schema(
-            vol.All(str, ycv.pressure_unit)
-        ),
-        vol.Optional(const.CONF_BETA, default=False): cv.boolean,
-        vol.Optional(const.CONF_CLOUD_STREAM, default=False): cv.boolean,
+        vol.Optional(const.CONF_PRESSURE_UNIT): vol.Schema(vol.All(str, ycv.pressure_unit)),
+        vol.Optional(const.CONF_BETA): cv.boolean,
+        vol.Optional(const.CONF_CLOUD_STREAM): cv.boolean,
     }
 )
 
@@ -142,13 +140,11 @@ SETTINGS_SCHEMA = vol.Schema(
 YANDEX_SMART_HOME_SCHEMA = vol.All(
     vol.Schema(
         {
-            vol.Optional(const.CONF_NOTIFIER, default=[]): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
-            vol.Optional(const.CONF_SETTINGS, default={}): vol.All(lambda value: value or {}, SETTINGS_SCHEMA),
+            vol.Optional(const.CONF_NOTIFIER): vol.All(cv.ensure_list, [NOTIFIER_SCHEMA]),
+            vol.Optional(const.CONF_SETTINGS): vol.All(lambda value: value or {}, SETTINGS_SCHEMA),
             vol.Optional(const.CONF_FILTER): BASE_FILTER_SCHEMA,
-            vol.Optional(const.CONF_ENTITY_CONFIG, default={}): vol.All(
-                lambda value: value or {}, {cv.entity_id: ENTITY_SCHEMA}
-            ),
-            vol.Optional(const.CONF_COLOR_PROFILE, default={}): vol.Schema(
+            vol.Optional(const.CONF_ENTITY_CONFIG): vol.All(lambda value: value or {}, {cv.entity_id: ENTITY_SCHEMA}),
+            vol.Optional(const.CONF_COLOR_PROFILE): vol.Schema(
                 {cv.string: {vol.All(ycv.color_name): vol.All(ycv.color_value)}}
             ),
         },

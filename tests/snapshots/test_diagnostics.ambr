@@ -159,43 +159,19 @@
         }),
       }),
       'yaml_config': dict({
-        'color_profile': dict({
-        }),
         'entity_config': dict({
           'light.kitchen': dict({
-            'custom_modes': dict({
-            }),
-            'custom_ranges': dict({
-            }),
-            'custom_toggles': dict({
-            }),
-            'modes': dict({
-            }),
             'properties': list([
               dict({
                 'entity': 'sensor.invalid',
                 'type': 'temperature',
               }),
             ]),
-            'range': dict({
-            }),
           }),
           'switch.with_template': dict({
-            'custom_modes': dict({
-            }),
-            'custom_ranges': dict({
-            }),
-            'custom_toggles': dict({
-            }),
             'error_code_template': dict({
               '__type': "<class 'homeassistant.helpers.template.Template'>",
               'repr': 'Template<template=({{ "a" + "b" }}) renders=0>',
-            }),
-            'modes': dict({
-            }),
-            'properties': list([
-            ]),
-            'range': dict({
             }),
           }),
         }),
@@ -217,11 +193,6 @@
           ]),
         }),
         'notifier': '**REDACTED**',
-        'settings': dict({
-          'beta': False,
-          'cloud_stream': False,
-          'pressure_unit': 'mmHg',
-        }),
       }),
     }),
   })

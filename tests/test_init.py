@@ -35,7 +35,7 @@ async def test_valid_config(hass):
             "user_id": "e8701ad48ba05a91604e480dd60899a3",
         }
     ]
-    assert config[DOMAIN]["settings"] == {"pressure_unit": "mmHg", "beta": True, "cloud_stream": False}
+    assert config[DOMAIN]["settings"] == {"pressure_unit": "mmHg", "beta": True}
     assert config[DOMAIN]["color_profile"] == {"test": {"red": 16711680, "green": 65280, "warm_white": 3000}}
     assert config[DOMAIN]["filter"] == {
         "include_domains": ["switch", "light", "climate"],
@@ -51,22 +51,11 @@ async def test_valid_config(hass):
 
     assert entity_config["switch.kitchen"] == {
         "name": "Выключатель",
-        "custom_toggles": {},
-        "properties": [],
-        "custom_ranges": {},
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
     assert entity_config["light.living_room"] == {
         "name": "Люстра",
         "modes": {"scene": {"sunrise": ["Wake up"], "alarm": ["Blink"]}},
         "color_profile": "natural",
-        "custom_toggles": {},
-        "properties": [],
-        "custom_ranges": {},
-        "range": {},
-        "custom_modes": {},
     }
     assert entity_config["media_player.tv_lg"] == {
         "custom_ranges": {
@@ -85,11 +74,6 @@ async def test_valid_config(hass):
                 "decrease_value": {"service": "script.decrease_volume"},
             },
         },
-        "custom_toggles": {},
-        "properties": [],
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
     assert entity_config["fan.xiaomi_miio_device"] == {
@@ -101,11 +85,6 @@ async def test_valid_config(hass):
             {"type": "humidity", "attribute": "humidity"},
             {"type": "water_level", "attribute": "depth"},
         ],
-        "custom_toggles": {},
-        "custom_ranges": {},
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
     assert entity_config["climate.tion_breezer"] == {
@@ -121,32 +100,16 @@ async def test_valid_config(hass):
                 "max": ["6", "6.0"],
             }
         },
-        "custom_toggles": {},
-        "properties": [],
-        "custom_ranges": {},
-        "range": {},
-        "custom_modes": {},
     }
 
     assert entity_config["media_player.receiver"] == {
         "type": "devices.types.media_device.receiver",
         "range": {"max": 95.0, "min": 20.0, "precision": 2.0},
-        "custom_toggles": {},
-        "properties": [],
-        "custom_ranges": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
     assert entity_config["media_player.cast"] == {
         "support_set_channel": False,
         "features": ["volume_mute", "volume_set", "next_previous_track"],
-        "custom_toggles": {},
-        "properties": [],
-        "custom_ranges": {},
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
     assert entity_config["climate.ac_living_room"] == {
@@ -165,11 +128,6 @@ async def test_valid_config(hass):
                 "turn_off": {"service": "input_boolean.turn_off", "entity_id": ["input_boolean.ac_lighting"]},
             },
         },
-        "properties": [],
-        "custom_ranges": {},
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
     assert isinstance(entity_config["switch.r4s1_kettle_boil"]["error_code_template"], Template)
@@ -191,53 +149,25 @@ async def test_valid_config(hass):
         "properties": [
             {"type": "temperature", "entity": "climate.r4s1_kettle_temp", "attribute": "current_temperature"}
         ],
-        "custom_toggles": {},
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
     assert entity_config["cover.ir_cover"] == {
         "name": "Глупые шторы",
         "state_unknown": True,
-        "custom_toggles": {},
-        "properties": [],
-        "custom_ranges": {},
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
     assert entity_config["input_text.button"] == {
         "name": "Кнопка на автоматизации",
         "device_class": "button",
-        "custom_toggles": {},
-        "properties": [],
-        "custom_ranges": {},
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
     assert entity_config["lock.front_door"] == {
         "type": "devices.types.openable",
         "turn_on": False,
-        "custom_toggles": {},
-        "properties": [],
-        "custom_ranges": {},
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
     assert entity_config["climate.ac"] == {
         "turn_on": {"data": {"mode": "cool"}, "entity_id": ["climate.ac"], "service": "climate.turn_on"},
-        "custom_toggles": {},
-        "properties": [],
-        "custom_ranges": {},
-        "range": {},
-        "modes": {},
-        "custom_modes": {},
     }
 
 
@@ -261,7 +191,7 @@ async def test_reload_no_config_entry(hass, hass_admin_user):
     await async_setup_component(hass, DOMAIN, {DOMAIN: {}})
 
     component: YandexSmartHome = hass.data[DOMAIN]
-    assert component._yaml_config["entity_config"] == {}
+    assert component._yaml_config.get("entity_config") is None
 
     files = {
         YAML_CONFIG_FILE: """
