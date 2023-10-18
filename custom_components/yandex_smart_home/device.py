@@ -219,7 +219,7 @@ class Device:
 
     @callback
     def get_state_properties(self) -> list[StateProperty]:
-        """Return properties for the devic based on the state."""
+        """Return properties for the device based on the state."""
         properties: list[StateProperty] = []
 
         for PropertyT in STATE_PROPERTIES_REGISTRY:
