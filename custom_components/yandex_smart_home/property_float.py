@@ -37,6 +37,7 @@ from .schema import (
     FloatPropertyDescription,
     FloatPropertyInstance,
     FloatPropertyParameters,
+    FoodLevelFloatPropertyParameters,
     HumidityFloatPropertyParameters,
     IlluminationFloatPropertyParameters,
     PM1DensityFloatPropertyParameters,
@@ -201,6 +202,17 @@ class IlluminationProperty(FloatProperty, ABC):
     def parameters(self) -> IlluminationFloatPropertyParameters:
         """Return parameters for a devices list request."""
         return IlluminationFloatPropertyParameters()
+
+
+class FoodLevelPercentageProperty(FloatProperty, Protocol):
+    """Base class for food level (%) properties."""
+
+    instance: FloatPropertyInstance = FloatPropertyInstance.FOOD_LEVEL
+
+    @property
+    def parameters(self) -> FoodLevelFloatPropertyParameters:
+        """Return parameters for a devices list request."""
+        return FoodLevelFloatPropertyParameters()
 
 
 class WaterLevelPercentageProperty(FloatProperty, Protocol):

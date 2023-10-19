@@ -68,8 +68,10 @@ yandex_smart_home:
           entity: sensor.temperature_158d000444c824
         - type: humidity
           attribute: humidity
-        - type: water_level
+        - type: float.water_level
           attribute: depth
+        - type: event.water_level
+          attribute: water_level
     climate.tion_breezer:
       name: Проветриватель
       modes:

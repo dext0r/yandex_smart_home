@@ -37,7 +37,7 @@ def test_property_custom_registry(registry: DictRegistry[Any], instance):
 
 @pytest.mark.parametrize("domain", [sensor.DOMAIN, binary_sensor.DOMAIN])
 @pytest.mark.parametrize("instance", ALL_INSTANCES)
-async def test_property_custom(hass, domain, instance):
+async def test_property_custom_short(hass, domain, instance):
     state = State(f"{domain}.test", "10")
     hass.states.async_set(state.entity_id, state.state)
 
@@ -66,7 +66,7 @@ async def test_property_custom(hass, domain, instance):
     if instance in ["vibration", "open", "button", "motion", "smoke", "gas", "water_leak"]:
         assert prop.type == PropertyType.EVENT
     else:
-        if domain == binary_sensor.DOMAIN and instance in ["water_level", "battery_level"]:
+        if domain == binary_sensor.DOMAIN and instance in ["food_level", "water_level", "battery_level"]:
             assert prop.type == PropertyType.EVENT
         else:
             assert prop.type == PropertyType.FLOAT
@@ -83,6 +83,26 @@ async def test_property_custom(hass, domain, instance):
         assert prop.retrievable is False
     else:
         assert prop.retrievable is True
+
+
+@pytest.mark.parametrize("domain", [sensor.DOMAIN, binary_sensor.DOMAIN])
+@pytest.mark.parametrize("instance", EventPropertyInstance.__members__.values())
+async def test_property_custom_event(hass, domain, instance):
+    prop = get_custom_property(
+        hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: f"event.{instance}"}, f"{domain}.test"
+    )
+    assert prop.type == PropertyType.EVENT
+    assert prop.parameters.dict()["instance"] == instance
+
+
+@pytest.mark.parametrize("domain", [sensor.DOMAIN, binary_sensor.DOMAIN])
+@pytest.mark.parametrize("instance", FloatPropertyInstance.__members__.values())
+async def test_property_custom_float(hass, domain, instance):
+    prop = get_custom_property(
+        hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: f"float.{instance}"}, f"{domain}.test"
+    )
+    assert prop.type == PropertyType.FLOAT
+    assert prop.parameters.dict()["instance"] == instance
 
 
 async def test_property_custom_get_value_button_event(hass):

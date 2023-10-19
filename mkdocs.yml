@@ -14,7 +14,10 @@ nav:
       - Режимы/функции: config/modes.md
       - Тип подключения: config/connection-type.md
   - Устройства:
-      - Датчики: devices/sensor.md
+      - Датчики:
+          - О датчиках: devices/sensor/about.md
+          - Цифровые датчики: devices/sensor/float.md
+          - Событийные датчики: devices/sensor/event.md
       - Освещение: devices/light.md
       - Камеры: devices/camera.md
       - Кондиционеры: devices/climate.md

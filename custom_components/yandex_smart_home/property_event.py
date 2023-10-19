@@ -26,6 +26,8 @@ from .schema import (
     EventPropertyDescription,
     EventPropertyInstance,
     EventPropertyParameters,
+    FoodLevelEventPropertyParameters,
+    FoodLevelInstanceEvent,
     GasEventPropertyParameters,
     GasInstanceEvent,
     MotionEventPropertyParameters,
@@ -212,6 +214,23 @@ class BatteryLevelEventProperty(SensorEventProperty, EventProperty[BatteryLevelI
     def parameters(self) -> BatteryLevelEventPropertyParameters:
         """Return parameters for a devices list request."""
         return BatteryLevelEventPropertyParameters()
+
+
+class FoodLevelEventProperty(SensorEventProperty, EventProperty[FoodLevelInstanceEvent], ABC):
+    """Base class for event property that detect food level."""
+
+    instance = EventPropertyInstance.FOOD_LEVEL
+
+    _event_map = {
+        FoodLevelInstanceEvent.EMPTY: ["empty"],
+        FoodLevelInstanceEvent.LOW: ["low"],
+        FoodLevelInstanceEvent.NORMAL: ["normal"],
+    }
+
+    @property
+    def parameters(self) -> FoodLevelEventPropertyParameters:
+        """Return parameters for a devices list request."""
+        return FoodLevelEventPropertyParameters()
 
 
 class WaterLevelEventProperty(SensorEventProperty, EventProperty[WaterLevelInstanceEvent], ABC):

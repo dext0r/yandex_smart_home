@@ -83,7 +83,8 @@ async def test_valid_config(hass):
         "properties": [
             {"type": "temperature", "entity": "sensor.temperature_158d000444c824"},
             {"type": "humidity", "attribute": "humidity"},
-            {"type": "water_level", "attribute": "depth"},
+            {"type": "float.water_level", "attribute": "depth"},
+            {"type": "event.water_level", "attribute": "water_level"},
         ],
     }
 

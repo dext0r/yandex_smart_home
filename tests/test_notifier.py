@@ -837,25 +837,29 @@ async def test_notifier_float_property_check_value_change(hass, instance):
 @pytest.mark.parametrize("instance", EventPropertyInstance.__members__.values())
 async def test_notifier_binary_event_property_check_value_change(hass, instance):
     if instance in [EventPropertyInstance.BUTTON, EventPropertyInstance.VIBRATION]:
-        pytest.skip()
+        return
+
+    a_value, b_value = Template("on"), Template("off")
+    if instance == EventPropertyInstance.FOOD_LEVEL:
+        a_value, b_value = Template("normal"), Template("low")
 
     ps = PendingStates()
     prop = get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
-    await _assert_empty_list(ps.async_add([prop.new_with_value_template(Template("on"))], []))
+    await _assert_empty_list(ps.async_add([prop.new_with_value_template(a_value)], []))
     await _assert_empty_list(
-        ps.async_add([prop.new_with_value_template(Template("on"))], [prop.new_with_value_template(Template("on"))])
+        ps.async_add([prop.new_with_value_template(a_value)], [prop.new_with_value_template(a_value)])
     )
     await _assert_not_empty_list(
-        ps.async_add([prop.new_with_value_template(Template("on"))], [prop.new_with_value_template(Template("off"))])
+        ps.async_add([prop.new_with_value_template(a_value)], [prop.new_with_value_template(b_value)])
     )
     await _assert_empty_list(
         ps.async_add(
-            [prop.new_with_value_template(Template("on"))], [prop.new_with_value_template(Template(STATE_UNAVAILABLE))]
+            [prop.new_with_value_template(a_value)], [prop.new_with_value_template(Template(STATE_UNAVAILABLE))]
         )
     )
     await _assert_empty_list(
         ps.async_add(
-            [prop.new_with_value_template(Template(STATE_UNAVAILABLE))], [prop.new_with_value_template(Template("on"))]
+            [prop.new_with_value_template(Template(STATE_UNAVAILABLE))], [prop.new_with_value_template(a_value)]
         )
     )
 

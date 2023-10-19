@@ -23,7 +23,7 @@ class EventPropertyInstance(StrEnum):
     SMOKE = "smoke"
     GAS = "gas"
     BATTERY_LEVEL = "battery_level"
-    # TODO: FOOD_LEVEL = "food_level"
+    FOOD_LEVEL = "food_level"
     WATER_LEVEL = "water_level"
     WATER_LEAK = "water_leak"
 
@@ -165,9 +165,8 @@ class BatteryLevelEventPropertyParameters(EventPropertyParameters[BatteryLevelIn
     instance: Literal[EventPropertyInstance.BATTERY_LEVEL] = EventPropertyInstance.BATTERY_LEVEL
 
 
-# TODO
-# class FoodLevelEventPropertyParameters(EventPropertyParameters[FoodLevelInstanceEvent]):
-#     instance: Literal[EventPropertyInstance.FOOD_LEVEL] = EventPropertyInstance.FOOD_LEVEL
+class FoodLevelEventPropertyParameters(EventPropertyParameters[FoodLevelInstanceEvent]):
+    instance: Literal[EventPropertyInstance.FOOD_LEVEL] = EventPropertyInstance.FOOD_LEVEL
 
 
 class WaterLevelEventPropertyParameters(EventPropertyParameters[WaterLevelInstanceEvent]):

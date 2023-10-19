@@ -9,7 +9,7 @@ import voluptuous as vol
 
 from . import const
 from .color import ColorName, rgb_to_int
-from .const import MediaPlayerFeature
+from .const import MediaPlayerFeature, PropertyInstanceType
 from .schema import (
     ColorScene,
     ColorSettingCapabilityInstance,
@@ -30,12 +30,27 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def property_type(value: str) -> str:
-    if value == EventPropertyInstance.BUTTON:
-        _LOGGER.warning(
-            f"Property type {value!r} is not supported. See documentation "
-            f"at https://docs.yaha-cloud.ru/master/devices/button/"
-        )
-        return value
+    if value.startswith(f"{PropertyInstanceType.EVENT}."):
+        instance = value.split(".", 1)[1]
+        try:
+            EventPropertyInstance(instance)
+            return value
+        except ValueError:
+            raise vol.Invalid(
+                f"Event property type {instance!r} is not supported. "
+                f"See valid event types at https://docs.yaha-cloud.ru/master/devices/sensor/event/#type"
+            )
+
+    if value.startswith(f"{PropertyInstanceType.FLOAT}."):
+        instance = value.split(".", 1)[1]
+        try:
+            FloatPropertyInstance(instance)
+            return value
+        except ValueError:
+            raise vol.Invalid(
+                f"Float property type {instance!r} is not supported. "
+                f"See valid float types at https://docs.yaha-cloud.ru/master/devices/sensor/float/#type"
+            )
 
     for enum in [FloatPropertyInstance, EventPropertyInstance]:
         try:
@@ -46,8 +61,8 @@ def property_type(value: str) -> str:
 
     raise vol.Invalid(
         f"Property type {value!r} is not supported. "
-        f"See valid types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html and "
-        f"https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html"
+        f"See valid types at https://docs.yaha-cloud.ru/master/devices/sensor/event/#type and "
+        f"https://docs.yaha-cloud.ru/master/devices/sensor/float/#type"
     )
 
 

@@ -23,6 +23,40 @@ yandex_smart_home:
     assert "Property type 'invalid' is not supported. See valid types at" in caplog.messages[-1]
 
 
+async def test_invalid_event_property_type(hass, caplog):
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    sensor.test:
+      properties:
+        - type: event.invalid
+          entity: sensor.test
+"""
+    }
+    with patch_yaml_files(files):
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+
+    assert "Event property type 'invalid' is not supported. See valid event types at" in caplog.messages[-1]
+
+
+async def test_invalid_float_property_type(hass, caplog):
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    sensor.test:
+      properties:
+        - type: float.invalid
+          entity: sensor.test
+"""
+    }
+    with patch_yaml_files(files):
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+
+    assert "Float property type 'invalid' is not supported. See valid float types at" in caplog.messages[-1]
+
+
 async def test_invalid_mode(hass, caplog):
     files = {
         YAML_CONFIG_FILE: """
@@ -174,22 +208,6 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
-
-
-async def test_property_type_button(hass, caplog):
-    files = {
-        YAML_CONFIG_FILE: """
-yandex_smart_home:
-  entity_config:
-    media_player.test:
-      properties:
-        - type: button
-          attribute: bla
-"""
-    }
-    with patch_yaml_files(files):
-        await async_integration_yaml_config(hass, DOMAIN)
-        assert "Property type 'button' is not supported" in caplog.messages[-1]
 
 
 @pytest.mark.parametrize(

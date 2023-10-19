@@ -13,6 +13,7 @@ from .const import (
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
+    PropertyInstanceType,
 )
 from .helpers import APIError, DictRegistry
 from .property import Property
@@ -20,6 +21,7 @@ from .property_event import (
     BatteryLevelEventProperty,
     ButtonPressEventProperty,
     EventProperty,
+    FoodLevelEventProperty,
     GasEventProperty,
     MotionEventProperty,
     OpenEventProperty,
@@ -34,6 +36,7 @@ from .property_float import (
     ElectricCurrentProperty,
     ElectricPowerProperty,
     FloatProperty,
+    FoodLevelPercentageProperty,
     HumidityProperty,
     IlluminationProperty,
     PM1DensityProperty,
@@ -138,6 +141,11 @@ class BatteryLevelCustomEventProperty(BatteryLevelEventProperty, CustomEventProp
 
 
 @EVENT_PROPERTIES_REGISTRY.register
+class FoodLevelCustomEventProperty(FoodLevelEventProperty, CustomEventProperty):
+    pass
+
+
+@EVENT_PROPERTIES_REGISTRY.register
 class WaterLevelCustomEventProperty(WaterLevelEventProperty, CustomEventProperty):
     pass
 
@@ -208,6 +216,11 @@ class IlluminationCustomFloatProperty(IlluminationProperty, CustomFloatProperty)
 
 
 @FLOAT_PROPERTIES_REGISTRY.register
+class FoodLevelCustomFloatProperty(FoodLevelPercentageProperty, CustomFloatProperty):
+    pass
+
+
+@FLOAT_PROPERTIES_REGISTRY.register
 class WaterLevelCustomFloatProperty(WaterLevelPercentageProperty, CustomFloatProperty):
     pass
 
@@ -261,35 +274,40 @@ def get_custom_property(
     hass: HomeAssistant, entry_data: ConfigEntryData, config: ConfigType, device_id: str
 ) -> CustomProperty:
     """Return initialized custom property based on property configuration."""
-    instance: str = config[CONF_ENTITY_PROPERTY_TYPE]
+    cls: type[CustomEventProperty] | type[CustomFloatProperty]
+    property_type: str = config[CONF_ENTITY_PROPERTY_TYPE]
     value_template = get_value_template(device_id, config)
     value_template.hass = hass
 
-    # TODO: battery_level and water_level can be events only for binary_sensor domain
-    if instance not in FLOAT_PROPERTIES_REGISTRY and instance in EVENT_PROPERTIES_REGISTRY:
-        property_type = PropertyType.EVENT
+    if property_type.startswith(f"{PropertyInstanceType.EVENT}."):
+        cls = EVENT_PROPERTIES_REGISTRY[property_type.split(".", 1)[1]]
+    elif property_type.startswith(f"{PropertyInstanceType.FLOAT}."):
+        cls = FLOAT_PROPERTIES_REGISTRY[property_type.split(".", 1)[1]]
     else:
-        property_type = PropertyType.FLOAT
-
-    info = value_template.async_render_to_info()
-    if len(info.entities) == 1:
-        entity_id = next(iter(info.entities))
-        domain, _ = split_entity_id(entity_id)
-
-        if domain == binary_sensor.DOMAIN:
-            if instance not in EVENT_PROPERTIES_REGISTRY:
-                raise APIError(
-                    ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f"Unsupported entity {entity_id} for {instance} instance of {device_id}",
-                )
-
+        instance = property_type
+        if instance not in FLOAT_PROPERTIES_REGISTRY and instance in EVENT_PROPERTIES_REGISTRY:
             property_type = PropertyType.EVENT
+        else:
+            property_type = PropertyType.FLOAT
 
-    cls: type[CustomEventProperty] | type[CustomFloatProperty]
-    if property_type == PropertyType.EVENT:
-        cls = EVENT_PROPERTIES_REGISTRY[instance]
-    else:
-        cls = FLOAT_PROPERTIES_REGISTRY[instance]
+        info = value_template.async_render_to_info()
+        if len(info.entities) == 1:
+            entity_id = next(iter(info.entities))
+            domain, _ = split_entity_id(entity_id)
+
+            if domain == binary_sensor.DOMAIN:
+                if instance not in EVENT_PROPERTIES_REGISTRY:
+                    raise APIError(
+                        ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
+                        f"Unsupported entity {entity_id} for {instance} instance of {device_id}",
+                    )
+
+                property_type = PropertyType.EVENT
+
+        if property_type == PropertyType.EVENT:
+            cls = EVENT_PROPERTIES_REGISTRY[instance]
+        else:
+            cls = FLOAT_PROPERTIES_REGISTRY[instance]
 
     return cls(hass, entry_data, config, device_id, value_template)
 

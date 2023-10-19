@@ -170,3 +170,10 @@ class MediaPlayerFeature(StrEnum):
     TURN_ON_OFF = "turn_on_off"
     PLAY_PAUSE = "play_pause"
     PLAY_MEDIA = "play_media"
+
+
+class PropertyInstanceType(StrEnum):
+    """Property instance type for config validation."""
+
+    FLOAT = "float"
+    EVENT = "event"

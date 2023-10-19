@@ -18,7 +18,7 @@ class FloatPropertyInstance(StrEnum):
     BATTERY_LEVEL = "battery_level"
     CO2_LEVEL = "co2_level"
     HUMIDITY = "humidity"
-    # TODO: FOOD_LEVEL = "food_level"
+    FOOD_LEVEL = "food_level"
     ILLUMINATION = "illumination"
     PM10_DENSITY = "pm10_density"
     PM1_DENSITY = "pm1_density"
@@ -107,9 +107,8 @@ class CO2LevelFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatProperty
     unit: Literal[FloatUnit.PPM] = FloatUnit.PPM
 
 
-# TODO
-# class FoodLevelFloatPropertyParameters(PercentFloatPropertyParameters):
-#     instance: Literal[FloatPropertyInstance.FOOD_LEVEL] = FloatPropertyInstance.FOOD_LEVEL
+class FoodLevelFloatPropertyParameters(PercentFloatPropertyParameters):
+    instance: Literal[FloatPropertyInstance.FOOD_LEVEL] = FloatPropertyInstance.FOOD_LEVEL
 
 
 class HumidityFloatPropertyParameters(PercentFloatPropertyParameters):
