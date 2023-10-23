@@ -4,102 +4,171 @@
     'data': dict({
       'devices': dict({
         'binary_sensor.front_door': dict({
-          'device_info': dict({
-            'model': 'binary_sensor.front_door',
-          }),
-          'id': 'binary_sensor.front_door',
-          'name': 'Front Door',
-          'properties': list([
-            dict({
-              'parameters': dict({
-                'events': list([
-                  dict({
-                    'value': 'opened',
-                  }),
-                  dict({
-                    'value': 'closed',
-                  }),
-                ]),
-                'instance': 'open',
-              }),
-              'reportable': True,
-              'retrievable': True,
-              'type': 'devices.properties.event',
-            }),
+          'capabilities': list([
           ]),
-          'type': 'devices.types.sensor.open',
+          'description': dict({
+            'device_info': dict({
+              'model': 'binary_sensor.front_door',
+            }),
+            'id': 'binary_sensor.front_door',
+            'name': 'Front Door',
+            'properties': list([
+              dict({
+                'parameters': dict({
+                  'events': list([
+                    dict({
+                      'value': 'opened',
+                    }),
+                    dict({
+                      'value': 'closed',
+                    }),
+                  ]),
+                  'instance': 'open',
+                }),
+                'reportable': True,
+                'retrievable': True,
+                'type': 'devices.properties.event',
+              }),
+            ]),
+            'type': 'devices.types.sensor.open',
+          }),
+          'properties': list([
+            '<OpenStateEventProperty device_id=binary_sensor.front_door type=devices.properties.event instance=open>',
+          ]),
+          'state': dict({
+            'capabilities': list([
+            ]),
+            'id': 'binary_sensor.front_door',
+            'properties': list([
+              dict({
+                'state': dict({
+                  'instance': 'open',
+                  'value': 'opened',
+                }),
+                'type': 'devices.properties.event',
+              }),
+            ]),
+          }),
         }),
         'light.kitchen': dict({
           'capabilities': list([
-            dict({
-              'parameters': dict({
-                'color_model': 'rgb',
-                'temperature_k': dict({
-                  'max': 6500,
-                  'min': 1500,
-                }),
-              }),
-              'reportable': True,
-              'retrievable': True,
-              'type': 'devices.capabilities.color_setting',
-            }),
-            dict({
-              'parameters': dict({
-                'instance': 'brightness',
-                'random_access': True,
-                'range': dict({
-                  'max': 100.0,
-                  'min': 1.0,
-                  'precision': 1.0,
-                }),
-                'unit': 'unit.percent',
-              }),
-              'reportable': True,
-              'retrievable': True,
-              'type': 'devices.capabilities.range',
-            }),
-            dict({
-              'reportable': True,
-              'retrievable': True,
-              'type': 'devices.capabilities.on_off',
-            }),
+            '<ColorSettingCapability device_id=light.kitchen type=devices.capabilities.color_setting instance=base>',
+            '<RGBColorCapability device_id=light.kitchen type=devices.capabilities.color_setting instance=rgb>',
+            '<ColorTemperatureCapability device_id=light.kitchen type=devices.capabilities.color_setting instance=temperature_k>',
+            '<BrightnessCapability device_id=light.kitchen type=devices.capabilities.range instance=brightness>',
+            '<OnOffCapabilityBasic device_id=light.kitchen type=devices.capabilities.on_off instance=on>',
           ]),
-          'device_info': dict({
-            'model': 'light.kitchen',
+          'description': dict({
+            'capabilities': list([
+              dict({
+                'parameters': dict({
+                  'color_model': 'rgb',
+                  'temperature_k': dict({
+                    'max': 6500,
+                    'min': 1500,
+                  }),
+                }),
+                'reportable': True,
+                'retrievable': True,
+                'type': 'devices.capabilities.color_setting',
+              }),
+              dict({
+                'parameters': dict({
+                  'instance': 'brightness',
+                  'random_access': True,
+                  'range': dict({
+                    'max': 100.0,
+                    'min': 1.0,
+                    'precision': 1.0,
+                  }),
+                  'unit': 'unit.percent',
+                }),
+                'reportable': True,
+                'retrievable': True,
+                'type': 'devices.capabilities.range',
+              }),
+              dict({
+                'reportable': True,
+                'retrievable': True,
+                'type': 'devices.capabilities.on_off',
+              }),
+            ]),
+            'device_info': dict({
+              'model': 'light.kitchen',
+            }),
+            'id': 'light.kitchen',
+            'name': 'Kitchen Light',
+            'properties': list([
+              dict({
+                'parameters': dict({
+                  'instance': 'temperature',
+                  'unit': 'unit.temperature.celsius',
+                }),
+                'reportable': True,
+                'retrievable': True,
+                'type': 'devices.properties.float',
+              }),
+            ]),
+            'type': 'devices.types.light',
           }),
-          'id': 'light.kitchen',
-          'name': 'Kitchen Light',
           'properties': list([
-            dict({
-              'parameters': dict({
-                'instance': 'temperature',
-                'unit': 'unit.temperature.celsius',
-              }),
-              'reportable': True,
-              'retrievable': True,
-              'type': 'devices.properties.float',
-            }),
+            "<TemperatureCustomFloatProperty device_id=light.kitchen instance=temperature value_template=Template<template=({{ states('sensor.invalid') }}) renders=2>>",
           ]),
-          'type': 'devices.types.light',
+          'state': dict({
+            '__type': "<class 'custom_components.yandex_smart_home.helpers.APIError'>",
+            'repr': 'APIError("Unsupported value \'foo\' for instance temperature of light.kitchen")',
+          }),
+        }),
+        'sensor.invalid': dict({
+          'capabilities': list([
+          ]),
+          'description': None,
+          'properties': list([
+          ]),
+          'state': dict({
+            'error_code': 'DEVICE_UNREACHABLE',
+            'id': 'sensor.invalid',
+          }),
         }),
         'sensor.outside_temp': dict({
-          'device_info': dict({
-            'model': 'sensor.outside_temp',
-          }),
-          'id': 'sensor.outside_temp',
-          'name': 'Температура за бортом',
-          'properties': list([
-            dict({
-              'parameters': dict({
-                'instance': 'temperature',
-                'unit': 'unit.temperature.celsius',
-              }),
-              'reportable': True,
-              'retrievable': True,
-              'type': 'devices.properties.float',
-            }),
+          'capabilities': list([
           ]),
-          'type': 'devices.types.sensor.climate',
+          'description': dict({
+            'device_info': dict({
+              'model': 'sensor.outside_temp',
+            }),
+            'id': 'sensor.outside_temp',
+            'name': 'Температура за бортом',
+            'properties': list([
+              dict({
+                'parameters': dict({
+                  'instance': 'temperature',
+                  'unit': 'unit.temperature.celsius',
+                }),
+                'reportable': True,
+                'retrievable': True,
+                'type': 'devices.properties.float',
+              }),
+            ]),
+            'type': 'devices.types.sensor.climate',
+          }),
+          'properties': list([
+            '<TemperatureSensor device_id=sensor.outside_temp type=devices.properties.float instance=temperature>',
+          ]),
+          'state': dict({
+            'capabilities': list([
+            ]),
+            'id': 'sensor.outside_temp',
+            'properties': list([
+              dict({
+                'state': dict({
+                  'instance': 'temperature',
+                  'value': 15.6,
+                }),
+                'type': 'devices.properties.float',
+              }),
+            ]),
+          }),
         }),
       }),
       'entry': dict({
@@ -123,40 +192,6 @@
         'title': 'Mock Title',
         'unique_id': None,
         'version': 3,
-      }),
-      'states': dict({
-        'binary_sensor.front_door': dict({
-          'capabilities': list([
-          ]),
-          'id': 'binary_sensor.front_door',
-          'properties': list([
-            dict({
-              'state': dict({
-                'instance': 'open',
-                'value': 'opened',
-              }),
-              'type': 'devices.properties.event',
-            }),
-          ]),
-        }),
-        'light.kitchen': dict({
-          '__type': "<class 'custom_components.yandex_smart_home.helpers.APIError'>",
-          'repr': 'APIError("Unsupported value \'foo\' for instance temperature of light.kitchen")',
-        }),
-        'sensor.outside_temp': dict({
-          'capabilities': list([
-          ]),
-          'id': 'sensor.outside_temp',
-          'properties': list([
-            dict({
-              'state': dict({
-                'instance': 'temperature',
-                'value': 15.6,
-              }),
-              'type': 'devices.properties.float',
-            }),
-          ]),
-        }),
       }),
       'yaml_config': dict({
         'entity_config': dict({

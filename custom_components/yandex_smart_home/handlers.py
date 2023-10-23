@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util.decorator import Registry
 
 from .const import ATTR_CAPABILITY, ATTR_ERROR_CODE, EVENT_DEVICE_ACTION
-from .device import Device, async_get_device_states, async_get_devices
+from .device import Device, async_get_device_description, async_get_device_states, async_get_devices
 from .helpers import ActionNotAllowed, APIError, RequestData
 from .schema import (
     ActionRequest,
@@ -15,6 +15,7 @@ from .schema import (
     ActionResultCapability,
     ActionResultCapabilityState,
     ActionResultDevice,
+    DeviceDescription,
     DeviceList,
     DeviceStates,
     Error,
@@ -63,7 +64,12 @@ async def async_device_list(hass: HomeAssistant, data: RequestData, _payload: st
     https://yandex.ru/dev/dialogs/smart-home/doc/reference/get-devices.html
     """
     assert data.request_user_id
-    devices = await async_get_devices(hass, data.entry_data)
+
+    devices: list[DeviceDescription] = []
+    for device in await async_get_devices(hass, data.entry_data):
+        if (description := await async_get_device_description(hass, device)) is not None:
+            devices.append(description)
+
     data.entry_data.discover_devices()
     return DeviceList(user_id=data.request_user_id, devices=devices)
 

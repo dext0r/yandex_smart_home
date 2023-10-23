@@ -427,24 +427,31 @@ class Device:
         return template
 
 
-async def async_get_devices(hass: HomeAssistant, entry_data: ConfigEntryData) -> list[DeviceDescription]:
+async def async_get_devices(hass: HomeAssistant, entry_data: ConfigEntryData) -> list[Device]:
     """Return list of supported user devices."""
-    devices: list[DeviceDescription] = []
-    ent_reg = entity_registry.async_get(hass)
-    dev_reg = device_registry.async_get(hass)
-    area_reg = area_registry.async_get(hass)
+    devices: list[Device] = []
 
     for state in hass.states.async_all():
         device = Device(hass, entry_data, state.entity_id, state)
         if not device.should_expose:
             continue
 
-        if (description := await device.describe(ent_reg, dev_reg, area_reg)) is not None:
-            devices.append(description)
-        else:
-            _LOGGER.debug(f"Missing capabilities and properties for {device.id}")
+        devices.append(device)
 
     return devices
+
+
+async def async_get_device_description(hass: HomeAssistant, device: Device) -> DeviceDescription | None:
+    """Return description for a user device."""
+    ent_reg = entity_registry.async_get(hass)
+    dev_reg = device_registry.async_get(hass)
+    area_reg = area_registry.async_get(hass)
+
+    if (description := await device.describe(ent_reg, dev_reg, area_reg)) is not None:
+        return description
+
+    _LOGGER.debug(f"Missing capabilities and properties for {device.id}")
+    return None
 
 
 async def async_get_device_states(
