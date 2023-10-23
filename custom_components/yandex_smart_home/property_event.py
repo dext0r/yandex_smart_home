@@ -450,9 +450,6 @@ class ButtonPressStateEventProperty(StateEventProperty, ButtonPressEventProperty
             ]
         )
 
-        if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get("last_action") in possible_actions
-
         if self.state.domain == sensor.DOMAIN:
             return self.state.attributes.get("action") in possible_actions
 
@@ -460,7 +457,7 @@ class ButtonPressStateEventProperty(StateEventProperty, ButtonPressEventProperty
 
     def _get_native_value(self) -> str | None:
         """Return the current property value without conversion."""
-        for value in [self.state.attributes.get("last_action"), self.state.attributes.get("action"), self.state.state]:
+        for value in [self.state.attributes.get("action"), self.state.state]:
             value = str(value).lower()
             if value in self._supported_native_values:
                 return value
@@ -479,8 +476,6 @@ class VibrationStateEventProperty(StateEventProperty, VibrationEventProperty):
             if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.VIBRATION:
                 return True
 
-            return self.state.attributes.get("last_action") in self._supported_native_values
-
         if self.state.domain == sensor.DOMAIN:
             return self.state.attributes.get("action") in self._supported_native_values
 
@@ -491,9 +486,8 @@ class VibrationStateEventProperty(StateEventProperty, VibrationEventProperty):
         if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.VIBRATION:
             return self.state.state
 
-        for value in [self.state.attributes.get("last_action"), self.state.attributes.get("action")]:
-            value = str(value).lower()
-            if value in self._supported_native_values:
-                return value
+        value = str(self.state.attributes.get("action")).lower()
+        if value in self._supported_native_values:
+            return value
 
         return None

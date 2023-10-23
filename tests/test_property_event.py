@@ -196,7 +196,6 @@ async def test_state_property_event_water_leak(hass, device_class, supported):
 @pytest.mark.parametrize(
     "domain,attribute,device_class,supported",
     [
-        (binary_sensor.DOMAIN, "last_action", None, True),
         (binary_sensor.DOMAIN, "none", None, False),
         (sensor.DOMAIN, "action", None, True),
     ],
@@ -277,7 +276,6 @@ async def test_state_property_event_button_sensor_state(hass, domain, device_cla
 @pytest.mark.parametrize(
     "domain,attribute,device_class,supported",
     [
-        (binary_sensor.DOMAIN, "last_action", None, True),
         (sensor.DOMAIN, "action", None, True),
         (binary_sensor.DOMAIN, None, BinarySensorDeviceClass.VIBRATION, True),
         (binary_sensor.DOMAIN, "bar", None, False),
