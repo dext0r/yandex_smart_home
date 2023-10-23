@@ -202,7 +202,7 @@ async def test_state_property_event_water_leak(hass, device_class, supported):
         ("button", False, True),
     ],
 )
-async def test_state_property_event_button(hass, domain, device_class, mock_entry_data, supported):
+async def test_state_property_event_button(hass, domain, device_class, mock_entry_data, supported, caplog):
     entity_id = f"{domain}.test"
     entry_data = BASIC_ENTRY_DATA
     if mock_entry_data:
@@ -231,8 +231,10 @@ async def test_state_property_event_button(hass, domain, device_class, mock_entr
     prop.state.state = "hold"
     assert prop.get_value() == "long_press"
 
+    caplog.clear()
     prop.state.state = "invalid"
     assert prop.get_value() is None
+    assert caplog.messages == [f"Unknown event invalid for instance button of {entity_id}"]
 
 
 async def test_state_property_event_button_gw3(hass):

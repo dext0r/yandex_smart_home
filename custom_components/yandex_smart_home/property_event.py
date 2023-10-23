@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
 from itertools import chain
+import logging
 from typing import Any, Protocol, Self
 
 from homeassistant.components import binary_sensor, sensor
@@ -44,6 +45,8 @@ from .schema import (
     WaterLevelEventPropertyParameters,
     WaterLevelInstanceEvent,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 _BOOLEAN_TRUE = ["yes", "true", "1", STATE_ON]
 _BOOLEAN_FALSE = ["no", "false", "0", STATE_OFF]
@@ -89,6 +92,8 @@ class EventProperty(Property, Protocol[EventInstanceEvent]):
         for event, values in self._event_map.items():
             if value in values:
                 return event
+
+        _LOGGER.debug(f"Unknown event {value} for instance {self.instance} of {self.device_id}")
 
         return None
 
