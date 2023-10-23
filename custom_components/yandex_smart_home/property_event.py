@@ -15,7 +15,7 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 
-from .const import CONF_DEVICE_CLASS, DEVICE_CLASS_BUTTON, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .const import CONF_DEVICE_CLASS, DEVICE_CLASS_ACTION, DEVICE_CLASS_BUTTON, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .schema import (
     BatteryLevelEventPropertyParameters,
@@ -442,27 +442,19 @@ class ButtonPressStateEventProperty(StateEventProperty, ButtonPressEventProperty
         if self._entry_data.get_entity_config(self.device_id).get(CONF_DEVICE_CLASS) == DEVICE_CLASS_BUTTON:
             return True
 
-        possible_actions = self._supported_native_values
-        possible_actions.extend(
-            [
-                "long_click_release",
-                "release",
-            ]
-        )
+        # Xiaomi Gateway 3
+        if self.state.domain == sensor.DOMAIN and self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ACTION:
+            possible_actions = self._supported_native_values
+            possible_actions.extend(
+                [
+                    "long_click_release",
+                    "release",
+                ]
+            )
 
-        if self.state.domain == sensor.DOMAIN:
             return self.state.attributes.get("action") in possible_actions
 
         return False
-
-    def _get_native_value(self) -> str | None:
-        """Return the current property value without conversion."""
-        for value in [self.state.attributes.get("action"), self.state.state]:
-            value = str(value).lower()
-            if value in self._supported_native_values:
-                return value
-
-        return None
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -476,18 +468,8 @@ class VibrationStateEventProperty(StateEventProperty, VibrationEventProperty):
             if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.VIBRATION:
                 return True
 
-        if self.state.domain == sensor.DOMAIN:
+        # Xiaomi Gateway 3
+        if self.state.domain == sensor.DOMAIN and self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ACTION:
             return self.state.attributes.get("action") in self._supported_native_values
 
         return False
-
-    def _get_native_value(self) -> str | None:
-        """Return the current property value without conversion."""
-        if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.VIBRATION:
-            return self.state.state
-
-        value = str(self.state.attributes.get("action")).lower()
-        if value in self._supported_native_values:
-            return value
-
-        return None

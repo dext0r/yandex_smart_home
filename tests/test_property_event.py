@@ -193,44 +193,6 @@ async def test_state_property_event_water_leak(hass, device_class, supported):
     assert prop.get_value() == "dry"
 
 
-@pytest.mark.parametrize(
-    "domain,attribute,device_class,supported",
-    [
-        (binary_sensor.DOMAIN, "none", None, False),
-        (sensor.DOMAIN, "action", None, True),
-    ],
-)
-async def test_state_property_event_button_sensor_attribute(hass, domain, attribute, device_class, supported):
-    entity_id = f"{domain}.test"
-
-    state = State(entity_id, STATE_ON, {attribute: "single", ATTR_DEVICE_CLASS: device_class})
-    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
-    if supported:
-        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
-    else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
-        return
-
-    assert prop.retrievable is False
-    assert prop.parameters == {
-        "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
-        "instance": "button",
-    }
-    assert prop.get_value() == "click"
-
-    prop.state = State(entity_id, STATE_ON, {attribute: "double"})
-    assert prop.get_value() == "double_click"
-
-    prop.state = State(entity_id, STATE_ON, {attribute: "hold"})
-    assert prop.get_value() == "long_press"
-
-    prop.state = State(entity_id, STATE_ON, {attribute: "invalid"})
-    assert prop.get_value() is None
-
-    prop.state = State(entity_id, "click")
-    assert prop.get_value() == "click"
-
-
 @pytest.mark.parametrize("domain", [sensor.DOMAIN, input_text.DOMAIN])
 @pytest.mark.parametrize(
     "device_class,mock_entry_data,supported",
@@ -240,7 +202,7 @@ async def test_state_property_event_button_sensor_attribute(hass, domain, attrib
         ("button", False, True),
     ],
 )
-async def test_state_property_event_button_sensor_state(hass, domain, device_class, mock_entry_data, supported):
+async def test_state_property_event_button(hass, domain, device_class, mock_entry_data, supported):
     entity_id = f"{domain}.test"
     entry_data = BASIC_ENTRY_DATA
     if mock_entry_data:
@@ -263,41 +225,41 @@ async def test_state_property_event_button_sensor_state(hass, domain, device_cla
     }
     assert prop.get_value() == "click"
 
-    prop.state = State(entity_id, "double")
+    prop.state.state = "double"
     assert prop.get_value() == "double_click"
 
-    prop.state = State(entity_id, "hold")
+    prop.state.state = "hold"
     assert prop.get_value() == "long_press"
 
-    prop.state = State(entity_id, "invalid")
+    prop.state.state = "invalid"
     assert prop.get_value() is None
 
 
-@pytest.mark.parametrize(
-    "domain,attribute,device_class,supported",
-    [
-        (sensor.DOMAIN, "action", None, True),
-        (binary_sensor.DOMAIN, None, BinarySensorDeviceClass.VIBRATION, True),
-        (binary_sensor.DOMAIN, "bar", None, False),
-    ],
-)
-async def test_state_property_event_vibration_sensor(hass, domain, attribute, device_class, supported):
-    attributes = {}
-    if attribute:
-        attributes[attribute] = "vibrate"
-    if device_class:
-        attributes[ATTR_DEVICE_CLASS] = device_class
-
-    state = State(f"{domain}.test", STATE_ON, attributes)
+async def test_state_property_event_button_gw3(hass):
+    state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action"})
     assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
 
-    if supported:
-        prop = get_exact_one_property(
-            hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION
-        )
-    else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
-        return
+    state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action", "action": "foo"})
+    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
+
+    state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action", "action": "click"})
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
+
+    assert not prop.retrievable
+    assert prop.parameters == {
+        "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
+        "instance": "button",
+    }
+    assert prop.get_value() is None
+
+    prop.state.state = "double"
+    assert prop.get_value() == "double_click"
+
+
+async def test_state_property_event_vibration(hass):
+    state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: BinarySensorDeviceClass.VIBRATION})
+
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
 
     assert not prop.retrievable
     assert prop.parameters == {
@@ -306,16 +268,29 @@ async def test_state_property_event_vibration_sensor(hass, domain, attribute, de
     }
     assert prop.get_value() == "vibration"
 
-    if attribute:
-        prop.state = State(f"{domain}.test", STATE_ON, {attribute: "flip90"})
-        assert prop.get_value() == "tilt"
+    prop.state.state = STATE_OFF
+    assert prop.get_value() is None
 
-        prop.state = State(f"{domain}.test", STATE_ON, {attribute: "free_fall"})
-        assert prop.get_value() == "fall"
 
-        prop.state = State(f"{domain}.test", STATE_ON, {attribute: "invalid"})
-        assert prop.get_value() is None
+async def test_state_property_event_vibration_gw3(hass):
+    state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action"})
+    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
 
-    if device_class:
-        prop.state = State(f"{domain}.test", STATE_OFF, {ATTR_DEVICE_CLASS: device_class})
-        assert prop.get_value() is None
+    state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action", "action": "foo"})
+    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
+
+    state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action", "action": "vibrate"})
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
+
+    assert not prop.retrievable
+    assert prop.parameters == {
+        "events": [{"value": "tilt"}, {"value": "fall"}, {"value": "vibration"}],
+        "instance": "vibration",
+    }
+    assert prop.get_value() is None
+
+    prop.state = State("sensor.vibration", "vibrate")
+    assert prop.get_value() == "vibration"
+
+    prop.state = State("sensor.vibration", "fall")
+    assert prop.get_value() == "fall"

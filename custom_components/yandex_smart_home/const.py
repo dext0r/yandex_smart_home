@@ -80,6 +80,10 @@ ATTR_POWER = "power"
 ATTR_TVOC = "total_volatile_organic_compounds"
 ATTR_WATER_LEVEL = "water_level"
 
+# Custom component Xiaomi Gateway 3
+ATTR_ACTION = "action"
+DEVICE_CLASS_ACTION = "action"
+
 # Integration xiaomi_airpurifier
 ATTR_TARGET_HUMIDITY = "target_humidity"
 DOMAIN_XIAOMI_AIRPURIFIER = "xiaomi_miio_airpurifier"
