@@ -45,8 +45,8 @@ from .schema import (
     WaterLevelInstanceEvent,
 )
 
-_BOOLEAN_TRUE = ["true", "1", STATE_ON]
-_BOOLEAN_FALSE = ["false", "0", STATE_OFF]
+_BOOLEAN_TRUE = ["yes", "true", "1", STATE_ON]
+_BOOLEAN_FALSE = ["no", "false", "0", STATE_OFF]
 
 
 class EventProperty(Property, Protocol[EventInstanceEvent]):
