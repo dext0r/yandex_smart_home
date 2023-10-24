@@ -107,6 +107,7 @@ class Property(Protocol):
         )
 
 
+@runtime_checkable
 class StateProperty(Property, Protocol):
     """Base class for a device property based on the state."""
 

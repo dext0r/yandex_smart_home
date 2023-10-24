@@ -150,6 +150,7 @@ class ActionOnlyCapabilityMixin:
         return None
 
 
+@runtime_checkable
 class StateCapability(Capability[CapabilityInstanceActionState], Protocol):
     """Base class for a device capability based on the state."""
 

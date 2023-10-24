@@ -47,10 +47,10 @@ from . import (  # noqa: F401
     property_float,
 )
 from . import const  # noqa: F401
-from .capability import STATE_CAPABILITIES_REGISTRY
+from .capability import STATE_CAPABILITIES_REGISTRY, StateCapability
 from .capability_custom import get_custom_capability
 from .helpers import ActionNotAllowed, APIError
-from .property import STATE_PROPERTIES_REGISTRY
+from .property import STATE_PROPERTIES_REGISTRY, StateProperty
 from .property_custom import get_custom_property
 from .schema import (
     CapabilityDescription,
@@ -73,9 +73,9 @@ if TYPE_CHECKING:
     from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
     from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 
-    from .capability import Capability, StateCapability
+    from .capability import Capability
     from .entry_data import ConfigEntryData
-    from .property import Property, StateProperty
+    from .property import Property
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -182,21 +182,17 @@ class Device:
                     if custom_capability.supported and custom_capability not in capabilities:
                         capabilities.append(custom_capability)
 
-        capabilities.extend(self.get_state_capabilities())
-
-        return capabilities
-
-    @callback
-    def get_state_capabilities(self) -> list[StateCapability[Any]]:
-        """Return capabilities of the device based on the state."""
-        capabilities: list[StateCapability[Any]] = []
-
         for CapabilityT in STATE_CAPABILITIES_REGISTRY:
             state_capability = CapabilityT(self._hass, self._entry_data, self._state)
             if state_capability.supported and state_capability not in capabilities:
                 capabilities.append(state_capability)
 
         return capabilities
+
+    @callback
+    def get_state_capabilities(self) -> list[StateCapability[Any]]:
+        """Return capabilities of the device based on the state."""
+        return [c for c in self.get_capabilities() if isinstance(c, StateCapability)]
 
     @callback
     def get_properties(self) -> list[Property]:
@@ -213,21 +209,17 @@ class Device:
             if custom_property.supported and custom_property not in properties:
                 properties.append(custom_property)
 
-        properties.extend(self.get_state_properties())
-
-        return properties
-
-    @callback
-    def get_state_properties(self) -> list[StateProperty]:
-        """Return properties for the device based on the state."""
-        properties: list[StateProperty] = []
-
         for PropertyT in STATE_PROPERTIES_REGISTRY:
             device_property = PropertyT(self._hass, self._entry_data, self._state)
             if device_property.supported and device_property not in properties:
                 properties.append(device_property)
 
         return properties
+
+    @callback
+    def get_state_properties(self) -> list[StateProperty]:
+        """Return properties for the device based on the state."""
+        return [p for p in self.get_properties() if isinstance(p, StateProperty)]
 
     @property
     def should_expose(self) -> bool:

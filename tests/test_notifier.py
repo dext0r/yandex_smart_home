@@ -2,9 +2,11 @@ import asyncio
 import json
 import logging
 import time
+from typing import cast
 from unittest.mock import patch
 
 from aiohttp.client_exceptions import ClientConnectionError
+from homeassistant.components.light import ATTR_BRIGHTNESS
 from homeassistant.const import ATTR_DEVICE_CLASS, EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE
 from homeassistant.core import CoreState, State
 from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION
@@ -464,6 +466,65 @@ async def test_notifier_state_changed(hass_platform, mock_call_later, caplog):
 
     hass.states.async_remove("light.kitchen")
     assert notifier._pending.empty is True
+
+    await notifier.async_unload()
+
+
+@pytest.mark.parametrize("use_custom", [True, False])
+async def test_notifier_track_templates_over_states(hass_platform, mock_call_later, use_custom):
+    hass = hass_platform
+    test_light = cast(State, hass.states.get("light.kitchen"))
+    test_sensor = cast(State, hass.states.get("sensor.outside_temp"))
+
+    entity_config = {}
+    if use_custom:
+        entity_config = {
+            test_light.entity_id: {
+                const.CONF_ENTITY_CUSTOM_RANGES: {
+                    "brightness": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.foo"}
+                }
+            },
+            test_sensor.entity_id: {
+                const.CONF_ENTITY_PROPERTIES: [
+                    {
+                        const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
+                        const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.foo",
+                    }
+                ]
+            },
+        }
+
+    entry_data = MockConfigEntryData(
+        hass=hass,
+        entity_config=entity_config,
+        entity_filter=generate_entity_filter(include_entity_globs=["*"]),
+    )
+
+    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_states())
+    await notifier.async_setup()
+    assert notifier._pending.empty is True
+
+    await _async_set_state(
+        hass,
+        test_light.entity_id,
+        test_light.state,
+        test_light.attributes | {ATTR_BRIGHTNESS: "99"},
+    )
+    if use_custom:
+        assert notifier._pending.empty is True
+    else:
+        assert len(await notifier._pending.async_get_all()) > 0
+
+    await _async_set_state(
+        hass,
+        test_sensor.entity_id,
+        99,
+        test_sensor.attributes,
+    )
+    if use_custom:
+        assert notifier._pending.empty is True
+    else:
+        assert len(await notifier._pending.async_get_all()) > 0
 
     await notifier.async_unload()
 
