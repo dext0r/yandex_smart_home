@@ -336,13 +336,13 @@ def get_custom_capability(
 
 def get_value_template(device_id: str, capability_config: ConfigType) -> Template | None:
     """Return capability value template from capability configuration."""
+    if template := capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE):
+        return cast(Template, template)
+
     entity_id = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
     attribute = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
-    template = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE)
 
-    if template:
-        return cast(Template, template)
-    elif attribute:
+    if attribute:
         return Template("{{ state_attr('%s', '%s') }}" % (entity_id or device_id, attribute))
     elif entity_id:
         return Template("{{ states('%s') }}" % entity_id)

@@ -1,11 +1,12 @@
 """Implement the Yandex Smart Home custom properties."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol, Self
+from typing import TYPE_CHECKING, Any, Protocol, Self, cast
 
 from homeassistant.components import binary_sensor
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import split_entity_id
+from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.template import Template
 
 from .const import (
@@ -13,6 +14,7 @@ from .const import (
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
+    CONF_ENTITY_PROPERTY_VALUE_TEMPLATE,
     PropertyInstanceType,
 )
 from .helpers import APIError, DictRegistry
@@ -87,7 +89,13 @@ class CustomProperty(Property, Protocol):
 
     def _get_native_value(self) -> str:
         """Return the current property value without conversion."""
-        return str(self._value_template.async_render())
+        try:
+            return str(self._value_template.async_render()).strip()
+        except TemplateError as exc:
+            raise APIError(
+                ResponseCode.INVALID_VALUE,
+                f"Unable to get current value for {self.instance.value} property of {self.device_id}: {exc!r}",
+            )
 
     def new_with_value_template(self, value_template: Template) -> Self:
         """Return copy of the property with new value template."""
@@ -314,6 +322,9 @@ def get_custom_property(
 
 def get_value_template(device_id: str, property_config: ConfigType) -> Template:
     """Return property value template from property configuration."""
+    if template := property_config.get(CONF_ENTITY_PROPERTY_VALUE_TEMPLATE):
+        return cast(Template, template)
+
     entity_id = property_config.get(CONF_ENTITY_PROPERTY_ENTITY, device_id)
     attribute = property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
 

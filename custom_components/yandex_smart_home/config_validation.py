@@ -66,6 +66,18 @@ def property_type(value: str) -> str:
     )
 
 
+def property_attributes(value: ConfigType) -> ConfigType:
+    """Validate keys for property."""
+    entity = value.get(const.CONF_ENTITY_PROPERTY_ENTITY)
+    attribute = value.get(const.CONF_ENTITY_PROPERTY_ATTRIBUTE)
+    value_template = value.get(const.CONF_ENTITY_PROPERTY_VALUE_TEMPLATE)
+
+    if value_template and (entity or attribute):
+        raise vol.Invalid("entity/attribute and value_template are mutually exclusive")
+
+    return value
+
+
 def mode_instance(value: str) -> str:
     if value == ColorSettingCapabilityInstance.SCENE:
         return value

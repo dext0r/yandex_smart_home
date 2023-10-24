@@ -27,14 +27,20 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 ENTITY_PROPERTY_SCHEMA = vol.All(
-    cv.has_at_least_one_key(const.CONF_ENTITY_PROPERTY_ENTITY, const.CONF_ENTITY_PROPERTY_ATTRIBUTE),
-    vol.Schema(
+    cv.has_at_least_one_key(
+        const.CONF_ENTITY_PROPERTY_ENTITY,
+        const.CONF_ENTITY_PROPERTY_ATTRIBUTE,
+        const.CONF_ENTITY_PROPERTY_VALUE_TEMPLATE,
+    ),
+    vol.All(
         {
             vol.Required(const.CONF_ENTITY_PROPERTY_TYPE): vol.Schema(vol.All(str, ycv.property_type)),
             vol.Optional(const.CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT): cv.string,
             vol.Optional(const.CONF_ENTITY_PROPERTY_ENTITY): cv.entity_id,
             vol.Optional(const.CONF_ENTITY_PROPERTY_ATTRIBUTE): cv.string,
+            vol.Optional(const.CONF_ENTITY_PROPERTY_VALUE_TEMPLATE): cv.template,
         },
+        ycv.property_attributes,
     ),
 )
 

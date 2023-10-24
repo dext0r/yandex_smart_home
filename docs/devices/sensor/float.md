@@ -1,4 +1,7 @@
-Цифровые датчики могут задаваться вручную через список `properties` в `entity_config`. Каждый датчик содержит один или несколько параметров. Устройство может иметь одновременно цифровые и [событийные датчики](event.md).
+## Ручное добавление { id=properties }
+Цифровые датчики могут быть добавлены к любому устройству вручную через список `properties` в `entity_config`. Каждый датчик содержит один или несколько параметров.
+
+Устройство может иметь одновременно цифровые и [событийные датчики](event.md).
 
 !!! example "Пример настройки датчиков"
     ```yaml
@@ -12,6 +15,8 @@
               entity: sensor.bedroom_humidity
             - type: co2_level
               entity: sensor.bedroom_co2
+            - type: event.motion
+              entity: binary_sensor.bedroom_motion
         sensor.pet_feeder:
           type: pet_feeder
           properties:
@@ -19,7 +24,7 @@
               attribute: pet_feeder.pet_food_left_level
     ```
 
-## Тип датчика { id=type }
+### Тип датчика { id=property-type }
 > Параметр: `type` (обязательный)
 
 Может быть задан в сокращённом или полном виде (`float.X`). Полный вид желательно использовать для датчиков, которые могут быть как числовыми, так и событийными (`battery_level`, `food_level`, `water_level`).
@@ -43,7 +48,7 @@
 | water_level       | float.water_level   | Уровень воды (в процентах)                           |
 
 
-## Источник состояния (объект) { id=state-object }
+### Источник состояния (объект) { id=property-value-state }
 > Параметры: `entity` и/или `attribute`
 
 Задают объект и/или его атрибут, в котором находится текущее состояние датчика. 

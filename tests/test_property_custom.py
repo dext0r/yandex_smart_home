@@ -4,6 +4,7 @@ from typing import Any
 from homeassistant.components import binary_sensor, sensor
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import State
+from homeassistant.helpers.template import Template
 import pytest
 
 from custom_components.yandex_smart_home import const
@@ -227,6 +228,34 @@ async def test_property_custom_get_value_float(hass):
         state.entity_id,
     )
     assert prop.get_value() == 9.99
+
+    prop = get_custom_property(
+        hass,
+        BASIC_ENTRY_DATA,
+        {
+            const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
+            const.CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("{{ 1 + 2 }}"),
+        },
+        state.entity_id,
+    )
+    assert prop.get_value() == 3
+
+    prop = get_custom_property(
+        hass,
+        BASIC_ENTRY_DATA,
+        {
+            const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
+            const.CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("{{ 1 / 0 }}"),
+        },
+        state.entity_id,
+    )
+    with pytest.raises(APIError) as e:
+        prop.get_value()
+    assert e.value.code == ResponseCode.INVALID_VALUE
+    assert (
+        e.value.message == "Unable to get current value for temperature property of sensor.test: "
+        "TemplateError('ZeroDivisionError: division by zero')"
+    )
 
 
 async def test_property_custom_value_float_limit(hass):

@@ -167,6 +167,13 @@ async def test_valid_config(hass):
         "turn_on": False,
     }
 
+    assert entity_config["switch.water_valve"] == {
+        "custom_modes": {"input_source": {"state_entity_id": "sensor.water_valve_input_source"}},
+        "custom_ranges": {"open": {"state_entity_id": "sensor.water_valve_angel"}},
+        "custom_toggles": {"backlight": {"state_entity_id": "sensor.water_valve_led"}},
+        "properties": [{"type": "temperature", "value_template": Template("{{ 3 + 5 }}", hass)}],
+    }
+
     assert entity_config["climate.ac"] == {
         "turn_on": {"data": {"mode": "cool"}, "entity_id": ["climate.ac"], "service": "climate.turn_on"},
     }

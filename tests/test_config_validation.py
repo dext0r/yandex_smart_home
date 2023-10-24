@@ -57,6 +57,56 @@ yandex_smart_home:
     assert "Float property type 'invalid' is not supported. See valid float types at" in caplog.messages[-1]
 
 
+async def test_invalid_property(hass, caplog):
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    media_player.test:
+      properties:
+        - type: temperature
+          entity: sensor.x   
+          value_template: foo
+"""
+    }
+    with patch_yaml_files(files):
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+    assert "entity/attribute and value_template are mutually exclusive" in caplog.messages[-1]
+
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    media_player.test:
+      properties:
+        - type: temperature
+          attribute: bar  
+          value_template: foo
+"""
+    }
+    with patch_yaml_files(files):
+        caplog.clear()
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+    assert "entity/attribute and value_template are mutually exclusive" in caplog.messages[-1]
+
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    media_player.test:
+      properties:
+        - type: temperature
+          entity: sensor.x   
+          attribute: bar
+          value_template: foo
+"""
+    }
+    with patch_yaml_files(files):
+        caplog.clear()
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+    assert "entity/attribute and value_template are mutually exclusive" in caplog.messages[-1]
+
+
 async def test_invalid_mode(hass, caplog):
     files = {
         YAML_CONFIG_FILE: """
@@ -218,7 +268,7 @@ yandex_smart_home:
         ("custom_modes", "swing"),
     ],
 )
-async def test_custom_capability_state(hass, key, instance, caplog):
+async def test_invalid_custom_capability(hass, key, instance, caplog):
     files = {
         YAML_CONFIG_FILE: f"""
 yandex_smart_home:
