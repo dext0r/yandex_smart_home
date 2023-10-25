@@ -304,18 +304,28 @@ class Device:
 
         capabilities: list[CapabilityInstanceState] = []
         for c in [c for c in self.get_capabilities() if c.retrievable]:
-            if (capability_state := c.get_instance_state()) is not None:
-                capabilities.append(capability_state)
+            try:
+                if (capability_state := c.get_instance_state()) is not None:
+                    capabilities.append(capability_state)
+            except APIError as e:
+                _LOGGER.error(e)
 
         properties: list[PropertyInstanceState] = []
         for p in [p for p in self.get_properties() if p.retrievable]:
-            if (property_state := p.get_instance_state()) is not None:
-                properties.append(property_state)
+            try:
+                if (property_state := p.get_instance_state()) is not None:
+                    properties.append(property_state)
+            except APIError as e:
+                _LOGGER.error(e)
 
         if not capabilities and not properties:
             return DeviceState(id=self.id, error_code=ResponseCode.DEVICE_UNREACHABLE)
 
-        return DeviceState(id=self.id, capabilities=capabilities, properties=properties)
+        return DeviceState(
+            id=self.id,
+            capabilities=capabilities or None,
+            properties=properties or None,
+        )
 
     async def execute(
         self, context: Context, action: CapabilityInstanceAction

@@ -36,8 +36,6 @@
             '<OpenStateEventProperty device_id=binary_sensor.front_door type=devices.properties.event instance=open>',
           ]),
           'state': dict({
-            'capabilities': list([
-            ]),
             'id': 'binary_sensor.front_door',
             'properties': list([
               dict({
@@ -115,8 +113,30 @@
             "<TemperatureCustomFloatProperty device_id=light.kitchen instance=temperature value_template=Template<template=({{ states('sensor.invalid') }}) renders=2>>",
           ]),
           'state': dict({
-            '__type': "<class 'custom_components.yandex_smart_home.helpers.APIError'>",
-            'repr': 'APIError("Unsupported value \'foo\' for instance temperature of light.kitchen")',
+            'capabilities': list([
+              dict({
+                'state': dict({
+                  'instance': 'temperature_k',
+                  'value': 4200,
+                }),
+                'type': 'devices.capabilities.color_setting',
+              }),
+              dict({
+                'state': dict({
+                  'instance': 'brightness',
+                  'value': 70,
+                }),
+                'type': 'devices.capabilities.range',
+              }),
+              dict({
+                'state': dict({
+                  'instance': 'on',
+                  'value': True,
+                }),
+                'type': 'devices.capabilities.on_off',
+              }),
+            ]),
+            'id': 'light.kitchen',
           }),
         }),
         'sensor.invalid': dict({
@@ -156,8 +176,6 @@
             '<TemperatureSensor device_id=sensor.outside_temp type=devices.properties.float instance=temperature>',
           ]),
           'state': dict({
-            'capabilities': list([
-            ]),
             'id': 'sensor.outside_temp',
             'properties': list([
               dict({

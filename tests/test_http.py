@@ -171,7 +171,6 @@ async def test_http_user_devices_query(hass_platform_direct, hass_client):
             "devices": [
                 {
                     "id": "sensor.outside_temp",
-                    "capabilities": [],
                     "properties": [
                         {"type": "devices.properties.float", "state": {"instance": "temperature", "value": 15.6}}
                     ],

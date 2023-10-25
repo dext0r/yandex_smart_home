@@ -344,7 +344,6 @@ async def test_cloud_req_user_devices_query(hass_platform, config_entry_cloud, a
             "devices": [
                 {
                     "id": "sensor.outside_temp",
-                    "capabilities": [],
                     "properties": [
                         {"type": "devices.properties.float", "state": {"instance": "temperature", "value": 15.6}}
                     ],

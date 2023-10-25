@@ -6,7 +6,7 @@ from homeassistant.core import Context, State
 from homeassistant.helpers.template import Template
 from homeassistant.util.decorator import Registry
 
-from custom_components.yandex_smart_home import YandexSmartHome, handlers
+from custom_components.yandex_smart_home import YandexSmartHome, const, handlers
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
 from custom_components.yandex_smart_home.const import CONF_DEVICES_DISCOVERED, DOMAIN, EVENT_DEVICE_ACTION
@@ -75,27 +75,45 @@ async def test_handler_devices_query(hass, caplog):
     hass.states.async_set(switch_not_expose.entity_id, switch_not_expose.state, switch_not_expose.attributes)
     hass.states.async_set(sensor.entity_id, sensor.state, sensor.attributes)
 
-    entry_data = MockConfigEntryData(entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]))
+    entry_data = MockConfigEntryData(
+        entity_config={
+            switch_1.entity_id: {
+                const.CONF_ENTITY_CUSTOM_RANGES: {
+                    "volume": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("not-float", hass)}
+                },
+                const.CONF_ENTITY_PROPERTIES: [
+                    {
+                        const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
+                        const.CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("not-float", hass),
+                    }
+                ],
+            }
+        },
+        entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]),
+    )
     data = RequestData(entry_data, Context(), "user", REQ_ID)
     payload = json.dumps(
         {"devices": [{"id": switch_1.entity_id}, {"id": switch_not_expose.entity_id}, {"id": "invalid.foo"}]}
     )
 
+    caplog.clear()
     assert (await handlers.async_devices_query(hass, data, payload)).as_dict() == {
         "devices": [
             {
                 "id": "switch.test_1",
                 "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": False}}],
-                "properties": [],
             },
             {
                 "id": "switch.not_expose",
                 "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": True}}],
-                "properties": [],
             },
             {"id": "invalid.foo", "error_code": "DEVICE_UNREACHABLE"},
         ]
     }
+    assert caplog.messages[:2] == [
+        "Unsupported value 'not-float' for instance volume of switch.test_1",
+        "Unsupported value 'not-float' for instance temperature of switch.test_1",
+    ]
 
     with patch.object(entry_data, "discover_devices"):
         assert (await handlers.async_device_list(hass, data, "")).as_dict() == {
@@ -105,7 +123,23 @@ async def test_handler_devices_query(hass, caplog):
                     "id": "switch.test_1",
                     "name": "test 1",
                     "type": "devices.types.switch",
-                    "capabilities": [{"type": "devices.capabilities.on_off", "retrievable": True, "reportable": True}],
+                    "capabilities": [
+                        {
+                            "parameters": {"instance": "volume", "random_access": False},
+                            "reportable": True,
+                            "retrievable": True,
+                            "type": "devices.capabilities.range",
+                        },
+                        {"type": "devices.capabilities.on_off", "retrievable": True, "reportable": True},
+                    ],
+                    "properties": [
+                        {
+                            "parameters": {"instance": "temperature", "unit": "unit.temperature.celsius"},
+                            "reportable": True,
+                            "retrievable": True,
+                            "type": "devices.properties.float",
+                        }
+                    ],
                     "device_info": {"model": "switch.test_1"},
                 }
             ],

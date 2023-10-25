@@ -22,17 +22,11 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, config_entry: 
     diag.update(component.get_diagnostics())
 
     for device in await async_get_devices(hass, entry_data):
-        device_data: dict[str, Any] = {
+        diag["devices"][device.id] = {
             "capabilities": [c.__repr__() for c in device.get_capabilities()],
             "properties": [p.__repr__() for p in device.get_properties()],
             "description": await async_get_device_description(hass, device),
+            "state": device.query(),
         }
-
-        try:
-            device_data["state"] = device.query()
-        except Exception as e:
-            device_data["state"] = e
-
-        diag["devices"][device.id] = device_data
 
     return async_redact_data(diag, [])
