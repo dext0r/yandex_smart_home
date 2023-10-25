@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import SERVICE_RELOAD
 from homeassistant.core import HomeAssistant
@@ -201,6 +200,8 @@ class YandexSmartHome:
 
     def get_diagnostics(self) -> ConfigType:
         """Return diagnostics for the component."""
+        from homeassistant.components.diagnostics import async_redact_data
+
         return {"yaml_config": async_redact_data(self._yaml_config, [const.CONF_NOTIFIER])}
 
     def yaml_config_has_filter(self) -> bool:
