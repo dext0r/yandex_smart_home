@@ -153,8 +153,9 @@ class CloudStream:
         view = views[request.view]()
 
         r = await view.get(web_request, self._stream.access_token, request.sequence, request.part_num)
+        body = r.body if r.body is not None else b''
         meta = ResponseMeta(status_code=r.status, headers=dict(r.headers))
-        response = bytes(json.dumps(asdict(meta)), 'utf-8') + b'\r\n' + r.body
+        response = bytes(json.dumps(asdict(meta)), 'utf-8') + b'\r\n' + body
         await self._ws.send_bytes(response, compress=False)
 
     def _try_reconnect(self):
