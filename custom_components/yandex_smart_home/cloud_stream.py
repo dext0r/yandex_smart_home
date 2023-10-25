@@ -181,9 +181,10 @@ class CloudStreamManager:
             await view.get(web_request, self._stream.access_token or "", request.sequence, request.part_num),
         )
         assert self._ws is not None
-        assert isinstance(r.body, bytes)
+        body = r.body if r.body is not None else b""
+        assert isinstance(body, bytes)
         meta = ResponseMeta(status_code=r.status, headers=dict(r.headers))
-        response = bytes(meta.json(), "utf-8") + b"\r\n" + r.body
+        response = bytes(meta.json(), "utf-8") + b"\r\n" + body
         return await self._ws.send_bytes(response, compress=False)
 
     def _try_reconnect(self) -> None:
