@@ -159,9 +159,7 @@
 Обычно возникает из-за проблем в разрешении IP-адреса из имени. 
 По состоянию на конец октября 2021 замечено, что без видимой причины могут не работать домены `*.tplinkdns.com` (попробуйте использовать другой динамический DNS).
 
-### Ошибка [401] Unauthorized { id=notifier-401 }
-Полный текст ошибки: `Failed to send state notification: [401] b'Unauthorized\n'`
-
+### Ошибка Notification request failed: Unauthorized { id=notifier-401 }
 Возникает из-за неверного OAuth токена в параметре `oauth_token` в настройках [нотификатора](#notifier). 
 
 Для исправления: замените `oauth_token` на актуальный, получить его можно по [этой ссылке](https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd). 

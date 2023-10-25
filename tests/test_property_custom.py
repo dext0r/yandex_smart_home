@@ -60,7 +60,7 @@ async def test_property_custom_short(hass, domain, instance):
             get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
 
         assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-        assert e.value.message == f"Unsupported entity {domain}.test for {instance} instance of {state.entity_id}"
+        assert e.value.message == f"Unsupported entity {domain}.test for {instance} property of {state.entity_id}"
         return
 
     prop = get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
@@ -187,7 +187,9 @@ async def test_property_custom_get_value_float(hass):
     with pytest.raises(APIError) as e:
         prop.get_value()
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert e.value.message == "Unsupported value 'not-a-number' for instance temperature of sensor.test"
+    assert (
+        e.value.message == "Unsupported value 'not-a-number' for instance temperature of float property of sensor.test"
+    )
 
     prop = get_custom_property(
         hass,
@@ -253,7 +255,7 @@ async def test_property_custom_get_value_float(hass):
         prop.get_value()
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert (
-        e.value.message == "Unable to get current value for temperature property of sensor.test: "
+        e.value.message == "Failed to get current value for instance temperature of float property of sensor.test: "
         "TemplateError('ZeroDivisionError: division by zero')"
     )
 

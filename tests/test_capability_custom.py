@@ -141,7 +141,7 @@ async def test_capability_custom_value(hass):
         cap.get_value()
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert (
-        e.value.message == "Unable to get current value for humidity instance of foo: "
+        e.value.message == "Failed to get current value for instance humidity of range capability of foo: "
         "TemplateError('ZeroDivisionError: division by zero')"
     )
 
@@ -411,7 +411,7 @@ async def test_capability_custom_range_random_access(hass):
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10, relative=True),
         )
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert e.value.message == "Unable to get current value for open instance of foo"
+    assert e.value.message == "Missing current value for instance open of range capability of foo"
 
     hass.states.async_remove(state.entity_id)
     with pytest.raises(APIError) as e:
@@ -477,7 +477,8 @@ async def test_capability_custom_range_random_access_no_state(hass):
             )
         assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert e.value.message == (
-            "Failed to set relative value for open instance of foo. No current value source or service found."
+            "Unable to set relative value for instance open of range capability of foo: "
+            "no current value source or service found"
         )
 
 

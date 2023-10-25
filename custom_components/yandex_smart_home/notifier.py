@@ -360,7 +360,7 @@ class YandexNotifier(ABC):
                 for pending_state in await self._pending.async_add([new_state], [old_state]):
                     _LOGGER.debug(
                         self._format_log_message(
-                            f"State report with value '{pending_state.get_value()!s}' scheduled for {pending_state}"
+                            f"State report with value '{pending_state.get_value()}' scheduled for {pending_state!r}"
                         )
                     )
 
@@ -393,7 +393,7 @@ class YandexNotifier(ABC):
         for pending_state in await self._pending.async_add(new_states, old_states):
             _LOGGER.debug(
                 self._format_log_message(
-                    f"State report with value '{pending_state.get_value()!s}' scheduled for {pending_state}"
+                    f"State report with value '{pending_state.get_value()}' scheduled for {pending_state!r}"
                 )
             )
 

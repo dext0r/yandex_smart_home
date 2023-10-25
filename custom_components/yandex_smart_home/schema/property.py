@@ -16,6 +16,11 @@ class PropertyType(StrEnum):
     FLOAT = "devices.properties.float"
     EVENT = "devices.properties.event"
 
+    @property
+    def short(self) -> str:
+        """Return short version of the property type."""
+        return str(self).replace("devices.properties.", "")
+
 
 class FloatPropertyDescription(APIModel):
     """Description of a float property for a device list request."""

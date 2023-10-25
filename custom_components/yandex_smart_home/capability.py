@@ -111,6 +111,10 @@ class Capability(Protocol[CapabilityInstanceActionState]):
         """Return additional configuration for the device."""
         return self._entry_data.get_entity_config(self.device_id)
 
+    def __str__(self) -> str:
+        """Return string representation."""
+        return f"instance {self.instance} of {self.type.short} capability of {self.device_id}"
+
     def __repr__(self) -> str:
         """Return the representation."""
         return (

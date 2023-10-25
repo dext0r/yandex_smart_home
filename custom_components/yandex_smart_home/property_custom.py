@@ -92,10 +92,7 @@ class CustomProperty(Property, Protocol):
         try:
             return str(self._value_template.async_render()).strip()
         except TemplateError as exc:
-            raise APIError(
-                ResponseCode.INVALID_VALUE,
-                f"Unable to get current value for {self.instance.value} property of {self.device_id}: {exc!r}",
-            )
+            raise APIError(ResponseCode.INVALID_VALUE, f"Failed to get current value for {self}: {exc!r}")
 
     def new_with_value_template(self, value_template: Template) -> Self:
         """Return copy of the property with new value template."""
@@ -307,7 +304,7 @@ def get_custom_property(
                 if instance not in EVENT_PROPERTIES_REGISTRY:
                     raise APIError(
                         ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                        f"Unsupported entity {entity_id} for {instance} instance of {device_id}",
+                        f"Unsupported entity {entity_id} for {instance} property of {device_id}",
                     )
 
                 property_type = PropertyType.EVENT

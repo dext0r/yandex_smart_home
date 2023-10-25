@@ -35,6 +35,11 @@ class CapabilityType(StrEnum):
     TOGGLE = "devices.capabilities.toggle"
     VIDEO_STREAM = "devices.capabilities.video_stream"
 
+    @property
+    def short(self) -> str:
+        """Return short version of the capability type."""
+        return str(self).replace("devices.capabilities.", "")
+
 
 CapabilityParameters = (
     OnOffCapabilityParameters

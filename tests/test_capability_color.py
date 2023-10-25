@@ -260,12 +260,18 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
     with pytest.raises(APIError) as e:
         assert cap.get_value() == 16714250
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert e.value.message == "Color profile 'invalid' not found for instance rgb of light.invalid"
+    assert (
+        e.value.message
+        == "Color profile 'invalid' not found for instance rgb of color_setting capability of light.invalid"
+    )
 
     with pytest.raises(APIError) as e:
         await cap.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert e.value.message == "Color profile 'invalid' not found for instance rgb of light.invalid"
+    assert (
+        e.value.message
+        == "Color profile 'invalid' not found for instance rgb of color_setting capability of light.invalid"
+    )
 
 
 @pytest.mark.parametrize(
@@ -371,7 +377,10 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
             TemperatureKInstanceActionState(value=6500),
         )
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert e.value.message == "Unsupported value 6500 for instance temperature_k of light.test"
+    assert (
+        e.value.message
+        == "Unsupported value '6500' for instance temperature_k of color_setting capability of light.test"
+    )
 
 
 async def test_capability_color_setting_temprature_k_extend(hass):
@@ -581,7 +590,9 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
     with pytest.raises(APIError) as e:
         cap_temp.get_value()
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert e.value.message == "Color profile 'invalid' not found for instance temperature_k of light.invalid"
+    assert e.value.message == (
+        "Color profile 'invalid' not found for instance temperature_k of color_setting capability of light.invalid"
+    )
 
     with pytest.raises(APIError) as e:
         await cap_temp.set_instance_state(
@@ -589,7 +600,9 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
             TemperatureKInstanceActionState(value=4100),
         )
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert e.value.message == "Color profile 'invalid' not found for instance temperature_k of light.invalid"
+    assert e.value.message == (
+        "Color profile 'invalid' not found for instance temperature_k of color_setting capability of light.invalid"
+    )
 
 
 @pytest.mark.parametrize("color_modes", [[light.ColorMode.RGB], [light.ColorMode.HS], [light.ColorMode.XY]])

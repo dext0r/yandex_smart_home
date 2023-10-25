@@ -111,8 +111,8 @@ async def test_handler_devices_query(hass, caplog):
         ]
     }
     assert caplog.messages[:2] == [
-        "Unsupported value 'not-float' for instance volume of switch.test_1",
-        "Unsupported value 'not-float' for instance temperature of switch.test_1",
+        "Unsupported value 'not-float' for instance volume of range capability of switch.test_1",
+        "Unsupported value 'not-float' for instance temperature of float property of switch.test_1",
     ]
 
     with patch.object(entry_data, "discover_devices"):
@@ -357,12 +357,12 @@ async def test_handler_devices_action(hass, caplog):
 
         filtered_messages = [m for m in caplog.messages if "Bus:Handling" not in m]
         assert filtered_messages == [
-            "Failed to execute action for instance ionization (devices.capabilities.toggle) of switch.test_1: "
-            "Exception('fail set_state') (INTERNAL_ERROR)",
-            "Capability not found for instance keep_warm (devices.capabilities.toggle) of switch.test_2 "
+            "Failed to execute action for instance ionization of toggle capability of "
+            "switch.test_1: Exception('fail set_state') (INTERNAL_ERROR)",
+            "Device switch.test_2 doesn't support instance keep_warm of toggle capability "
             "(NOT_SUPPORTED_IN_CURRENT_MODE)",
-            "Capability not found for instance controls_locked (devices.capabilities.toggle) of switch.test_2 "
-            "(NOT_SUPPORTED_IN_CURRENT_MODE)",
+            "Device switch.test_2 doesn't support instance controls_locked of toggle "
+            "capability (NOT_SUPPORTED_IN_CURRENT_MODE)",
         ]
 
 
@@ -490,7 +490,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
             ]
         }
 
-        assert caplog.records[-2].message == "Invalid error code for switch.test: 'WAT?' (INTERNAL_ERROR)"
+        assert caplog.records[-2].message == "Error code 'WAT?' is invalid for switch.test (INTERNAL_ERROR)"
 
         hass.states.async_set("sensor.foo", "bar")
         payload = json.dumps(

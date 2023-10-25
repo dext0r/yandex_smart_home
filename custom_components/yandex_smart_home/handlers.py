@@ -43,7 +43,7 @@ async def async_handle_request(hass: HomeAssistant, data: RequestData, action: s
     handler = HANDLERS.get(action)
 
     if handler is None:
-        _LOGGER.error(f"Unexpected action {action!r}")
+        _LOGGER.error(f"Unexpected action '{action}'")
         return Response(request_id=data.request_id, payload=Error(error_code=ResponseCode.INTERNAL_ERROR))
 
     # noinspection PyBroadException

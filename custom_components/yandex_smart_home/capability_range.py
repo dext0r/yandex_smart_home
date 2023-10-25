@@ -142,10 +142,7 @@ class RangeCapability(Capability[RangeCapabilityInstanceActionState], Protocol):
             return float(value)
         except (ValueError, TypeError):
             if strict:
-                raise APIError(
-                    ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f"Unsupported value {value!r} for instance {self.instance} of {self.device_id}",
-                )
+                raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Unsupported value '{value}' for {self}")
 
         return None
 
@@ -161,10 +158,7 @@ class StateRangeCapability(RangeCapability, StateCapability[RangeCapabilityInsta
             if self.state.state == STATE_OFF:
                 raise APIError(ResponseCode.DEVICE_OFF, f"Device {self.state.entity_id} probably turned off")
 
-            raise APIError(
-                ResponseCode.INVALID_VALUE,
-                f"Unable to get current value or {self.instance.value} instance of {self.device_id}",
-            )
+            raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Missing current value for {self}")
 
         return max(min(value + relative_value, self._range.max), self._range.min)
 
@@ -458,7 +452,7 @@ class VolumeCapability(StateRangeCapability):
 
         # absolute volume
         if not state.relative:
-            raise APIError(ResponseCode.INVALID_VALUE, f"Failed to set absolute volume for {self.state.entity_id}")
+            raise APIError(ResponseCode.INVALID_VALUE, f"Absolute volume is not supported for {self}")
 
         if state.value > 0:
             service = media_player.SERVICE_VOLUME_UP
@@ -561,10 +555,7 @@ class ChannelCapability(StateRangeCapability):
                 return
 
             if self.get_value() is None:
-                raise APIError(
-                    ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f"Failed to set relative value for {self.instance.value} instance of {self.state.entity_id}.",
-                )
+                raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Missing current value for {self}")
             else:
                 value = self._get_absolute_value(state.value)
 
@@ -583,7 +574,7 @@ class ChannelCapability(StateRangeCapability):
         except ValueError as e:
             raise APIError(
                 ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                f"Failed to set channel for {self.state.entity_id}. "
+                f"Failed to set channel for {self.device_id}. "
                 f'Please change setting "support_set_channel" to "false" in entity_config '
                 f"if the device does not support channel selection. Error: {e!r}",
             )

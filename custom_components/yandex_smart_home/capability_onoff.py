@@ -102,6 +102,10 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
 
         return SERVICE_TURN_OFF
 
+    def __str__(self) -> str:
+        """Return string representation."""
+        return f"{self.type.short} capability of {self.device_id}"
+
 
 class OnlyOnCapability(ActionOnlyCapabilityMixin, OnOffCapability, ABC):
     """Capability to only turn on a device."""
@@ -451,7 +455,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
             target_state_text = "on" if state.value else "off"
             raise APIError(
                 ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                f"Unable to determine operation mode for {target_state_text} state",
+                f"Unable to determine operation mode for {target_state_text} state for {self}",
             )
 
         await self._hass.services.async_call(

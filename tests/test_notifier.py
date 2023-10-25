@@ -295,7 +295,7 @@ async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):
     assert notifier._pending.empty is True
     assert caplog.messages[:1] == [
         "Failed to track custom property: Unsupported entity binary_sensor.foo for "
-        "temperature instance of light.kitchen",
+        "temperature property of light.kitchen",
     ]
 
     # event
@@ -325,7 +325,9 @@ async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):
     caplog.clear()
     await _async_set_state(hass, "sensor.float", "q")
     assert notifier._pending.empty is True
-    assert caplog.messages[-1] == "Unsupported value 'q' for instance co2_level of sensor.outside_temp"
+    assert (
+        caplog.messages[-1] == "Unsupported value 'q' for instance co2_level of float property of sensor.outside_temp"
+    )
     mock_call_later.assert_not_called()
 
     # mode
@@ -570,7 +572,7 @@ async def test_notifier_initial_report(hass_platform, mock_call_later, caplog):
     ]
 
     assert notifier._pending.empty is True
-    assert caplog.messages[-1:] == ["Unsupported entity binary_sensor.foo for temperature instance of light.kitchen"]
+    assert caplog.messages[-1:] == ["Unsupported entity binary_sensor.foo for temperature property of light.kitchen"]
 
 
 async def test_notifier_send_callback_exception(hass, caplog):

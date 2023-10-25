@@ -69,8 +69,7 @@ class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStream
             except network.NoURLAvailableError:
                 raise APIError(
                     ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                    "Unable to get Home Assistant external URL. "
-                    "Have you set external URLs in Configuration -> General?",
+                    "Missing Home Assistant external URL. Have you set external URLs in Configuration -> General?",
                 )
 
             endpoint_url = stream.endpoint_url(StreamType.HLS)

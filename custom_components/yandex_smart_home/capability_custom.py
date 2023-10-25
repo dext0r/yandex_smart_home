@@ -108,10 +108,7 @@ class CustomCapability(Capability[Any], Protocol):
         try:
             return self._value_template.async_render()
         except TemplateError as exc:
-            raise APIError(
-                ResponseCode.INVALID_VALUE,
-                f"Unable to get current value for {self.instance.value} instance of {self.device_id}: {exc!r}",
-            )
+            raise APIError(ResponseCode.INVALID_VALUE, f"Failed to get current value for {self}: {exc!r}")
 
     def __repr__(self) -> str:
         """Return the representation."""
@@ -233,8 +230,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                 if not self.retrievable:
                     raise APIError(
                         ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                        f"Failed to set relative value for {self.instance.value} instance of {self.device_id}. "
-                        f"No current value source or service found.",
+                        f"Unable to set relative value for {self}: no current value source or service found",
                     )
 
                 value = self._get_absolute_value(state.value)
@@ -272,10 +268,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                     elif state.state in (STATE_OFF, STATE_UNKNOWN):
                         raise APIError(ResponseCode.DEVICE_OFF, f"Device {entity_id} probably turned off")
 
-            raise APIError(
-                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                f"Unable to get current value for {self.instance.value} instance of {self.device_id}",
-            )
+            raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Missing current value for {self}")
 
         return max(min(value + relative_value, self._range.max), self._range.min)
 

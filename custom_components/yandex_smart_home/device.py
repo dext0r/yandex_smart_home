@@ -341,8 +341,7 @@ class Device:
         if not target_capability:
             raise APIError(
                 ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                f"Capability not found for instance {action.state.instance.value} ({action.type.value}) of "
-                f"{self.id}",
+                f"Device {self.id} doesn't support instance {action.state.instance} of {action.type.short} capability",
             )
 
         if error_code_template := self._error_code_template:
@@ -350,7 +349,7 @@ class Device:
                 try:
                     code = ResponseCode(error_code)
                 except ValueError:
-                    raise APIError(ResponseCode.INTERNAL_ERROR, f"Invalid error code for {self.id}: {error_code!r}")
+                    raise APIError(ResponseCode.INTERNAL_ERROR, f"Error code '{error_code}' is invalid for {self.id}")
 
                 raise ActionNotAllowed(code)
 
@@ -359,11 +358,7 @@ class Device:
         except (APIError, ActionNotAllowed):
             raise
         except Exception as e:
-            raise APIError(
-                ResponseCode.INTERNAL_ERROR,
-                f"Failed to execute action for instance {action.state.instance.value} ({action.type.value}) of "
-                f"{self.id}: {e!r}",
-            )
+            raise APIError(ResponseCode.INTERNAL_ERROR, f"Failed to execute action for {target_capability}: {e!r}")
 
     async def _get_entity_and_device(
         self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry

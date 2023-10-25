@@ -444,7 +444,7 @@ script:
 yandex_smart_home:
   entity_config:
     media_player.androidtv:
-      # https://docs.yaha-cloud.ru/v0.6.x/advanced/capabilities/#custom-ranges
+      # https://docs.yaha-cloud.ru/master/advanced/capabilities/#custom-ranges
       # указываем, что для volume поддерживаются increase_value и decrease_value
       # и не указываем set_value - так Yandex Smart Home понимает, что абсолютные
       # значение громкости не поддерживаются ТВ
@@ -456,7 +456,7 @@ yandex_smart_home:
           decrease_value:
             service: media_player.volume_down
             entity_id: media_player.androidtv
-      # https://docs.yaha-cloud.ru/v0.6.x/advanced/capabilities/#custom-modes
+      # https://docs.yaha-cloud.ru/master/advanced/capabilities/#custom-modes
       modes:
         input_source:
           one: ['HW1'] # HDMI 1

@@ -165,8 +165,7 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
             except KeyError:
                 raise APIError(
                     ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f"Color profile {color_profile_name!r} not found for instance {self.instance} "
-                    f"of {self.state.entity_id}",
+                    f"Color profile '{color_profile_name}' not found for {self}",
                 )
 
         return ColorConverter()
@@ -287,10 +286,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
                 light.DOMAIN, light.SERVICE_TURN_ON, service_data, blocking=True, context=context
             )
         else:
-            raise APIError(
-                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                f"Unsupported value {state.value!r} for instance {self.instance} of {self.state.entity_id}",
-            )
+            raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Unsupported value '{state.value}' for {self}")
 
     @cached_property
     def _converter(self) -> ColorTemperatureConverter:
@@ -302,8 +298,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
             except KeyError:
                 raise APIError(
                     ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                    f"Color profile {color_profile_name!r} not found for instance {self.instance} "
-                    f"of {self.state.entity_id}",
+                    f"Color profile '{color_profile_name}' not found for {self}",
                 )
 
         return ColorTemperatureConverter(None, self.state)

@@ -100,20 +100,18 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                 pass
 
         if rv is not None and ha_mode not in self.supported_ha_modes:
-            err = (
-                f'Unsupported HA mode "{ha_mode}" for {self.instance.value} instance of {self.device_id} '
-                f"(not in {self.supported_ha_modes!r})"
+            raise APIError(
+                ResponseCode.INVALID_VALUE,
+                f"Unsupported HA mode '{ha_mode}' for {self}: not in {self.supported_ha_modes}",
             )
-
-            raise APIError(ResponseCode.INVALID_VALUE, err)
 
         if rv is None and not hide_warnings:
             if str(ha_mode).lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
                 if str(ha_mode).lower() in [str(m).lower() for m in self.supported_ha_modes]:
                     _LOGGER.warning(
-                        f'Unable to get Yandex mode for "{ha_mode}" for {self.instance.value} instance '
-                        f"of {self.device_id}. It may cause inconsistencies between Yandex and HA. "
-                        f'Check "modes" setting for this entity'
+                        f"Failed to get Yandex mode for mode '{ha_mode}' for {self}. "
+                        f"It may cause inconsistencies between Yandex and HA. "
+                        f"See https://docs.yaha-cloud.ru/master/config/modes/"
                     )
 
         return rv
@@ -133,8 +131,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
 
         raise APIError(
             ResponseCode.INVALID_VALUE,
-            f'Unsupported mode "{yandex_mode.value}" for {self.instance.value} instance of {self.device_id}. '
-            f'Check "modes" setting for this entity',
+            f"Unsupported mode '{yandex_mode}' for {self}, see https://docs.yaha-cloud.ru/master/config/modes/",
         )
 
     @abstractmethod
@@ -716,8 +713,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
             if not ha_modes:
                 raise APIError(
                     ResponseCode.INVALID_VALUE,
-                    f'Unsupported mode "{state.value.value}" for {self.instance.value} instance of '
-                    f'{self.state.entity_id}. Check "modes" setting for this entity',
+                    f"Unsupported mode '{state.value}' for {self}, see https://docs.yaha-cloud.ru/master/config/modes/",
                 )
 
             ha_mode = self._convert_mapping_speed_value(ha_modes[0])
@@ -741,10 +737,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         try:
             return int(value.replace("%", ""))
         except ValueError:
-            raise APIError(
-                ResponseCode.INVALID_VALUE,
-                f"Unsupported speed value {value!r} for {self.instance.value} instance of {self.state.entity_id}.",
-            )
+            raise APIError(ResponseCode.INVALID_VALUE, f"Unsupported speed value '{value}' for {self}")
 
 
 @STATE_CAPABILITIES_REGISTRY.register

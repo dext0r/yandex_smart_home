@@ -87,6 +87,10 @@ class Property(Protocol):
         """Test if the property value differs from other property."""
         ...
 
+    def __str__(self) -> str:
+        """Return string representation."""
+        return f"instance {self.instance} of {self.type.short} property of {self.device_id}"
+
     def __repr__(self) -> str:
         """Return the representation."""
         return (

@@ -122,8 +122,8 @@ async def test_capability_range(hass, caplog):
 
     with pytest.raises(APIError) as e:
         cap._get_absolute_value(0)
-    assert e.value.code == ResponseCode.INVALID_VALUE
-    assert e.value.message == "Unable to get current value or volume instance of switch.test"
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.message == "Missing current value for instance volume of range capability of switch.test"
 
     cap.state.state = STATE_OFF
     with pytest.raises(APIError) as e:

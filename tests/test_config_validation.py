@@ -20,7 +20,11 @@ yandex_smart_home:
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
-    assert "Property type 'invalid' is not supported. See valid types at" in caplog.messages[-1]
+    assert (
+        "Property type 'invalid' is not supported, see valid types at "
+        "https://docs.yaha-cloud.ru/master/devices/sensor/event/#type and "
+        "https://docs.yaha-cloud.ru/master/devices/sensor/float/#type" in caplog.messages[-1]
+    )
 
 
 async def test_invalid_event_property_type(hass, caplog):
@@ -37,7 +41,10 @@ yandex_smart_home:
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
-    assert "Event property type 'invalid' is not supported. See valid event types at" in caplog.messages[-1]
+    assert (
+        "Event property type 'invalid' is not supported, see valid event types at "
+        "https://docs.yaha-cloud.ru/master/devices/sensor/event/#type"
+    ) in caplog.messages[-1]
 
 
 async def test_invalid_float_property_type(hass, caplog):
@@ -54,7 +61,10 @@ yandex_smart_home:
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
-    assert "Float property type 'invalid' is not supported. See valid float types at" in caplog.messages[-1]
+    assert (
+        "Float property type 'invalid' is not supported, see valid float types at "
+        "https://docs.yaha-cloud.ru/master/devices/sensor/float/#type"
+    ) in caplog.messages[-1]
 
 
 async def test_invalid_property(hass, caplog):
@@ -120,7 +130,11 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
-    assert "Mode 'invalid' is not supported. See valid modes at" in caplog.messages[-2]
+    assert (
+        "Mode 'invalid' is not supported, see valid modes at "
+        "https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html and "
+        "https://docs.yaha-cloud.ru/master/devices/light/#scene-list" in caplog.messages[-2]
+    )
 
 
 async def test_invalid_mode_instance(hass, caplog):
@@ -135,7 +149,10 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
-    assert "Mode instance 'invalid' is not supported. See valid modes at" in caplog.messages[-2]
+    assert (
+        "Mode instance 'invalid' is not supported, see valid modes at "
+        "https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html"
+    ) in caplog.messages[-2]
 
 
 async def test_invalid_toggle_instance(hass, caplog):
@@ -150,7 +167,10 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
-    assert "Toggle instance 'invalid' is not supported. See valid values at" in caplog.messages[-2]
+    assert (
+        "Toggle instance 'invalid' is not supported, see valid values at "
+        "https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html"
+    ) in caplog.messages[-2]
 
 
 async def test_invalid_range_instance(hass, caplog):
@@ -165,7 +185,10 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
-    assert "Range instance 'invalid' is not supported. See valid values at" in caplog.messages[-2]
+    assert (
+        "Range instance 'invalid' is not supported, see valid values at "
+        "https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html"
+    ) in caplog.messages[-2]
 
 
 async def test_invalid_entity_feature(hass, caplog):
@@ -180,7 +203,7 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
-    assert "Feature 'invalid' is not supported" in caplog.messages[-1]
+    assert "Feature invalid is not supported" in caplog.messages[-1]
 
 
 async def test_invalid_device_type(hass, caplog):
@@ -220,7 +243,10 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
-    assert "Color name 'invalid' is not supported. See valid values at" in caplog.messages[-2]
+    assert (
+        "Color name 'invalid' is not supported, see valid values at "
+        "https://docs.yaha-cloud.ru/master/devices/light/#color-profile-config" in caplog.messages[-2]
+    )
 
 
 async def test_color_value(hass):

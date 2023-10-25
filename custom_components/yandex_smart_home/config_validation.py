@@ -37,8 +37,8 @@ def property_type(value: str) -> str:
             return value
         except ValueError:
             raise vol.Invalid(
-                f"Event property type {instance!r} is not supported. "
-                f"See valid event types at https://docs.yaha-cloud.ru/master/devices/sensor/event/#type"
+                f"Event property type '{instance}' is not supported, "
+                f"see valid event types at https://docs.yaha-cloud.ru/master/devices/sensor/event/#type"
             )
 
     if value.startswith(f"{PropertyInstanceType.FLOAT}."):
@@ -48,8 +48,8 @@ def property_type(value: str) -> str:
             return value
         except ValueError:
             raise vol.Invalid(
-                f"Float property type {instance!r} is not supported. "
-                f"See valid float types at https://docs.yaha-cloud.ru/master/devices/sensor/float/#type"
+                f"Float property type '{instance}' is not supported, "
+                f"see valid float types at https://docs.yaha-cloud.ru/master/devices/sensor/float/#type"
             )
 
     for enum in [FloatPropertyInstance, EventPropertyInstance]:
@@ -60,8 +60,8 @@ def property_type(value: str) -> str:
             pass
 
     raise vol.Invalid(
-        f"Property type {value!r} is not supported. "
-        f"See valid types at https://docs.yaha-cloud.ru/master/devices/sensor/event/#type and "
+        f"Property type '{value}' is not supported, "
+        f"see valid types at https://docs.yaha-cloud.ru/master/devices/sensor/event/#type and "
         f"https://docs.yaha-cloud.ru/master/devices/sensor/float/#type"
     )
 
@@ -86,10 +86,10 @@ def mode_instance(value: str) -> str:
         ModeCapabilityInstance(value)
     except ValueError:
         _LOGGER.error(
-            f"Mode instance {value!r} is not supported. "
-            f"See valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html"
+            f"Mode instance '{value}' is not supported, "
+            f"see valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html"
         )
-        raise vol.Invalid(f"Mode instance {value!r} is not supported")
+        raise vol.Invalid(f"Mode instance '{value}' is not supported")
 
     return value
 
@@ -103,13 +103,12 @@ def mode(value: str) -> str:
             pass
 
     _LOGGER.error(
-        f"Mode {value!r} is not supported. "
-        f"See valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html and "
-        f"https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html#discovery__discovery-"
-        f"parameters-color-setting-table__entry__75"
+        f"Mode '{value}' is not supported, "
+        f"see valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html and "
+        f"https://docs.yaha-cloud.ru/master/devices/light/#scene-list"
     )
 
-    raise vol.Invalid(f"Mode {value!r} is not supported.")
+    raise vol.Invalid(f"Mode '{value}' is not supported")
 
 
 def toggle_instance(value: str) -> str:
@@ -117,10 +116,10 @@ def toggle_instance(value: str) -> str:
         ToggleCapabilityInstance(value)
     except ValueError:
         _LOGGER.error(
-            f"Toggle instance {value!r} is not supported. "
-            f"See valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html"
+            f"Toggle instance '{value}' is not supported, "
+            f"see valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html"
         )
-        raise vol.Invalid(f"Toggle instance {value!r} is not supported.")
+        raise vol.Invalid(f"Toggle instance '{value}' is not supported")
 
     return value
 
@@ -130,10 +129,10 @@ def range_instance(value: str) -> str:
         RangeCapabilityInstance(value)
     except ValueError:
         _LOGGER.error(
-            f"Range instance {value!r} is not supported. "
-            f"See valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html"
+            f"Range instance '{value}' is not supported, "
+            f"see valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html"
         )
-        raise vol.Invalid(f"Range instance {value!r} is not supported.")
+        raise vol.Invalid(f"Range instance '{value}' is not supported")
 
     return value
 
@@ -143,7 +142,7 @@ def entity_features(value: list[str]) -> list[str]:
         try:
             MediaPlayerFeature(feature)
         except ValueError:
-            raise vol.Invalid(f"Feature {feature!r} is not supported")
+            raise vol.Invalid(f"Feature {feature} is not supported")
 
     return value
 
@@ -158,10 +157,10 @@ def device_type(value: str) -> str:
             pass
 
     _LOGGER.error(
-        f"Device type {value!r} is not supported. "
-        f"See valid device types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html"
+        f"Device type '{value}' is not supported, "
+        f"see valid device types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html"
     )
-    raise vol.Invalid(f"Device type {value!r} is not supported.")
+    raise vol.Invalid(f"Device type '{value}' is not supported")
 
 
 def pressure_unit(value: str) -> str:
@@ -178,10 +177,10 @@ def color_name(value: str) -> str:
         ColorName(value)
     except ValueError:
         _LOGGER.error(
-            f"Color name {value!r} is not supported. "
-            f"See valid values at https://docs.yaha-cloud.ru/v0.6.x/devices/light/#color-profile-config"
+            f"Color name '{value}' is not supported, "
+            f"see valid values at https://docs.yaha-cloud.ru/master/devices/light/#color-profile-config"
         )
-        raise vol.Invalid(f"Color name {value!r} is not supported")
+        raise vol.Invalid(f"Color name '{value}' is not supported")
 
     return value
 
@@ -193,7 +192,7 @@ def color_value(value: list[Any] | int) -> int:
     if isinstance(value, list) and len(value) == 3:
         return rgb_to_int(RGBColor(*[int(v) for v in value]))
 
-    raise vol.Invalid(f"Invalid value: {value!r}")
+    raise vol.Invalid(f"Invalid value: {value}")
 
 
 def custom_capability_state(value: ConfigType) -> ConfigType:

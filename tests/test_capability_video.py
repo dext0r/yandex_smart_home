@@ -142,8 +142,8 @@ async def test_capability_video_stream_direct(hass_platform_direct, config_entry
             await cap.set_instance_state(Context(), ACTION_STATE)
         assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert (
-            e.value.message == "Unable to get Home Assistant external URL. "
-            "Have you set external URLs in Configuration -> General?"
+            e.value.message
+            == "Missing Home Assistant external URL. Have you set external URLs in Configuration -> General?"
         )
 
     await async_process_ha_core_config(hass, {"external_url": "https://example.com"})

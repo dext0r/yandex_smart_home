@@ -236,7 +236,7 @@ async def test_device_properties(hass, caplog):
     )
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert [type(c) for c in device.get_properties()] == [OpenStateEventProperty]
-    assert caplog.messages[-1] == "Unsupported entity binary_sensor.foo for temperature instance of sensor.temp"
+    assert caplog.messages[-1] == "Unsupported entity binary_sensor.foo for temperature property of sensor.temp"
 
 
 async def test_device_info(hass, registries):
@@ -527,7 +527,7 @@ async def test_device_execute(hass, caplog):
         )
 
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert e.value.message == "Capability not found for instance pause (devices.capabilities.toggle) of switch.test"
+    assert e.value.message == "Device switch.test doesn't support instance pause of toggle capability"
 
     off_calls = async_mock_service(hass, state.domain, SERVICE_TURN_OFF)
     await device.execute(
@@ -566,8 +566,7 @@ async def test_device_execute_exception(hass):
 
     assert e.value.code == ResponseCode.INTERNAL_ERROR
     assert e.value.message == (
-        "Failed to execute action for instance on (devices.capabilities.on_off) of switch.test: "
-        "Exception('fail set_state')"
+        "Failed to execute action for on_off capability of switch.test: Exception('fail set_state')"
     )
 
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)

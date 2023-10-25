@@ -87,10 +87,7 @@ class FloatProperty(Property, Protocol):
         try:
             float_value = float(value)
         except (ValueError, TypeError):
-            raise APIError(
-                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE,
-                f"Unsupported value {value!r} for instance {self.instance.value} of {self.device_id}",
-            )
+            raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Unsupported value '{value}' for {self}")
 
         if self._native_unit_of_measurement and self.unit_of_measurement and self._unit_converter:
             float_value = self._unit_converter.convert(
