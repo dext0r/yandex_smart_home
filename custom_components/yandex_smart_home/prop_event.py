@@ -260,11 +260,10 @@ class ButtonProperty(EventProperty):
         return False
 
     def get_value(self) -> str | None:
-        for value in [self.state.attributes.get('last_action'), self.state.attributes.get('action'), self.state.state]:
-            event_value = self.event_value(value)
+        if self.state.domain == binary_sensor.DOMAIN:
+            return self.event_value(self.state.attributes.get('last_action'))
 
-            if event_value:
-                return event_value
+        return self.event_value(self.state.state)
 
 
 @register_property
@@ -308,4 +307,4 @@ class VibrationSensorProperty(EventProperty):
         return False
 
     def get_value(self) -> str | None:
-        return self.event_value(self.state.attributes.get('action'))
+        return self.event_value(self.state.state)
