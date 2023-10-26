@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from homeassistant import core
-from homeassistant.components import button, climate, cover, fan, humidifier, light, lock, media_player, switch
+from homeassistant.components import demo
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
@@ -83,8 +83,7 @@ async def test_capability_demo_platform(hass):
         ],
     ):
         await async_setup_component(hass, core.DOMAIN, {})
-        for component in [button, switch, light, cover, media_player, fan, climate, humidifier, lock]:
-            await async_setup_component(hass, component.DOMAIN, {component.DOMAIN: [{"platform": "demo"}]})
+        await async_setup_component(hass, demo.DOMAIN, {})
         await hass.async_block_till_done()
 
     # for x in sorted(hass.states.async_all(), key=lambda e: e.entity_id):
@@ -357,31 +356,7 @@ async def test_capability_demo_platform(hass):
         ("devices.capabilities.on_off", "on"),
     ]
 
-    state = hass.states.get("media_player.kitchen_2")
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
-    assert capabilities == [
-        ("devices.capabilities.range", "volume"),
-        ("devices.capabilities.range", "channel"),
-        ("devices.capabilities.toggle", "mute"),
-        ("devices.capabilities.toggle", "pause"),
-        ("devices.capabilities.on_off", "on"),
-    ]
-
     state = hass.states.get("media_player.living_room")
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
-    assert capabilities == [
-        ("devices.capabilities.range", "volume"),
-        ("devices.capabilities.range", "channel"),
-        ("devices.capabilities.toggle", "mute"),
-        ("devices.capabilities.toggle", "pause"),
-        ("devices.capabilities.on_off", "on"),
-    ]
-
-    state = hass.states.get("media_player.living_room_2")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
@@ -404,30 +379,7 @@ async def test_capability_demo_platform(hass):
         ("devices.capabilities.on_off", "on"),
     ]
 
-    state = hass.states.get("media_player.lounge_room_2")
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.media_device.tv"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
-    assert capabilities == [
-        ("devices.capabilities.mode", "input_source"),
-        ("devices.capabilities.range", "channel"),
-        ("devices.capabilities.toggle", "pause"),
-        ("devices.capabilities.on_off", "on"),
-    ]
-
     state = hass.states.get("media_player.walkman")
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
-    assert capabilities == [
-        ("devices.capabilities.range", "volume"),
-        ("devices.capabilities.range", "channel"),
-        ("devices.capabilities.toggle", "mute"),
-        ("devices.capabilities.toggle", "pause"),
-        ("devices.capabilities.on_off", "on"),
-    ]
-
-    state = hass.states.get("media_player.walkman_2")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == "devices.types.media_device"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())

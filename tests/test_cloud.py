@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from aiohttp import WSMessage, WSMsgType
 from homeassistant import core
-from homeassistant.components import switch
+from homeassistant.components import demo
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION
@@ -386,7 +386,7 @@ async def test_cloud_req_user_devices_action(hass_platform, config_entry_cloud, 
         [Platform.SWITCH],
     ):
         await async_setup_component(hass, core.DOMAIN, {})
-        await async_setup_component(hass, switch.DOMAIN, {switch.DOMAIN: {"platform": "demo"}})
+        await async_setup_component(hass, demo.DOMAIN, {})
         await hass.async_block_till_done()
 
     assert hass.states.get("switch.ac").state == "off"

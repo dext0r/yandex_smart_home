@@ -2,7 +2,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 from homeassistant import core
-from homeassistant.components import switch
+from homeassistant.components import demo
 from homeassistant.const import Platform
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockUser
@@ -199,7 +199,7 @@ async def test_http_user_devices_action(hass_platform_direct, hass_client):
         [Platform.SWITCH],
     ):
         await async_setup_component(hass, core.DOMAIN, {})
-        await async_setup_component(hass, switch.DOMAIN, {switch.DOMAIN: {"platform": "demo"}})
+        await async_setup_component(hass, demo.DOMAIN, {})
         await hass.async_block_till_done()
 
     assert hass.states.get("switch.ac").state == "off"

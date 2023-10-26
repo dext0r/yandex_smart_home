@@ -2,7 +2,7 @@ import typing
 from unittest.mock import patch
 
 from homeassistant import core
-from homeassistant.components import binary_sensor, climate, sensor
+from homeassistant.components import demo
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
@@ -125,8 +125,7 @@ async def test_property_demo_platform(hass):
         [Platform.CLIMATE, Platform.SENSOR, Platform.BINARY_SENSOR],
     ):
         await async_setup_component(hass, core.DOMAIN, {})
-        for component in climate, sensor, binary_sensor:
-            await async_setup_component(hass, component.DOMAIN, {component.DOMAIN: [{"platform": "demo"}]})
+        await async_setup_component(hass, demo.DOMAIN, {})
         await hass.async_block_till_done()
 
     # for x in hass.states.async_all():
