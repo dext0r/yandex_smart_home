@@ -51,7 +51,7 @@
 ### Источник состояния (объект) { id=property-value-state }
 > Параметры: `entity` и/или `attribute`
 
-Задают объект и/или его атрибут, в котором находится текущее состояние датчика. 
+Задают объект и/или его атрибут, в котором находится текущее состояние датчика. Нельзя использовать совместо с [`value_template`](#property-value-template).
 
 !!! info "Описание"
     ```yaml
@@ -72,6 +72,25 @@
             - type: power
               entity: switch.humidifer_socket
               attribute: current_power
+    ```
+
+### Источник состояния (шаблон) { id=property-value-template }
+> Параметр: `value_template`
+
+Задаёт шаблон для вычисления текущего состояние датчика. Нельзя использовать совместно с [`entity` и/или `attribute`](#property-value-state).
+
+Используйте в случаях, когда в УДЯ требуется получиться значение отличное от значения в HA, и для этого не хочется создавать дополнительный [датчик на шаблоне](https://www.home-assistant.io/integrations/template).
+
+!!! warning "Не рекомендуется использовать для конвертации из одних единиц измерения в другие [подробнее](#unit-conversion)"
+
+!!! info "Пример"
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        humidifier.room:
+          properties:
+            - type: temperature 
+              value_template: '{{ states("sensor.room_temperature") + 5 }}'
     ```
 
 ### Единицы измерения в HA { id=property-unit-of-measurement }
