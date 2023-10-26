@@ -4,7 +4,6 @@ yandex_smart_home:
       skill_id: d38d4c39-5846-ba53-67acc27e08bc
       user_id: e8701ad48ba05a91604e480dd60899a3
   settings:
-    pressure_unit: mmHg
     beta: true
   color_profile:
     test:
@@ -180,3 +179,13 @@ yandex_smart_home:
       custom_modes:
         input_source:
           state_template: buz
+    sensor.sun:
+      properties:
+        - type: temperature
+          value_template: '{{ 15000000 }}'
+          unit_of_measurement: °C
+          target_unit_of_measurement: K
+        - type: pressure
+          value_template: '{{ 0 }}'
+          unit_of_measurement: mmHg
+          target_unit_of_measurement: bar

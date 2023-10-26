@@ -35,6 +35,7 @@ ENTITY_PROPERTY_SCHEMA = vol.All(
         {
             vol.Required(const.CONF_ENTITY_PROPERTY_TYPE): vol.Schema(vol.All(str, ycv.property_type)),
             vol.Optional(const.CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT): cv.string,
+            vol.Optional(const.CONF_ENTITY_PROPERTY_TARGET_UNIT_OF_MEASUREMENT): cv.string,
             vol.Optional(const.CONF_ENTITY_PROPERTY_ENTITY): cv.entity_id,
             vol.Optional(const.CONF_ENTITY_PROPERTY_ATTRIBUTE): cv.string,
             vol.Optional(const.CONF_ENTITY_PROPERTY_VALUE_TEMPLATE): cv.template,
@@ -137,12 +138,13 @@ NOTIFIER_SCHEMA = vol.Schema(
 )
 
 
-SETTINGS_SCHEMA = vol.Schema(
+SETTINGS_SCHEMA = vol.All(
+    cv.deprecated(const.CONF_PRESSURE_UNIT),
     {
-        vol.Optional(const.CONF_PRESSURE_UNIT): vol.Schema(vol.All(str, ycv.pressure_unit)),
+        vol.Optional(const.CONF_PRESSURE_UNIT): cv.string,
         vol.Optional(const.CONF_BETA): cv.boolean,
         vol.Optional(const.CONF_CLOUD_STREAM): cv.boolean,
-    }
+    },
 )
 
 

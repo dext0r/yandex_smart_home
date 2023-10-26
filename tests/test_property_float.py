@@ -24,12 +24,12 @@ from homeassistant.core import State
 from homeassistant.exceptions import HomeAssistantError
 import pytest
 
-from custom_components.yandex_smart_home import const
+from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.property_float import PropertyType
-from custom_components.yandex_smart_home.schema import FloatPropertyInstance
+from custom_components.yandex_smart_home.schema import FloatPropertyInstance, ResponseCode
 from custom_components.yandex_smart_home.unit_conversion import UnitOfPressure
 
-from . import BASIC_ENTRY_DATA, MockConfigEntryData
+from . import BASIC_ENTRY_DATA
 from .test_property import assert_no_properties, get_exact_one_property
 
 
@@ -158,6 +158,20 @@ async def test_property_float_temperature_convertion(hass):
 
     state = State(
         "sensor.test",
+        "34.756",
+        {
+            ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
+            ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.KELVIN,
+        },
+    )
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
+
+    assert prop.retrievable is True
+    assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.kelvin"}
+    assert prop.get_value() == 34.76
+
+    state = State(
+        "sensor.test",
         "50.10",
         {
             ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
@@ -170,84 +184,57 @@ async def test_property_float_temperature_convertion(hass):
     assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.celsius"}
     assert prop.get_value() == 10.06
 
-
-@pytest.mark.parametrize("device_class", [SensorDeviceClass.PRESSURE, SensorDeviceClass.ATMOSPHERIC_PRESSURE])
-@pytest.mark.parametrize(
-    "unit_of_measurement,property_unit,v",
-    [
-        (UnitOfPressure.PA, "unit.pressure.pascal", 98658.57),
-        (UnitOfPressure.MMHG, "unit.pressure.mmhg", 740),
-        (UnitOfPressure.ATM, "unit.pressure.atm", 0.97),
-        (UnitOfPressure.BAR, "unit.pressure.bar", 0.99),
-    ],
-)
-def test_property_float_pressure_from_mmhg(
-    hass, config_entry_direct, device_class, unit_of_measurement, property_unit, v
-):
-    entry_data = MockConfigEntryData(
-        entry=config_entry_direct, yaml_config={const.CONF_SETTINGS: {const.CONF_PRESSURE_UNIT: unit_of_measurement}}
-    )
     state = State(
         "sensor.test",
-        "740",
-        {ATTR_DEVICE_CLASS: device_class, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.MMHG},
+        "50.10",
+        {
+            ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
+            ATTR_UNIT_OF_MEASUREMENT: "foo",
+        },
     )
-    prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
+
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "pressure", "unit": property_unit}
-    assert prop.get_value() == v
-
-    prop.state = State(
-        "sensor.test",
-        "-5",
-        {ATTR_DEVICE_CLASS: device_class, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.MMHG},
-    )
-    assert prop.get_value() == 0
-
-
-@pytest.mark.parametrize("device_class", [SensorDeviceClass.PRESSURE, SensorDeviceClass.ATMOSPHERIC_PRESSURE])
-@pytest.mark.parametrize(
-    "unit_of_measurement,property_unit,v",
-    [
-        (UnitOfPressure.PA, "unit.pressure.pascal", 106868.73),
-        (UnitOfPressure.MMHG, "unit.pressure.mmhg", 801.58),
-        (UnitOfPressure.ATM, "unit.pressure.atm", 1.05),
-        (UnitOfPressure.BAR, "unit.pressure.bar", 1.07),
-    ],
-)
-def test_property_float_pressure_from_psi(
-    hass, config_entry_direct, device_class, unit_of_measurement, property_unit, v
-):
-    entry_data = MockConfigEntryData(
-        entry=config_entry_direct, yaml_config={const.CONF_SETTINGS: {const.CONF_PRESSURE_UNIT: unit_of_measurement}}
-    )
-    state = State(
-        "sensor.test",
-        "15.5",
-        {ATTR_DEVICE_CLASS: device_class, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.PSI},
-    )
-    prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
-    assert prop.retrievable is True
-    assert prop.parameters == {"instance": "pressure", "unit": property_unit}
-    assert prop.get_value() == v
-
-
-def test_property_float_pressure_unsupported_target(hass, config_entry_direct):
-    entry_data = MockConfigEntryData(
-        entry=config_entry_direct, yaml_config={const.CONF_SETTINGS: {const.CONF_PRESSURE_UNIT: "kPa"}}
-    )
-    state = State(
-        "sensor.test",
-        "15.5",
-        {ATTR_DEVICE_CLASS: SensorDeviceClass.PRESSURE, ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.PSI},
-    )
-    prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
-    assert prop.retrievable is True
-    with pytest.raises(ValueError):
-        assert prop.parameters
-
-    with pytest.raises(ValueError):
+    assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.celsius"}
+    with pytest.raises(APIError) as e:
         prop.get_value()
+    assert e.value.code == ResponseCode.INVALID_VALUE
+    assert e.value.message == (
+        "Failed to convert value from 'foo' to '°C' for instance temperature of float property of sensor.test: "
+        "foo is not a recognized temperature unit."
+    )
+
+
+@pytest.mark.parametrize("device_class", [SensorDeviceClass.PRESSURE, SensorDeviceClass.ATMOSPHERIC_PRESSURE])
+@pytest.mark.parametrize(
+    "unit_of_measurement,property_unit,assert_value",
+    [
+        (None, "unit.pressure.mmhg", None),
+        (UnitOfPressure.PA, "unit.pressure.pascal", None),
+        (UnitOfPressure.MMHG, "unit.pressure.mmhg", None),
+        (UnitOfPressure.ATM, "unit.pressure.atm", None),
+        (UnitOfPressure.BAR, "unit.pressure.bar", None),
+        (UnitOfPressure.PSI, "unit.pressure.mmhg", 38294.9),
+    ],
+)
+def test_property_float_pressure(hass, device_class, unit_of_measurement, property_unit, assert_value):
+    value = 740.5
+    attributes = {ATTR_DEVICE_CLASS: device_class}
+    if unit_of_measurement:
+        attributes[ATTR_UNIT_OF_MEASUREMENT] = unit_of_measurement
+
+    state = State("sensor.test", str(value), attributes)
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
+    assert prop.retrievable is True
+    assert prop.parameters == {"instance": "pressure", "unit": property_unit}
+
+    if assert_value:
+        assert prop.get_value() == assert_value
+    else:
+        assert prop.get_value() == value
+
+    prop.state = State("sensor.test", "-5", attributes)
+    assert prop.get_value() == 0
 
 
 @pytest.mark.parametrize(

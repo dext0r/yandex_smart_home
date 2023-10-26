@@ -35,7 +35,7 @@ async def test_valid_config(hass):
             "user_id": "e8701ad48ba05a91604e480dd60899a3",
         }
     ]
-    assert config[DOMAIN]["settings"] == {"pressure_unit": "mmHg", "beta": True}
+    assert config[DOMAIN]["settings"] == {"beta": True}
     assert config[DOMAIN]["color_profile"] == {"test": {"red": 16711680, "green": 65280, "warm_white": 3000}}
     assert config[DOMAIN]["filter"] == {
         "include_domains": ["switch", "light", "climate"],
@@ -47,7 +47,7 @@ async def test_valid_config(hass):
     }
 
     entity_config = config[DOMAIN]["entity_config"]
-    assert len(entity_config) == 15
+    assert len(entity_config) == 16
 
     assert entity_config["switch.kitchen"] == {
         "name": "Выключатель",
@@ -182,6 +182,23 @@ async def test_valid_config(hass):
         "custom_modes": {"input_source": {"state_template": Template("buz", hass)}},
         "custom_ranges": {"open": {"state_template": Template("foo", hass)}},
         "custom_toggles": {"backlight": {"state_template": Template("bar", hass)}},
+    }
+
+    assert entity_config["sensor.sun"] == {
+        "properties": [
+            {
+                "target_unit_of_measurement": "K",
+                "type": "temperature",
+                "unit_of_measurement": "°C",
+                "value_template": Template("{{ 15000000 }}", hass),
+            },
+            {
+                "target_unit_of_measurement": "bar",
+                "type": "pressure",
+                "unit_of_measurement": "mmHg",
+                "value_template": Template("{{ 0 }}", hass),
+            },
+        ]
     }
 
 

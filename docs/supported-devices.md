@@ -113,7 +113,7 @@
 | `device_tracker`         |                                                                                                                                |
 | `lawn_mower`             | Поддержка запланирована                                                                                                        |
 | `notify`                 |                                                                                                                                |
-| `number`, `input_number` | Можно привязать к устройству через [пользовательские умения](advanced/capabilties.md)                                          |
-| `remote`                 | Можно задействовать в [пользовательском умении](advanced/capabilties.md)                                                       |
+| `number`, `input_number` | Можно привязать к устройству через [пользовательские умения](advanced/capabilities.md)                                         |
+| `remote`                 | Можно задействовать в [пользовательском умении](advanced/capabilities.md)                                                      |
 | `select`, `input_select` | Нет ясности что делать при выборе разных значений<br>Можно задействовать в [пользовательском умении](advanced/capabilities.md) |
 | `siren`                  | Поддержка запланирована                                                                                                        |

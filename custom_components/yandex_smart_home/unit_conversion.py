@@ -8,6 +8,8 @@ from homeassistant.const import (
     CONCENTRATION_PARTS_PER_BILLION,
     CONCENTRATION_PARTS_PER_MILLION,
 )
+
+# noinspection PyProtectedMember
 from homeassistant.util.unit_conversion import (
     _IN_TO_M,
     _MERCURY_DENSITY,
@@ -16,7 +18,7 @@ from homeassistant.util.unit_conversion import (
     BaseUnitConverter,
 )
 
-from .schema import PressureUnit
+from .schema import PressureUnit, TemperatureUnit
 
 
 class TVOCConcentrationConverter(BaseUnitConverter):
@@ -40,6 +42,25 @@ class TVOCConcentrationConverter(BaseUnitConverter):
         CONCENTRATION_PARTS_PER_MILLION: 1 / 4496.29381184,
         CONCENTRATION_PARTS_PER_BILLION: 1 / 4.49629381184,
     }
+
+
+class UnitOfTemperature(StrEnum):
+    """Temperature units."""
+
+    CELSIUS = "°C"
+    FAHRENHEIT = "°F"
+    KELVIN = "K"
+
+    @property
+    def as_property_unit(self) -> TemperatureUnit:
+        """Return value as property unit."""
+        match self:
+            case self.CELSIUS:
+                return TemperatureUnit.CELSIUS
+            case self.KELVIN:
+                return TemperatureUnit.KELVIN
+
+        raise ValueError
 
 
 class UnitOfPressure(StrEnum):

@@ -1,5 +1,6 @@
 """Implement the Yandex Smart Home float properties."""
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from typing import Protocol, Self
 
 from homeassistant.components import air_quality, climate, fan, humidifier, light, sensor, switch, water_heater
@@ -16,8 +17,8 @@ from homeassistant.const import (
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
     UnitOfPower,
-    UnitOfTemperature,
 )
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util.unit_conversion import (
     BaseUnitConverter,
     ElectricCurrentConverter,
@@ -48,12 +49,11 @@ from .schema import (
     PropertyType,
     ResponseCode,
     TemperatureFloatPropertyParameters,
-    TemperatureUnit,
     TVOCFloatPropertyParameters,
     VoltageFloatPropertyParameters,
     WaterLevelFloatPropertyParameters,
 )
-from .unit_conversion import PressureConverter, TVOCConcentrationConverter, UnitOfPressure
+from .unit_conversion import PressureConverter, TVOCConcentrationConverter, UnitOfPressure, UnitOfTemperature
 
 
 class FloatProperty(Property, Protocol):
@@ -90,9 +90,16 @@ class FloatProperty(Property, Protocol):
             raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Unsupported value '{value}' for {self}")
 
         if self._native_unit_of_measurement and self.unit_of_measurement and self._unit_converter:
-            float_value = self._unit_converter.convert(
-                float_value, self._native_unit_of_measurement, self.unit_of_measurement
-            )
+            try:
+                float_value = self._unit_converter.convert(
+                    float_value, self._native_unit_of_measurement, self.unit_of_measurement
+                )
+            except HomeAssistantError as e:
+                raise APIError(
+                    ResponseCode.INVALID_VALUE,
+                    f"Failed to convert value from '{self._native_unit_of_measurement}' to "
+                    f"'{self.unit_of_measurement}' for {self}: {e}",
+                )
 
         lower_limit, upper_limit = self.parameters.range
         if lower_limit is not None and float_value < lower_limit:
@@ -145,11 +152,17 @@ class TemperatureProperty(FloatProperty, ABC):
     @property
     def parameters(self) -> TemperatureFloatPropertyParameters:
         """Return parameters for a devices list request."""
-        return TemperatureFloatPropertyParameters(unit=TemperatureUnit.CELSIUS)
+        return TemperatureFloatPropertyParameters(unit=self.unit_of_measurement.as_property_unit)
 
     @property
-    def unit_of_measurement(self) -> str:
+    def unit_of_measurement(self) -> UnitOfTemperature:
         """Return the unit the property value is expressed in."""
+        if self._native_unit_of_measurement:
+            with suppress(ValueError):
+                unit = UnitOfTemperature(self._native_unit_of_measurement)
+                if unit.as_property_unit:
+                    return unit
+
         return UnitOfTemperature.CELSIUS
 
     @property
@@ -182,7 +195,13 @@ class PressureProperty(FloatProperty, ABC):
     @property
     def unit_of_measurement(self) -> UnitOfPressure:
         """Return the unit the property value is expressed in."""
-        return UnitOfPressure(self._entry_data.pressure_unit)
+        if self._native_unit_of_measurement:
+            with suppress(ValueError):
+                unit = UnitOfPressure(self._native_unit_of_measurement)
+                if unit.as_property_unit:
+                    return unit
+
+        return UnitOfPressure.MMHG
 
     @property
     def _unit_converter(self) -> PressureConverter:
@@ -442,7 +461,7 @@ class PressureSensor(StateProperty, PressureProperty):
     @property
     def _native_unit_of_measurement(self) -> str:
         """Return the unit the native value is expressed in."""
-        return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement))
+        return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfPressure.MMHG))
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -620,7 +639,7 @@ class VoltageSensor(StateProperty, VoltageProperty):
         if self.state.domain == sensor.DOMAIN:
             return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement))
 
-        return self.unit_of_measurement
+        return None
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -646,12 +665,12 @@ class ElectricCurrentSensor(StateProperty, ElectricCurrentProperty):
         return self.state.attributes.get(const.ATTR_CURRENT)
 
     @property
-    def _native_unit_of_measurement(self) -> str:
+    def _native_unit_of_measurement(self) -> str | None:
         """Return the unit the native value is expressed in."""
         if self.state.domain == sensor.DOMAIN:
             return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement))
 
-        return self.unit_of_measurement
+        return None
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -681,12 +700,12 @@ class ElectricPowerSensor(StateProperty, ElectricPowerProperty):
         return self.state.state
 
     @property
-    def _native_unit_of_measurement(self) -> str:
+    def _native_unit_of_measurement(self) -> str | None:
         """Return the unit the native value is expressed in."""
         if self.state.domain == sensor.DOMAIN:
             return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, self.unit_of_measurement))
 
-        return self.unit_of_measurement
+        return None
 
 
 @STATE_PROPERTIES_REGISTRY.register

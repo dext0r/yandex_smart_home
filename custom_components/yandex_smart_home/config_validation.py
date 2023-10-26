@@ -21,7 +21,7 @@ from .schema import (
     RangeCapabilityInstance,
     ToggleCapabilityInstance,
 )
-from .unit_conversion import UnitOfPressure
+from .unit_conversion import UnitOfPressure, UnitOfTemperature
 
 if TYPE_CHECKING:
     from homeassistant.helpers import ConfigType
@@ -74,6 +74,29 @@ def property_attributes(value: ConfigType) -> ConfigType:
 
     if value_template and (entity or attribute):
         raise vol.Invalid("entity/attribute and value_template are mutually exclusive")
+
+    property_type_value = value.get(const.CONF_ENTITY_PROPERTY_TYPE)
+    target_unit_of_measurement = value.get(const.CONF_ENTITY_PROPERTY_TARGET_UNIT_OF_MEASUREMENT)
+    if target_unit_of_measurement:
+        try:
+            if property_type_value in [
+                FloatPropertyInstance.TEMPERATURE,
+                f"{PropertyInstanceType.FLOAT}.{FloatPropertyInstance.TEMPERATURE}",
+            ]:
+                assert UnitOfTemperature(target_unit_of_measurement).as_property_unit
+            elif property_type_value in [
+                FloatPropertyInstance.PRESSURE,
+                f"{PropertyInstanceType.FLOAT}.{FloatPropertyInstance.PRESSURE}",
+            ]:
+                assert UnitOfPressure(target_unit_of_measurement).as_property_unit
+            else:
+                raise ValueError
+        except ValueError:
+            raise vol.Invalid(
+                f"Target unit of measurement '{target_unit_of_measurement}' is not supported "
+                f"for {property_type_value} property, see valid values "
+                f"at https://docs.yaha-cloud.ru/master/devices/sensor/float/#property-target-unit-of-measurement"
+            )
 
     return value
 
@@ -161,15 +184,6 @@ def device_type(value: str) -> str:
         f"see valid device types at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html"
     )
     raise vol.Invalid(f"Device type '{value}' is not supported")
-
-
-def pressure_unit(value: str) -> str:
-    try:
-        UnitOfPressure(value)
-    except ValueError:
-        raise vol.Invalid(f"Pressure unit {value!r} is not supported")
-
-    return value
 
 
 def color_name(value: str) -> str:

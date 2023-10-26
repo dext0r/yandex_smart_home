@@ -276,20 +276,29 @@ async def test_property_custom_value_float_limit(hass):
 
 
 @pytest.mark.parametrize(
-    "instance,unit_of_measurement,unit,value",
+    "instance,unit_of_measurement,unit,fallback_unit,assert_value",
     [
-        ("pressure", "bar", "unit.pressure.mmhg", 75006.16),
-        ("tvoc", "ppb", "unit.density.mcg_m3", 449.63),
-        ("amperage", "mA", "unit.ampere", 0.1),
-        ("voltage", "mV", "unit.volt", 0.1),
-        ("temperature", "K", "unit.temperature.celsius", -173.15),
-        ("humidity", "x", "unit.percent", 100),
+        ("pressure", "bar", "unit.pressure.bar", "unit.pressure.mmhg", None),
+        ("pressure", "Pa", "unit.pressure.pascal", "unit.pressure.mmhg", None),
+        ("pressure", "mmHg", "unit.pressure.mmhg", None, None),
+        ("pressure", "atm", "unit.pressure.atm", "unit.pressure.mmhg", None),
+        ("pressure", "psi", "unit.pressure.mmhg", None, 5171.49),
+        ("tvoc", "ppb", "unit.density.mcg_m3", None, 449.63),
+        ("amperage", "mA", "unit.ampere", None, 0.1),
+        ("voltage", "mV", "unit.volt", None, 0.1),
+        ("temperature", "°F", "unit.temperature.celsius", None, 37.78),
+        ("temperature", "°C", "unit.temperature.celsius", None, None),
+        ("temperature", "K", "unit.temperature.kelvin", "unit.temperature.celsius", None),
+        ("humidity", "x", "unit.percent", None, None),
     ],
 )
-async def test_property_custom_get_value_float_conversion(hass, instance, unit_of_measurement, unit, value):
-    state = State("sensor.test", "100")
+async def test_property_custom_get_value_float_conversion(
+    hass, instance, unit_of_measurement, unit, fallback_unit, assert_value
+):
+    value = 100
+    state = State("sensor.test", str(value))
     hass.states.async_set(state.entity_id, state.state)
-    hass.states.async_set("climate.test", STATE_ON, {ATTR_UNIT_OF_MEASUREMENT: unit_of_measurement, "t": 100})
+    hass.states.async_set("climate.test", STATE_ON, {ATTR_UNIT_OF_MEASUREMENT: unit_of_measurement, "t": str(value)})
 
     prop = get_custom_property(
         hass,
@@ -301,7 +310,7 @@ async def test_property_custom_get_value_float_conversion(hass, instance, unit_o
         state.entity_id,
     )
     assert prop.parameters.dict()["unit"] == unit
-    assert prop.get_value() == value
+    assert prop.get_value() == (value if assert_value is None else assert_value)
 
     hass.states.async_set(state.entity_id, STATE_UNAVAILABLE)
     assert prop.get_value() is None
@@ -310,7 +319,7 @@ async def test_property_custom_get_value_float_conversion(hass, instance, unit_o
     hass.states.async_set(state.entity_id, state.state, state.attributes)
     prop = get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
     assert prop.parameters.dict()["unit"] == unit
-    assert prop.get_value() == value
+    assert prop.get_value() == (value if assert_value is None else assert_value)
 
     # ignore unit_of_measurement when use attribute
     prop = get_custom_property(
@@ -323,8 +332,8 @@ async def test_property_custom_get_value_float_conversion(hass, instance, unit_o
         },
         state.entity_id,
     )
-    assert prop.parameters.dict()["unit"] == unit
-    assert prop.get_value() == 100
+    assert prop.parameters.dict()["unit"] == (unit if fallback_unit is None else fallback_unit)
+    assert prop.get_value() == value
 
     # override unit_of_measurement when use attribute
     prop = get_custom_property(
@@ -339,4 +348,38 @@ async def test_property_custom_get_value_float_conversion(hass, instance, unit_o
         state.entity_id,
     )
     assert prop.parameters.dict()["unit"] == unit
-    assert prop.get_value() == value
+    assert prop.get_value() == (value if assert_value is None else assert_value)
+
+
+@pytest.mark.parametrize(
+    "instance,unit_of_measurement,target_unit_of_measurement,target_unit,assert_value",
+    [
+        ("pressure", "bar", "Pa", "unit.pressure.pascal", 10000000.0),
+        ("pressure", "bar", "mmHg", "unit.pressure.mmhg", 75006.16),
+        ("pressure", "bar", "atm", "unit.pressure.atm", 98.69),
+        ("pressure", "atm", "bar", "unit.pressure.bar", 101.33),
+        ("temperature", "°F", "K", "unit.temperature.kelvin", 310.93),
+        ("temperature", "°C", "K", "unit.temperature.kelvin", 373.15),
+        ("temperature", "K", "°C", "unit.temperature.celsius", -173.15),
+    ],
+)
+async def test_property_custom_get_value_float_conversion_override_target_unit(
+    hass, instance, unit_of_measurement, target_unit_of_measurement, target_unit, assert_value
+):
+    value = 100
+    state = State("sensor.test", str(value), {ATTR_UNIT_OF_MEASUREMENT: unit_of_measurement})
+    hass.states.async_set(state.entity_id, state.state, state.attributes)
+
+    prop = get_custom_property(
+        hass,
+        BASIC_ENTRY_DATA,
+        {
+            const.CONF_ENTITY_PROPERTY_TYPE: instance,
+            const.CONF_ENTITY_PROPERTY_ENTITY: state.entity_id,
+            const.CONF_ENTITY_PROPERTY_TARGET_UNIT_OF_MEASUREMENT: target_unit_of_measurement,
+        },
+        state.entity_id,
+    )
+
+    assert prop.parameters.dict()["unit"] == target_unit
+    assert prop.get_value() == assert_value

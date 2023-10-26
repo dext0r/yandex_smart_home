@@ -67,6 +67,68 @@ yandex_smart_home:
     ) in caplog.messages[-1]
 
 
+async def test_invalid_property_target_unit_of_measurement(hass, caplog):
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    sensor.test:
+      properties:
+        - type: battery_level
+          entity: sensor.test
+          target_unit_of_measurement: foo
+"""
+    }
+    with patch_yaml_files(files):
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+
+    assert (
+        "Target unit of measurement 'foo' is not supported for battery_level property, see valid values at "
+        "https://docs.yaha-cloud.ru/master/devices/sensor/float/#property-target-unit-of-measurement"
+    ) in caplog.messages[-1]
+
+    for type_prefix in ["", "float."]:
+        files = {
+            YAML_CONFIG_FILE: f"""
+    yandex_smart_home:
+      entity_config:
+        sensor.test:
+          properties:
+            - type: {type_prefix}temperature
+              entity: sensor.test
+              target_unit_of_measurement: °F
+    """
+        }
+        with patch_yaml_files(files):
+            assert await async_integration_yaml_config(hass, DOMAIN) is None
+
+        assert (
+            f"Target unit of measurement '°F' is not supported for {type_prefix}temperature property, "
+            f"see valid values "
+            f"at https://docs.yaha-cloud.ru/master/devices/sensor/float/#property-target-unit-of-measurement"
+        ) in caplog.messages[-1]
+
+        files = {
+            YAML_CONFIG_FILE: f"""
+    yandex_smart_home:
+      entity_config:
+        sensor.test:
+          properties:
+            - type: {type_prefix}pressure
+              entity: sensor.test
+              target_unit_of_measurement: psi
+    """
+        }
+        with patch_yaml_files(files):
+            assert await async_integration_yaml_config(hass, DOMAIN) is None
+
+        assert (
+            f"Target unit of measurement 'psi' is not supported for {type_prefix}pressure property, "
+            f"see valid values "
+            f"at https://docs.yaha-cloud.ru/master/devices/sensor/float/#property-target-unit-of-measurement"
+        ) in caplog.messages[-1]
+
+
 async def test_invalid_property(hass, caplog):
     files = {
         YAML_CONFIG_FILE: """
@@ -218,18 +280,6 @@ yandex_smart_home:
     with patch_yaml_files(files):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert "Device type 'unsupported' is not supported" in caplog.messages[-1]
-
-
-async def test_invalid_pressure_unit(hass):
-    files = {
-        YAML_CONFIG_FILE: """
-yandex_smart_home:
-  settings:
-    pressure_unit: invalid
-"""
-    }
-    with patch_yaml_files(files):
-        assert await async_integration_yaml_config(hass, DOMAIN) is None
 
 
 async def test_invalid_color_name(hass, caplog):

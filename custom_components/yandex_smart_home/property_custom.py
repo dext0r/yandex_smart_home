@@ -12,6 +12,7 @@ from homeassistant.helpers.template import Template
 from .const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
     CONF_ENTITY_PROPERTY_ENTITY,
+    CONF_ENTITY_PROPERTY_TARGET_UNIT_OF_MEASUREMENT,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
     CONF_ENTITY_PROPERTY_VALUE_TEMPLATE,
@@ -51,6 +52,7 @@ from .property_float import (
     WaterLevelPercentageProperty,
 )
 from .schema import PropertyType, ResponseCode
+from .unit_conversion import UnitOfPressure, UnitOfTemperature
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -202,7 +204,13 @@ FLOAT_PROPERTIES_REGISTRY = DictRegistry[type[CustomFloatProperty]]()
 
 @FLOAT_PROPERTIES_REGISTRY.register
 class TemperatureCustomFloatProperty(TemperatureProperty, CustomFloatProperty):
-    pass
+    @property
+    def unit_of_measurement(self) -> UnitOfTemperature:
+        """Return the unit the property value is expressed in."""
+        if unit := self._config.get(CONF_ENTITY_PROPERTY_TARGET_UNIT_OF_MEASUREMENT):
+            return UnitOfTemperature(unit)
+
+        return super().unit_of_measurement
 
 
 @FLOAT_PROPERTIES_REGISTRY.register
@@ -212,7 +220,13 @@ class HumidityCustomFloatProperty(HumidityProperty, CustomFloatProperty):
 
 @FLOAT_PROPERTIES_REGISTRY.register
 class PressureCustomFloatProperty(PressureProperty, CustomFloatProperty):
-    pass
+    @property
+    def unit_of_measurement(self) -> UnitOfPressure:
+        """Return the unit the property value is expressed in."""
+        if unit := self._config.get(CONF_ENTITY_PROPERTY_TARGET_UNIT_OF_MEASUREMENT):
+            return UnitOfPressure(unit)
+
+        return super().unit_of_measurement
 
 
 @FLOAT_PROPERTIES_REGISTRY.register
