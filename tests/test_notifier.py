@@ -661,6 +661,18 @@ async def test_notifier_send_direct(hass, aioclient_mock, caplog):
 
     aioclient_mock.post(
         f"https://dialogs.yandex.net/api/v1/skills/{skill_id}/callback/discovery",
+        status=400,
+        json={"request_id": REQ_ID, "status": "error", "error_code": "some code"},
+    )
+    await notifier.async_send_discovery()
+
+    assert aioclient_mock.call_count == 1
+    assert caplog.messages[-1] == "Notification request failed: some code"
+    aioclient_mock.clear_requests()
+    caplog.clear()
+
+    aioclient_mock.post(
+        f"https://dialogs.yandex.net/api/v1/skills/{skill_id}/callback/discovery",
         status=500,
         content=b"ERROR",
     )
@@ -744,6 +756,18 @@ async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
 
     assert aioclient_mock.call_count == 1
     assert caplog.messages[-1] == "Notification request failed: some error"
+    aioclient_mock.clear_requests()
+    caplog.clear()
+
+    aioclient_mock.post(
+        "https://yaha-cloud.ru/api/home_assistant/v1/callback/discovery",
+        status=400,
+        json={"request_id": REQ_ID, "status": "error", "error_code": "some code"},
+    )
+    await notifier.async_send_discovery()
+
+    assert aioclient_mock.call_count == 1
+    assert caplog.messages[-1] == "Notification request failed: some code"
     aioclient_mock.clear_requests()
     caplog.clear()
 

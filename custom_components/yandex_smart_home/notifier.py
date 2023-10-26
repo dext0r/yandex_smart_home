@@ -320,6 +320,8 @@ class YandexNotifier(ABC):
                 response = CallbackResponse.parse_raw(response_body)
                 if response.error_message:
                     error_message = response.error_message
+                elif response.error_code:
+                    error_message = response.error_code
             except ValidationError:
                 error_message = response_body.decode("utf-8").strip()[:100]
 
