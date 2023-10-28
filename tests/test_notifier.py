@@ -9,7 +9,6 @@ from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.components.light import ATTR_BRIGHTNESS
 from homeassistant.const import ATTR_DEVICE_CLASS, EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE
 from homeassistant.core import CoreState, State
-from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION
 from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 import pytest
@@ -82,14 +81,14 @@ async def test_notifier_setup_config_invalid(hass, hass_admin_user, config_entry
     component: YandexSmartHome = hass.data[DOMAIN]
     with pytest.raises(KeyError):
         component.get_entry_data(config_entry_direct)
-    assert (
-        caplog.messages[-1] == "Config entry 'Mock Title' for yandex_smart_home integration not ready yet: "
-        "User invalid does not exist; Retrying in background"
+    assert caplog.messages[-1].startswith(
+        "Config entry 'Mock Title' for yandex_smart_home integration not ready yet: "
+        "User invalid does not exist; Retrying in"
     )
 
 
 async def test_notifier_setup_not_discovered(hass, hass_admin_user, aioclient_mock):
-    hass.data[DATA_CLIENTSESSION] = test_cloud.MockSession(aioclient_mock)
+    test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
     yaml_config = {
         const.CONF_NOTIFIER: [
@@ -129,7 +128,7 @@ async def test_notifier_setup_not_discovered(hass, hass_admin_user, aioclient_mo
 
 
 async def test_notifier_lifecycle_discovered(hass, hass_admin_user, aioclient_mock):
-    hass.data[DATA_CLIENTSESSION] = test_cloud.MockSession(aioclient_mock)
+    test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
     yaml_config = {
         const.CONF_NOTIFIER: [

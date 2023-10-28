@@ -1,7 +1,6 @@
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.config import YAML_CONFIG_FILE
 from homeassistant.const import CONF_ENTITIES
-from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION
 from homeassistant.helpers.reload import async_integration_yaml_config
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.setup import async_setup_component
@@ -65,7 +64,7 @@ async def test_config_flow_empty_entities(hass):
 
 
 async def test_config_flow_cloud(hass, aioclient_mock):
-    hass.data[DATA_CLIENTSESSION] = test_cloud.MockSession(aioclient_mock)
+    test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     assert result["type"] == "form"

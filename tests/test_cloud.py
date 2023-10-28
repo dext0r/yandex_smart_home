@@ -6,7 +6,7 @@ from unittest.mock import patch
 from aiohttp import WSMessage, WSMsgType
 from homeassistant import core
 from homeassistant.components import demo
-from homeassistant.const import Platform
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION
 from homeassistant.setup import async_setup_component
@@ -59,14 +59,22 @@ class MockSession:
         return self.ws
 
 
+def mock_client_session(hass, session):
+    if MAJOR_VERSION > 2023 or (MAJOR_VERSION == 2023 and MINOR_VERSION >= 11):
+        from homeassistant.helpers.aiohttp_client import _make_key
+
+        hass.data[DATA_CLIENTSESSION] = {_make_key(): session}
+    else:
+        hass.data[DATA_CLIENTSESSION] = session
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     session: MockSession | None = None,
     aiohttp_client: Any | None = None,
 ):
-    hass.data[DATA_CLIENTSESSION] = session or MockSession(aiohttp_client)
-
+    mock_client_session(hass, session or MockSession(aiohttp_client))
     config_entry.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
