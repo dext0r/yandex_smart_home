@@ -227,7 +227,7 @@ async def test_options_step_init_cloud(hass):
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
     assert result["menu_options"] == ["include_entities", "connection_type", "cloud_info", "cloud_settings"]
 
 
@@ -237,7 +237,7 @@ async def test_options_step_init_direct(hass):
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
     assert result["menu_options"] == ["include_entities", "connection_type"]
 
 
@@ -248,7 +248,7 @@ async def test_options_step_connection_type_no_change(hass, connection_type):
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "connection_type"}
@@ -272,7 +272,7 @@ async def test_options_step_connection_type_change_to_direct(hass):
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "connection_type"}
@@ -302,7 +302,7 @@ async def test_options_step_connection_type_change_to_cloud(hass, aioclient_mock
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "connection_type"}
@@ -360,7 +360,7 @@ async def test_options_step_connection_type_change_to_cloud_again(hass, aioclien
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "connection_type"}
@@ -388,7 +388,7 @@ async def test_options_step_cloud_info(hass):
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "cloud_info"}
@@ -399,7 +399,7 @@ async def test_options_step_cloud_info(hass):
 
     result3 = await hass.config_entries.options.async_configure(result["flow_id"], user_input={})
     assert result3["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result3["step_id"] == "menu"
+    assert result3["step_id"] == "init"
 
 
 async def test_options_step_cloud_settings(hass, hass_admin_user):
@@ -408,7 +408,7 @@ async def test_options_step_cloud_settings(hass, hass_admin_user):
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "cloud_settings"}
@@ -441,7 +441,7 @@ yandex_smart_home:
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "include_entities"}
@@ -451,7 +451,7 @@ yandex_smart_home:
 
     result3 = await hass.config_entries.options.async_configure(result2["flow_id"], user_input={})
     assert result3["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result3["step_id"] == "menu"
+    assert result3["step_id"] == "init"
 
 
 @pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])
@@ -467,7 +467,7 @@ async def test_options_flow_include_entities(hass, connection_type):
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "include_entities"}
@@ -494,7 +494,7 @@ async def test_options_flow_filter_no_entities(hass, connection_type):
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result["step_id"] == "menu"
+    assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "include_entities"}
