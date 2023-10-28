@@ -150,7 +150,7 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
         if self._data[const.CONF_CONNECTION_TYPE] == const.CONNECTION_TYPE_CLOUD:
             options += ['cloud_info', 'cloud_settings']
 
-        return self.async_show_menu(step_id='menu', menu_options=options)
+        return self.async_show_menu(step_id='init', menu_options=options)
 
     async def async_step_filter_yaml(self, user_input: ConfigType | None = None) -> data_entry_flow.FlowResult:
         if user_input is not None:

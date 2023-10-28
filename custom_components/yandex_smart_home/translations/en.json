@@ -37,7 +37,7 @@
       "entities_not_selected": "Необходимо выбрать хотя бы один объект"
     },
     "step": {
-      "menu": {
+      "init": {
         "menu_options": {
           "include_entities": "Объекты для передачи в УДЯ",
           "connection_type": "Тип подключения",
