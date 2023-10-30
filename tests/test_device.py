@@ -1,6 +1,6 @@
 from unittest.mock import PropertyMock, patch
 
-from homeassistant.components import media_player, switch
+from homeassistant.components import cover, media_player, switch
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.sensor import SensorDeviceClass
@@ -362,6 +362,24 @@ async def test_device_type(hass):
     )
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == DeviceType.OPENABLE_CURTAIN
+
+
+@pytest.mark.parametrize(
+    "device_class,device_type",
+    [
+        (None, DeviceType.OPENABLE),
+        (cover.CoverDeviceClass.SHADE, DeviceType.OPENABLE),
+        (cover.CoverDeviceClass.CURTAIN, DeviceType.OPENABLE_CURTAIN),
+    ],
+)
+async def test_device_type_cover(hass, device_class, device_type):
+    attributes = {}
+    if device_class:
+        attributes[ATTR_DEVICE_CLASS] = device_class
+
+    state = State("cover.foo", STATE_ON, attributes=attributes)
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    assert device.type == device_type
 
 
 @pytest.mark.parametrize(

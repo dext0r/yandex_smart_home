@@ -140,13 +140,13 @@ async def test_capability_demo_platform(hass):
 
     state = hass.states.get("cover.garage_door")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.openable.curtain"
+    assert device.type == "devices.types.openable"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("cover.hall_window")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.openable.curtain"
+    assert device.type == "devices.types.openable"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.range", "open"),
@@ -156,13 +156,13 @@ async def test_capability_demo_platform(hass):
 
     state = hass.states.get("cover.kitchen_window")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.openable.curtain"
+    assert device.type == "devices.types.openable"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.toggle", "pause"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("cover.living_room_window")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.openable.curtain"
+    assert device.type == "devices.types.openable"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.range", "open"),
@@ -172,7 +172,7 @@ async def test_capability_demo_platform(hass):
 
     state = hass.states.get("cover.pergola_roof")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.openable.curtain"
+    assert device.type == "devices.types.openable"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
