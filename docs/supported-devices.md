@@ -58,6 +58,8 @@
 Или при наличии у объекта атрибута `carbon_dioxide`
 
 ### Уровни частиц PM1 / PM2.5 / PM10 { id=float-sensor-pm }
+* `device_class`: `pm1` / `pm25` / `pm10`
+
 При наличиии у объекта атрибутов `particulate_matter_0_1` / `particulate_matter_2_5` / `particulate_matter_10`
 
 ### Уровень TVOC { id=float-sensor-tvoc }

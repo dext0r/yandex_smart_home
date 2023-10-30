@@ -543,8 +543,11 @@ class PM1DensitySensor(StateProperty, PM1DensityProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == air_quality.DOMAIN:
-            return air_quality.ATTR_PM_0_1 in self.state.attributes
+        match self.state.domain:
+            case sensor.DOMAIN:
+                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.PM1
+            case air_quality.DOMAIN:
+                return air_quality.ATTR_PM_0_1 in self.state.attributes
 
         return False
 
@@ -555,6 +558,9 @@ class PM1DensitySensor(StateProperty, PM1DensityProperty):
 
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.state
+
         return self.state.attributes.get(air_quality.ATTR_PM_0_1)
 
 
@@ -565,13 +571,19 @@ class PM25DensitySensor(StateProperty, PM25DensityProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == air_quality.DOMAIN:
-            return air_quality.ATTR_PM_2_5 in self.state.attributes
+        match self.state.domain:
+            case sensor.DOMAIN:
+                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.PM25
+            case air_quality.DOMAIN:
+                return air_quality.ATTR_PM_2_5 in self.state.attributes
 
         return False
 
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.state
+
         return self.state.attributes.get(air_quality.ATTR_PM_2_5)
 
 
@@ -582,13 +594,19 @@ class PM10DensitySensor(StateProperty, PM10DensityProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == air_quality.DOMAIN:
-            return air_quality.ATTR_PM_10 in self.state.attributes
+        match self.state.domain:
+            case sensor.DOMAIN:
+                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.PM10
+            case air_quality.DOMAIN:
+                return air_quality.ATTR_PM_10 in self.state.attributes
 
         return False
 
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.state
+
         return self.state.attributes.get(air_quality.ATTR_PM_10)
 
 

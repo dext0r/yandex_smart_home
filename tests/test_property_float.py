@@ -371,27 +371,35 @@ async def test_property_float_co2_level(hass, domain, device_class, attribute, s
     assert prop.get_value() is None
 
 
+@pytest.mark.parametrize("v,assert_v", [("300", 300), ("-5", 0), (None, None)])
 @pytest.mark.parametrize(
-    "attribute,instance",
+    "domain,device_class,attribute,instance",
     [
-        (air_quality.ATTR_PM_0_1, "pm1_density"),
-        (air_quality.ATTR_PM_2_5, "pm2.5_density"),
-        (air_quality.ATTR_PM_10, "pm10_density"),
+        (sensor.DOMAIN, SensorDeviceClass.PM1, None, "pm1_density"),
+        (sensor.DOMAIN, SensorDeviceClass.PM25, None, "pm2.5_density"),
+        (sensor.DOMAIN, SensorDeviceClass.PM10, None, "pm10_density"),
+        (air_quality.DOMAIN, None, air_quality.ATTR_PM_0_1, "pm1_density"),
+        (air_quality.DOMAIN, None, air_quality.ATTR_PM_2_5, "pm2.5_density"),
+        (air_quality.DOMAIN, None, air_quality.ATTR_PM_10, "pm10_density"),
     ],
 )
-async def test_property_float_pm_density(hass, attribute, instance):
-    state = State("air_quality.test", STATE_ON, {attribute: 300})
+async def test_property_float_pm_density(hass, domain, v, assert_v, device_class, attribute, instance):
+    state = STATE_ON
+    attributes = {}
+    if device_class:
+        attributes[ATTR_DEVICE_CLASS] = device_class
+
+    if attribute:
+        attributes[attribute] = v
+    else:
+        state = v
+
+    state = State(f"{domain}.test", state, attributes)
     prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance(instance))
 
     assert prop.retrievable is True
     assert prop.parameters == {"instance": instance, "unit": "unit.density.mcg_m3"}
-    assert prop.get_value() == 300
-
-    prop.state = State("air_quality.test", STATE_ON, {attribute: -5})
-    assert prop.get_value() == 0
-
-    prop.state = State("air_quality.test", STATE_ON, {attribute: None})
-    assert prop.get_value() is None
+    assert prop.get_value() == assert_v
 
 
 @pytest.mark.parametrize(
