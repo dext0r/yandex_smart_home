@@ -37,6 +37,7 @@ from .test_property import assert_no_properties, get_exact_one_property
     "domain,device_class,attribute,supported",
     [
         (sensor.DOMAIN, SensorDeviceClass.HUMIDITY, None, True),
+        (sensor.DOMAIN, SensorDeviceClass.MOISTURE, None, True),
         (air_quality.DOMAIN, None, climate.ATTR_HUMIDITY, True),
         (air_quality.DOMAIN, None, None, False),
         (climate.DOMAIN, None, climate.ATTR_CURRENT_HUMIDITY, True),

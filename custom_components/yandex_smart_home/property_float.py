@@ -423,7 +423,10 @@ class HumiditySensor(StateProperty, HumidityProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.HUMIDITY
+                return self.state.attributes.get(ATTR_DEVICE_CLASS) in [
+                    SensorDeviceClass.HUMIDITY,
+                    SensorDeviceClass.MOISTURE,
+                ]
             case air_quality.DOMAIN:
                 return self.state.attributes.get(climate.ATTR_HUMIDITY) is not None
             case climate.DOMAIN | fan.DOMAIN | humidifier.DOMAIN:

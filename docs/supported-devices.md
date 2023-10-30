@@ -35,7 +35,7 @@
 Или при наличии у объекта атрибутов `temperature` или `current_temperature`
 
 ### Влажность { id=float-sensor-humidity }
-* `device_class`: `humidity`
+* `device_class`: `humidity` или `moisture`
 * `unit_of_measurements`: `%`
 
 Или при наличии у объекта атрибутов `humidity` или `current_humidity`
