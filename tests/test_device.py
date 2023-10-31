@@ -54,11 +54,11 @@ from custom_components.yandex_smart_home.property_custom import (
     VoltageCustomFloatProperty,
     get_custom_property,
 )
-from custom_components.yandex_smart_home.property_event import OpenStateEventProperty, WaterLevelStateEventProperty
+from custom_components.yandex_smart_home.property_event import BatteryLevelStateEvent, OpenStateEventProperty
 from custom_components.yandex_smart_home.property_float import (
+    BatteryLevelPercentageSensor,
     TemperatureSensor,
     VoltageSensor,
-    WaterLevelPercentageSensor,
 )
 from custom_components.yandex_smart_home.schema import (
     DeviceType,
@@ -172,12 +172,12 @@ async def test_device_duplicate_properties(hass):
         def supported(self) -> bool:
             return True
 
-    class MockPropertyWS(WaterLevelPercentageSensor):
+    class MockPropertyBS(BatteryLevelPercentageSensor):
         @property
         def supported(self) -> bool:
             return True
 
-    class MockPropertyWE(WaterLevelStateEventProperty):
+    class MockPropertyBE(BatteryLevelStateEvent):
         @property
         def supported(self) -> bool:
             return True
@@ -187,13 +187,13 @@ async def test_device_duplicate_properties(hass):
 
     with patch(
         "custom_components.yandex_smart_home.device.STATE_PROPERTIES_REGISTRY",
-        [MockProperty, MockPropertyWS, MockProperty, MockPropertyWS, MockPropertyWE],
+        [MockProperty, MockPropertyBS, MockProperty, MockPropertyBS, MockPropertyBE],
     ):
         props = device.get_properties()
         assert len(props) == 3
         assert isinstance(props[0], MockProperty)
-        assert isinstance(props[1], MockPropertyWS)
-        assert isinstance(props[2], MockPropertyWE)
+        assert isinstance(props[1], MockPropertyBS)
+        assert isinstance(props[2], MockPropertyBE)
 
 
 async def test_device_properties(hass, caplog):

@@ -4,6 +4,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Protocol, Self, runtime_checkable
 
+from homeassistant.const import ATTR_DEVICE_CLASS
+
 from .helpers import ListRegistry
 from .schema import (
     PropertyDescription,
@@ -124,6 +126,11 @@ class StateProperty(Property, Protocol):
 
         self.state = state
         self.device_id = state.entity_id
+
+    @property
+    def _state_device_class(self) -> str | None:
+        """Return state device class."""
+        return self.state.attributes.get(ATTR_DEVICE_CLASS)
 
 
 STATE_PROPERTIES_REGISTRY = ListRegistry[type[StateProperty]]()

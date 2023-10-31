@@ -6,17 +6,10 @@ import logging
 from typing import Any, Protocol, Self
 
 from homeassistant.components import binary_sensor, sensor
-from homeassistant.const import (
-    ATTR_DEVICE_CLASS,
-    STATE_CLOSED,
-    STATE_OFF,
-    STATE_ON,
-    STATE_OPEN,
-    STATE_UNAVAILABLE,
-    STATE_UNKNOWN,
-)
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.const import STATE_CLOSED, STATE_OFF, STATE_ON, STATE_OPEN, STATE_UNAVAILABLE, STATE_UNKNOWN
 
-from .const import CONF_DEVICE_CLASS, DEVICE_CLASS_ACTION, DEVICE_CLASS_BUTTON, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .const import CONF_DEVICE_CLASS, DEVICE_CLASS_BUTTON, STATE_EMPTY, STATE_NONE, STATE_NONE_UI, XGW3DeviceClass
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .schema import (
     BatteryLevelEventPropertyParameters,
@@ -339,15 +332,12 @@ class OpenStateEventProperty(StateEventProperty, OpenEventProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) in (
-                binary_sensor.BinarySensorDeviceClass.DOOR,
-                binary_sensor.BinarySensorDeviceClass.GARAGE_DOOR,
-                binary_sensor.BinarySensorDeviceClass.WINDOW,
-                binary_sensor.BinarySensorDeviceClass.OPENING,
-            )
-
-        return False
+        return self.state.domain == binary_sensor.DOMAIN and self._state_device_class in (
+            BinarySensorDeviceClass.DOOR,
+            BinarySensorDeviceClass.GARAGE_DOOR,
+            BinarySensorDeviceClass.WINDOW,
+            BinarySensorDeviceClass.OPENING,
+        )
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -357,14 +347,11 @@ class MotionStateEventProperty(StateEventProperty, MotionEventProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) in (
-                binary_sensor.BinarySensorDeviceClass.MOTION,
-                binary_sensor.BinarySensorDeviceClass.OCCUPANCY,
-                binary_sensor.BinarySensorDeviceClass.PRESENCE,
-            )
-
-        return False
+        return self.state.domain == binary_sensor.DOMAIN and self._state_device_class in (
+            BinarySensorDeviceClass.MOTION,
+            BinarySensorDeviceClass.OCCUPANCY,
+            BinarySensorDeviceClass.PRESENCE,
+        )
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -374,10 +361,7 @@ class GasStateEventProperty(StateEventProperty, GasEventProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.GAS
-
-        return False
+        return self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.GAS
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -387,10 +371,7 @@ class SmokeStateEventProperty(StateEventProperty, SmokeEventProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.SMOKE
-
-        return False
+        return self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.SMOKE
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -400,25 +381,7 @@ class BatteryLevelStateEvent(StateEventProperty, BatteryLevelEventProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.BATTERY
-
-        return False
-
-
-@STATE_PROPERTIES_REGISTRY.register
-class WaterLevelStateEventProperty(StateEventProperty, WaterLevelEventProperty):
-    """Represents the state event property that detect low level of water."""
-
-    instance = EventPropertyInstance.WATER_LEVEL
-
-    @property
-    def supported(self) -> bool:
-        """Test if the property is supported."""
-        if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == "water_level"
-
-        return False
+        return self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.BATTERY
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -428,10 +391,9 @@ class WaterLeakStateEventProperty(StateEventProperty, WaterLeakEventProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == binary_sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.MOISTURE
-
-        return False
+        return (
+            self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.MOISTURE
+        )
 
 
 @STATE_PROPERTIES_REGISTRY.register
@@ -441,14 +403,13 @@ class ButtonPressStateEventProperty(StateEventProperty, ButtonPressEventProperty
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BUTTON:
+        if self._state_device_class == DEVICE_CLASS_BUTTON:
             return True
 
         if self._entry_data.get_entity_config(self.device_id).get(CONF_DEVICE_CLASS) == DEVICE_CLASS_BUTTON:
             return True
 
-        # Xiaomi Gateway 3
-        if self.state.domain == sensor.DOMAIN and self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ACTION:
+        if self.state.domain == sensor.DOMAIN and self._state_device_class == XGW3DeviceClass.ACTION:
             possible_actions = self._supported_native_values
             possible_actions.extend(
                 [
@@ -470,11 +431,10 @@ class VibrationStateEventProperty(StateEventProperty, VibrationEventProperty):
     def supported(self) -> bool:
         """Test if the property is supported."""
         if self.state.domain == binary_sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_DEVICE_CLASS) == binary_sensor.BinarySensorDeviceClass.VIBRATION:
+            if self._state_device_class == BinarySensorDeviceClass.VIBRATION:
                 return True
 
-        # Xiaomi Gateway 3
-        if self.state.domain == sensor.DOMAIN and self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ACTION:
+        if self.state.domain == sensor.DOMAIN and self._state_device_class == XGW3DeviceClass.ACTION:
             return self.state.attributes.get("action") in self._supported_native_values
 
         return False

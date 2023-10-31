@@ -84,8 +84,6 @@ ATTR_WATER_LEVEL = "water_level"
 
 # Custom component Xiaomi Gateway 3
 ATTR_ACTION = "action"
-DEVICE_CLASS_ACTION = "action"
-DEVICE_CLASS_TVOC = "tvoc"
 
 # Integration xiaomi_airpurifier
 ATTR_TARGET_HUMIDITY = "target_humidity"
@@ -184,3 +182,10 @@ class PropertyInstanceType(StrEnum):
 
     FLOAT = "float"
     EVENT = "event"
+
+
+class XGW3DeviceClass(StrEnum):
+    """Device class for Xiaomi Gateway 3 custom component."""
+
+    ACTION = "action"
+    TVOC = "tvoc"

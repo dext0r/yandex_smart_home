@@ -7,7 +7,6 @@ from homeassistant.components import air_quality, climate, fan, humidifier, ligh
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
-    ATTR_DEVICE_CLASS,
     ATTR_UNIT_OF_MEASUREMENT,
     ATTR_VOLTAGE,
     CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
@@ -28,7 +27,7 @@ from homeassistant.util.unit_conversion import (
 )
 
 from . import const
-from .const import STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .const import STATE_EMPTY, STATE_NONE, STATE_NONE_UI, XGW3DeviceClass
 from .helpers import APIError
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .schema import (
@@ -390,7 +389,7 @@ class TemperatureSensor(StateProperty, TemperatureProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.TEMPERATURE
+                return self._state_device_class == SensorDeviceClass.TEMPERATURE
             case air_quality.DOMAIN:
                 return self.state.attributes.get(climate.ATTR_TEMPERATURE) is not None
             case climate.DOMAIN | fan.DOMAIN | humidifier.DOMAIN | water_heater.DOMAIN:
@@ -423,10 +422,7 @@ class HumiditySensor(StateProperty, HumidityProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) in [
-                    SensorDeviceClass.HUMIDITY,
-                    SensorDeviceClass.MOISTURE,
-                ]
+                return self._state_device_class in (SensorDeviceClass.HUMIDITY, SensorDeviceClass.MOISTURE)
             case air_quality.DOMAIN:
                 return self.state.attributes.get(climate.ATTR_HUMIDITY) is not None
             case climate.DOMAIN | fan.DOMAIN | humidifier.DOMAIN:
@@ -452,10 +448,10 @@ class PressureSensor(StateProperty, PressureProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        return self.state.domain == sensor.DOMAIN and self.state.attributes.get(ATTR_DEVICE_CLASS) in [
+        return self.state.domain == sensor.DOMAIN and self._state_device_class in (
             SensorDeviceClass.PRESSURE,
             SensorDeviceClass.ATMOSPHERIC_PRESSURE,
-        ]
+        )
 
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
@@ -471,14 +467,11 @@ class PressureSensor(StateProperty, PressureProperty):
 class IlluminationSensor(StateProperty, IlluminationProperty):
     """Representaton of the state as a illumination sensor."""
 
-    __slots__ = ("a",)
-
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.ILLUMINANCE:
-                return True
+        if self.state.domain == sensor.DOMAIN and self._state_device_class == SensorDeviceClass.ILLUMINANCE:
+            return True
 
         if self.state.domain in (sensor.DOMAIN, light.DOMAIN, fan.DOMAIN):
             return const.ATTR_ILLUMINANCE in self.state.attributes
@@ -487,9 +480,8 @@ class IlluminationSensor(StateProperty, IlluminationProperty):
 
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
-        if self.state.domain == sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.ILLUMINANCE:
-                return self.state.state
+        if self.state.domain == sensor.DOMAIN and self._state_device_class == SensorDeviceClass.ILLUMINANCE:
+            return self.state.state
 
         return self.state.attributes.get(const.ATTR_ILLUMINANCE)
 
@@ -520,7 +512,7 @@ class CO2LevelSensor(StateProperty, CO2LevelProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.CO2
+                return self._state_device_class == SensorDeviceClass.CO2
             case air_quality.DOMAIN | fan.DOMAIN:
                 return air_quality.ATTR_CO2 in self.state.attributes
 
@@ -545,7 +537,7 @@ class PM1DensitySensor(StateProperty, PM1DensityProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.PM1
+                return self._state_device_class == SensorDeviceClass.PM1
             case air_quality.DOMAIN:
                 return air_quality.ATTR_PM_0_1 in self.state.attributes
 
@@ -573,7 +565,7 @@ class PM25DensitySensor(StateProperty, PM25DensityProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.PM25
+                return self._state_device_class == SensorDeviceClass.PM25
             case air_quality.DOMAIN:
                 return air_quality.ATTR_PM_2_5 in self.state.attributes
 
@@ -596,7 +588,7 @@ class PM10DensitySensor(StateProperty, PM10DensityProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.PM10
+                return self._state_device_class == SensorDeviceClass.PM10
             case air_quality.DOMAIN:
                 return air_quality.ATTR_PM_10 in self.state.attributes
 
@@ -619,10 +611,10 @@ class TVOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) in [
+                return self._state_device_class in (
                     SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS_PARTS,
-                    const.DEVICE_CLASS_TVOC,
-                ]
+                    XGW3DeviceClass.TVOC,
+                )
             case air_quality.DOMAIN:
                 return const.ATTR_TVOC in self.state.attributes
 
@@ -653,7 +645,7 @@ class VOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
         """Test if the property is supported."""
         return (
             self.state.domain == sensor.DOMAIN
-            and self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS
+            and self._state_device_class == SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS
         )
 
     def _get_native_value(self) -> float | str | None:
@@ -670,7 +662,7 @@ class VoltageSensor(StateProperty, VoltageProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.VOLTAGE
+                return self._state_device_class == SensorDeviceClass.VOLTAGE
             case switch.DOMAIN | light.DOMAIN:
                 return ATTR_VOLTAGE in self.state.attributes
 
@@ -701,7 +693,7 @@ class ElectricCurrentSensor(StateProperty, ElectricCurrentProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.CURRENT
+                return self._state_device_class == SensorDeviceClass.CURRENT
             case switch.DOMAIN | light.DOMAIN:
                 return const.ATTR_CURRENT in self.state.attributes
 
@@ -731,10 +723,10 @@ class ElectricPowerSensor(StateProperty, ElectricPowerProperty):
     def supported(self) -> bool:
         """Test if the property is supported."""
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.POWER
+            return self._state_device_class == SensorDeviceClass.POWER
 
         if self.state.domain == switch.DOMAIN:
-            for attribute in [const.ATTR_POWER, const.ATTR_LOAD_POWER, const.ATTR_CURRENT_CONSUMPTION]:
+            for attribute in (const.ATTR_POWER, const.ATTR_LOAD_POWER, const.ATTR_CURRENT_CONSUMPTION):
                 if attribute in self.state.attributes:
                     return True
 
@@ -743,7 +735,7 @@ class ElectricPowerSensor(StateProperty, ElectricPowerProperty):
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
         if self.state.domain == switch.DOMAIN:
-            for attribute in [const.ATTR_POWER, const.ATTR_LOAD_POWER, const.ATTR_CURRENT_CONSUMPTION]:
+            for attribute in (const.ATTR_POWER, const.ATTR_LOAD_POWER, const.ATTR_CURRENT_CONSUMPTION):
                 if attribute in self.state.attributes:
                     return self.state.attributes.get(attribute)
 
@@ -762,13 +754,11 @@ class ElectricPowerSensor(StateProperty, ElectricPowerProperty):
 class BatteryLevelPercentageSensor(StateProperty, BatteryLevelPercentageProperty):
     """Representaton of the state as battery level sensor."""
 
-    __slots__ = ()
-
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
         if (
-            self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.BATTERY
+            self._state_device_class == SensorDeviceClass.BATTERY
             and self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == PERCENTAGE
         ):
             return True
@@ -778,7 +768,7 @@ class BatteryLevelPercentageSensor(StateProperty, BatteryLevelPercentageProperty
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
         value = None
-        if self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.BATTERY:
+        if self._state_device_class == SensorDeviceClass.BATTERY:
             value = self.state.state
         elif ATTR_BATTERY_LEVEL in self.state.attributes:
             value = self.state.attributes.get(ATTR_BATTERY_LEVEL)

@@ -144,34 +144,6 @@ async def test_state_property_event_battery(hass, device_class, supported):
 @pytest.mark.parametrize(
     "device_class,supported",
     [
-        ("water_level", True),
-        (BinarySensorDeviceClass.SMOKE, False),
-    ],
-)
-async def test_state_property_event_water_level(hass, device_class, supported):
-    state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
-    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, EventPropertyInstance.WATER_LEVEL)
-    if supported:
-        prop = get_exact_one_property(
-            hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.WATER_LEVEL
-        )
-    else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.WATER_LEVEL)
-        return
-
-    assert prop.retrievable is True
-    assert prop.parameters == {
-        "events": [{"value": "empty"}, {"value": "low"}, {"value": "normal"}],
-        "instance": "water_level",
-    }
-    assert prop.get_value() == "low"
-    prop.state.state = STATE_OFF
-    assert prop.get_value() == "normal"
-
-
-@pytest.mark.parametrize(
-    "device_class,supported",
-    [
         (BinarySensorDeviceClass.MOISTURE, True),
         (BinarySensorDeviceClass.SMOKE, False),
     ],

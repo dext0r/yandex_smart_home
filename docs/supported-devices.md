@@ -105,7 +105,6 @@
 | Наличие газа          | `gas`                                      | `binary_sensor`                                                                    |
 | Наличие дыма          | `smoke`                                    | `binary_sensor`                                                                    |
 | Низкий уровень заряда | `battery`                                  | `binary_sensor`                                                                    |
-| Низкий уровень воды   | `water_level`                              | `binary_sensor`                                                                    |
 | Наличие протечки      | `moisture`                                 | `binary_sensor`                                                                    |
 | Вибрация              | `vibration`                                | `binary_sensor`                                                                    |
 | Вибрация              |                                            | `sensor` (компонент [Xiaomi Gateway 3](https://github.com/AlexxIT/XiaomiGateway3)) |
