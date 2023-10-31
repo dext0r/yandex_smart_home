@@ -21,7 +21,6 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import State
-from homeassistant.exceptions import HomeAssistantError
 import pytest
 
 from custom_components.yandex_smart_home.helpers import APIError
@@ -403,45 +402,63 @@ async def test_property_float_pm_density(hass, domain, v, assert_v, device_class
 
 
 @pytest.mark.parametrize(
-    "unit,v",
+    "domain,device_class,attribute",
     [
-        ("ppb", 134.89),
-        ("ppm", 134888.81),
-        ("µg/m³", 30),
-        ("mg/m³", 30000),
-        ("μg/ft³", 1059.44),
-        ("unsupported", 30),
-        (None, 30),
+        (sensor.DOMAIN, SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS_PARTS, None),
+        (sensor.DOMAIN, "tvoc", None),
+        (air_quality.DOMAIN, None, "total_volatile_organic_compounds"),
     ],
 )
-async def test_property_float_tvoc_concentration(hass, unit, v):
-    state = State(
-        "air_quality.test",
-        STATE_ON,
-    )
-    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
+@pytest.mark.parametrize(
+    "unit_of_measurement,v,assert_v",
+    [
+        ("ppb", "30", 134.89),
+        ("ppm", "30", 134888.81),
+        ("µg/m³", "30", 30),
+        ("mg/m³", "30", 30000),
+        ("μg/ft³", "30", 1059.44),
+        (None, "30", 30),
+        (None, "-5", 0),
+        (None, None, None),
+    ],
+)
+async def test_property_float_tvoc_concentration(
+    hass, domain, device_class, attribute, unit_of_measurement, v, assert_v
+):
+    state = STATE_ON
+    attributes = {}
+    if device_class:
+        attributes[ATTR_DEVICE_CLASS] = device_class
 
-    attributes = {"total_volatile_organic_compounds": 30}
-    if unit:
-        attributes[ATTR_UNIT_OF_MEASUREMENT] = unit
+    if attribute:
+        attributes[attribute] = v
+    else:
+        state = v
+    if unit_of_measurement:
+        attributes[ATTR_UNIT_OF_MEASUREMENT] = unit_of_measurement
 
-    state = State("air_quality.test", STATE_ON, attributes)
+    state = State(f"{domain}.test", state, attributes)
     prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
 
     assert prop.retrievable is True
     assert prop.parameters == {"instance": "tvoc", "unit": "unit.density.mcg_m3"}
-    if unit == "unsupported":
-        with pytest.raises(HomeAssistantError):
-            prop.get_value()
-        return
+    if attribute and unit_of_measurement:
+        assert prop.get_value() == float(v)
+    else:
+        assert prop.get_value() == assert_v
 
-    assert prop.get_value() == v
 
-    prop.state = State("air_quality.test", STATE_ON, {"total_volatile_organic_compounds": -5})
+async def test_property_float_tvoc_concentration_voc(hass):
+    attributes = {ATTR_DEVICE_CLASS: SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS, ATTR_UNIT_OF_MEASUREMENT: "foo"}
+    state = State("sensor.test", "30", attributes)
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
+
+    assert prop.retrievable is True
+    assert prop.parameters == {"instance": "tvoc", "unit": "unit.density.mcg_m3"}
+    assert prop.get_value() == 30
+
+    prop.state = State("sensor.test", "-5", attributes)
     assert prop.get_value() == 0
-
-    prop.state = State("air_quality.test", STATE_ON, {"total_volatile_organic_compounds": None})
-    assert prop.get_value() is None
 
 
 @pytest.mark.parametrize(

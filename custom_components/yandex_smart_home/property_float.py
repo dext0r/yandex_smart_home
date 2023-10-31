@@ -617,19 +617,48 @@ class TVOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == air_quality.DOMAIN:
-            return const.ATTR_TVOC in self.state.attributes
+        match self.state.domain:
+            case sensor.DOMAIN:
+                return self.state.attributes.get(ATTR_DEVICE_CLASS) in [
+                    SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS_PARTS,
+                    const.DEVICE_CLASS_TVOC,
+                ]
+            case air_quality.DOMAIN:
+                return const.ATTR_TVOC in self.state.attributes
 
         return False
 
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.state
+
         return self.state.attributes.get(const.ATTR_TVOC)
 
     @property
-    def _native_unit_of_measurement(self) -> str:
+    def _native_unit_of_measurement(self) -> str | None:
         """Return the unit the native value is expressed in."""
-        return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, CONCENTRATION_MICROGRAMS_PER_CUBIC_METER))
+        if self.state.domain == sensor.DOMAIN:
+            return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, CONCENTRATION_MICROGRAMS_PER_CUBIC_METER))
+
+        return None
+
+
+@STATE_PROPERTIES_REGISTRY.register
+class VOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
+    """Representaton of the state as a VOC concentration sensor."""
+
+    @property
+    def supported(self) -> bool:
+        """Test if the property is supported."""
+        return (
+            self.state.domain == sensor.DOMAIN
+            and self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS
+        )
+
+    def _get_native_value(self) -> float | str | None:
+        """Return the current property value without conversion."""
+        return self.state.state
 
 
 @STATE_PROPERTIES_REGISTRY.register

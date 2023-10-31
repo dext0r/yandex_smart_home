@@ -85,6 +85,7 @@ ATTR_WATER_LEVEL = "water_level"
 # Custom component Xiaomi Gateway 3
 ATTR_ACTION = "action"
 DEVICE_CLASS_ACTION = "action"
+DEVICE_CLASS_TVOC = "tvoc"
 
 # Integration xiaomi_airpurifier
 ATTR_TARGET_HUMIDITY = "target_humidity"
