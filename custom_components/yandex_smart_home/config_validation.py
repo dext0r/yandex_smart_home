@@ -110,7 +110,7 @@ def mode_instance(value: str) -> str:
     except ValueError:
         _LOGGER.error(
             f"Mode instance '{value}' is not supported, "
-            f"see valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html"
+            f"see valid modes at https://docs.yaha-cloud.ru/master/advanced/capabilities/mode/#instance"
         )
         raise vol.Invalid(f"Mode instance '{value}' is not supported")
 
@@ -140,7 +140,7 @@ def toggle_instance(value: str) -> str:
     except ValueError:
         _LOGGER.error(
             f"Toggle instance '{value}' is not supported, "
-            f"see valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html"
+            f"see valid values at https://docs.yaha-cloud.ru/master/advanced/capabilities/toggle/#instance"
         )
         raise vol.Invalid(f"Toggle instance '{value}' is not supported")
 
@@ -153,7 +153,7 @@ def range_instance(value: str) -> str:
     except ValueError:
         _LOGGER.error(
             f"Range instance '{value}' is not supported, "
-            f"see valid values at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html"
+            f"see valid values at https://docs.yaha-cloud.ru/master/advanced/capabilities/range/#instance"
         )
         raise vol.Invalid(f"Range instance '{value}' is not supported")
 

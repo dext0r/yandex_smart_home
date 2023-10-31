@@ -213,7 +213,7 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert (
         "Mode instance 'invalid' is not supported, see valid modes at "
-        "https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html"
+        "https://docs.yaha-cloud.ru/master/advanced/capabilities/mode/#instance"
     ) in caplog.messages[-2]
 
 
@@ -231,7 +231,7 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert (
         "Toggle instance 'invalid' is not supported, see valid values at "
-        "https://yandex.ru/dev/dialogs/smart-home/doc/concepts/toggle-instance.html"
+        "https://docs.yaha-cloud.ru/master/advanced/capabilities/toggle/#instance"
     ) in caplog.messages[-2]
 
 
@@ -249,7 +249,7 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert (
         "Range instance 'invalid' is not supported, see valid values at "
-        "https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html"
+        "https://docs.yaha-cloud.ru/master/advanced/capabilities/range/#instance"
     ) in caplog.messages[-2]
 
 

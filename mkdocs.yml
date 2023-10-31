@@ -24,7 +24,11 @@ nav:
       - Кнопки: devices/button.md
   - Для продвинутых:
       - Прямое подключение: advanced/direct-connection.md
-      - Пользовательские умения: advanced/capabilities.md
+      - Пользовательские умения:
+          - О пользовательских умениях: advanced/capabilities/about.md
+          - Умения "Режимы работы": advanced/capabilities/mode.md
+          - Умения "Выбор из диапазона": advanced/capabilities/range.md
+          - Умения "Переключатели": advanced/capabilities/toggle.md
       - Несколько интеграций: advanced/clone.md
       - События: advanced/events.md
       - Коды ошибок: advanced/error-codes.md
