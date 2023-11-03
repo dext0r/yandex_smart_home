@@ -860,8 +860,14 @@ async def test_capability_color_setting_scene(hass):
     assert cap_scene.get_value() == "siren"
 
     calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
-    for v in ("romance", "sunset"):
-        await cap_scene.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene(v)))
-    assert len(calls) == 2
+    await cap_scene.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene("romance")))
+    assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_EFFECT: "Leasure"}
-    assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_EFFECT: None}
+
+    with pytest.raises(APIError) as e:
+        await cap_scene.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene("sunset")))
+    assert e.value.code == ResponseCode.INVALID_VALUE
+    assert (
+        e.value.message == "Unsupported scene 'sunset' for instance scene of color_setting capability of light.test, "
+        "see https://docs.yaha-cloud.ru/master/config/modes/"
+    )

@@ -16,14 +16,18 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
+from custom_components.yandex_smart_home.capability_color import ColorSettingCapability
 from custom_components.yandex_smart_home.capability_custom import (
     CustomCapability,
+    CustomColorSceneCapability,
     CustomRangeCapability,
     get_custom_capability,
 )
+from custom_components.yandex_smart_home.device import Device
 from custom_components.yandex_smart_home.helpers import ActionNotAllowed, APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
+    ColorScene,
     ModeCapabilityInstance,
     ModeCapabilityInstanceActionState,
     ModeCapabilityMode,
@@ -31,6 +35,7 @@ from custom_components.yandex_smart_home.schema import (
     RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
     ResponseCode,
+    SceneInstanceActionState,
     ToggleCapabilityInstance,
     ToggleCapabilityInstanceActionState,
 )
@@ -244,6 +249,91 @@ async def test_capability_custom_mode(hass):
 
     for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
         assert cap.new_with_value_template(Template(t)).get_value() is None
+
+
+@pytest.mark.parametrize("domain", ["switch", "light"])
+async def test_capability_custom_mode_scene(hass, domain):
+    state = State(f"{domain}.test", "foo", {})
+    hass.states.async_set(state.entity_id, state.state)
+    entry_data = MockConfigEntryData(
+        entity_config={
+            state.entity_id: {
+                const.CONF_ENTITY_MODE_MAP: {
+                    "scene": {
+                        "alarm": ["foo"],
+                        "fantasy": ["bar"],
+                    }
+                },
+                const.CONF_ENTITY_CUSTOM_MODES: {
+                    "scene": {
+                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
+                    }
+                },
+            }
+        }
+    )
+
+    device = Device(hass, entry_data, state.entity_id, state)
+    scene_cap = color_setting_cap = None
+    for capability in device.get_capabilities():
+        if isinstance(capability, CustomColorSceneCapability):
+            scene_cap = capability
+        if isinstance(capability, ColorSettingCapability):
+            color_setting_cap = capability
+
+    assert scene_cap is not None
+    assert scene_cap.supported is True
+    assert scene_cap.retrievable is True
+    assert scene_cap.reportable is True
+    assert scene_cap.get_value() == "alarm"
+
+    assert color_setting_cap is not None
+    assert color_setting_cap.parameters.as_dict() == {"color_scene": {"scenes": [{"id": "alarm"}, {"id": "fantasy"}]}}
+
+    with pytest.raises(ActionNotAllowed):
+        await scene_cap.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene.FANTASY))
+
+    entry_data = MockConfigEntryData(
+        entity_config={
+            state.entity_id: {
+                const.CONF_ENTITY_MODE_MAP: {
+                    "scene": {
+                        "alarm": ["foo"],
+                        "fantasy": ["bar"],
+                    }
+                },
+                const.CONF_ENTITY_CUSTOM_MODES: {
+                    "scene": {
+                        const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {
+                            CONF_SERVICE: "test.set_mode",
+                            CONF_SERVICE_DATA: {"service_mode": dynamic_template("mode: {{ mode }}")},
+                            ATTR_ENTITY_ID: state.entity_id,
+                        },
+                    }
+                },
+            }
+        }
+    )
+
+    device = Device(hass, entry_data, state.entity_id, state)
+    scene_cap = None
+    for capability in device.get_capabilities():
+        if isinstance(capability, CustomColorSceneCapability):
+            scene_cap = capability
+
+    assert scene_cap is not None
+    assert scene_cap.supported is True
+    assert scene_cap.retrievable is False
+    assert scene_cap.reportable is False
+    assert scene_cap.get_value() is None
+
+    calls = async_mock_service(hass, "test", "set_mode")
+    await scene_cap.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene.FANTASY))
+    assert len(calls) == 1
+    assert calls[0].data == {"service_mode": "mode: bar", ATTR_ENTITY_ID: state.entity_id}
+
+    for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
+        assert scene_cap.new_with_value_template(Template(t)).get_value() is None
 
 
 async def test_capability_custom_toggle(hass):

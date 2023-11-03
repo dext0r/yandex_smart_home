@@ -1,18 +1,21 @@
 """Implement the Yandex Smart Home color_setting capability."""
 from __future__ import annotations
 
+from abc import abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
 
-from .capability import STATE_CAPABILITIES_REGISTRY, StateCapability
+from . import const
+from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
 from .color import ColorConverter, ColorTemperatureConverter
 from .const import CONF_COLOR_PROFILE, CONF_ENTITY_MODE_MAP
 from .helpers import APIError
 from .schema import (
+    CapabilityInstance,
     CapabilityParameterColorModel,
     CapabilityParameterColorScene,
     CapabilityParameterTemperatureK,
@@ -35,13 +38,13 @@ if TYPE_CHECKING:
 
 @STATE_CAPABILITIES_REGISTRY.register
 class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActionState]):
-    """Root capability to discover another light device capabilities.
+    """Capability to discover another color_setting capabilities.
 
     https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html
     """
 
-    type = CapabilityType.COLOR_SETTING
-    instance = ColorSettingCapabilityInstance.BASE
+    type: CapabilityType = CapabilityType.COLOR_SETTING
+    instance: CapabilityInstance = ColorSettingCapabilityInstance.BASE
 
     def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, state: State):
         """Initialize a capability for the state."""
@@ -49,7 +52,7 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
 
         self._color = RGBColorCapability(hass, entry_data, state)
         self._temperature = ColorTemperatureCapability(hass, entry_data, state)
-        self._color_scene = ColorSceneCapability(hass, entry_data, state)
+        self._scene = self._get_scene_capability()
 
     @property
     def supported(self) -> bool:
@@ -61,12 +64,12 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
         return False
 
     @property
-    def parameters(self) -> ColorSettingCapabilityParameters | None:
+    def parameters(self) -> ColorSettingCapabilityParameters:
         """Return parameters for a devices list request."""
         return ColorSettingCapabilityParameters(
             color_model=self._color.parameters.color_model if self._color.supported else None,
-            temperature_k=self._temperature.parameters.temperature_k if self._temperature.parameters else None,
-            color_scene=self._color_scene.parameters.color_scene if self._color_scene.supported else None,
+            temperature_k=self._temperature.parameters.temperature_k if self._temperature.supported else None,
+            color_scene=self._scene.parameters.color_scene if self._scene.supported else None,
         )
 
     def get_value(self) -> None:
@@ -77,10 +80,23 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
         """Change the capability state."""
         raise APIError(ResponseCode.INTERNAL_ERROR, "No instance")
 
+    def _get_scene_capability(self) -> ColorSceneCapability:
+        """Return scene capability."""
+        scene_instance = ColorSettingCapabilityInstance.SCENE
+        if custom_scene_config := self._entity_config.get(const.CONF_ENTITY_CUSTOM_MODES, {}).get(scene_instance):
+            from .capability_custom import get_custom_capability
+
+            custom_capability = get_custom_capability(
+                self._hass, self._entry_data, custom_scene_config, CapabilityType.MODE, scene_instance, self.device_id
+            )
+            return cast(ColorSceneCapability, custom_capability)
+
+        return ColorSceneStateCapability(self._hass, self._entry_data, self.state)
+
     @property
-    def _capabilities(self) -> list[StateCapability[Any]]:
+    def _capabilities(self) -> list[Capability[Any]]:
         """Return all child capabilities."""
-        return [self._color, self._temperature, self._color_scene]
+        return [self._color, self._temperature, self._scene]
 
 
 @STATE_CAPABILITIES_REGISTRY.register
@@ -197,11 +213,8 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
         return False
 
     @property
-    def parameters(self) -> ColorSettingCapabilityParameters | None:
+    def parameters(self) -> ColorSettingCapabilityParameters:
         """Return parameters for a devices list request."""
-        if not self.supported:
-            return None
-
         supported_color_modes = set(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, []))
 
         if self._state_features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
@@ -210,17 +223,14 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
                 temperature_k=CapabilityParameterTemperatureK(min=min_temp, max=max_temp)
             )
 
-        if self._color_modes_temp_to_white & supported_color_modes:
-            min_temp = self._default_white_temperature
-            max_temp = self._default_white_temperature
-            if light.ColorMode.RGBW in supported_color_modes or light.ColorMode.WHITE in supported_color_modes:
-                max_temp = self._cold_white_temperature
+        min_temp = self._default_white_temperature
+        max_temp = self._default_white_temperature
+        if light.ColorMode.RGBW in supported_color_modes or light.ColorMode.WHITE in supported_color_modes:
+            max_temp = self._cold_white_temperature
 
-            return ColorSettingCapabilityParameters(
-                temperature_k=CapabilityParameterTemperatureK(min=min_temp, max=max_temp)
-            )
-
-        return None  # pragma: no cover
+        return ColorSettingCapabilityParameters(
+            temperature_k=CapabilityParameterTemperatureK(min=min_temp, max=max_temp)
+        )
 
     def get_description(self) -> None:
         """Return a description for a device list request. Capability with an empty description isn't discoverable."""
@@ -304,12 +314,97 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
         return ColorTemperatureConverter(None, self.state)
 
 
-@STATE_CAPABILITIES_REGISTRY.register
-class ColorSceneCapability(StateCapability[SceneInstanceActionState]):
-    """Capability to control effect of a light device."""
+class ColorSceneCapability(Capability[SceneInstanceActionState]):
+    """Base class for capability to control color scene."""
 
-    type = CapabilityType.COLOR_SETTING
-    instance = ColorSettingCapabilityInstance.SCENE
+    type: CapabilityType = CapabilityType.COLOR_SETTING
+    instance: CapabilityInstance = ColorSettingCapabilityInstance.SCENE
+
+    _scenes_map_default: dict[ColorScene, list[str]] = {}
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        return bool(self.supported_yandex_scenes)
+
+    @property
+    def parameters(self) -> ColorSettingCapabilityParameters:
+        """Return parameters for a devices list request."""
+        return ColorSettingCapabilityParameters(
+            color_scene=CapabilityParameterColorScene.from_list(self.supported_yandex_scenes)
+        )
+
+    @property
+    def supported_yandex_scenes(self) -> list[ColorScene]:
+        """Returns a list of supported Yandex scenes."""
+        scenes = set()
+
+        for ha_value in self.supported_ha_scenes:
+            if value := self.get_yandex_scene_by_ha_scene(ha_value):
+                scenes.add(value)
+
+        return sorted(list(scenes))
+
+    @property
+    @abstractmethod
+    def supported_ha_scenes(self) -> list[str]:
+        """Returns a list of supported HA scenes."""
+        ...
+
+    @cached_property
+    def scenes_map(self) -> dict[ColorScene, list[str]]:
+        """Return scene mapping between Yandex and HA."""
+        scenes_map = self._scenes_map_default.copy()
+
+        if CONF_ENTITY_MODE_MAP in self._entity_config:
+            scenes_map.update(
+                {ColorScene(k): v for k, v in self._entity_config[CONF_ENTITY_MODE_MAP].get(self.instance, {}).items()}
+            )
+
+        return scenes_map
+
+    def get_yandex_scene_by_ha_scene(self, ha_scene: str | None) -> ColorScene | None:
+        """Return Yandex scene for HA scene."""
+        if ha_scene is None:
+            return None
+
+        for scene, names in self.scenes_map.items():
+            if ha_scene.lower() in [n.lower() for n in names]:
+                return scene
+
+        return None
+
+    def get_ha_scene_by_yandex_scene(self, yandex_scene: ColorScene) -> str:
+        """Return HA scene for Yandex scene."""
+        ha_scenes = self.scenes_map.get(yandex_scene, [])
+        for ha_scene in ha_scenes:
+            for sc in self.supported_ha_scenes:
+                if sc.lower() == ha_scene.lower():
+                    return sc
+
+        raise APIError(
+            ResponseCode.INVALID_VALUE,
+            f"Unsupported scene '{yandex_scene}' for {self}, see https://docs.yaha-cloud.ru/master/config/modes/",
+        )
+
+    def get_description(self) -> None:
+        """Return a description for a device list request. Capability with an empty description isn't discoverable."""
+        return None
+
+    @abstractmethod
+    def get_value(self) -> ColorScene | None:
+        """Return the current capability value."""
+        ...
+
+    @abstractmethod
+    async def set_instance_state(self, context: Context, state: SceneInstanceActionState) -> None:
+        """Change the capability state."""
+        ...
+
+
+@STATE_CAPABILITIES_REGISTRY.register
+class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInstanceActionState]):
+    """Capability to control effect of a light device."""
 
     _scenes_map_default = {
         ColorScene.ALARM: ["Тревога", "Alarm", "Shine", "Strobe Mega"],
@@ -336,25 +431,19 @@ class ColorSceneCapability(StateCapability[SceneInstanceActionState]):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == light.DOMAIN and self._state_features & light.LightEntityFeature.EFFECT:
-            return bool(self.supported_scenes)
+            return super().supported
 
         return False
 
     @property
-    def parameters(self) -> ColorSettingCapabilityParameters:
-        """Return parameters for a devices list request."""
-        return ColorSettingCapabilityParameters(
-            color_scene=CapabilityParameterColorScene.from_list(self.supported_scenes)
-        )
-
-    def get_description(self) -> None:
-        """Return a description for a device list request. Capability with an empty description isn't discoverable."""
-        return None
+    def supported_ha_scenes(self) -> list[str]:
+        """Returns a list of supported Yandex scenes."""
+        return self.state.attributes.get(light.ATTR_EFFECT_LIST, []) or []
 
     def get_value(self) -> ColorScene | None:
         """Return the current capability value."""
         if effect := self.state.attributes.get(light.ATTR_EFFECT):
-            return self.get_scene_by_effect(effect)
+            return self.get_yandex_scene_by_ha_scene(effect)
 
         return None
 
@@ -365,52 +454,8 @@ class ColorSceneCapability(StateCapability[SceneInstanceActionState]):
             light.SERVICE_TURN_ON,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_EFFECT: self.get_effect_by_scene(state.value),
+                light.ATTR_EFFECT: self.get_ha_scene_by_yandex_scene(state.value),
             },
             blocking=True,
             context=context,
         )
-
-    @property
-    def supported_scenes(self) -> list[ColorScene]:
-        """Returns a list of supported Yandex scenes."""
-        scenes = set()
-
-        if effect_list := self.state.attributes.get(light.ATTR_EFFECT_LIST):
-            for effect in effect_list:
-                if scene := self.get_scene_by_effect(effect):
-                    scenes.add(scene)
-
-        return sorted(list(scenes))
-
-    @cached_property
-    def scenes_map(self) -> dict[ColorScene, list[str]]:
-        """Return mapping between Yandex scenes and HA light effects."""
-        scenes_map = self._scenes_map_default.copy()
-
-        if CONF_ENTITY_MODE_MAP in self._entity_config:
-            scenes_map.update(
-                {ColorScene(k): v for k, v in self._entity_config[CONF_ENTITY_MODE_MAP].get(self.instance, {}).items()}
-            )
-
-        for scene, effects in scenes_map.items():
-            scenes_map[scene] = [e.lower() for e in effects]
-
-        return scenes_map
-
-    def get_scene_by_effect(self, effect: str) -> ColorScene | None:
-        """Return Yandex scene for HA light effect."""
-        for scene, effects in self.scenes_map.items():
-            if effect.lower() in effects:
-                return scene
-
-        return None
-
-    def get_effect_by_scene(self, scene: ColorScene) -> str | None:
-        """Return HA light effect for Yandex scene."""
-        for effect in self.scenes_map.get(scene, {}):
-            for supported_effect in self.state.attributes.get(light.ATTR_EFFECT_LIST, []):
-                if str(supported_effect).lower() == effect:
-                    return str(supported_effect)
-
-        return None

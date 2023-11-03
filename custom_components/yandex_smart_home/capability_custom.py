@@ -12,6 +12,7 @@ from homeassistant.helpers.service import async_call_from_config
 from homeassistant.helpers.template import Template, forgiving_boolean
 
 from .capability import Capability
+from .capability_color import ColorSceneCapability
 from .capability_mode import ModeCapability
 from .capability_range import RangeCapability
 from .capability_toggle import ToggleCapability
@@ -35,6 +36,8 @@ from .helpers import ActionNotAllowed, APIError
 from .schema import (
     CapabilityInstance,
     CapabilityType,
+    ColorScene,
+    ColorSettingCapabilityInstance,
     ModeCapabilityInstance,
     ModeCapabilityInstanceActionState,
     ModeCapabilityMode,
@@ -42,6 +45,7 @@ from .schema import (
     RangeCapabilityInstanceActionState,
     RangeCapabilityRange,
     ResponseCode,
+    SceneInstanceActionState,
     ToggleCapabilityInstance,
     ToggleCapabilityInstanceActionState,
 )
@@ -299,6 +303,39 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
         return self._config.get(CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE)
 
 
+class CustomColorSceneCapability(CustomCapability, ColorSceneCapability):
+    """Custom scene capability that user can set up using yaml configuration."""
+
+    @property
+    def supported_ha_scenes(self) -> list[str]:
+        """Returns a list of supported HA scenes."""
+        modes = self._entity_config.get(CONF_ENTITY_MODE_MAP, {}).get(self.instance, {})
+        rv = list(itertools.chain(*modes.values()))
+        return rv
+
+    def get_value(self) -> ColorScene | None:
+        """Return the current capability value."""
+        if not self.retrievable:
+            return None
+
+        return self.get_yandex_scene_by_ha_scene(self._get_source_value())
+
+    async def set_instance_state(self, context: Context, state: SceneInstanceActionState) -> None:
+        """Change the capability state."""
+        service_config = self._config.get(CONF_ENTITY_CUSTOM_MODE_SET_MODE)
+        if not service_config:
+            raise ActionNotAllowed
+
+        await async_call_from_config(
+            self._hass,
+            service_config,
+            validate_config=False,
+            variables={"mode": self.get_ha_scene_by_yandex_scene(state.value)},
+            blocking=True,
+            context=context,
+        )
+
+
 def get_custom_capability(
     hass: HomeAssistant,
     entry_data: ConfigEntryData,
@@ -312,6 +349,11 @@ def get_custom_capability(
 
     match capability_type:
         case CapabilityType.MODE:
+            if instance == ColorSettingCapabilityInstance.SCENE:
+                return CustomColorSceneCapability(
+                    hass, entry_data, capability_config, ColorSettingCapabilityInstance.SCENE, device_id, value_template
+                )
+
             return CustomModeCapability(
                 hass, entry_data, capability_config, ModeCapabilityInstance(instance), device_id, value_template
             )
