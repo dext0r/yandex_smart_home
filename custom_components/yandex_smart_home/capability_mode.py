@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 import logging
 import math
-from typing import Protocol
+from typing import Any, Iterable, Protocol
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
 from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -50,20 +50,17 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
     @property
     def supported_yandex_modes(self) -> list[ModeCapabilityMode]:
         """Returns a list of supported Yandex modes."""
-        modes = []
-
+        modes = set()
         for ha_value in self.supported_ha_modes:
-            value = self.get_yandex_mode_by_ha_mode(ha_value, hide_warnings=True)
-            if value is not None and value not in modes:
-                modes.append(value)
+            if value := self.get_yandex_mode_by_ha_mode(ha_value, hide_warnings=True):
+                modes.add(value)
 
-        return modes
+        return sorted(modes)
 
     @property
-    @abstractmethod
     def supported_ha_modes(self) -> list[str]:
         """Returns list of supported HA modes."""
-        ...
+        return list(map(str, self._ha_modes))
 
     @property
     def modes_map(self) -> dict[ModeCapabilityMode, list[str]]:
@@ -81,47 +78,43 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
 
         return None
 
-    def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings: bool = False) -> ModeCapabilityMode | None:
-        """Return Yandex mode by HA mode."""
-        if ha_mode is None:
-            return None
-
-        rv = None
+    def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings: bool = False) -> ModeCapabilityMode | None:
+        """Return Yandex mode for HA mode."""
+        mode = None
         for yandex_mode, names in self.modes_map.items():
-            lower_names = [str(n).lower() for n in names]
-            if str(ha_mode).lower() in lower_names:
-                rv = yandex_mode
+            if ha_mode.lower() in [n.lower() for n in names]:
+                mode = yandex_mode
                 break
 
-        if rv is None and self.modes_map_config is None and self._modes_map_index_fallback:
+        if mode is None and self.modes_map_config is None and self._modes_map_index_fallback:
             try:
-                rv = self._modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
+                mode = self._modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
             except (IndexError, ValueError, KeyError):
                 pass
 
-        if rv is not None and ha_mode not in self.supported_ha_modes:
+        if mode is not None and ha_mode not in self.supported_ha_modes:
             raise APIError(
                 ResponseCode.INVALID_VALUE,
                 f"Unsupported HA mode '{ha_mode}' for {self}: not in {self.supported_ha_modes}",
             )
 
-        if rv is None and not hide_warnings:
-            if str(ha_mode).lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
-                if str(ha_mode).lower() in [str(m).lower() for m in self.supported_ha_modes]:
+        if mode is None and not hide_warnings:
+            if ha_mode.lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+                if ha_mode.lower() in [m.lower() for m in self.supported_ha_modes]:
                     _LOGGER.warning(
                         f"Failed to get Yandex mode for mode '{ha_mode}' for {self}. "
                         f"It may cause inconsistencies between Yandex and HA. "
                         f"See https://docs.yaha-cloud.ru/master/config/modes/"
                     )
 
-        return rv
+        return mode
 
     def get_ha_mode_by_yandex_mode(self, yandex_mode: ModeCapabilityMode) -> str:
-        """Return HA mode by Yandex mode."""
+        """Return HA mode for Yandex mode."""
         ha_modes = self.modes_map.get(yandex_mode, [])
         for ha_mode in ha_modes:
             for am in self.supported_ha_modes:
-                if str(am).lower() == str(ha_mode).lower():
+                if am.lower() == ha_mode.lower():
                     return am
 
         if self.modes_map_config is None:
@@ -139,16 +132,25 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
         """Return the current capability value."""
         ...
 
+    @property
+    @abstractmethod
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        ...
+
 
 class StateModeCapability(ModeCapability, StateCapability[ModeCapabilityInstanceActionState], Protocol):
     """Base class for a mode capability based on the state."""
 
     def get_value(self) -> ModeCapabilityMode | None:
         """Return the current capability value."""
-        return self.get_yandex_mode_by_ha_mode(self._ha_value, False)
+        if self._ha_value is None:
+            return None
+
+        return self.get_yandex_mode_by_ha_mode(str(self._ha_value), False)
 
     @property
-    def _ha_value(self) -> str | None:
+    def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.state
 
@@ -175,11 +177,6 @@ class ThermostatCapability(StateModeCapability):
 
         return False
 
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        return self.state.attributes.get(climate.ATTR_HVAC_MODES, []) or []
-
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -192,6 +189,11 @@ class ThermostatCapability(StateModeCapability):
             blocking=True,
             context=context,
         )
+
+    @property
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        return self.state.attributes.get(climate.ATTR_HVAC_MODES, []) or []
 
 
 @STATE_CAPABILITIES_REGISTRY.register
@@ -215,11 +217,6 @@ class SwingCapability(StateModeCapability):
 
         return False
 
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        return self.state.attributes.get(climate.ATTR_SWING_MODES, []) or []
-
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -234,7 +231,12 @@ class SwingCapability(StateModeCapability):
         )
 
     @property
-    def _ha_value(self) -> str | None:
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        return self.state.attributes.get(climate.ATTR_SWING_MODES, []) or []
+
+    @property
+    def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.attributes.get(climate.ATTR_SWING_MODE)
 
@@ -312,11 +314,6 @@ class ProgramCapabilityHumidifier(ProgramCapability):
 
         return False
 
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        return self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES, []) or []
-
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -331,7 +328,12 @@ class ProgramCapabilityHumidifier(ProgramCapability):
         )
 
     @property
-    def _ha_value(self) -> str | None:
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        return self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES, []) or []
+
+    @property
+    def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.attributes.get(humidifier.ATTR_MODE)
 
@@ -386,11 +388,6 @@ class ProgramCapabilityFan(ProgramCapability):
 
         return False
 
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        return self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or []
-
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -405,7 +402,12 @@ class ProgramCapabilityFan(ProgramCapability):
         )
 
     @property
-    def _ha_value(self) -> str | None:
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        return self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or []
+
+    @property
+    def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.attributes.get(fan.ATTR_PRESET_MODE)
 
@@ -441,19 +443,8 @@ class InputSourceCapability(StateModeCapability):
 
         return False
 
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        modes = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST, []) or []
-        filtered_modes = list(filter(lambda m: m not in ["Live TV"], modes))  # #418
-        if filtered_modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
-            self._cache.save_attr_value(self.state.entity_id, media_player.ATTR_INPUT_SOURCE_LIST, modes)
-            return modes
-
-        return self._cache.get_attr_value(self.state.entity_id, media_player.ATTR_INPUT_SOURCE_LIST) or []
-
-    def get_yandex_mode_by_ha_mode(self, ha_mode: str | None, hide_warnings: bool = False) -> ModeCapabilityMode | None:
-        """Return Yandex mode by HA mode."""
+    def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings: bool = False) -> ModeCapabilityMode | None:
+        """Return Yandex mode for HA mode."""
         return super().get_yandex_mode_by_ha_mode(ha_mode, hide_warnings=True)
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
@@ -470,7 +461,18 @@ class InputSourceCapability(StateModeCapability):
         )
 
     @property
-    def _ha_value(self) -> str | None:
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        modes = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST, []) or []
+        filtered_modes = list(filter(lambda m: m not in ["Live TV"], modes))  # #418
+        if filtered_modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
+            self._cache.save_attr_value(self.state.entity_id, media_player.ATTR_INPUT_SOURCE_LIST, modes)
+            return modes
+
+        return self._cache.get_attr_value(self.state.entity_id, media_player.ATTR_INPUT_SOURCE_LIST) or []
+
+    @property
+    def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.attributes.get(media_player.ATTR_INPUT_SOURCE)
 
@@ -534,17 +536,6 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
 
         return False
 
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        modes = self.state.attributes.get(climate.ATTR_FAN_MODES, []) or []
-
-        # esphome default state for some devices
-        if self._ha_value == climate.const.FAN_ON and climate.const.FAN_ON not in modes:
-            modes.append(climate.const.FAN_ON)
-
-        return modes
-
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -559,7 +550,18 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         )
 
     @property
-    def _ha_value(self) -> str | None:
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        modes = self.state.attributes.get(climate.ATTR_FAN_MODES, []) or []
+
+        # esphome default state for some devices
+        if self._ha_value == climate.const.FAN_ON and climate.const.FAN_ON not in modes:
+            modes.append(climate.const.FAN_ON)
+
+        return modes
+
+    @property
+    def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.attributes.get(climate.ATTR_FAN_MODE)
 
@@ -620,11 +622,6 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
 
         return False
 
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        return self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or []
-
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -639,7 +636,12 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
         )
 
     @property
-    def _ha_value(self) -> str | None:
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        return self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or []
+
+    @property
+    def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.attributes.get(fan.ATTR_PRESET_MODE)
 
@@ -659,31 +661,6 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
                 return super().supported
 
         return False
-
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        if self.modes_map:
-            return list(self.modes_map.keys())
-
-        percentage_step = self.state.attributes.get(fan.ATTR_PERCENTAGE_STEP, 100)
-        speed_count = math.ceil(100 / percentage_step)
-        if speed_count == 1:
-            return []
-
-        modes = [ModeCapabilityMode.LOW, ModeCapabilityMode.HIGH]
-        if speed_count >= 3:
-            modes.insert(modes.index(ModeCapabilityMode.HIGH), ModeCapabilityMode.MEDIUM)
-        if speed_count >= 4:
-            modes.insert(modes.index(ModeCapabilityMode.MEDIUM), ModeCapabilityMode.NORMAL)
-        if speed_count >= 5:
-            modes.insert(0, ModeCapabilityMode.ECO)
-        if speed_count >= 6:
-            modes.insert(modes.index(ModeCapabilityMode.LOW), ModeCapabilityMode.QUIET)
-        if speed_count >= 7:
-            modes.append(ModeCapabilityMode.TURBO)
-
-        return [str(s) for s in modes]
 
     @property
     def supported_yandex_modes(self) -> list[ModeCapabilityMode]:
@@ -729,7 +706,32 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         )
 
     @property
-    def _ha_value(self) -> str | None:
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        if self.modes_map:
+            return self.modes_map.keys()
+
+        percentage_step = self.state.attributes.get(fan.ATTR_PERCENTAGE_STEP, 100)
+        speed_count = math.ceil(100 / percentage_step)
+        if speed_count == 1:
+            return []
+
+        modes = [ModeCapabilityMode.LOW, ModeCapabilityMode.HIGH]
+        if speed_count >= 3:
+            modes.insert(modes.index(ModeCapabilityMode.HIGH), ModeCapabilityMode.MEDIUM)
+        if speed_count >= 4:
+            modes.insert(modes.index(ModeCapabilityMode.MEDIUM), ModeCapabilityMode.NORMAL)
+        if speed_count >= 5:
+            modes.insert(0, ModeCapabilityMode.ECO)
+        if speed_count >= 6:
+            modes.insert(modes.index(ModeCapabilityMode.LOW), ModeCapabilityMode.QUIET)
+        if speed_count >= 7:
+            modes.append(ModeCapabilityMode.TURBO)
+
+        return modes
+
+    @property
+    def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.attributes.get(fan.ATTR_PERCENTAGE)
 
@@ -769,11 +771,6 @@ class CleanupModeCapability(StateModeCapability):
 
         return False
 
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        return self.state.attributes.get(vacuum.ATTR_FAN_SPEED_LIST, []) or []
-
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -788,6 +785,11 @@ class CleanupModeCapability(StateModeCapability):
         )
 
     @property
-    def _ha_value(self) -> str | None:
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        return self.state.attributes.get(vacuum.ATTR_FAN_SPEED_LIST, []) or []
+
+    @property
+    def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.attributes.get(vacuum.ATTR_FAN_SPEED)

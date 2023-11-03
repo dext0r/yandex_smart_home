@@ -338,7 +338,6 @@ class ColorSceneCapability(Capability[SceneInstanceActionState]):
     def supported_yandex_scenes(self) -> list[ColorScene]:
         """Returns a list of supported Yandex scenes."""
         scenes = set()
-
         for ha_value in self.supported_ha_scenes:
             if value := self.get_yandex_scene_by_ha_scene(ha_value):
                 scenes.add(value)
@@ -363,11 +362,8 @@ class ColorSceneCapability(Capability[SceneInstanceActionState]):
 
         return scenes_map
 
-    def get_yandex_scene_by_ha_scene(self, ha_scene: str | None) -> ColorScene | None:
+    def get_yandex_scene_by_ha_scene(self, ha_scene: str) -> ColorScene | None:
         """Return Yandex scene for HA scene."""
-        if ha_scene is None:
-            return None
-
         for scene, names in self.scenes_map.items():
             if ha_scene.lower() in [n.lower() for n in names]:
                 return scene
@@ -438,12 +434,12 @@ class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInsta
     @property
     def supported_ha_scenes(self) -> list[str]:
         """Returns a list of supported Yandex scenes."""
-        return self.state.attributes.get(light.ATTR_EFFECT_LIST, []) or []
+        return list(map(str, self.state.attributes.get(light.ATTR_EFFECT_LIST, []) or []))
 
     def get_value(self) -> ColorScene | None:
         """Return the current capability value."""
-        if effect := self.state.attributes.get(light.ATTR_EFFECT):
-            return self.get_yandex_scene_by_ha_scene(effect)
+        if (effect := self.state.attributes.get(light.ATTR_EFFECT)) is not None:
+            return self.get_yandex_scene_by_ha_scene(str(effect))
 
         return None
 

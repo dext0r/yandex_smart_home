@@ -35,7 +35,7 @@ class MockModeCapability(StateModeCapability):
     }
 
     @property
-    def supported_ha_modes(self) -> list[str]:
+    def _ha_modes(self) -> list[str]:
         return self.state.attributes.get("modes_list", [])
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
@@ -149,8 +149,8 @@ async def test_capability_mode_fallback_index(hass):
     assert cap.supported is True
     assert cap.supported_ha_modes == ["some", "mode_1", "foo"]
     assert cap.supported_yandex_modes == [
-        ModeCapabilityMode.ONE,
         ModeCapabilityMode.FOWL,
+        ModeCapabilityMode.ONE,
         ModeCapabilityMode.THREE,
     ]
     assert cap.get_ha_mode_by_yandex_mode(ModeCapabilityMode.FOWL) == "mode_1"
@@ -178,7 +178,7 @@ async def test_capability_mode_fallback_index(hass):
     )
     cap = MockFallbackModeCapability(hass, entry_data, state)
     assert cap.supported is True
-    assert cap.supported_yandex_modes == ["baby_food", "americano"]
+    assert cap.supported_yandex_modes == ["americano", "baby_food"]
 
 
 async def test_capability_mode_get_value(hass, caplog):
@@ -337,7 +337,7 @@ async def test_capability_mode_program_fan(hass):
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "program", "modes": [{"value": "quiet"}, {"value": "normal"}]}
+    assert cap.parameters.dict() == {"instance": "program", "modes": [{"value": "normal"}, {"value": "quiet"}]}
     assert cap.get_value() is None
 
     state = State(
@@ -406,7 +406,7 @@ async def test_capability_mode_input_source(hass, caplog):
     assert cap.retrievable is True
     assert cap.parameters.dict() == {
         "instance": "input_source",
-        "modes": [{"value": "one"}, {"value": "two"}, {"value": "three"}],
+        "modes": [{"value": "one"}, {"value": "three"}, {"value": "two"}],
     }
     assert cap.get_value() is None
 
@@ -767,7 +767,13 @@ async def test_capability_mode_fan_speed_climate(hass, caplog):
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "fan_speed", "modes": [{"value": "medium"}, {"value": "low"}]}
+    assert cap.parameters.dict() == {
+        "instance": "fan_speed",
+        "modes": [
+            {"value": "low"},
+            {"value": "medium"},
+        ],
+    }
     assert cap.get_value() is None
 
     state = State(

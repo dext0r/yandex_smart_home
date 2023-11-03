@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import itertools
 import logging
-from typing import TYPE_CHECKING, Any, Protocol, Self, cast
+from typing import TYPE_CHECKING, Any, Iterable, Protocol, Self, cast
 
 from homeassistant.const import STATE_OFF, STATE_UNKNOWN
 from homeassistant.core import callback
@@ -130,19 +130,15 @@ class CustomModeCapability(CustomCapability, ModeCapability):
 
     instance: ModeCapabilityInstance
 
-    @property
-    def supported_ha_modes(self) -> list[str]:
-        """Returns list of supported HA modes."""
-        modes = self._entity_config.get(CONF_ENTITY_MODE_MAP, {}).get(self.instance, {})
-        rv = list(itertools.chain(*modes.values()))
-        return rv
-
     def get_value(self) -> ModeCapabilityMode | None:
         """Return the current capability value."""
         if not self.retrievable:
             return None
 
-        return self.get_yandex_mode_by_ha_mode(self._get_source_value())
+        if (value := self._get_source_value()) is not None:
+            return self.get_yandex_mode_by_ha_mode(str(value))
+
+        return None
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -158,6 +154,12 @@ class CustomModeCapability(CustomCapability, ModeCapability):
             blocking=True,
             context=context,
         )
+
+    @property
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        modes = self._entity_config.get(CONF_ENTITY_MODE_MAP, {}).get(self.instance, {})
+        return itertools.chain(*modes.values())
 
 
 class CustomToggleCapability(CustomCapability, ToggleCapability):
@@ -310,15 +312,17 @@ class CustomColorSceneCapability(CustomCapability, ColorSceneCapability):
     def supported_ha_scenes(self) -> list[str]:
         """Returns a list of supported HA scenes."""
         modes = self._entity_config.get(CONF_ENTITY_MODE_MAP, {}).get(self.instance, {})
-        rv = list(itertools.chain(*modes.values()))
-        return rv
+        return list(itertools.chain(*modes.values()))
 
     def get_value(self) -> ColorScene | None:
         """Return the current capability value."""
         if not self.retrievable:
             return None
 
-        return self.get_yandex_scene_by_ha_scene(self._get_source_value())
+        if (value := self._get_source_value()) is not None:
+            return self.get_yandex_scene_by_ha_scene(str(value))
+
+        return None
 
     async def set_instance_state(self, context: Context, state: SceneInstanceActionState) -> None:
         """Change the capability state."""
