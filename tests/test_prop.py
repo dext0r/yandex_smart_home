@@ -108,7 +108,7 @@ async def test_property_demo_platform(hass):
             state = hass.states.get('sensor.today_energy')
             entity = YandexEntity(hass, BASIC_CONFIG, state)
             props = list((p.type, p.instance) for p in entity.properties())
-            assert props == []
+            assert props == [('devices.properties.float', 'electricity_meter')]
 
     state = hass.states.get('binary_sensor.basement_floor_wet')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
