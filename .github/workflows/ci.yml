@@ -29,6 +29,7 @@ jobs:
         include:
           - ha-version: '2023.10'
           - ha-version: '2023.11'
+          - ha-version: '2023.12'
             latest: true
     steps:
       - uses: actions/checkout@v3

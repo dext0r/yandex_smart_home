@@ -43,7 +43,7 @@ class EventPropertyDescription(APIModel):
 PropertyDescription = FloatPropertyDescription | EventPropertyDescription
 """Description of a property for a device list request."""
 
-PropertyParameters = FloatPropertyParameters | EventPropertyParameters
+PropertyParameters = FloatPropertyParameters | EventPropertyParameters[Any]
 """Parameters of a property for a device list request."""
 
 PropertyInstance = FloatPropertyInstance | EventPropertyInstance
