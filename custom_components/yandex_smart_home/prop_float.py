@@ -32,6 +32,7 @@ from homeassistant.const import (
     PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
+    TEMP_CELSIUS,
     VOLUME_LITERS,
 )
 
@@ -183,7 +184,10 @@ class TemperatureProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_TEMPERATURE
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_TEMPERATURE:
+                return True
+            if self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == TEMP_CELSIUS:
+                return True
         elif self.state.domain == air_quality.DOMAIN:
             return self.state.attributes.get(climate.ATTR_TEMPERATURE) is not None
         elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN, water_heater.DOMAIN):
