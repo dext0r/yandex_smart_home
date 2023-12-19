@@ -18,7 +18,9 @@ from homeassistant.const import (
     PERCENTAGE,
     STATE_ON,
     STATE_UNKNOWN,
+    UnitOfEnergy,
     UnitOfTemperature,
+    UnitOfVolume,
 )
 from homeassistant.core import State
 import pytest
@@ -368,6 +370,41 @@ async def test_property_float_co2_level(hass, domain, device_class, attribute, s
         attributes[attribute] = None
     prop.state = State(f"{domain}.test", value, attributes)
     assert prop.get_value() is None
+
+
+@pytest.mark.parametrize(
+    "device_class,unit_of_measurement,instance,unit,assert_value",
+    [
+        (SensorDeviceClass.ENERGY, None, "electricity_meter", "unit.kilowatt_hour", None),
+        (SensorDeviceClass.ENERGY, UnitOfEnergy.WATT_HOUR, "electricity_meter", "unit.kilowatt_hour", 3.42),
+        (SensorDeviceClass.ENERGY, UnitOfEnergy.KILO_WATT_HOUR, "electricity_meter", "unit.kilowatt_hour", None),
+        (SensorDeviceClass.ENERGY, UnitOfEnergy.MEGA_WATT_HOUR, "electricity_meter", "unit.kilowatt_hour", 3420500.0),
+        (SensorDeviceClass.GAS, None, "gas_meter", "unit.cubic_meter", None),
+        (SensorDeviceClass.GAS, UnitOfVolume.CUBIC_METERS, "gas_meter", "unit.cubic_meter", None),
+        (SensorDeviceClass.GAS, UnitOfVolume.LITERS, "gas_meter", "unit.cubic_meter", 3.42),
+        (SensorDeviceClass.WATER, None, "water_meter", "unit.cubic_meter", None),
+        (SensorDeviceClass.WATER, UnitOfVolume.CUBIC_METERS, "water_meter", "unit.cubic_meter", None),
+        (SensorDeviceClass.WATER, UnitOfVolume.LITERS, "water_meter", "unit.cubic_meter", 3.42),
+    ],
+)
+def test_property_float_meter(hass, device_class, instance, unit, unit_of_measurement, assert_value):
+    value = 3420.5
+    attributes = {ATTR_DEVICE_CLASS: device_class}
+    if unit_of_measurement:
+        attributes[ATTR_UNIT_OF_MEASUREMENT] = unit_of_measurement
+
+    state = State("sensor.test", str(value), attributes)
+    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance(instance))
+    assert prop.retrievable is True
+    assert prop.parameters == {"instance": instance, "unit": unit}
+
+    if assert_value:
+        assert prop.get_value() == assert_value
+    else:
+        assert prop.get_value() == value
+
+    prop.state = State("sensor.test", "-5", attributes)
+    assert prop.get_value() == 0
 
 
 @pytest.mark.parametrize("v,assert_v", [("300", 300), ("-5", 0), (None, None)])

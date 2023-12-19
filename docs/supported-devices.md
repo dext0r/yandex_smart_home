@@ -57,6 +57,18 @@
 
 Или при наличии у объекта атрибута `carbon_dioxide`
 
+### Счетчик электричества { id=float-sensor-electricity-meter }
+* `device_class`: `energy`
+* `unit_of_measurements`: `Wh`, `kWh`, `MWh`
+
+### Счетчик газа { id=float-sensor-gas-meter }
+* `device_class`: `gas`
+* `unit_of_measurements`: `m³`, `L` (и другие единицы измерения объёма)
+
+### Счетчик воды { id=float-sensor-gas-meter }
+* `device_class`: `water`
+* `unit_of_measurements`: `m³`, `L` (и другие единицы измерения объёма)
+
 ### Уровни частиц PM1 / PM2.5 / PM10 { id=float-sensor-pm }
 * `device_class`: `pm1` / `pm25` / `pm10`
 

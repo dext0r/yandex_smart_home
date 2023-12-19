@@ -197,27 +197,27 @@ async def test_property_demo_platform(hass):
 
     state = hass.states.get("sensor.total_energy_kwh")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.sensor"
+    assert device.type == "devices.types.smart_meter.electricity"
     props = list((p.type, p.instance) for p in device.get_properties())
-    assert props == []
+    assert props == [("devices.properties.float", "electricity_meter")]
 
     state = hass.states.get("sensor.total_energy_mwh")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.sensor"
+    assert device.type == "devices.types.smart_meter.electricity"
     props = list((p.type, p.instance) for p in device.get_properties())
-    assert props == []
+    assert props == [("devices.properties.float", "electricity_meter")]
 
     state = hass.states.get("sensor.total_gas_m3")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.sensor"
+    assert device.type == "devices.types.smart_meter.gas"
     props = list((p.type, p.instance) for p in device.get_properties())
-    assert props == []
+    assert props == [("devices.properties.float", "gas_meter")]
 
     state = hass.states.get("sensor.total_gas_ft3")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.sensor"
+    assert device.type == "devices.types.smart_meter.gas"
     props = list((p.type, p.instance) for p in device.get_properties())
-    assert props == []
+    assert props == [("devices.properties.float", "gas_meter")]
 
     state = hass.states.get("sensor.thermostat")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)

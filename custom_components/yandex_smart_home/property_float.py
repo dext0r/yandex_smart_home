@@ -15,15 +15,19 @@ from homeassistant.const import (
     STATE_UNKNOWN,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
+    UnitOfEnergy,
     UnitOfPower,
+    UnitOfVolume,
 )
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util.unit_conversion import (
     BaseUnitConverter,
     ElectricCurrentConverter,
     ElectricPotentialConverter,
+    EnergyConverter,
     PowerConverter,
     TemperatureConverter,
+    VolumeConverter,
 )
 
 from . import const
@@ -34,12 +38,16 @@ from .schema import (
     AmperageFloatPropertyParameters,
     BatteryLevelFloatPropertyParameters,
     CO2LevelFloatPropertyParameters,
+    ElectricityMeterFloatPropertyParameters,
     FloatPropertyDescription,
     FloatPropertyInstance,
     FloatPropertyParameters,
     FoodLevelFloatPropertyParameters,
+    GasMeterFloatPropertyParameters,
+    HeatMeterFloatPropertyParameters,
     HumidityFloatPropertyParameters,
     IlluminationFloatPropertyParameters,
+    MeterFloatPropertyParameters,
     PM1DensityFloatPropertyParameters,
     PM10DensityFloatPropertyParameters,
     PM25DensityFloatPropertyParameters,
@@ -51,6 +59,7 @@ from .schema import (
     TVOCFloatPropertyParameters,
     VoltageFloatPropertyParameters,
     WaterLevelFloatPropertyParameters,
+    WaterMeterFloatPropertyParameters,
 )
 from .unit_conversion import PressureConverter, TVOCConcentrationConverter, UnitOfPressure, UnitOfTemperature
 
@@ -250,6 +259,91 @@ class CO2LevelProperty(FloatProperty, Protocol):
     def parameters(self) -> CO2LevelFloatPropertyParameters:
         """Return parameters for a devices list request."""
         return CO2LevelFloatPropertyParameters()
+
+
+class MeterProperty(FloatProperty, Protocol):
+    """Base class for meter properties."""
+
+    instance: FloatPropertyInstance = FloatPropertyInstance.METER
+
+    @property
+    def parameters(self) -> MeterFloatPropertyParameters:
+        """Return parameters for a devices list request."""
+        return MeterFloatPropertyParameters()
+
+
+class ElectricityMeterProperty(FloatProperty, Protocol):
+    """Base class for electricity meter properties."""
+
+    instance: FloatPropertyInstance = FloatPropertyInstance.ELECTRICITY_METER
+
+    @property
+    def parameters(self) -> ElectricityMeterFloatPropertyParameters:
+        """Return parameters for a devices list request."""
+        return ElectricityMeterFloatPropertyParameters()
+
+    @property
+    def unit_of_measurement(self) -> UnitOfEnergy:
+        """Return the unit the property value is expressed in."""
+        return UnitOfEnergy.KILO_WATT_HOUR
+
+    @property
+    def _unit_converter(self) -> EnergyConverter:
+        """Return the unit converter."""
+        return EnergyConverter()
+
+
+class GasMeterProperty(FloatProperty, Protocol):
+    """Base class for gas meter properties."""
+
+    instance: FloatPropertyInstance = FloatPropertyInstance.GAS_METER
+
+    @property
+    def parameters(self) -> GasMeterFloatPropertyParameters:
+        """Return parameters for a devices list request."""
+        return GasMeterFloatPropertyParameters()
+
+    @property
+    def unit_of_measurement(self) -> UnitOfVolume:
+        """Return the unit the property value is expressed in."""
+        return UnitOfVolume.CUBIC_METERS
+
+    @property
+    def _unit_converter(self) -> VolumeConverter:
+        """Return the unit converter."""
+        return VolumeConverter()
+
+
+class HeatMeterProperty(FloatProperty, Protocol):
+    """Base class for heat meter properties."""
+
+    instance: FloatPropertyInstance = FloatPropertyInstance.HEAT_METER
+
+    @property
+    def parameters(self) -> HeatMeterFloatPropertyParameters:
+        """Return parameters for a devices list request."""
+        return HeatMeterFloatPropertyParameters()
+
+
+class WaterMeterProperty(FloatProperty, Protocol):
+    """Base class for water meter properties."""
+
+    instance: FloatPropertyInstance = FloatPropertyInstance.WATER_METER
+
+    @property
+    def parameters(self) -> WaterMeterFloatPropertyParameters:
+        """Return parameters for a devices list request."""
+        return WaterMeterFloatPropertyParameters()
+
+    @property
+    def unit_of_measurement(self) -> UnitOfVolume:
+        """Return the unit the property value is expressed in."""
+        return UnitOfVolume.CUBIC_METERS
+
+    @property
+    def _unit_converter(self) -> VolumeConverter:
+        """Return the unit converter."""
+        return VolumeConverter()
 
 
 class PM1DensityProperty(FloatProperty, Protocol):
@@ -524,6 +618,63 @@ class CO2LevelSensor(StateProperty, CO2LevelProperty):
             return self.state.state
 
         return self.state.attributes.get(air_quality.ATTR_CO2)
+
+
+@STATE_PROPERTIES_REGISTRY.register
+class ElectricityMeterSensor(StateProperty, ElectricityMeterProperty):
+    """Representaton of the state as a electricity meter sensor."""
+
+    @property
+    def supported(self) -> bool:
+        """Test if the property is supported."""
+        return self.state.domain == sensor.DOMAIN and self._state_device_class == SensorDeviceClass.ENERGY
+
+    def _get_native_value(self) -> float | str | None:
+        """Return the current property value without conversion."""
+        return self.state.state
+
+    @property
+    def _native_unit_of_measurement(self) -> str:
+        """Return the unit the native value is expressed in."""
+        return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfEnergy.KILO_WATT_HOUR))
+
+
+@STATE_PROPERTIES_REGISTRY.register
+class GasMeterSensor(StateProperty, GasMeterProperty):
+    """Representaton of the state as a gas meter sensor."""
+
+    @property
+    def supported(self) -> bool:
+        """Test if the property is supported."""
+        return self.state.domain == sensor.DOMAIN and self._state_device_class == SensorDeviceClass.GAS
+
+    def _get_native_value(self) -> float | str | None:
+        """Return the current property value without conversion."""
+        return self.state.state
+
+    @property
+    def _native_unit_of_measurement(self) -> str:
+        """Return the unit the native value is expressed in."""
+        return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfVolume.CUBIC_METERS))
+
+
+@STATE_PROPERTIES_REGISTRY.register
+class WaterMeterSensor(StateProperty, WaterMeterProperty):
+    """Representaton of the state as a water meter sensor."""
+
+    @property
+    def supported(self) -> bool:
+        """Test if the property is supported."""
+        return self.state.domain == sensor.DOMAIN and self._state_device_class == SensorDeviceClass.WATER
+
+    def _get_native_value(self) -> float | str | None:
+        """Return the current property value without conversion."""
+        return self.state.state
+
+    @property
+    def _native_unit_of_measurement(self) -> str:
+        """Return the unit the native value is expressed in."""
+        return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfVolume.CUBIC_METERS))
 
 
 @STATE_PROPERTIES_REGISTRY.register

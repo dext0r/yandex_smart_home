@@ -17,9 +17,13 @@ class FloatPropertyInstance(StrEnum):
     AMPERAGE = "amperage"
     BATTERY_LEVEL = "battery_level"
     CO2_LEVEL = "co2_level"
-    HUMIDITY = "humidity"
+    ELECTRICITY_METER = "electricity_meter"
     FOOD_LEVEL = "food_level"
+    GAS_METER = "gas_meter"
+    HEAT_METER = "heat_meter"
+    HUMIDITY = "humidity"
     ILLUMINATION = "illumination"
+    METER = "meter"
     PM10_DENSITY = "pm10_density"
     PM1_DENSITY = "pm1_density"
     PM2_5_DENSITY = "pm2.5_density"
@@ -29,18 +33,22 @@ class FloatPropertyInstance(StrEnum):
     TVOC = "tvoc"
     VOLTAGE = "voltage"
     WATER_LEVEL = "water_level"
+    WATER_METER = "water_meter"
 
 
 class FloatUnit(StrEnum):
     """Unit used in a float property."""
 
     AMPERE = "unit.ampere"
+    CUBIC_METER = "unit.cubic_meter"
+    GIGACALORIE = "unit.gigacalorie"
+    KILOWATT_HOUR = "unit.kilowatt_hour"
     LUX = "unit.illumination.lux"
+    MCG_M3 = "unit.density.mcg_m3"
     PERCENT = "unit.percent"
     PPM = "unit.ppm"
-    MCG_M3 = "unit.density.mcg_m3"
-    WATT = "unit.watt"
     VOLT = "unit.volt"
+    WATT = "unit.watt"
 
 
 class PressureUnit(StrEnum):
@@ -63,7 +71,7 @@ class FloatPropertyParameters(APIModel):
     """Parameters of a float property."""
 
     instance: FloatPropertyInstance
-    unit: FloatUnit | PressureUnit | TemperatureUnit
+    unit: FloatUnit | PressureUnit | TemperatureUnit | None
 
     @property
     def range(self) -> tuple[int | None, int | None]:
@@ -107,8 +115,23 @@ class CO2LevelFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatProperty
     unit: Literal[FloatUnit.PPM] = FloatUnit.PPM
 
 
+class ElectricityMeterFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatPropertyParameters):
+    instance: Literal[FloatPropertyInstance.ELECTRICITY_METER] = FloatPropertyInstance.ELECTRICITY_METER
+    unit: Literal[FloatUnit.KILOWATT_HOUR] = FloatUnit.KILOWATT_HOUR
+
+
 class FoodLevelFloatPropertyParameters(PercentFloatPropertyParameters):
     instance: Literal[FloatPropertyInstance.FOOD_LEVEL] = FloatPropertyInstance.FOOD_LEVEL
+
+
+class GasMeterFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatPropertyParameters):
+    instance: Literal[FloatPropertyInstance.GAS_METER] = FloatPropertyInstance.GAS_METER
+    unit: Literal[FloatUnit.CUBIC_METER] = FloatUnit.CUBIC_METER
+
+
+class HeatMeterFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatPropertyParameters):
+    instance: Literal[FloatPropertyInstance.HEAT_METER] = FloatPropertyInstance.HEAT_METER
+    unit: Literal[FloatUnit.GIGACALORIE] = FloatUnit.GIGACALORIE
 
 
 class HumidityFloatPropertyParameters(PercentFloatPropertyParameters):
@@ -118,6 +141,11 @@ class HumidityFloatPropertyParameters(PercentFloatPropertyParameters):
 class IlluminationFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatPropertyParameters):
     instance: Literal[FloatPropertyInstance.ILLUMINATION] = FloatPropertyInstance.ILLUMINATION
     unit: Literal[FloatUnit.LUX] = FloatUnit.LUX
+
+
+class MeterFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatPropertyParameters):
+    instance: Literal[FloatPropertyInstance.METER] = FloatPropertyInstance.METER
+    unit: None = None
 
 
 class PM1DensityFloatPropertyParameters(DensityFloatPropertyParameters):
@@ -158,3 +186,8 @@ class VoltageFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatPropertyP
 
 class WaterLevelFloatPropertyParameters(PercentFloatPropertyParameters):
     instance: Literal[FloatPropertyInstance.WATER_LEVEL] = FloatPropertyInstance.WATER_LEVEL
+
+
+class WaterMeterFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatPropertyParameters):
+    instance: Literal[FloatPropertyInstance.WATER_METER] = FloatPropertyInstance.WATER_METER
+    unit: Literal[FloatUnit.CUBIC_METER] = FloatUnit.CUBIC_METER

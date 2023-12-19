@@ -37,11 +37,15 @@ from .property_float import (
     BatteryLevelPercentageProperty,
     CO2LevelProperty,
     ElectricCurrentProperty,
+    ElectricityMeterProperty,
     ElectricPowerProperty,
     FloatProperty,
     FoodLevelPercentageProperty,
+    GasMeterProperty,
+    HeatMeterProperty,
     HumidityProperty,
     IlluminationProperty,
+    MeterProperty,
     PM1DensityProperty,
     PM10DensityProperty,
     PM25DensityProperty,
@@ -50,6 +54,7 @@ from .property_float import (
     TVOCConcentrationProperty,
     VoltageProperty,
     WaterLevelPercentageProperty,
+    WaterMeterProperty,
 )
 from .schema import PropertyType, ResponseCode
 from .unit_conversion import UnitOfPressure, UnitOfTemperature
@@ -246,6 +251,31 @@ class WaterLevelCustomFloatProperty(WaterLevelPercentageProperty, CustomFloatPro
 
 @FLOAT_PROPERTIES_REGISTRY.register
 class CO2LevelCustomFloatProperty(CO2LevelProperty, CustomFloatProperty):
+    pass
+
+
+@FLOAT_PROPERTIES_REGISTRY.register
+class MeterCustomFloatProperty(MeterProperty, CustomFloatProperty):
+    pass
+
+
+@FLOAT_PROPERTIES_REGISTRY.register
+class ElectricityMeterCustomFloatProperty(ElectricityMeterProperty, CustomFloatProperty):
+    pass
+
+
+@FLOAT_PROPERTIES_REGISTRY.register
+class GasMeterCustomFloatProperty(GasMeterProperty, CustomFloatProperty):
+    pass
+
+
+@FLOAT_PROPERTIES_REGISTRY.register
+class HeatMeterCustomFloatProperty(HeatMeterProperty, CustomFloatProperty):
+    pass
+
+
+@FLOAT_PROPERTIES_REGISTRY.register
+class WaterMeterCustomFloatProperty(WaterMeterProperty, CustomFloatProperty):
     pass
 
 

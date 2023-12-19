@@ -29,23 +29,28 @@
 
 Может быть задан в сокращённом или полном виде (`float.X`). Полный вид желательно использовать для датчиков, которые могут быть как числовыми, так и событийными (`battery_level`, `food_level`, `water_level`).
 
-| Тип (сокращённый) | Тип (полный)        | Описание                                             |
-|-------------------|---------------------|------------------------------------------------------|
-| amperage          | float.amperage      | Текущее потребление тока                             |
-| battery_level     | float.battery_level | Уровень заряда аккумулятора (в процентах)            |
-| co2_level         | float.co2_level     | Уровень углекислого газа                             |
-| food_level        | float.food_level    | Уровень корма (в процентах)                          |
-| humidity          | float.humidity      | Влажность                                            |
-| illumination      | float.illumination  | Уровень освещенности                                 |
-| pm1_density       | float.pm1_density   | Уровень загрязнения воздуха частицами PM1            |
-| pm2.5_density     | float.pm2.5_density | Уровень загрязнения воздуха частицами PM2.5          |
-| pm10_density      | float.pm10_density  | Уровень загрязнения воздуха частицами PM10           |
-| power             | float.power         | Текущая потребляемая мощность                        |
-| pressure          | float.pressure      | Давление                                             |
-| temperature       | float.temperature   | Температура                                          |
-| tvoc              | float.tvoc          | Уровень загрязнения воздуха органическими веществами |
-| voltage           | float.voltage       | Текущее напряжение                                   |
-| water_level       | float.water_level   | Уровень воды (в процентах)                           |
+| Тип (сокращённый) | Тип (полный)            | Описание                                             |
+|-------------------|-------------------------|------------------------------------------------------|
+| amperage          | float.amperage          | Текущее потребление тока                             |
+| battery_level     | float.battery_level     | Уровень заряда аккумулятора (в процентах)            |
+| co2_level         | float.co2_level         | Уровень углекислого газа                             |
+| electricity_meter | float.electricity_meter | Показания счетчика электроэнергии                    |
+| food_level        | float.food_level        | Уровень корма (в процентах)                          |
+| gas_meter         | float.gas_meter         | Показания счетчика газа                              |
+| heat_meter        | float.heat_meter        | Показания счетчика тепла                             |
+| humidity          | float.humidity          | Влажность                                            |
+| illumination      | float.illumination      | Уровень освещенности                                 |
+| meter             | float.meter             | Показания универсального счетчика                    |
+| pm1_density       | float.pm1_density       | Уровень загрязнения воздуха частицами PM1            |
+| pm2.5_density     | float.pm2.5_density     | Уровень загрязнения воздуха частицами PM2.5          |
+| pm10_density      | float.pm10_density      | Уровень загрязнения воздуха частицами PM10           |
+| power             | float.power             | Текущая потребляемая мощность                        |
+| pressure          | float.pressure          | Давление                                             |
+| temperature       | float.temperature       | Температура                                          |
+| tvoc              | float.tvoc              | Уровень загрязнения воздуха органическими веществами |
+| voltage           | float.voltage           | Текущее напряжение                                   |
+| water_level       | float.water_level       | Уровень воды (в процентах)                           |
+| water_meter       | float.water_meter       | Показания счетчика воды                              |
 
 
 ### Источник состояния (объект) { id=property-value-state }

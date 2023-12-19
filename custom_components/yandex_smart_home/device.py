@@ -123,6 +123,8 @@ _DEVICE_CLASS_TO_DEVICE_TYPES: dict[tuple[str, str], DeviceType] = {
     (sensor.DOMAIN, const.DEVICE_CLASS_BUTTON): DeviceType.SENSOR_BUTTON,
     (sensor.DOMAIN, sensor.SensorDeviceClass.CO): DeviceType.SENSOR_CLIMATE,
     (sensor.DOMAIN, sensor.SensorDeviceClass.CO2): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.ENERGY): DeviceType.SMART_METER_ELECTRICITY,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.GAS): DeviceType.SMART_METER_GAS,
     (sensor.DOMAIN, sensor.SensorDeviceClass.HUMIDITY): DeviceType.SENSOR_CLIMATE,
     (sensor.DOMAIN, sensor.SensorDeviceClass.ILLUMINANCE): DeviceType.SENSOR_ILLUMINATION,
     (sensor.DOMAIN, sensor.SensorDeviceClass.PM1): DeviceType.SENSOR_CLIMATE,
@@ -131,6 +133,7 @@ _DEVICE_CLASS_TO_DEVICE_TYPES: dict[tuple[str, str], DeviceType] = {
     (sensor.DOMAIN, sensor.SensorDeviceClass.PRESSURE): DeviceType.SENSOR_CLIMATE,
     (sensor.DOMAIN, sensor.SensorDeviceClass.TEMPERATURE): DeviceType.SENSOR_CLIMATE,
     (sensor.DOMAIN, sensor.SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.WATER): DeviceType.SMART_METER_COLD_WATER,
     (switch.DOMAIN, switch.SwitchDeviceClass.OUTLET): DeviceType.SOCKET,
 }
 

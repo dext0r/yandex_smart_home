@@ -47,6 +47,11 @@ async def test_property_custom_short(hass, domain, instance):
         "temperature",
         "pressure",
         "co2_level",
+        "meter",
+        "electricity_meter",
+        "gas_meter",
+        "heat_meter",
+        "water_meter",
         "power",
         "voltage",
         "amperage",
@@ -75,7 +80,10 @@ async def test_property_custom_short(hass, domain, instance):
     assert prop.parameters.dict()["instance"] == instance
 
     if prop.type == PropertyType.FLOAT:
-        assert prop.parameters.dict()["unit"] is not None
+        if prop.instance == FloatPropertyInstance.METER:
+            assert prop.parameters.dict()["unit"] is None
+        else:
+            assert prop.parameters.dict()["unit"] is not None
 
     if prop.type == PropertyType.EVENT:
         assert len(prop.parameters.dict()["events"]) != 0
@@ -290,6 +298,9 @@ async def test_property_custom_value_float_limit(hass):
         ("temperature", "°C", "unit.temperature.celsius", None, None),
         ("temperature", "K", "unit.temperature.kelvin", "unit.temperature.celsius", None),
         ("humidity", "x", "unit.percent", None, None),
+        ("electricity_meter", "Wh", "unit.kilowatt_hour", None, 0.1),
+        ("gas_meter", "L", "unit.cubic_meter", None, 0.1),
+        ("water_meter", "L", "unit.cubic_meter", None, 0.1),
     ],
 )
 async def test_property_custom_get_value_float_conversion(
