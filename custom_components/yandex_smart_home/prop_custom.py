@@ -99,16 +99,17 @@ class CustomFloatEntityProperty(CustomEntityProperty, FloatProperty):
         super().__init__(hass, config, state, property_state, property_config)
 
     @property
-    def unit(self) -> str:
+    def unit(self) -> str | None:
         if self.instance == const.FLOAT_INSTANCE_PRESSURE:
             return PRESSURE_UNITS_TO_YANDEX_UNITS[self.config.pressure_unit]
 
-        return PROPERTY_FLOAT_INSTANCE_TO_UNITS[self.instance]
+        return PROPERTY_FLOAT_INSTANCE_TO_UNITS.get(self.instance)
 
     def get_value(self) -> float | None:
         value = super().get_value()
 
-        if self.instance in [const.FLOAT_INSTANCE_PRESSURE, const.FLOAT_INSTANCE_TVOC, const.FLOAT_INSTANCE_AMPERAGE]:
+        if self.instance in [const.FLOAT_INSTANCE_PRESSURE, const.FLOAT_INSTANCE_TVOC, const.FLOAT_INSTANCE_AMPERAGE,
+                             const.FLOAT_INSTANCE_ELECTRICITY_METER, const.FLOAT_INSTANCE_WATER_METER]:
             value_unit = self.property_config.get(CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT,
                                                   self.property_state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
             return self.convert_value(value, value_unit)

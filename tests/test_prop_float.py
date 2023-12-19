@@ -20,6 +20,8 @@ from homeassistant.const import (
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CO2,
     DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_ENERGY,
+    DEVICE_CLASS_GAS,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_ILLUMINANCE,
     DEVICE_CLASS_POWER,
@@ -34,6 +36,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import const
+from custom_components.yandex_smart_home.const import DEVICE_CLASS_WATER
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.prop_event import PROPERTY_EVENT
 from custom_components.yandex_smart_home.prop_float import PRESSURE_UNITS_TO_YANDEX_UNITS, PROPERTY_FLOAT, FloatProperty
@@ -409,6 +412,10 @@ async def test_property_float_amperage_value(hass, unit, v):
     (switch.DOMAIN, None, 'power', const.FLOAT_INSTANCE_POWER, 'unit.watt', True),
     (switch.DOMAIN, None, 'load_power', const.FLOAT_INSTANCE_POWER, 'unit.watt', True),
     (switch.DOMAIN, None, None, const.FLOAT_INSTANCE_POWER, 'unit.watt', False),
+
+    (sensor.DOMAIN, DEVICE_CLASS_ENERGY, None, const.FLOAT_INSTANCE_ELECTRICITY_METER, 'unit.kilowatt_hour', True),
+    (sensor.DOMAIN, DEVICE_CLASS_GAS, None, const.FLOAT_INSTANCE_GAS_METER, 'unit.cubic_meter', True),
+    (sensor.DOMAIN, DEVICE_CLASS_WATER, None, const.FLOAT_INSTANCE_WATER_METER, 'unit.cubic_meter', True),
 ])
 async def test_property_float_simple(hass, domain, device_class, attribute, instance: str, unit, supported):
     attributes = {}
@@ -500,3 +507,35 @@ async def test_property_float_battery_attr(hass, domain):
             ATTR_BATTERY_LEVEL: s
         })
         assert prop.get_value() == 0
+
+
+@pytest.mark.parametrize('unit,v', [
+    ('Wh', 0.001),
+    ('kWh', 1.245),
+])
+async def test_property_float_energy_meter_value(hass, unit, v):
+    state = State('sensor.test', '1.245', {
+        ATTR_UNIT_OF_MEASUREMENT: unit,
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_ENERGY
+    })
+    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_ELECTRICITY_METER)
+
+    assert prop.retrievable
+    assert prop.parameters() == {'instance': const.FLOAT_INSTANCE_ELECTRICITY_METER, 'unit': 'unit.kilowatt_hour'}
+    assert prop.get_value() == v
+
+
+@pytest.mark.parametrize('unit,v', [
+    ('L', 1.245),
+    ('m³', 1245),
+])
+async def test_property_float_water_meter_value(hass, unit, v):
+    state = State('sensor.test', '1245', {
+        ATTR_UNIT_OF_MEASUREMENT: unit,
+        ATTR_DEVICE_CLASS: DEVICE_CLASS_WATER
+    })
+    prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_WATER_METER)
+
+    assert prop.retrievable
+    assert prop.parameters() == {'instance': const.FLOAT_INSTANCE_WATER_METER, 'unit': 'unit.cubic_meter'}
+    assert prop.get_value() == v

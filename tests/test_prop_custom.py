@@ -42,13 +42,19 @@ class ConfigNoBeta(MockConfig):
     'motion',
     'smoke',
     'gas',
-    'water_leak'
+    'water_leak',
+    'electricity_meter',
+    'gas_meter',
+    'heat_meter',
+    'meter',
+    'water_meter',
 ])
 async def test_property_custom(hass, domain, instance):
     state = State(f'{domain}.test', '10')
     if domain == binary_sensor.DOMAIN and instance in [
         'humidity', 'temperature', 'pressure', 'co2_level', 'power', 'voltage',
-        'amperage', 'illumination', 'tvoc', 'pm1_density', 'pm2.5_density', 'pm10_density'
+        'amperage', 'illumination', 'tvoc', 'pm1_density', 'pm2.5_density', 'pm10_density',
+        'electricity_meter', 'gas_meter', 'heat_meter', 'meter', 'water_meter',
     ]:
         with pytest.raises(SmartHomeError) as e:
             CustomEntityProperty.get(hass, BASIC_CONFIG, state, {
@@ -72,7 +78,7 @@ async def test_property_custom(hass, domain, instance):
 
     assert prop.parameters()['instance'] == instance
 
-    if prop.type == PROPERTY_FLOAT:
+    if prop.type == PROPERTY_FLOAT and prop.instance != 'meter':
         instance_unit = prop.parameters()['unit']
         if instance == 'pressure':
             assert 'pressure' in instance_unit
@@ -190,7 +196,9 @@ async def test_property_custom_value_float_limit(hass):
 @pytest.mark.parametrize('instance,unit,value', [
     (const.FLOAT_INSTANCE_PRESSURE, 'mmHg', 100),
     (const.FLOAT_INSTANCE_TVOC, 'ppb', 449.63),
-    (const.FLOAT_INSTANCE_AMPERAGE, 'mA', 0.1)
+    (const.FLOAT_INSTANCE_AMPERAGE, 'mA', 0.1),
+    (const.FLOAT_INSTANCE_ELECTRICITY_METER, 'Wh', 0.1),
+    (const.FLOAT_INSTANCE_WATER_METER, 'L', 0.1),
 ])
 async def test_property_custom_get_value_float_conversion(hass, instance: str, unit, value):
     state = State('sensor.test', '100')

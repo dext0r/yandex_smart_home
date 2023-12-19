@@ -19,6 +19,8 @@ from homeassistant.const import (
     DEVICE_CLASS_BATTERY,
     DEVICE_CLASS_CO2,
     DEVICE_CLASS_CURRENT,
+    DEVICE_CLASS_ENERGY,
+    DEVICE_CLASS_GAS,
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_ILLUMINANCE,
     DEVICE_CLASS_POWER,
@@ -26,13 +28,15 @@ from homeassistant.const import (
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
     ELECTRIC_CURRENT_MILLIAMPERE,
+    ENERGY_WATT_HOUR,
     PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
+    VOLUME_LITERS,
 )
 
 from . import const
-from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .const import DEVICE_CLASS_WATER, ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
 from .error import SmartHomeError
 from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 
@@ -83,7 +87,11 @@ PROPERTY_FLOAT_INSTANCE_TO_UNITS = {
     const.FLOAT_INSTANCE_TVOC: 'unit.density.mcg_m3',
     const.FLOAT_INSTANCE_PM1_DENSITY: 'unit.density.mcg_m3',
     const.FLOAT_INSTANCE_PM2_5_DENSITY: 'unit.density.mcg_m3',
-    const.FLOAT_INSTANCE_PM10_DENSITY: 'unit.density.mcg_m3'
+    const.FLOAT_INSTANCE_PM10_DENSITY: 'unit.density.mcg_m3',
+    const.FLOAT_INSTANCE_ELECTRICITY_METER: 'unit.kilowatt_hour',
+    const.FLOAT_INSTANCE_GAS_METER: 'unit.cubic_meter',
+    const.FLOAT_INSTANCE_HEAT_METER: 'unit.gigacalorie',
+    const.FLOAT_INSTANCE_WATER_METER: 'unit.cubic_meter',
 }
 PROPERTY_FLOAT_VALUE_LIMITS = {
     'unit.percent': (0, 100),
@@ -97,6 +105,9 @@ PROPERTY_FLOAT_VALUE_LIMITS = {
     'unit.ampere': (0, None),
     'unit.illumination.lux': (0, None),
     'unit.density.mcg_m3': (0, None),
+    'unit.kilowatt_hour': (0, None),
+    'unit.cubic_meter': (0, None),
+    'unit.gigacalorie': (0, None),
 }
 
 
@@ -104,14 +115,17 @@ class FloatProperty(AbstractProperty, ABC):
     type = PROPERTY_FLOAT
 
     def parameters(self) -> dict[str, Any]:
-        return {
+        parameters = {
             'instance': self.instance,
-            'unit': self.unit
         }
+        if self.unit:
+            parameters['unit'] = self.unit
+
+        return parameters
 
     @property
-    def unit(self) -> str:
-        return PROPERTY_FLOAT_INSTANCE_TO_UNITS[self.instance]
+    def unit(self) -> str | None:
+        return PROPERTY_FLOAT_INSTANCE_TO_UNITS.get(self.instance)
 
     def float_value(self, value: Any) -> float | None:
         if str(value).lower() in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
@@ -155,6 +169,10 @@ class FloatProperty(AbstractProperty, ABC):
             return round(float_value * TVOC_CONCENTRATION_TO_MCG_M3.get(from_unit, 1), 2)
         elif self.instance == const.FLOAT_INSTANCE_AMPERAGE and from_unit == ELECTRIC_CURRENT_MILLIAMPERE:
             return float_value / 1000
+        elif self.instance == const.FLOAT_INSTANCE_ELECTRICITY_METER and from_unit == ENERGY_WATT_HOUR:
+            return round(float_value / 1000, 3)
+        elif self.instance == const.FLOAT_INSTANCE_WATER_METER and from_unit == VOLUME_LITERS:
+            return round(float_value / 1000, 3)
 
         return float_value
 
@@ -435,3 +453,45 @@ class BatteryLevelProperty(FloatProperty):
             return 0
 
         return self.float_value(value)
+
+
+@register_property
+class ElectricityMeterProperty(FloatProperty):
+    instance = const.FLOAT_INSTANCE_ELECTRICITY_METER
+
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ENERGY
+
+        return False
+
+    def get_value(self) -> float | None:
+        return self.convert_value(self.state.state, self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+
+
+@register_property
+class GasMeterProperty(FloatProperty):
+    instance = const.FLOAT_INSTANCE_GAS_METER
+
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_GAS
+
+        return False
+
+    def get_value(self) -> float | None:
+        return self.convert_value(self.state.state, self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
+
+
+@register_property
+class WaterMeterProperty(FloatProperty):
+    instance = const.FLOAT_INSTANCE_WATER_METER
+
+    def supported(self) -> bool:
+        if self.state.domain == sensor.DOMAIN:
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_WATER
+
+        return False
+
+    def get_value(self) -> float | None:
+        return self.convert_value(self.state.state, self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT))
