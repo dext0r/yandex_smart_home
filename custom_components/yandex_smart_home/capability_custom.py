@@ -177,7 +177,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
 
         if state.get('relative'):
             if self.increase_value or self.decrease_value:
-                if value >= 0:
+                if value > 0:
                     service = self.increase_value
                 else:
                     service = self.decrease_value

@@ -520,7 +520,7 @@ class ChannelCapability(RangeCapability):
         if state.get('relative'):
             if features & media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK and \
                     features & media_player.MediaPlayerEntityFeature.NEXT_TRACK:
-                if state['value'] >= 0:
+                if state['value'] > 0:
                     service = media_player.SERVICE_MEDIA_NEXT_TRACK
                 else:
                     service = media_player.SERVICE_MEDIA_PREVIOUS_TRACK

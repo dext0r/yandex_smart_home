@@ -788,7 +788,8 @@ async def test_capability_range_channel_set_relative(hass, features, device_clas
     assert len(calls_up) == 1
     assert calls_up[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
-    calls_down = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_PREVIOUS_TRACK)
-    await cap.set_state(BASIC_DATA, {'value': -1, 'relative': True})
-    assert len(calls_down) == 1
-    assert calls_down[0].data == {ATTR_ENTITY_ID: state.entity_id}
+    for v in (-1, 0):
+        calls_down = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_PREVIOUS_TRACK)
+        await cap.set_state(BASIC_DATA, {'value': v, 'relative': True})
+        assert len(calls_down) == 1
+        assert calls_down[0].data == {ATTR_ENTITY_ID: state.entity_id}

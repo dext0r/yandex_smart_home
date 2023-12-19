@@ -312,8 +312,10 @@ async def test_capability_custom_range_relative_override_no_state(hass):
     assert calls[0].data == {'entity_id': 'input_number.test', 'value': 'value: 10'}
 
     calls = async_mock_service(hass, 'test', 'decrease_value')
+    await cap.set_state(BASIC_DATA, {'value': 0, 'relative': True})
     await cap.set_state(BASIC_DATA, {'value': -3, 'relative': True})
     await cap.set_state(BASIC_DATA, {'value': -50, 'relative': True})
-    assert len(calls) == 2
-    assert calls[0].data == {'entity_id': 'input_number.test', 'value': 'value: -3'}
-    assert calls[1].data == {'entity_id': 'input_number.test', 'value': 'value: -50'}
+    assert len(calls) == 3
+    assert calls[0].data == {'entity_id': 'input_number.test', 'value': 'value: 0'}
+    assert calls[1].data == {'entity_id': 'input_number.test', 'value': 'value: -3'}
+    assert calls[2].data == {'entity_id': 'input_number.test', 'value': 'value: -50'}
