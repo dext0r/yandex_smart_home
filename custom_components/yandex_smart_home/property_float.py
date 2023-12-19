@@ -483,7 +483,10 @@ class TemperatureSensor(StateProperty, TemperatureProperty):
         """Test if the property is supported."""
         match self.state.domain:
             case sensor.DOMAIN:
-                return self._state_device_class == SensorDeviceClass.TEMPERATURE
+                if self._state_device_class == SensorDeviceClass.TEMPERATURE:
+                    return True
+                if self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) in UnitOfTemperature.__members__.values():
+                    return True
             case air_quality.DOMAIN:
                 return self.state.attributes.get(climate.ATTR_TEMPERATURE) is not None
             case climate.DOMAIN | fan.DOMAIN | humidifier.DOMAIN | water_heater.DOMAIN:

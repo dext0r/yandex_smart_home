@@ -88,22 +88,25 @@ async def test_property_float_humidity(hass, domain, device_class, attribute, su
 
 
 @pytest.mark.parametrize(
-    "domain,device_class,attribute,supported",
+    "domain,device_class,attribute,unit_of_measurement,supported",
     [
-        (sensor.DOMAIN, SensorDeviceClass.TEMPERATURE, None, True),
-        (air_quality.DOMAIN, None, climate.ATTR_TEMPERATURE, True),
-        (air_quality.DOMAIN, None, None, False),
-        (climate.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, True),
-        (climate.DOMAIN, None, None, False),
-        (fan.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, True),
-        (fan.DOMAIN, None, None, False),
-        (humidifier.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, True),
-        (humidifier.DOMAIN, None, None, False),
-        (water_heater.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, True),
-        (water_heater.DOMAIN, None, None, False),
+        (sensor.DOMAIN, SensorDeviceClass.TEMPERATURE, None, None, True),
+        (sensor.DOMAIN, None, None, UnitOfTemperature.CELSIUS, True),
+        (sensor.DOMAIN, None, None, UnitOfTemperature.KELVIN, True),
+        (sensor.DOMAIN, None, None, UnitOfTemperature.FAHRENHEIT, True),
+        (air_quality.DOMAIN, None, climate.ATTR_TEMPERATURE, None, True),
+        (air_quality.DOMAIN, None, None, None, False),
+        (climate.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
+        (climate.DOMAIN, None, None, None, False),
+        (fan.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
+        (fan.DOMAIN, None, None, None, False),
+        (humidifier.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
+        (humidifier.DOMAIN, None, None, None, False),
+        (water_heater.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
+        (water_heater.DOMAIN, None, None, None, False),
     ],
 )
-async def test_property_float_temperature(hass, domain, device_class, attribute, supported):
+async def test_property_float_temperature(hass, domain, device_class, attribute, unit_of_measurement, supported):
     attributes = {}
     value = STATE_ON
 
@@ -114,6 +117,8 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
 
     if device_class:
         attributes[ATTR_DEVICE_CLASS] = device_class
+    if unit_of_measurement:
+        attributes[ATTR_UNIT_OF_MEASUREMENT] = unit_of_measurement
 
     state = State(f"{domain}.test", value, attributes)
     if supported:
@@ -122,6 +127,9 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
         )
     else:
         assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
+        return
+
+    if unit_of_measurement in (UnitOfTemperature.FAHRENHEIT, UnitOfTemperature.KELVIN):
         return
 
     assert prop.retrievable is True
