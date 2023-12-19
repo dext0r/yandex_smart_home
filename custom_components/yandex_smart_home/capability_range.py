@@ -540,7 +540,7 @@ class ChannelCapability(StateRangeCapability):
                 self._state_features & media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK
                 and self._state_features & media_player.MediaPlayerEntityFeature.NEXT_TRACK
             ):
-                if state.value >= 0:
+                if state.value > 0:
                     service = media_player.SERVICE_MEDIA_NEXT_TRACK
                 else:
                     service = media_player.SERVICE_MEDIA_PREVIOUS_TRACK

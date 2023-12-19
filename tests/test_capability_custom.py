@@ -634,14 +634,15 @@ async def test_capability_custom_range_relative_override_no_state(hass):
     assert calls[0].data == {"entity_id": "input_number.test", "value": "value: 10"}
 
     calls = async_mock_service(hass, "test", "decrease_value")
-    for value in (-3, -50):
+    for value in (0, -3, -50):
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=value, relative=True),
         )
-    assert len(calls) == 2
-    assert calls[0].data == {"entity_id": "input_number.test", "value": "value: -3"}
-    assert calls[1].data == {"entity_id": "input_number.test", "value": "value: -50"}
+    assert len(calls) == 3
+    assert calls[0].data == {"entity_id": "input_number.test", "value": "value: 0"}
+    assert calls[1].data == {"entity_id": "input_number.test", "value": "value: -3"}
+    assert calls[2].data == {"entity_id": "input_number.test", "value": "value: -50"}
 
 
 async def test_capability_custom_range_only_relative(hass):
@@ -682,14 +683,15 @@ async def test_capability_custom_range_only_relative(hass):
     assert calls[0].data == {"entity_id": "input_number.test", "value": "value: 10"}
 
     calls = async_mock_service(hass, "test", "decrease_value")
-    for value in (-3, -50):
+    for value in (0, -3, -50):
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=value, relative=True),
         )
-    assert len(calls) == 2
-    assert calls[0].data == {"entity_id": "input_number.test", "value": "value: -3"}
-    assert calls[1].data == {"entity_id": "input_number.test", "value": "value: -50"}
+    assert len(calls) == 3
+    assert calls[0].data == {"entity_id": "input_number.test", "value": "value: 0"}
+    assert calls[1].data == {"entity_id": "input_number.test", "value": "value: -3"}
+    assert calls[2].data == {"entity_id": "input_number.test", "value": "value: -50"}
 
 
 async def test_capability_custom_range_no_service(hass):
