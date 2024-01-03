@@ -1,21 +1,27 @@
 """Global fixtures for yandex_smart_home integration."""
 from unittest.mock import patch
 
+from homeassistant import core
 from homeassistant.components import http
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.demo.binary_sensor import DemoBinarySensor
 from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.demo.sensor import DemoSensor
-from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
-from homeassistant.const import DEVICE_CLASS_TEMPERATURE, TEMP_CELSIUS
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, UnitOfTemperature
 from homeassistant.helpers import entityfilter
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components import yandex_smart_home
 from custom_components.yandex_smart_home import DOMAIN, async_setup, async_setup_entry, const
 
 pytest_plugins = 'pytest_homeassistant_custom_component'
+
+
+def pytest_configure(config):
+    yandex_smart_home._PYTEST = True
 
 
 @pytest.fixture(autouse=True)
@@ -63,24 +69,46 @@ def config_entry_cloud_connection():
 
 @pytest.fixture
 def hass_platform(loop, hass, config_entry):
-    demo_sensor = DemoSensor(
-        unique_id='outside_temp',
-        name='Outside Temperature',
-        state=15.6,
-        device_class=DEVICE_CLASS_TEMPERATURE,
-        state_class=STATE_CLASS_MEASUREMENT,
-        unit_of_measurement=TEMP_CELSIUS,
-        battery=None
-    )
+    if (MAJOR_VERSION == 2023 and MINOR_VERSION >= 7) or MAJOR_VERSION >= 2024:
+        demo_sensor = DemoSensor(
+            'outside_temp',
+            'Outside Temperature',
+            state=15.6,
+            device_class=SensorDeviceClass.TEMPERATURE,
+            state_class=SensorStateClass.MEASUREMENT,
+            unit_of_measurement=UnitOfTemperature.CELSIUS,
+            battery=None,
+        )
+        demo_sensor._attr_name = 'Outside Temperature'
+
+        demo_light = DemoLight(
+            'light_kitchen',
+            'Kitchen Light',
+            available=True,
+            state=True,
+        )
+        demo_light._attr_name = 'Kitchen Light'
+        demo_light._ct = 240
+    else:
+        demo_sensor = DemoSensor(
+            unique_id='outside_temp',
+            name='Outside Temperature',
+            state=15.6,
+            device_class=SensorDeviceClass.TEMPERATURE,
+            state_class=SensorStateClass.MEASUREMENT,
+            unit_of_measurement=UnitOfTemperature.CELSIUS,
+            battery=None
+        )
+
+        demo_light = DemoLight(
+            unique_id='light_kitchen',
+            name='Kitchen Light',
+            available=True,
+            state=True,
+        )
+
     demo_sensor.hass = hass
     demo_sensor.entity_id = 'sensor.outside_temp'
-
-    demo_light = DemoLight(
-        unique_id='light_kitchen',
-        name='Kitchen Light',
-        available=True,
-        state=True,
-    )
     demo_light.hass = hass
     demo_light.entity_id = 'light.kitchen'
 
@@ -108,34 +136,64 @@ def hass_platform(loop, hass, config_entry):
 
 @pytest.fixture
 def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
-    demo_sensor = DemoSensor(
-        unique_id='outside_temp',
-        name='Outside Temperature',
-        state=15.6,
-        device_class=DEVICE_CLASS_TEMPERATURE,
-        state_class=STATE_CLASS_MEASUREMENT,
-        unit_of_measurement=TEMP_CELSIUS,
-        battery=None
-    )
+    if (MAJOR_VERSION == 2023 and MINOR_VERSION >= 7) or MAJOR_VERSION >= 2024:
+        demo_sensor = DemoSensor(
+            'outside_temp',
+            'Outside Temperature',
+            state=15.6,
+            device_class=SensorDeviceClass.TEMPERATURE,
+            state_class=SensorStateClass.MEASUREMENT,
+            unit_of_measurement=UnitOfTemperature.CELSIUS,
+            battery=None,
+        )
+        demo_sensor._attr_name = 'Outside Temperature'
+
+        demo_binary_sensor = DemoBinarySensor(
+            'front_door',
+            'Front Door',
+            state=True,
+            device_class=BinarySensorDeviceClass.DOOR,
+        )
+        demo_binary_sensor._attr_name = 'Front Door'
+
+        demo_light = DemoLight(
+            'light_kitchen',
+            'Kitchen Light',
+            available=True,
+            state=True,
+        )
+        demo_light._attr_name = 'Kitchen Light'
+        demo_light._ct = 240
+    else:
+        demo_sensor = DemoSensor(
+            unique_id='outside_temp',
+            name='Outside Temperature',
+            state=15.6,
+            device_class=SensorDeviceClass.TEMPERATURE,
+            state_class=SensorStateClass.MEASUREMENT,
+            unit_of_measurement=UnitOfTemperature.CELSIUS,
+            battery=None
+        )
+
+        demo_binary_sensor = DemoBinarySensor(
+            unique_id='front_door',
+            name='Front Door',
+            state=True,
+            device_class=BinarySensorDeviceClass.DOOR,
+        )
+
+        demo_light = DemoLight(
+            unique_id='light_kitchen',
+            name='Kitchen Light',
+            ct=240,
+            available=True,
+            state=True,
+        )
+
     demo_sensor.hass = hass
     demo_sensor.entity_id = 'sensor.outside_temp'
-
-    demo_binary_sensor = DemoBinarySensor(
-        unique_id='front_door',
-        name='Front Door',
-        state=True,
-        device_class=BinarySensorDeviceClass.DOOR,
-    )
     demo_binary_sensor.hass = hass
     demo_binary_sensor.entity_id = 'binary_sensor.front_Door'
-
-    demo_light = DemoLight(
-        unique_id='light_kitchen',
-        name='Kitchen Light',
-        ct=240,
-        available=True,
-        state=True,
-    )
     demo_light.hass = hass
     demo_light.entity_id = 'light.kitchen'
 
@@ -149,6 +207,9 @@ def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
         demo_light.async_update_ha_state()
     )
 
+    loop.run_until_complete(
+        async_setup_component(hass, core.DOMAIN, {http.DOMAIN: {}})
+    )
     loop.run_until_complete(
         async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
     )

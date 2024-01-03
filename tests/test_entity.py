@@ -12,6 +12,8 @@ from homeassistant.const import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_TEMPERATURE,
     DEVICE_CLASS_VOLTAGE,
+    MAJOR_VERSION,
+    MINOR_VERSION,
     PERCENTAGE,
     SERVICE_TURN_OFF,
     STATE_OFF,
@@ -22,6 +24,7 @@ from homeassistant.const import (
 from homeassistant.core import State
 import pytest
 from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
     async_mock_service,
     mock_area_registry,
     mock_device_registry,
@@ -89,12 +92,21 @@ async def test_yandex_entity_duplicate_capabilities(hass):
 
 
 async def test_yandex_entity_capabilities(hass):
-    light = DemoLight(
-        unique_id='test_light',
-        name='Light',
-        available=True,
-        state=True,
-    )
+    if (MAJOR_VERSION == 2023 and MINOR_VERSION >= 7) or MAJOR_VERSION >= 2024:
+        light = DemoLight(
+            'test_light',
+            'Light',
+            available=True,
+            state=True,
+        )
+        light._attr_name = 'Kitchen Light'
+    else:
+        light = DemoLight(
+            unique_id='test_light',
+            name='Light',
+            available=True,
+            state=True,
+        )
     light.hass = hass
     light.entity_id = 'light.test'
     await light.async_update_ha_state()
@@ -218,11 +230,14 @@ async def test_yandex_entity_devices_serialize_device(hass, registries):
     area_kitchen = area_reg.async_get_or_create('Кухня')
     area_closet = area_reg.async_get_or_create('Кладовка')
 
+    config_entry = MockConfigEntry(domain='test', data={})
+    config_entry.add_to_hass(hass)
+
     state = State('switch.test_1', STATE_ON)
     device = dev_reg.async_get_or_create(
         manufacturer='Acme Inc.',
         identifiers={'test_1'},
-        config_entry_id='test_1',
+        config_entry_id=config_entry.entry_id,
     )
     ent_reg.async_get_or_create(
         'switch',
@@ -241,7 +256,7 @@ async def test_yandex_entity_devices_serialize_device(hass, registries):
         model='Ultra Switch',
         sw_version=57,
         identifiers={'test_2'},
-        config_entry_id='test_2',
+        config_entry_id=config_entry.entry_id,
     )
     dev_reg.async_update_device(device.id, area_id=area_closet.id)
     ent_reg.async_get_or_create(
@@ -273,7 +288,7 @@ async def test_yandex_entity_devices_serialize_device(hass, registries):
     state = State('switch.test_3', STATE_ON)
     device = dev_reg.async_get_or_create(
         identifiers={'test_3'},
-        config_entry_id='test_3',
+        config_entry_id=config_entry.entry_id,
     )
     entry = ent_reg.async_get_or_create(
         'switch',

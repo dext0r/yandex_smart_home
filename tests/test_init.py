@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from homeassistant.components import http
 from homeassistant.config import YAML_CONFIG_FILE
-from homeassistant.const import SERVICE_RELOAD
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, SERVICE_RELOAD
 from homeassistant.core import Context
 from homeassistant.exceptions import Unauthorized
 from homeassistant.helpers.reload import async_integration_yaml_config
@@ -35,6 +35,10 @@ async def test_valid_config(hass):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
     assert DOMAIN in config
+
+    hass_template = None
+    if (MAJOR_VERSION == 2023 and MINOR_VERSION >= 4) or MAJOR_VERSION >= 2024:
+        hass_template = hass
 
     assert config[DOMAIN]['notifier'] == [{
         'oauth_token': 'AgAAAAAEEo2aYYR7m-CEyS7SEiUJjnKez3v3GZe',
@@ -117,7 +121,7 @@ async def test_valid_config(hass):
                     ],
                     'data': {
                         'media_content_type': 'channel',
-                        'media_content_id': Template('{{ value }}')
+                        'media_content_id': Template('{{ value }}', hass_template)
                     }
                 },
                 'increase_value': {
@@ -293,7 +297,7 @@ async def test_valid_config(hass):
                 'set_value': {
                     'service': 'climate.set_temperature',
                     'data': {
-                        'temperature': Template('{{ value }}')
+                        'temperature': Template('{{ value }}', hass_template)
                     },
                     'target': {
                         'entity_id': [
@@ -484,7 +488,8 @@ yandex_smart_home:
         assert hass.data[DOMAIN][CONFIG].should_expose('climate.test') is False
 
 
-async def test_async_setup_entry_cloud(hass, config_entry_cloud_connection):
+@pytest.mark.parametrize('expected_lingering_timers', [True])
+async def test_async_setup_entry_cloud(hass, config_entry_cloud_connection, expected_lingering_timers):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 
     assert await async_setup(hass, {})
@@ -536,7 +541,8 @@ async def test_async_remove_entry_cloud(hass, config_entry_cloud_connection, aio
     assert len(caplog.records) == 0
 
 
-async def test_async_setup_update_from_yaml(hass, hass_admin_user):
+@pytest.mark.parametrize('expected_lingering_timers', [True])
+async def test_async_setup_update_from_yaml(hass, hass_admin_user, expected_lingering_timers):
     await async_setup_component(hass, http.DOMAIN, {http.DOMAIN: {}})
 
     entry = MockConfigEntry(
@@ -622,7 +628,11 @@ yandex_smart_home:
             assert await async_setup_entry(hass, entry)
 
     assert entry.options[const.CONF_PRESSURE_UNIT] == 'mmHg'
-    assert entry.data[const.YAML_CONFIG_HASH] == 'cbe26e947d35ed6222f97e493b32d94f'
+
+    if (MAJOR_VERSION == 2023 and MINOR_VERSION >= 4) or MAJOR_VERSION >= 2024:
+        assert entry.data[const.YAML_CONFIG_HASH] == '0eedd9f5ee18739bf910b36d2f9f1c6e'
+    else:
+        assert entry.data[const.YAML_CONFIG_HASH] == 'cbe26e947d35ed6222f97e493b32d94f'
 
 
 async def test_migrate_entity(hass):

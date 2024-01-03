@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from homeassistant import core
 from homeassistant.components import binary_sensor, climate, sensor
-from homeassistant.const import MINOR_VERSION
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
+import pytest
 
 from custom_components.yandex_smart_home.entity import YandexEntity
 from custom_components.yandex_smart_home.helpers import Config
@@ -47,7 +48,10 @@ def assert_no_properties(hass: HomeAssistant, config: Config, state: State,
     assert len(get_properties(hass, config, state, property_type, instance)) == 0
 
 
-async def test_property_demo_platform(hass):
+@pytest.mark.parametrize('expected_lingering_timers', [True])
+async def test_property_demo_platform(hass, expected_lingering_timers):
+    await async_setup_component(hass, core.DOMAIN, {})
+
     for component in climate, sensor, binary_sensor:
         await async_setup_component(
             hass, component.DOMAIN, {component.DOMAIN: [{'platform': 'demo'}]}
@@ -98,17 +102,10 @@ async def test_property_demo_platform(hass):
     props = list((p.type, p.instance) for p in entity.properties())
     assert props == [('devices.properties.float', 'co2_level'), ('devices.properties.float', 'battery_level')]
 
-    if MINOR_VERSION > 7:
-        state = hass.states.get('sensor.power_consumption')
-        entity = YandexEntity(hass, BASIC_CONFIG, state)
-        props = list((p.type, p.instance) for p in entity.properties())
-        assert props == [('devices.properties.float', 'power')]
-
-        if MINOR_VERSION < 9:
-            state = hass.states.get('sensor.today_energy')
-            entity = YandexEntity(hass, BASIC_CONFIG, state)
-            props = list((p.type, p.instance) for p in entity.properties())
-            assert props == [('devices.properties.float', 'electricity_meter')]
+    state = hass.states.get('sensor.power_consumption')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    props = list((p.type, p.instance) for p in entity.properties())
+    assert props == [('devices.properties.float', 'power')]
 
     state = hass.states.get('binary_sensor.basement_floor_wet')
     entity = YandexEntity(hass, BASIC_CONFIG, state)

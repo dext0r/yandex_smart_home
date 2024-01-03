@@ -681,7 +681,7 @@ async def test_capability_range_channel_set_not_supported(hass, caplog):
     assert cap.retrievable is True
     assert cap.support_random_access is True
 
-    with patch.object(cap.hass.services, 'async_call', side_effect=ValueError('nope')):
+    with patch('homeassistant.core.ServiceRegistry.async_call', side_effect=ValueError('nope')):
         with pytest.raises(SmartHomeError) as e:
             await cap.set_state(BASIC_DATA, {'value': 15})
         assert e.value.code == const.ERR_NOT_SUPPORTED_IN_CURRENT_MODE

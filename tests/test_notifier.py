@@ -405,7 +405,10 @@ async def test_notifier_check_for_devices_discovered(hass_platform_cloud_connect
         mock_send_cb.assert_called_once()
 
 
-async def test_notifier_schedule_initial_report(hass_platform_cloud_connection, mock_call_later):
+@pytest.mark.parametrize('expected_lingering_tasks', [True])
+@pytest.mark.parametrize('expected_lingering_timers', [True])
+async def test_notifier_schedule_initial_report(hass_platform_cloud_connection, mock_call_later,
+                                                expected_lingering_tasks, expected_lingering_timers):
     hass = hass_platform_cloud_connection
 
     hass.bus.async_fire(const.EVENT_DEVICE_DISCOVERY)

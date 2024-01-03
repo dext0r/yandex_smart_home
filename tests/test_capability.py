@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from homeassistant import core
 from homeassistant.components import button, climate, cover, fan, humidifier, light, lock, media_player, switch
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant, State
@@ -111,6 +112,7 @@ def test_capability(hass):
 
 
 async def test_capability_demo_platform(hass):
+    await async_setup_component(hass, core.DOMAIN, {})
     components = [button, switch, light, cover, media_player, fan, climate, humidifier, lock]
 
     for component in components:

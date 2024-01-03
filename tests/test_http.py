@@ -1,6 +1,8 @@
 from http import HTTPStatus
 
+from homeassistant import core
 from homeassistant.setup import async_setup_component
+import pytest
 
 from custom_components.yandex_smart_home import async_unload_entry
 from custom_components.yandex_smart_home.http import (
@@ -22,7 +24,8 @@ async def test_unauthorized_view(hass_platform, aiohttp_client, config_entry, so
     assert response.status == HTTPStatus.NOT_FOUND
 
 
-async def test_ping(hass_platform, aiohttp_client, config_entry, socket_enabled):
+@pytest.mark.parametrize('expected_lingering_timers', [True])
+async def test_ping(hass_platform, aiohttp_client, config_entry, expected_lingering_timers, socket_enabled):
     http_client = await aiohttp_client(hass_platform.http.app)
     response = await http_client.get(YandexSmartHomePingView.url)
     assert response.status == HTTPStatus.OK
@@ -58,7 +61,8 @@ async def test_user_unlink(hass_platform, hass_client):
     assert await response.json() == {'request_id': REQ_ID}
 
 
-async def test_user_devices(hass_platform, hass_client, hass_admin_user):
+@pytest.mark.parametrize('expected_lingering_timers', [True])
+async def test_user_devices(hass_platform, hass_client, hass_admin_user, expected_lingering_timers):
     http_client = await hass_client()
     response = await http_client.get(
         YandexSmartHomeView.url + '/user/devices',
@@ -167,6 +171,7 @@ async def test_user_devices_query(hass_platform, hass_client):
 
 
 async def test_user_devices_action(hass_platform, hass_client):
+    await async_setup_component(hass_platform, core.DOMAIN, {})
     await async_setup_component(hass_platform, 'switch', {'switch': {'platform': 'demo'}})
     await hass_platform.async_block_till_done()
 

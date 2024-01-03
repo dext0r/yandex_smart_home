@@ -198,7 +198,10 @@ async def test_cloud_messages_invalid_format(hass_platform_cloud_connection, con
         mock_reconnect.assert_called_once()
 
 
-async def test_cloud_req_user_devices(hass_platform_cloud_connection, config, aioclient_mock):
+@pytest.mark.parametrize('expected_lingering_tasks', [True])
+@pytest.mark.parametrize('expected_lingering_timers', [True])
+async def test_cloud_req_user_devices(hass_platform_cloud_connection, config, aioclient_mock,
+                                      expected_lingering_tasks, expected_lingering_timers):
     hass = hass_platform_cloud_connection
     requests = [{
         'request_id': 'req_user_devices',
