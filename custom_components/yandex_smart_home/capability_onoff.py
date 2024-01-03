@@ -359,7 +359,7 @@ class OnOffCapabilityVacuum(OnOffCapability):
 @register_capability
 class OnOffCapabilityClimate(OnOffCapability):
     def get_value(self) -> bool | None:
-        return self.state.state != climate.HVAC_MODE_OFF
+        return self.state.state != climate.HVACMode.OFF
 
     def supported(self) -> bool:
         return self.state.domain == climate.DOMAIN

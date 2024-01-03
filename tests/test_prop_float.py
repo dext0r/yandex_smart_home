@@ -12,32 +12,22 @@ from homeassistant.components import (
     switch,
     water_heater,
 )
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     ATTR_DEVICE_CLASS,
     ATTR_UNIT_OF_MEASUREMENT,
     ATTR_VOLTAGE,
-    DEVICE_CLASS_BATTERY,
-    DEVICE_CLASS_CO2,
-    DEVICE_CLASS_CURRENT,
-    DEVICE_CLASS_ENERGY,
-    DEVICE_CLASS_GAS,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_ILLUMINANCE,
-    DEVICE_CLASS_POWER,
-    DEVICE_CLASS_TEMPERATURE,
-    DEVICE_CLASS_VOLTAGE,
     PERCENTAGE,
     STATE_ON,
     STATE_UNKNOWN,
-    TEMP_CELSIUS,
+    UnitOfTemperature,
 )
 from homeassistant.core import State
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import const
-from custom_components.yandex_smart_home.const import DEVICE_CLASS_WATER
 from custom_components.yandex_smart_home.error import SmartHomeError
 from custom_components.yandex_smart_home.prop_event import PROPERTY_EVENT
 from custom_components.yandex_smart_home.prop_float import PRESSURE_UNITS_TO_YANDEX_UNITS, PROPERTY_FLOAT, FloatProperty
@@ -62,7 +52,7 @@ async def test_property_float(hass):
 
 
 @pytest.mark.parametrize('domain,device_class,attribute,supported', [
-    (sensor.DOMAIN, DEVICE_CLASS_HUMIDITY, None, True),
+    (sensor.DOMAIN, SensorDeviceClass.HUMIDITY, None, True),
     (air_quality.DOMAIN, None, climate.ATTR_HUMIDITY, True),
     (air_quality.DOMAIN, None, None, False),
     (climate.DOMAIN, None, climate.ATTR_CURRENT_HUMIDITY, True),
@@ -111,8 +101,8 @@ async def test_property_float_humidity(hass, domain, device_class, attribute, su
 
 
 @pytest.mark.parametrize('domain,device_class,attribute,unit_of_measurement,supported', [
-    (sensor.DOMAIN, DEVICE_CLASS_TEMPERATURE, None, None, True),
-    (sensor.DOMAIN, None, None, TEMP_CELSIUS, True),
+    (sensor.DOMAIN, SensorDeviceClass.TEMPERATURE, None, None, True),
+    (sensor.DOMAIN, None, None, UnitOfTemperature.CELSIUS, True),
     (air_quality.DOMAIN, None, climate.ATTR_TEMPERATURE, None, True),
     (air_quality.DOMAIN, None, None, None, False),
     (climate.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
@@ -212,7 +202,7 @@ def test_property_float_pressure(hass, device_class, yandex_pressure_unit, v):
 
 
 @pytest.mark.parametrize('domain,device_class,attribute,supported', [
-    (sensor.DOMAIN, DEVICE_CLASS_ILLUMINANCE, None, True),
+    (sensor.DOMAIN, SensorDeviceClass.ILLUMINANCE, None, True),
     (sensor.DOMAIN, None, None, False),
     (sensor.DOMAIN, None, 'illuminance', True),
     (light.DOMAIN, None, 'illuminance', True),
@@ -284,7 +274,7 @@ async def test_property_float_water_level(hass, domain, attribute, supported):
 
 
 @pytest.mark.parametrize('domain,device_class,attribute,supported', [
-    (sensor.DOMAIN, DEVICE_CLASS_CO2, None, True),
+    (sensor.DOMAIN, SensorDeviceClass.CO2, None, True),
     (sensor.DOMAIN, None, None, False),
     (air_quality.DOMAIN, None, air_quality.ATTR_CO2, True),
     (air_quality.DOMAIN, None, None, False),
@@ -395,31 +385,31 @@ async def test_property_float_amperage_value(hass, unit, v):
 
 
 @pytest.mark.parametrize('domain,device_class,attribute,instance,unit,supported', [
-    (binary_sensor.DOMAIN, DEVICE_CLASS_VOLTAGE, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
-    (sensor.DOMAIN, DEVICE_CLASS_VOLTAGE, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', True),
+    (binary_sensor.DOMAIN, SensorDeviceClass.VOLTAGE, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
+    (sensor.DOMAIN, SensorDeviceClass.VOLTAGE, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', True),
     (sensor.DOMAIN, None, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
     (switch.DOMAIN, None, ATTR_VOLTAGE, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', True),
     (switch.DOMAIN, None, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
     (light.DOMAIN, None, ATTR_VOLTAGE, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', True),
     (light.DOMAIN, None, None, const.FLOAT_INSTANCE_VOLTAGE, 'unit.volt', False),
 
-    (binary_sensor.DOMAIN, DEVICE_CLASS_CURRENT, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', False),
-    (sensor.DOMAIN, DEVICE_CLASS_CURRENT, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', True),
+    (binary_sensor.DOMAIN, SensorDeviceClass.CURRENT, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', False),
+    (sensor.DOMAIN, SensorDeviceClass.CURRENT, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', True),
     (sensor.DOMAIN, None, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', False),
     (switch.DOMAIN, None, 'current', const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', True),
     (switch.DOMAIN, None, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', False),
     (light.DOMAIN, None, 'current', const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', True),
     (light.DOMAIN, None, None, const.FLOAT_INSTANCE_AMPERAGE, 'unit.ampere', False),
 
-    (sensor.DOMAIN, DEVICE_CLASS_POWER, None, const.FLOAT_INSTANCE_POWER, 'unit.watt', True),
+    (sensor.DOMAIN, SensorDeviceClass.POWER, None, const.FLOAT_INSTANCE_POWER, 'unit.watt', True),
     (sensor.DOMAIN, None, None, const.FLOAT_INSTANCE_POWER, 'unit.watt', False),
     (switch.DOMAIN, None, 'power', const.FLOAT_INSTANCE_POWER, 'unit.watt', True),
     (switch.DOMAIN, None, 'load_power', const.FLOAT_INSTANCE_POWER, 'unit.watt', True),
     (switch.DOMAIN, None, None, const.FLOAT_INSTANCE_POWER, 'unit.watt', False),
 
-    (sensor.DOMAIN, DEVICE_CLASS_ENERGY, None, const.FLOAT_INSTANCE_ELECTRICITY_METER, 'unit.kilowatt_hour', True),
-    (sensor.DOMAIN, DEVICE_CLASS_GAS, None, const.FLOAT_INSTANCE_GAS_METER, 'unit.cubic_meter', True),
-    (sensor.DOMAIN, DEVICE_CLASS_WATER, None, const.FLOAT_INSTANCE_WATER_METER, 'unit.cubic_meter', True),
+    (sensor.DOMAIN, SensorDeviceClass.ENERGY, None, const.FLOAT_INSTANCE_ELECTRICITY_METER, 'unit.kilowatt_hour', True),
+    (sensor.DOMAIN, SensorDeviceClass.GAS, None, const.FLOAT_INSTANCE_GAS_METER, 'unit.cubic_meter', True),
+    (sensor.DOMAIN, SensorDeviceClass.WATER, None, const.FLOAT_INSTANCE_WATER_METER, 'unit.cubic_meter', True),
 ])
 async def test_property_float_simple(hass, domain, device_class, attribute, instance: str, unit, supported):
     attributes = {}
@@ -462,13 +452,13 @@ async def test_property_float_simple(hass, domain, device_class, attribute, inst
 @pytest.mark.parametrize('domain', [switch.DOMAIN, sensor.DOMAIN, light.DOMAIN, cover.DOMAIN])
 async def test_property_float_battery_class(hass, domain):
     state = State(f'{domain}.test', '50', {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY
+        ATTR_DEVICE_CLASS: SensorDeviceClass.BATTERY
     })
     assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_EVENT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
     assert_no_properties(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
 
     state = State(f'{domain}.test', '50', {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.BATTERY,
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE
     })
     prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_BATTERY_LEVEL)
@@ -477,14 +467,14 @@ async def test_property_float_battery_class(hass, domain):
     assert prop.get_value() == 50
 
     prop.state = State(f'{domain}.test', STATE_UNKNOWN, {
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.BATTERY,
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE
     })
     assert prop.get_value() is None
 
     for s in ['low', 'charging', -5, 200]:
         prop.state = State(f'{domain}.test', s, {
-            ATTR_DEVICE_CLASS: DEVICE_CLASS_BATTERY,
+            ATTR_DEVICE_CLASS: SensorDeviceClass.BATTERY,
             ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE
         })
         assert prop.get_value() == 0
@@ -520,7 +510,7 @@ async def test_property_float_battery_attr(hass, domain):
 async def test_property_float_energy_meter_value(hass, unit, v):
     state = State('sensor.test', '1.245', {
         ATTR_UNIT_OF_MEASUREMENT: unit,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_ENERGY
+        ATTR_DEVICE_CLASS: SensorDeviceClass.ENERGY
     })
     prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_ELECTRICITY_METER)
 
@@ -536,7 +526,7 @@ async def test_property_float_energy_meter_value(hass, unit, v):
 async def test_property_float_water_meter_value(hass, unit, v):
     state = State('sensor.test', '1245', {
         ATTR_UNIT_OF_MEASUREMENT: unit,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_WATER
+        ATTR_DEVICE_CLASS: SensorDeviceClass.WATER
     })
     prop = get_exact_one_property(hass, BASIC_CONFIG, state, PROPERTY_FLOAT, const.FLOAT_INSTANCE_WATER_METER)
 

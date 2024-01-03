@@ -199,7 +199,7 @@ async def test_capability_mode_thermostat(hass):
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_THERMOSTAT)
 
     state = State('climate.test', STATE_OFF, {
-        climate.ATTR_HVAC_MODES: [climate.HVAC_MODE_HEAT_COOL, climate.HVACMode.FAN_ONLY, climate.HVAC_MODE_OFF]
+        climate.ATTR_HVAC_MODES: [climate.HVACMode.HEAT_COOL, climate.HVACMode.FAN_ONLY, climate.HVACMode.OFF]
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_MODE, MODE_INSTANCE_THERMOSTAT)
     assert cap.retrievable

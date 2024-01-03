@@ -28,11 +28,11 @@ async def test_property_event(hass):
 
 
 @pytest.mark.parametrize('device_class,supported', [
-    (binary_sensor.DEVICE_CLASS_DOOR, True),
-    (binary_sensor.DEVICE_CLASS_GARAGE_DOOR, True),
-    (binary_sensor.DEVICE_CLASS_WINDOW, True),
-    (binary_sensor.DEVICE_CLASS_OPENING, True),
-    (binary_sensor.DEVICE_CLASS_BATTERY, False),
+    (binary_sensor.BinarySensorDeviceClass.DOOR, True),
+    (binary_sensor.BinarySensorDeviceClass.GARAGE_DOOR, True),
+    (binary_sensor.BinarySensorDeviceClass.WINDOW, True),
+    (binary_sensor.BinarySensorDeviceClass.OPENING, True),
+    (binary_sensor.BinarySensorDeviceClass.BATTERY, False),
 ])
 async def test_property_event_contact(hass, device_class, supported):
     state = State('binary_sensor.test', binary_sensor.STATE_ON, {
@@ -52,10 +52,10 @@ async def test_property_event_contact(hass, device_class, supported):
 
 
 @pytest.mark.parametrize('device_class,supported', [
-    (binary_sensor.DEVICE_CLASS_MOTION, True),
-    (binary_sensor.DEVICE_CLASS_OCCUPANCY, True),
-    (binary_sensor.DEVICE_CLASS_PRESENCE, True),
-    (binary_sensor.DEVICE_CLASS_BATTERY, False),
+    (binary_sensor.BinarySensorDeviceClass.MOTION, True),
+    (binary_sensor.BinarySensorDeviceClass.OCCUPANCY, True),
+    (binary_sensor.BinarySensorDeviceClass.PRESENCE, True),
+    (binary_sensor.BinarySensorDeviceClass.BATTERY, False),
 ])
 async def test_property_event_motion(hass, device_class, supported):
     state = State('binary_sensor.test', binary_sensor.STATE_ON, {
@@ -75,8 +75,8 @@ async def test_property_event_motion(hass, device_class, supported):
 
 
 @pytest.mark.parametrize('device_class,supported', [
-    (binary_sensor.DEVICE_CLASS_GAS, True),
-    (binary_sensor.DEVICE_CLASS_BATTERY, False),
+    (binary_sensor.BinarySensorDeviceClass.GAS, True),
+    (binary_sensor.BinarySensorDeviceClass.BATTERY, False),
 ])
 async def test_property_event_gas(hass, device_class, supported):
     state = State('binary_sensor.test', binary_sensor.STATE_ON, {
@@ -100,8 +100,8 @@ async def test_property_event_gas(hass, device_class, supported):
 
 
 @pytest.mark.parametrize('device_class,supported', [
-    (binary_sensor.DEVICE_CLASS_SMOKE, True),
-    (binary_sensor.DEVICE_CLASS_BATTERY, False),
+    (binary_sensor.BinarySensorDeviceClass.SMOKE, True),
+    (binary_sensor.BinarySensorDeviceClass.BATTERY, False),
 ])
 async def test_property_event_smoke(hass, device_class, supported):
     state = State('binary_sensor.test', binary_sensor.STATE_ON, {
@@ -125,8 +125,8 @@ async def test_property_event_smoke(hass, device_class, supported):
 
 
 @pytest.mark.parametrize('device_class,supported', [
-    (binary_sensor.DEVICE_CLASS_BATTERY, True),
-    (binary_sensor.DEVICE_CLASS_SMOKE, False),
+    (binary_sensor.BinarySensorDeviceClass.BATTERY, True),
+    (binary_sensor.BinarySensorDeviceClass.SMOKE, False),
 ])
 async def test_property_event_battery(hass, device_class, supported):
     state = State('binary_sensor.test', binary_sensor.STATE_ON, {
@@ -149,7 +149,7 @@ async def test_property_event_battery(hass, device_class, supported):
 
 @pytest.mark.parametrize('device_class,supported', [
     ('water_level', True),
-    (binary_sensor.DEVICE_CLASS_SMOKE, False),
+    (binary_sensor.BinarySensorDeviceClass.SMOKE, False),
 ])
 async def test_property_event_water_level(hass, device_class, supported):
     state = State('binary_sensor.test', binary_sensor.STATE_ON, {
@@ -172,8 +172,8 @@ async def test_property_event_water_level(hass, device_class, supported):
 
 
 @pytest.mark.parametrize('device_class,supported', [
-    (binary_sensor.DEVICE_CLASS_MOISTURE, True),
-    (binary_sensor.DEVICE_CLASS_SMOKE, False),
+    (binary_sensor.BinarySensorDeviceClass.MOISTURE, True),
+    (binary_sensor.BinarySensorDeviceClass.SMOKE, False),
 ])
 async def test_property_event_water_leak(hass, device_class, supported):
     state = State('binary_sensor.test', binary_sensor.STATE_ON, {
@@ -330,7 +330,7 @@ async def test_property_event_vibration_sensor(hass):
 
 @pytest.mark.parametrize('attribute,device_class,supported', [
     ('last_action', None, True),
-    (None, binary_sensor.DEVICE_CLASS_VIBRATION, True),
+    (None, binary_sensor.BinarySensorDeviceClass.VIBRATION, True),
     ('bar', None, False),
 ])
 async def test_property_event_vibration_binary_sensor(hass, attribute, device_class, supported):

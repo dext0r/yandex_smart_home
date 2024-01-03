@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from homeassistant.components import air_quality, climate, fan, humidifier, light, sensor, switch, water_heater
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     ATTR_DEVICE_CLASS,
@@ -16,28 +17,17 @@ from homeassistant.const import (
     CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
     CONCENTRATION_PARTS_PER_BILLION,
     CONCENTRATION_PARTS_PER_MILLION,
-    DEVICE_CLASS_BATTERY,
-    DEVICE_CLASS_CO2,
-    DEVICE_CLASS_CURRENT,
-    DEVICE_CLASS_ENERGY,
-    DEVICE_CLASS_GAS,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_ILLUMINANCE,
-    DEVICE_CLASS_POWER,
-    DEVICE_CLASS_PRESSURE,
-    DEVICE_CLASS_TEMPERATURE,
-    DEVICE_CLASS_VOLTAGE,
-    ELECTRIC_CURRENT_MILLIAMPERE,
-    ENERGY_WATT_HOUR,
     PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
-    TEMP_CELSIUS,
-    VOLUME_LITERS,
+    UnitOfElectricCurrent,
+    UnitOfEnergy,
+    UnitOfTemperature,
+    UnitOfVolume,
 )
 
 from . import const
-from .const import DEVICE_CLASS_WATER, ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
+from .const import ERR_NOT_SUPPORTED_IN_CURRENT_MODE, STATE_EMPTY, STATE_NONE, STATE_NONE_UI
 from .error import SmartHomeError
 from .prop import PREFIX_PROPERTIES, AbstractProperty, register_property
 
@@ -168,11 +158,11 @@ class FloatProperty(AbstractProperty, ABC):
             )
         elif self.instance == const.FLOAT_INSTANCE_TVOC:
             return round(float_value * TVOC_CONCENTRATION_TO_MCG_M3.get(from_unit, 1), 2)
-        elif self.instance == const.FLOAT_INSTANCE_AMPERAGE and from_unit == ELECTRIC_CURRENT_MILLIAMPERE:
+        elif self.instance == const.FLOAT_INSTANCE_AMPERAGE and from_unit == UnitOfElectricCurrent.MILLIAMPERE:
             return float_value / 1000
-        elif self.instance == const.FLOAT_INSTANCE_ELECTRICITY_METER and from_unit == ENERGY_WATT_HOUR:
+        elif self.instance == const.FLOAT_INSTANCE_ELECTRICITY_METER and from_unit == UnitOfEnergy.WATT_HOUR:
             return round(float_value / 1000, 3)
-        elif self.instance == const.FLOAT_INSTANCE_WATER_METER and from_unit == VOLUME_LITERS:
+        elif self.instance == const.FLOAT_INSTANCE_WATER_METER and from_unit == UnitOfVolume.LITERS:
             return round(float_value / 1000, 3)
 
         return float_value
@@ -184,9 +174,9 @@ class TemperatureProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_TEMPERATURE:
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.TEMPERATURE:
                 return True
-            if self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == TEMP_CELSIUS:
+            if self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == UnitOfTemperature.CELSIUS:
                 return True
         elif self.state.domain == air_quality.DOMAIN:
             return self.state.attributes.get(climate.ATTR_TEMPERATURE) is not None
@@ -210,7 +200,7 @@ class HumidityProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_HUMIDITY
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.HUMIDITY
         elif self.state.domain == air_quality.DOMAIN:
             return self.state.attributes.get(climate.ATTR_HUMIDITY) is not None
         elif self.state.domain in (climate.DOMAIN, fan.DOMAIN, humidifier.DOMAIN):
@@ -233,8 +223,8 @@ class PressureProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_DEVICE_CLASS) in [DEVICE_CLASS_PRESSURE,
-                                                                const.DEVICE_CLASS_ATMOSPHERIC_PRESSURE]:
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) in [SensorDeviceClass.PRESSURE,
+                                                                SensorDeviceClass.ATMOSPHERIC_PRESSURE]:
                 if self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) in PRESSURE_TO_PASCAL:
                     return True
 
@@ -260,7 +250,7 @@ class IlluminanceProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ILLUMINANCE:
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.ILLUMINANCE:
                 return True
 
         if self.state.domain in (sensor.DOMAIN, light.DOMAIN, fan.DOMAIN):
@@ -270,7 +260,7 @@ class IlluminanceProperty(FloatProperty):
 
     def get_value(self) -> float | None:
         if self.state.domain == sensor.DOMAIN:
-            if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ILLUMINANCE:
+            if self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.ILLUMINANCE:
                 return self.float_value(self.state.state)
 
         if const.ATTR_ILLUMINANCE in self.state.attributes:
@@ -297,7 +287,7 @@ class CO2Property(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CO2
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.CO2
         elif self.state.domain in (air_quality.DOMAIN, fan.DOMAIN):
             return air_quality.ATTR_CO2 in self.state.attributes
 
@@ -375,7 +365,7 @@ class VoltageProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_VOLTAGE
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.VOLTAGE
         elif self.state.domain in (switch.DOMAIN, light.DOMAIN):
             return ATTR_VOLTAGE in self.state.attributes
 
@@ -394,7 +384,7 @@ class CurrentProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_CURRENT
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.CURRENT
         elif self.state.domain in (switch.DOMAIN, light.DOMAIN):
             return const.ATTR_CURRENT in self.state.attributes
 
@@ -415,7 +405,7 @@ class PowerProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_POWER
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.POWER
         elif self.state.domain == switch.DOMAIN:
             for attribute in [const.ATTR_POWER, const.ATTR_LOAD_POWER, const.ATTR_CURRENT_CONSUMPTION]:
                 if attribute in self.state.attributes:
@@ -440,7 +430,7 @@ class BatteryLevelProperty(FloatProperty):
     instance = const.FLOAT_INSTANCE_BATTERY_LEVEL
 
     def supported(self) -> bool:
-        if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY and \
+        if self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.BATTERY and \
                 self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) == PERCENTAGE:
             return True
 
@@ -448,7 +438,7 @@ class BatteryLevelProperty(FloatProperty):
 
     def get_value(self) -> float | None:
         value = None
-        if self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_BATTERY:
+        if self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.BATTERY:
             value = self.state.state
         elif ATTR_BATTERY_LEVEL in self.state.attributes:
             value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
@@ -465,7 +455,7 @@ class ElectricityMeterProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_ENERGY
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.ENERGY
 
         return False
 
@@ -479,7 +469,7 @@ class GasMeterProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_GAS
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.GAS
 
         return False
 
@@ -493,7 +483,7 @@ class WaterMeterProperty(FloatProperty):
 
     def supported(self) -> bool:
         if self.state.domain == sensor.DOMAIN:
-            return self.state.attributes.get(ATTR_DEVICE_CLASS) == DEVICE_CLASS_WATER
+            return self.state.attributes.get(ATTR_DEVICE_CLASS) == SensorDeviceClass.WATER
 
         return False
 

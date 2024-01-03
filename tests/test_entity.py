@@ -2,16 +2,15 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from homeassistant.components import media_player, switch
-from homeassistant.components.binary_sensor import DEVICE_CLASS_DOOR
+from homeassistant.components import media_player
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.demo.light import DemoLight
+from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.switch import SwitchDeviceClass
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
     ATTR_UNIT_OF_MEASUREMENT,
-    DEVICE_CLASS_HUMIDITY,
-    DEVICE_CLASS_TEMPERATURE,
-    DEVICE_CLASS_VOLTAGE,
     MAJOR_VERSION,
     MINOR_VERSION,
     PERCENTAGE,
@@ -19,7 +18,7 @@ from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
     STATE_UNAVAILABLE,
-    TEMP_CELSIUS,
+    UnitOfTemperature,
 )
 from homeassistant.core import State
 import pytest
@@ -165,8 +164,8 @@ async def test_yandex_entity_duplicate_properties(hass):
 
 async def test_yandex_entity_properties(hass):
     state = State('sensor.temp', '5', attributes={
-        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
     })
     config = MockConfig(
         entity_config={
@@ -185,7 +184,7 @@ async def test_yandex_entity_properties(hass):
     ]
 
     state = State('binary_sensor.door', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_DOOR,
+        ATTR_DEVICE_CLASS: BinarySensorDeviceClass.DOOR,
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert [type(c) for c in entity.properties()] == [
@@ -335,19 +334,19 @@ async def test_yandex_entity_device_type_media_player(hass):
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE
 
     state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_TV
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE_TV
 
     state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_RECEIVER
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.RECEIVER
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE_RECIEVER
 
     state = State('media_player.tv', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: media_player.DEVICE_CLASS_SPEAKER
+        ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.SPEAKER
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_MEDIA_DEVICE
@@ -359,7 +358,7 @@ async def test_yandex_entity_device_type_switch(hass):
     assert entity.yandex_device_type == const.TYPE_SWITCH
 
     state = State('switch.test', STATE_ON, attributes={
-        ATTR_DEVICE_CLASS: switch.DEVICE_CLASS_OUTLET
+        ATTR_DEVICE_CLASS: SwitchDeviceClass.OUTLET
     })
     entity = YandexEntity(hass, BASIC_CONFIG, state)
     assert entity.yandex_device_type == const.TYPE_SOCKET
@@ -407,18 +406,18 @@ async def test_yandex_entity_serialize(hass):
     cap_pause = PauseCapability(hass, BASIC_CONFIG, state_pause)
 
     state_temp = State('sensor.temp', '5', attributes={
-        ATTR_UNIT_OF_MEASUREMENT: TEMP_CELSIUS,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_TEMPERATURE,
+        ATTR_UNIT_OF_MEASUREMENT: UnitOfTemperature.CELSIUS,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.TEMPERATURE,
     })
     state_humidity = State('sensor.humidity', '95', attributes={
         ATTR_UNIT_OF_MEASUREMENT: PERCENTAGE,
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_HUMIDITY,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.HUMIDITY,
     })
     hass.states.async_set(state_humidity.entity_id, state_humidity.state, state_humidity.attributes)
 
     state_voltage = State('sensor.voltage', '220', attributes={
         ATTR_UNIT_OF_MEASUREMENT: 'V',
-        ATTR_DEVICE_CLASS: DEVICE_CLASS_VOLTAGE,
+        ATTR_DEVICE_CLASS: SensorDeviceClass.VOLTAGE,
     })
 
     prop_temp = TemperatureProperty(hass, BASIC_CONFIG, state_temp)

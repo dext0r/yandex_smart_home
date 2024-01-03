@@ -95,10 +95,6 @@ EVENT_CONFIG_CHANGED = 'yandex_smart_home_config_changed'
 # Fake device class
 DEVICE_CLASS_BUTTON = 'button'
 
-# Backported from newer versions
-DEVICE_CLASS_ATMOSPHERIC_PRESSURE = 'atmospheric_pressure'
-DEVICE_CLASS_WATER = 'water'
-
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html
 PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'
@@ -241,7 +237,7 @@ DEVICE_CLASS_TO_YANDEX_TYPES = {
     (sensor.DOMAIN, sensor.SensorDeviceClass.PRESSURE): TYPE_SENSOR_CLIMATE,
     (sensor.DOMAIN, sensor.SensorDeviceClass.TEMPERATURE): TYPE_SENSOR_CLIMATE,
     (sensor.DOMAIN, sensor.SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS): TYPE_SENSOR_CLIMATE,
-    (sensor.DOMAIN, DEVICE_CLASS_WATER): TYPE_SMART_METER_COLD_WATER,
+    (sensor.DOMAIN, sensor.SensorDeviceClass.WATER): TYPE_SMART_METER_COLD_WATER,
     (switch.DOMAIN, switch.SwitchDeviceClass.OUTLET): TYPE_SOCKET,
 }
 
