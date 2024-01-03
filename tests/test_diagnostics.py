@@ -48,7 +48,9 @@ async def test_diagnostics(
     response = await client.get(f"/api/diagnostics/config_entry/{config_entry.entry_id}")
     assert response.status == HTTPStatus.OK
     diagnostics = await response.json()
-    for k in ("integration_manifest", "custom_components", "home_assistant"):
+    for k in ("integration_manifest", "custom_components", "home_assistant", "minor_version"):
         diagnostics.pop(k, None)
+
+    diagnostics["data"]["entry"].pop("minor_version", None)
 
     assert diagnostics == snapshot

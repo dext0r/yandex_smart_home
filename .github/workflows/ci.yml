@@ -31,6 +31,7 @@ jobs:
           - ha-version: '2023.11'
           - ha-version: '2023.12'
             latest: true
+          - ha-version: '2024.1b'
     steps:
       - uses: actions/checkout@v3
 
@@ -63,7 +64,6 @@ jobs:
     name: Validate for HACS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
       - uses: actions/checkout@v3
 
       - name: HACS validation
