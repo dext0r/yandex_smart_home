@@ -3,10 +3,10 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from homeassistant.components import camera, http
-from homeassistant.components.camera import Camera
+from homeassistant.components.camera import Camera, DynamicStreamSettings
 from homeassistant.components.stream import OUTPUT_IDLE_TIMEOUT, Stream, StreamOutput, StreamSettings
 from homeassistant.config import async_process_ha_core_config
-from homeassistant.const import ATTR_SUPPORTED_FEATURES, MAJOR_VERSION, MINOR_VERSION
+from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 import pytest
@@ -24,54 +24,27 @@ from custom_components.yandex_smart_home.error import SmartHomeError
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
-if MAJOR_VERSION == 2022 and MINOR_VERSION >= 7:
-    class MockStream(Stream):
-        def __init__(self, hass: HomeAssistant):
-            if MAJOR_VERSION == 2022 and MINOR_VERSION >= 10:
-                super().__init__(hass, 'test', {}, StreamSettings(
-                    ll_hls=True,
-                    min_segment_duration=0,
-                    part_target_duration=0,
-                    hls_advance_part_limit=0,
-                    hls_part_timeout=0,
-                    orientation=0
-                ))
-            else:
-                # noinspection PyArgumentList
-                super().__init__(hass, 'test', {}, StreamSettings(
-                    ll_hls=True,
-                    min_segment_duration=0,
-                    part_target_duration=0,
-                    hls_advance_part_limit=0,
-                    hls_part_timeout=0,
-                ))
 
-        def endpoint_url(self, fmt: str) -> str:
-            return '/foo'
+class MockStream(Stream):
+    def __init__(self, hass: HomeAssistant):
+        super().__init__(hass, 'test', {}, StreamSettings(
+            ll_hls=True,
+            min_segment_duration=0,
+            part_target_duration=0,
+            hls_advance_part_limit=0,
+            hls_part_timeout=0,
+        ), DynamicStreamSettings())
 
-        def add_provider(
-                self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT
-        ) -> StreamOutput:
-            pass
+    def endpoint_url(self, fmt: str) -> str:
+        return '/foo'
 
-        async def start(self):
-            pass
-else:
-    class MockStream(Stream):
-        def __init__(self, hass: HomeAssistant):
-            # noinspection PyArgumentList
-            super().__init__(hass, 'test', {})
-
-        def endpoint_url(self, fmt: str) -> str:
-            return '/foo'
-
-        def add_provider(
+    def add_provider(
             self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT
-        ) -> StreamOutput:
-            pass
+    ) -> StreamOutput:
+        pass
 
-        def start(self):
-            pass
+    async def start(self):
+        pass
 
 
 class MockCamera(Camera):
