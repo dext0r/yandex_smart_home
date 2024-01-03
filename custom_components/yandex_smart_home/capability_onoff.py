@@ -385,7 +385,7 @@ class OnOffCapabilityClimate(OnOffCapability):
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
-        return self.state.state != climate.HVAC_MODE_OFF
+        return self.state.state != climate.HVACMode.OFF
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state (if wasn't overriden by the user)."""
