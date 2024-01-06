@@ -36,7 +36,7 @@ from custom_components.yandex_smart_home.capability_custom import (
     CustomRangeCapability,
     CustomToggleCapability,
 )
-from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic
+from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic, OnOffCapabilityButton
 from custom_components.yandex_smart_home.capability_range import BrightnessCapability
 from custom_components.yandex_smart_home.capability_toggle import MuteCapability, StateToggleCapability
 from custom_components.yandex_smart_home.const import (
@@ -435,6 +435,7 @@ async def test_device_query(hass):
     state = State("switch.test", STATE_ON)
     state_pause = State("input_boolean.pause", STATE_OFF)
     cap_onoff = OnOffCapabilityBasic(hass, BASIC_ENTRY_DATA, state)
+    cap_button = OnOffCapabilityButton(hass, BASIC_ENTRY_DATA, state)
     cap_pause = PauseCapability(hass, BASIC_ENTRY_DATA, state_pause)
 
     state_temp = State(
@@ -519,8 +520,8 @@ async def test_device_query(hass):
                 ],
             }
 
-        state_pause.state = STATE_UNAVAILABLE
-        state_voltage.state = STATE_UNAVAILABLE
+        cap_pause.state.state = STATE_UNAVAILABLE
+        prop_voltage.state.state = STATE_UNAVAILABLE
         hass.states.async_set(state_humidity.entity_id, STATE_UNAVAILABLE)
         assert device.query().as_dict() == {
             "id": "switch.test",
@@ -528,9 +529,29 @@ async def test_device_query(hass):
             "properties": [{"type": "devices.properties.float", "state": {"instance": "temperature", "value": 5.0}}],
         }
 
-        state_temp.state = STATE_UNAVAILABLE
-        with patch.object(Device, "get_capabilities", return_value=[cap_pause]):
-            assert device.query().as_dict() == {"id": "switch.test", "error_code": "DEVICE_UNREACHABLE"}
+    cap_pause.state.state = STATE_ON
+    with patch.object(Device, "get_capabilities", return_value=[cap_pause]), patch.object(
+        Device, "get_properties", return_value=[prop_temp]
+    ):
+        assert device.query().as_dict() == {
+            "id": "switch.test",
+            "capabilities": [{"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": True}}],
+            "properties": [{"type": "devices.properties.float", "state": {"instance": "temperature", "value": 5.0}}],
+        }
+
+        prop_temp.state.state = STATE_UNAVAILABLE
+        assert device.query().as_dict() == {
+            "id": "switch.test",
+            "capabilities": [{"type": "devices.capabilities.toggle", "state": {"instance": "pause", "value": True}}],
+        }
+
+        cap_pause.state.state = STATE_UNAVAILABLE
+        assert device.query().as_dict() == {"id": "switch.test", "error_code": "DEVICE_UNREACHABLE"}
+
+    with patch.object(Device, "get_capabilities", return_value=[cap_button]), patch.object(
+        Device, "get_properties", return_value=[prop_button]
+    ):
+        assert device.query().as_dict() == {"id": "switch.test"}
 
 
 async def test_device_execute(hass, caplog):
