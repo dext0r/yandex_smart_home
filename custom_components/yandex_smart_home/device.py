@@ -138,14 +138,6 @@ _DEVICE_CLASS_TO_DEVICE_TYPES: dict[tuple[str, str], DeviceType] = {
 }
 
 
-def _alias_priority(text: str) -> tuple[int, str]:
-    """Return sort priority for alias."""
-    if re.search("[а-яё]", text, flags=re.IGNORECASE):
-        return 0, text
-
-    return 1, text
-
-
 class Device:
     """Represent user device."""
 
@@ -391,8 +383,9 @@ class Device:
         if name := self._config.get(CONF_NAME):
             return str(name)
 
-        if entity_entry and entity_entry.aliases:
-            return sorted(entity_entry.aliases, key=_alias_priority)[0]
+        if entity_entry:
+            if alias := self._get_entry_alias(entity_entry.aliases):
+                return alias
 
         return self._state.name or self.id
 
@@ -405,12 +398,26 @@ class Device:
 
         area = self._get_area(entity_entry, device_entry, area_reg)
         if area:
-            if area.aliases:
-                return sorted(area.aliases, key=_alias_priority)[0]
+            if alias := self._get_entry_alias(area.aliases):
+                return alias
 
             return area.name
 
         return None
+
+    def _get_entry_alias(self, aliases: set[str] | None) -> str | None:
+        """Return best matched entry alias."""
+        filtered_aliases: set[str] = set()
+        for alias in aliases or []:
+            if "алиса:" in alias.lower():
+                filtered_aliases.add(alias.split(":", 1)[1].strip())
+            elif self._entry_data.use_entry_aliases and re.search(r"^[а-яё0-9 ]+$", alias, flags=re.IGNORECASE):
+                filtered_aliases.add(alias)
+
+        if not filtered_aliases:
+            return None
+
+        return sorted(filtered_aliases)[0]
 
     @staticmethod
     def _get_area(

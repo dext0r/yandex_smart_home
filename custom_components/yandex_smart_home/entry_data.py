@@ -115,6 +115,11 @@ class ConfigEntryData:
         return bool(settings.get(const.CONF_CLOUD_STREAM))
 
     @property
+    def use_entry_aliases(self) -> bool:
+        """Test if device or area entry aliases should be used for device or room name."""
+        return bool(self.entry.options.get(const.CONF_ENTRY_ALIASES, True))
+
+    @property
     def connection_type(self) -> ConnectionType:
         """Return connection type."""
         return ConnectionType(str(self.entry.data.get(const.CONF_CONNECTION_TYPE)))

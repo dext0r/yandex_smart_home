@@ -12,7 +12,13 @@ from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
-from homeassistant.helpers.selector import SelectOptionDict, SelectSelector, SelectSelectorConfig, SelectSelectorMode
+from homeassistant.helpers.selector import (
+    BooleanSelector,
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 import voluptuous as vol
 
 from . import DOMAIN, FILTER_SCHEMA, const
@@ -78,10 +84,11 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             step_id="expose_settings",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(
+                    vol.Required(
                         const.CONF_FILTER_SOURCE, default=EntityFilterSource.CONFIG_ENTRY
-                    ): FILTER_SOURCE_SELECTOR
-                }
+                    ): FILTER_SOURCE_SELECTOR,
+                    vol.Required(const.CONF_ENTRY_ALIASES, default=True): BooleanSelector(),
+                },
             ),
         )
 
@@ -185,9 +192,12 @@ class OptionsFlowHandler(OptionsFlow):
             step_id="expose_settings",
             data_schema=vol.Schema(
                 {
-                    vol.Optional(
+                    vol.Required(
                         const.CONF_FILTER_SOURCE, default=self._options[const.CONF_FILTER_SOURCE]
-                    ): FILTER_SOURCE_SELECTOR
+                    ): FILTER_SOURCE_SELECTOR,
+                    vol.Required(
+                        const.CONF_ENTRY_ALIASES, default=self._options.get(const.CONF_ENTRY_ALIASES, True)
+                    ): BooleanSelector(),
                 }
             ),
         )

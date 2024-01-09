@@ -46,6 +46,7 @@ from custom_components.yandex_smart_home.const import (
     CONF_NAME,
     CONF_ROOM,
     CONF_TYPE,
+    DOMAIN,
 )
 from custom_components.yandex_smart_home.device import Device
 from custom_components.yandex_smart_home.helpers import APIError
@@ -281,8 +282,9 @@ async def test_device_info(hass, registries):
 async def test_device_name_room(hass, registries):
     ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
     area_room = area_reg.async_create("Room")
-    area_kitchen = area_reg.async_create("Kitchen")
-    area_closet = area_reg.async_create("Closet", aliases=["Test", "1", "Кладовка", "ббб"])
+    bathroom_room = area_reg.async_create("Bathroom", aliases=["foo"])
+    area_kitchen = area_reg.async_create("Кухня", aliases=["Кухне"])
+    area_closet = area_reg.async_create("Closet", aliases=["Test", "Кладовка", "ббб"])
     config_entry = MockConfigEntry(domain="test", data={})
     config_entry.add_to_hass(hass)
 
@@ -299,15 +301,68 @@ async def test_device_name_room(hass, registries):
     d = await device.describe(ent_reg, dev_reg, area_reg)
     assert d.room == "Room"
 
+    dev_reg.async_update_device(dev_entry.id, area_id=bathroom_room.id)
+    d = await device.describe(ent_reg, dev_reg, area_reg)
+    assert d.room == "Bathroom"
+
     ent_reg.async_update_entity(entry.entity_id, area_id=area_kitchen.id)
     d = await device.describe(ent_reg, dev_reg, area_reg)
     assert d.name == "test 1"
-    assert d.room == "Kitchen"
+    assert d.room == "Кухне"
 
-    ent_reg.async_update_entity(entry.entity_id, area_id=area_closet.id, aliases=["2", "foo", "Устройство", "апельсин"])
+    ent_reg.async_update_entity(entry.entity_id, area_id=area_closet.id, aliases=["foo", "Устройство 2", "апельсин"])
+    d = await device.describe(ent_reg, dev_reg, area_reg)
+    assert d.name == "Устройство 2"
+    assert d.room == "Кладовка"
+
+    entry_data = MockConfigEntryData(entity_config={"switch.test_1": {CONF_NAME: "Имя", CONF_ROOM: "Комната"}})
+    device = Device(hass, entry_data, state.entity_id, state)
+    d = await device.describe(ent_reg, dev_reg, area_reg)
+    assert d.name == "Имя"
+    assert d.room == "Комната"
+
+
+async def test_device_name_room_ignore_aliases(hass, registries):
+    ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
+    area_room = area_reg.async_create("Room")
+    area_kitchen = area_reg.async_create("Кухня", aliases=["Ананас", "АлисА: Кухня", "Алиса: Балкон "])
+    area_closet = area_reg.async_create("Closet", aliases=["Test", "1", "Кладовка", "ббб"])
+    config_entry = MockConfigEntry(domain="test", data={})
+    config_entry.add_to_hass(hass)
+
+    entry_data = MockConfigEntryData(
+        entry=MockConfigEntry(domain=DOMAIN, data={}, options={const.CONF_ENTRY_ALIASES: False}),
+    )
+
+    state = State("switch.test_1", STATE_ON)
+    dev_entry = dev_reg.async_get_or_create(identifiers={"test_1"}, config_entry_id=config_entry.entry_id)
+    entry = ent_reg.async_get_or_create("switch", "test", "1", device_id=dev_entry.id)
+    device = Device(hass, entry_data, state.entity_id, state)
+    d = await device.describe(ent_reg, dev_reg, area_reg)
+    assert d.id == "switch.test_1"
+    assert d.name == "test 1"
+    assert d.room is None
+
+    dev_reg.async_update_device(dev_entry.id, area_id=area_room.id)
+    d = await device.describe(ent_reg, dev_reg, area_reg)
+    assert d.room == "Room"
+
+    ent_reg.async_update_entity(entry.entity_id, area_id=area_kitchen.id)
+    d = await device.describe(ent_reg, dev_reg, area_reg)
+    assert d.name == "test 1"
+    assert d.room == "Балкон"
+
+    ent_reg.async_update_entity(entry.entity_id, area_id=area_closet.id, aliases=["Устройство"])
+    d = await device.describe(ent_reg, dev_reg, area_reg)
+    assert d.name == "test 1"
+    assert d.room == "Closet"
+
+    ent_reg.async_update_entity(
+        entry.entity_id, area_id=area_closet.id, aliases=["2", "foo", "Устройство", "апельсин", "Алиса: Устройство"]
+    )
     d = await device.describe(ent_reg, dev_reg, area_reg)
     assert d.name == "Устройство"
-    assert d.room == "Кладовка"
+    assert d.room == "Closet"
 
     entry_data = MockConfigEntryData(entity_config={"switch.test_1": {CONF_NAME: "Имя", CONF_ROOM: "Комната"}})
     device = Device(hass, entry_data, state.entity_id, state)

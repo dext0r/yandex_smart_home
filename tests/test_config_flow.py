@@ -130,6 +130,7 @@ async def test_config_flow_cloud(hass, aioclient_mock):
         "devices_discovered": False,
     }
     assert result5["options"] == {
+        "entry_aliases": True,
         "filter_source": "config_entry",
         "filter": {"include_entities": ["foo.bar", "script.test"]},
     }
@@ -155,6 +156,7 @@ async def test_config_flow_direct(hass):
     assert result3["title"] == "YSH: Direct"
     assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
     assert result3["options"] == {
+        "entry_aliases": True,
         "filter_source": "config_entry",
         "filter": {"include_entities": ["foo.bar", "script.test"]},
     }
@@ -186,7 +188,7 @@ async def test_config_flow_direct_filter_source_yaml(hass):
     assert result4["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
     assert result4["title"] == "YSH: Direct"
     assert result4["data"] == {"connection_type": "direct", "devices_discovered": False}
-    assert result4["options"] == {"filter_source": "yaml"}
+    assert result4["options"] == {"entry_aliases": True, "filter_source": "yaml"}
 
     component: YandexSmartHome = hass.data[DOMAIN]
     assert len(component._entry_datas) == 1
@@ -420,9 +422,12 @@ async def test_options_step_contex_user_clear(hass, hass_admin_user):
 
 @pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])
 async def test_options_flow_expose_settings(hass, connection_type):
-    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
+    config_entry = _mock_config_entry(
+        data={const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD}, options={const.CONF_ENTRY_ALIASES: False}
+    )
     config_entry.add_to_hass(hass)
     assert config_entry.options[const.CONF_FILTER_SOURCE] == EntityFilterSource.CONFIG_ENTRY
+    assert config_entry.options[const.CONF_ENTRY_ALIASES] is False
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
@@ -435,10 +440,12 @@ async def test_options_flow_expose_settings(hass, connection_type):
     assert result2["step_id"] == "expose_settings"
 
     result3 = await hass.config_entries.options.async_configure(
-        result2["flow_id"], user_input={const.CONF_FILTER_SOURCE: EntityFilterSource.YAML}
+        result2["flow_id"],
+        user_input={const.CONF_FILTER_SOURCE: EntityFilterSource.YAML, const.CONF_ENTRY_ALIASES: True},
     )
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
     assert config_entry.options == {
+        "entry_aliases": True,
         "filter_source": "yaml",
         "filter": {
             "include_domains": ["fan", "humidifier", "vacuum", "media_player", "climate"],
@@ -480,6 +487,7 @@ async def test_options_flow_include_entities(hass, connection_type):
     )
     assert result4["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
     assert config_entry.options == {
+        "entry_aliases": True,
         "filter_source": "config_entry",
         "filter": {"include_entities": ["climate.foo", "fan.foo", "lock.test", "script.foo"]},
     }
