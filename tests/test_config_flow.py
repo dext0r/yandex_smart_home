@@ -199,7 +199,7 @@ async def test_options_step_init_cloud(hass):
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
     assert result["step_id"] == "init"
-    assert result["menu_options"] == ["expose_settings", "connection_type", "cloud_info", "cloud_settings"]
+    assert result["menu_options"] == ["expose_settings", "connection_type", "cloud_info", "context_user"]
 
 
 async def test_options_step_init_direct(hass):
@@ -373,7 +373,7 @@ async def test_options_step_cloud_info(hass):
     assert result3["step_id"] == "init"
 
 
-async def test_options_step_cloud_settings(hass, hass_admin_user):
+async def test_options_step_contex_user(hass, hass_admin_user):
     config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
     config_entry.add_to_hass(hass)
 
@@ -382,17 +382,40 @@ async def test_options_step_cloud_settings(hass, hass_admin_user):
     assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input={"next_step_id": "cloud_settings"}
+        result["flow_id"], user_input={"next_step_id": "context_user"}
     )
     assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
-    assert result2["step_id"] == "cloud_settings"
-    assert len(result2["data_schema"].schema["user_id"].container) == 1
+    assert result2["step_id"] == "context_user"
+    assert len(result2["data_schema"].schema["user_id"].config["options"]) == 2
 
     result3 = await hass.config_entries.options.async_configure(
         result2["flow_id"], user_input={"user_id": hass_admin_user.id}
     )
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
     assert config_entry.options["user_id"] == hass_admin_user.id
+
+
+async def test_options_step_contex_user_clear(hass, hass_admin_user):
+    config_entry = _mock_config_entry(
+        data={const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD}, options={const.CONF_USER_ID: "foo"}
+    )
+    config_entry.add_to_hass(hass)
+    assert "user_id" in config_entry.options
+
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
+    assert result["step_id"] == "init"
+
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "context_user"}
+    )
+    assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result2["step_id"] == "context_user"
+    assert len(result2["data_schema"].schema["user_id"].config["options"]) == 2
+
+    result3 = await hass.config_entries.options.async_configure(result2["flow_id"], user_input={"user_id": "none"})
+    assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert "user_id" not in config_entry.options
 
 
 @pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])

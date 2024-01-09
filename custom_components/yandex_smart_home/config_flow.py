@@ -28,6 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONNECTION_TYPES = {ConnectionType.CLOUD: "Через облако", ConnectionType.DIRECT: "Напрямую"}
 DEFAULT_CONFIG_ENTRY_TITLE = "Yandex Smart Home"
+USER_NONE = "none"
 FILTER_SOURCE_SELECTOR = SelectSelector(
     SelectSelectorConfig(
         mode=SelectSelectorMode.LIST,
@@ -165,7 +166,7 @@ class OptionsFlowHandler(OptionsFlow):
         """Show menu."""
         options = ["expose_settings", "connection_type"]
         if self._data[const.CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
-            options += ["cloud_info", "cloud_settings"]
+            options += ["cloud_info", "context_user"]
 
         return self.async_show_menu(step_id="init", menu_options=options)
 
@@ -265,18 +266,28 @@ class OptionsFlowHandler(OptionsFlow):
             errors=errors,
         )
 
-    async def async_step_cloud_settings(self, user_input: ConfigType | None = None) -> FlowResult:
-        """Choose additional cloud options."""
+    async def async_step_context_user(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose user for a service calls context."""
         if user_input is not None:
-            self._options.update(user_input)
+            if user_input[const.CONF_USER_ID] == USER_NONE:
+                self._options.pop(const.CONF_USER_ID, None)
+            else:
+                self._options.update(user_input)
+
             return await self.async_step_done()
 
         return self.async_show_form(
-            step_id="cloud_settings",
+            step_id="context_user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(const.CONF_USER_ID, default=self._options.get(const.CONF_USER_ID)): vol.In(
-                        await _async_get_users(self.hass)
+                    vol.Required(
+                        const.CONF_USER_ID, default=self._options.get(const.CONF_USER_ID, USER_NONE)
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            mode=SelectSelectorMode.LIST,
+                            translation_key=const.CONF_USER_ID,
+                            options=await _async_get_users(self.hass),
+                        ),
                     )
                 }
             ),
@@ -301,14 +312,15 @@ class OptionsFlowHandler(OptionsFlow):
         return self.async_create_entry(data=self._options)
 
 
-async def _async_get_users(hass: HomeAssistant) -> dict[str, str]:
+async def _async_get_users(hass: HomeAssistant) -> list[SelectOptionDict]:
     """Return users with admin privileges."""
-    users = {}
+    users: list[SelectOptionDict] = [SelectOptionDict(value=USER_NONE, label=USER_NONE)]
+
     for user in await hass.auth.async_get_users():
         if any(gr.id == GROUP_ID_READ_ONLY for gr in user.groups):
             continue
 
-        users[user.id] = user.name or user.id
+        users.append(SelectOptionDict(value=user.id, label=user.name or user.id))
 
     return users
 
