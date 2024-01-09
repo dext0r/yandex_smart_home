@@ -92,6 +92,14 @@ class ConfigEntryData:
 
         return None
 
+    async def async_get_user_id(self) -> str | None:
+        """Return user id for service calls (cloud connection only)."""
+        if user_id := self.entry.options.get(const.CONF_USER_ID):
+            if user := await self._hass.auth.async_get_user(user_id):
+                return user.id
+
+        return None
+
     @property
     def is_reporting_states(self) -> bool:
         """Test if the config entry can report state changes."""
@@ -126,11 +134,6 @@ class ConfigEntryData:
             return str(self.entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN])
 
         raise ValueError("Config entry uses direct connection")
-
-    @property
-    def user_id(self) -> str | None:
-        """Return user id for service calls (used only when cloud connection)."""
-        return self.entry.options.get(const.CONF_USER_ID)
 
     @property
     def color_profiles(self) -> ColorProfiles:
