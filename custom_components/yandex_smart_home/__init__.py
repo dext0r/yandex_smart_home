@@ -8,13 +8,13 @@ from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import SERVICE_RELOAD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA
+from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA, EntityFilter
 from homeassistant.helpers.reload import async_integration_yaml_config
 import voluptuous as vol
 
 from . import config_validation as ycv, const
 from .cloud import delete_cloud_instance
-from .const import DOMAIN, ConnectionType
+from .const import DOMAIN, ConnectionType, EntityFilterSource
 from .entry_data import ConfigEntryData
 from .http import async_register_http
 
@@ -206,15 +206,16 @@ class YandexSmartHome:
 
         return {"yaml_config": async_redact_data(self._yaml_config, [const.CONF_NOTIFIER])}
 
-    def yaml_config_has_filter(self) -> bool:
-        """Test if yaml configuration has filters defined."""
-        return const.CONF_FILTER in self._yaml_config
-
     async def async_setup_entry(self, entry: ConfigEntry) -> bool:
         """Set up a config entry."""
         entity_config = self._yaml_config.get(const.CONF_ENTITY_CONFIG)
-        entity_filter_config = self._yaml_config.get(const.CONF_FILTER, entry.options.get(const.CONF_FILTER))
-        entity_filter = FILTER_SCHEMA(entity_filter_config) if entity_filter_config else None
+
+        entity_filter: EntityFilter | None = None
+        if entry.options.get(const.CONF_FILTER_SOURCE) == EntityFilterSource.YAML:
+            if entity_filter_config := self._yaml_config.get(const.CONF_FILTER):
+                entity_filter = FILTER_SCHEMA(entity_filter_config)
+        else:
+            entity_filter = FILTER_SCHEMA(entry.options.get(const.CONF_FILTER, {}))
 
         data = ConfigEntryData(
             hass=self._hass,
@@ -267,6 +268,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate the config entry upon new versions."""
     version = entry.version
+    component: YandexSmartHome = hass.data[DOMAIN]
     data = {**entry.data}
     options = {**entry.options}
 
@@ -299,6 +301,15 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.config_entries.async_update_entry(entry, title=config_entry_title(data))
 
         version = entry.version = 3
+        _LOGGER.debug(f"Migration to version {version} successful")
+
+    if version == 3:
+        options[const.CONF_FILTER_SOURCE] = EntityFilterSource.CONFIG_ENTRY
+        if const.CONF_FILTER in component._yaml_config:
+            options[const.CONF_FILTER_SOURCE] = EntityFilterSource.YAML
+
+        version = entry.version = 4
+        hass.config_entries.async_update_entry(entry, data=data, options=options)
         _LOGGER.debug(f"Migration to version {version} successful")
 
     return True

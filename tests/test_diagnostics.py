@@ -7,7 +7,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUs
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 from syrupy import SnapshotAssertion
 
-from custom_components.yandex_smart_home import DOMAIN, ConnectionType, const
+from custom_components.yandex_smart_home import DOMAIN, ConnectionType, EntityFilterSource, const
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 
 
@@ -38,7 +38,10 @@ async def test_diagnostics(
             const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
             const.CONF_CLOUD_INSTANCE: {const.CONF_CLOUD_INSTANCE_PASSWORD: "foo"},
         },
-        options={const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]}},
+        options={
+            const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
+            const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]},
+        },
     )
     config_entry.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry.entry_id)

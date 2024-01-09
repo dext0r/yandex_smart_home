@@ -1,21 +1,20 @@
 from homeassistant import config_entries, data_entry_flow
-from homeassistant.config import YAML_CONFIG_FILE
 from homeassistant.const import CONF_ENTITIES
-from homeassistant.helpers.reload import async_integration_yaml_config
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.setup import async_setup_component
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry, patch_yaml_files
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import ConnectionType, YandexSmartHome, cloud, const
 from custom_components.yandex_smart_home.config_flow import DOMAIN, ConfigFlowHandler, config_entry_title
+from custom_components.yandex_smart_home.const import EntityFilterSource
 
 from . import test_cloud
 
 COMPONENT_PATH = "custom_components.yandex_smart_home"
 
 
-def _mock_config_entry(data: ConfigType):
+def _mock_config_entry(data: ConfigType, options: ConfigType | None = None):
     if data[const.CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
         data[const.CONF_CLOUD_INSTANCE] = {
             const.CONF_CLOUD_INSTANCE_ID: "test",
@@ -28,19 +27,41 @@ def _mock_config_entry(data: ConfigType):
         version=ConfigFlowHandler.VERSION,
         title=config_entry_title(data),
         data=data,
-        options={
-            "filter": {
-                "include_domains": [
-                    "fan",
-                    "humidifier",
-                    "vacuum",
-                    "media_player",
-                    "climate",
-                ],
-                "include_entities": ["lock.test"],
+        options=dict(
+            {
+                "filter_source": "config_entry",
+                "filter": {
+                    "include_domains": [
+                        "fan",
+                        "humidifier",
+                        "vacuum",
+                        "media_player",
+                        "climate",
+                    ],
+                    "include_entities": ["lock.test"],
+                },
             },
-        },
+            **(options or {}),
+        ),
     )
+
+
+async def _async_forward_to_step_include_entites(hass) -> str:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    assert result["type"] == "form"
+    assert result["step_id"] == "user"
+
+    result2 = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result2["type"] == "form"
+    assert result2["step_id"] == "expose_settings"
+
+    result3 = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY}
+    )
+    assert result3["type"] == "form"
+    assert result3["step_id"] == "include_entities"
+
+    return result3["flow_id"]
 
 
 async def test_config_flow_duplicate(hass):
@@ -53,25 +74,20 @@ async def test_config_flow_duplicate(hass):
 
 
 async def test_config_flow_empty_entities(hass):
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    result = await hass.config_entries.flow.async_configure(
+        await _async_forward_to_step_include_entites(hass), {CONF_ENTITIES: []}
+    )
     assert result["type"] == "form"
     assert result["step_id"] == "include_entities"
-
-    result2 = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_ENTITIES: []})
-    assert result2["type"] == "form"
-    assert result2["step_id"] == "include_entities"
-    assert result2["errors"] == {"base": "entities_not_selected"}
+    assert result["errors"] == {"base": "entities_not_selected"}
 
 
 async def test_config_flow_cloud(hass, aioclient_mock):
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
-    assert result["type"] == "form"
-    assert result["step_id"] == "include_entities"
-
     result2 = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {CONF_ENTITIES: ["foo.bar", "script.test"]}
+        await _async_forward_to_step_include_entites(hass),
+        {CONF_ENTITIES: ["foo.bar", "script.test"]},
     )
     assert result2["type"] == "form"
     assert result2["step_id"] == "connection_type"
@@ -114,6 +130,7 @@ async def test_config_flow_cloud(hass, aioclient_mock):
         "devices_discovered": False,
     }
     assert result5["options"] == {
+        "filter_source": "config_entry",
         "filter": {"include_entities": ["foo.bar", "script.test"]},
     }
 
@@ -122,12 +139,8 @@ async def test_config_flow_cloud(hass, aioclient_mock):
 
 
 async def test_config_flow_direct(hass):
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
-    assert result["type"] == "form"
-    assert result["step_id"] == "include_entities"
-
     result2 = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {CONF_ENTITIES: ["foo.bar", "script.test"]}
+        await _async_forward_to_step_include_entites(hass), {CONF_ENTITIES: ["foo.bar", "script.test"]}
     )
     assert result2["type"] == "form"
     assert result2["step_id"] == "connection_type"
@@ -142,6 +155,7 @@ async def test_config_flow_direct(hass):
     assert result3["title"] == "YSH: Direct"
     assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
     assert result3["options"] == {
+        "filter_source": "config_entry",
         "filter": {"include_entities": ["foo.bar", "script.test"]},
     }
 
@@ -149,72 +163,30 @@ async def test_config_flow_direct(hass):
     assert len(component._entry_datas) == 1
 
 
-async def test_config_flow_with_yaml_no_filter(hass):
-    with patch_yaml_files(
-        {
-            YAML_CONFIG_FILE: """
-yandex_smart_home:
-  settings:
-    cloud_stream: false"""
-        }
-    ):
-        await async_setup_component(hass, DOMAIN, await async_integration_yaml_config(hass, DOMAIN))
-
+async def test_config_flow_direct_filter_source_yaml(hass):
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     assert result["type"] == "form"
-    assert result["step_id"] == "include_entities"
-
-    result2 = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {CONF_ENTITIES: ["foo.bar", "script.test"]}
-    )
-    assert result2["type"] == "form"
-    assert result2["step_id"] == "connection_type"
-    assert result2["errors"] == {}
-
-    result3 = await hass.config_entries.flow.async_configure(
-        result2["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT}
-    )
-    await hass.async_block_till_done()
-
-    assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert result3["title"] == "YSH: Direct"
-    assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
-    assert result3["options"] == {"filter": {"include_entities": ["foo.bar", "script.test"]}}
-
-    component: YandexSmartHome = hass.data[DOMAIN]
-    assert len(component._entry_datas) == 1
-
-
-async def test_config_flow_with_yaml_filter(hass):
-    with patch_yaml_files(
-        {
-            YAML_CONFIG_FILE: """
-yandex_smart_home:
-  filter:
-    include_domains:
-      - script"""
-        }
-    ):
-        await async_setup_component(hass, DOMAIN, await async_integration_yaml_config(hass, DOMAIN))
-
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
-    assert result["type"] == "form"
-    assert result["step_id"] == "filter_yaml"
+    assert result["step_id"] == "user"
 
     result2 = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     assert result2["type"] == "form"
-    assert result2["step_id"] == "connection_type"
-    assert result2["errors"] == {}
+    assert result2["step_id"] == "expose_settings"
 
     result3 = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT}
+        result["flow_id"], {const.CONF_FILTER_SOURCE: EntityFilterSource.YAML}
+    )
+    assert result3["type"] == "form"
+    assert result3["step_id"] == "connection_type"
+
+    result4 = await hass.config_entries.flow.async_configure(
+        result3["flow_id"], {const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT}
     )
     await hass.async_block_till_done()
 
-    assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert result3["title"] == "YSH: Direct"
-    assert result3["data"] == {"connection_type": "direct", "devices_discovered": False}
-    assert result3["options"] == {}
+    assert result4["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result4["title"] == "YSH: Direct"
+    assert result4["data"] == {"connection_type": "direct", "devices_discovered": False}
+    assert result4["options"] == {"filter_source": "yaml"}
 
     component: YandexSmartHome = hass.data[DOMAIN]
     assert len(component._entry_datas) == 1
@@ -227,7 +199,7 @@ async def test_options_step_init_cloud(hass):
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
     assert result["step_id"] == "init"
-    assert result["menu_options"] == ["include_entities", "connection_type", "cloud_info", "cloud_settings"]
+    assert result["menu_options"] == ["expose_settings", "connection_type", "cloud_info", "cloud_settings"]
 
 
 async def test_options_step_init_direct(hass):
@@ -237,7 +209,7 @@ async def test_options_step_init_direct(hass):
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
     assert result["step_id"] == "init"
-    assert result["menu_options"] == ["include_entities", "connection_type"]
+    assert result["menu_options"] == ["expose_settings", "connection_type"]
 
 
 @pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])
@@ -423,34 +395,33 @@ async def test_options_step_cloud_settings(hass, hass_admin_user):
     assert config_entry.options["user_id"] == hass_admin_user.id
 
 
-async def test_options_step_include_entities_with_yaml_filters(hass):
-    with patch_yaml_files(
-        {
-            YAML_CONFIG_FILE: """
-yandex_smart_home:
-  filter:
-    include_domains:
-      - script"""
-        }
-    ):
-        await async_setup_component(hass, DOMAIN, await async_integration_yaml_config(hass, DOMAIN))
-
+@pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])
+async def test_options_flow_expose_settings(hass, connection_type):
     config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
     config_entry.add_to_hass(hass)
+    assert config_entry.options[const.CONF_FILTER_SOURCE] == EntityFilterSource.CONFIG_ENTRY
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == data_entry_flow.RESULT_TYPE_MENU
     assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input={"next_step_id": "include_entities"}
+        result["flow_id"], user_input={"next_step_id": "expose_settings"}
     )
     assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
-    assert result2["step_id"] == "filter_yaml"
+    assert result2["step_id"] == "expose_settings"
 
-    result3 = await hass.config_entries.options.async_configure(result2["flow_id"], user_input={})
-    assert result3["type"] == data_entry_flow.RESULT_TYPE_MENU
-    assert result3["step_id"] == "init"
+    result3 = await hass.config_entries.options.async_configure(
+        result2["flow_id"], user_input={const.CONF_FILTER_SOURCE: EntityFilterSource.YAML}
+    )
+    assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert config_entry.options == {
+        "filter_source": "yaml",
+        "filter": {
+            "include_domains": ["fan", "humidifier", "vacuum", "media_player", "climate"],
+            "include_entities": ["lock.test"],
+        },
+    }
 
 
 @pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])
@@ -469,17 +440,24 @@ async def test_options_flow_include_entities(hass, connection_type):
     assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input={"next_step_id": "include_entities"}
+        result["flow_id"], user_input={"next_step_id": "expose_settings"}
     )
     assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
-    assert result2["step_id"] == "include_entities"
-    assert list(result2["data_schema"].schema.keys())[0].default() == ["climate.foo", "fan.foo", "lock.test"]
+    assert result2["step_id"] == "expose_settings"
 
     result3 = await hass.config_entries.options.async_configure(
-        result2["flow_id"], user_input={"entities": ["climate.foo", "fan.foo", "lock.test", "script.foo"]}
+        result2["flow_id"], user_input={const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY}
     )
-    assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result3["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result3["step_id"] == "include_entities"
+    assert list(result3["data_schema"].schema.keys())[0].default() == ["climate.foo", "fan.foo", "lock.test"]
+
+    result4 = await hass.config_entries.options.async_configure(
+        result3["flow_id"], user_input={"entities": ["climate.foo", "fan.foo", "lock.test", "script.foo"]}
+    )
+    assert result4["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
     assert config_entry.options == {
+        "filter_source": "config_entry",
         "filter": {"include_entities": ["climate.foo", "fan.foo", "lock.test", "script.foo"]},
     }
 
@@ -496,13 +474,19 @@ async def test_options_flow_filter_no_entities(hass, connection_type):
     assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input={"next_step_id": "include_entities"}
+        result["flow_id"], user_input={"next_step_id": "expose_settings"}
     )
     assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
-    assert result2["step_id"] == "include_entities"
+    assert result2["step_id"] == "expose_settings"
 
-    result3 = await hass.config_entries.options.async_configure(result["flow_id"], user_input={"entities": []})
-    assert result3["errors"]["base"] == "entities_not_selected"
+    result3 = await hass.config_entries.options.async_configure(
+        result2["flow_id"], user_input={const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY}
+    )
+    assert result3["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result3["step_id"] == "include_entities"
+
+    result4 = await hass.config_entries.options.async_configure(result["flow_id"], user_input={"entities": []})
+    assert result4["errors"]["base"] == "entities_not_selected"
 
 
 async def test_config_entry_title_default():

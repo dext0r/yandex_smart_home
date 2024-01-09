@@ -203,13 +203,14 @@
               '*',
             ]),
           }),
+          'filter_source': 'config_entry',
         }),
         'pref_disable_new_entities': False,
         'pref_disable_polling': False,
         'source': 'user',
         'title': 'Mock Title',
         'unique_id': None,
-        'version': 3,
+        'version': 4,
       }),
       'yaml_config': dict({
         'entity_config': dict({

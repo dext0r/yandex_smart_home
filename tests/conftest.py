@@ -15,7 +15,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
 from syrupy import SnapshotAssertion
 
-from custom_components.yandex_smart_home import DOMAIN, ConnectionType, const
+from custom_components.yandex_smart_home import DOMAIN, ConnectionType, EntityFilterSource, const
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 
 pytest_plugins = "pytest_homeassistant_custom_component"
@@ -64,7 +64,10 @@ def config_entry_direct():
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
-        options={const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]}},
+        options={
+            const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
+            const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]},
+        },
     )
 
 
@@ -80,7 +83,10 @@ def config_entry_cloud():
                 const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "token-foo",
             },
         },
-        options={const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]}},
+        options={
+            const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
+            const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]},
+        },
     )
 
 

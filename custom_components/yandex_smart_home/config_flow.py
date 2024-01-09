@@ -12,29 +12,38 @@ from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
+from homeassistant.helpers.selector import SelectOptionDict, SelectSelector, SelectSelectorConfig, SelectSelectorMode
 import voluptuous as vol
 
 from . import DOMAIN, FILTER_SCHEMA, const
 from .cloud import register_cloud_instance
-from .const import ConnectionType
+from .const import ConnectionType, EntityFilterSource
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers import ConfigType
 
-    from . import YandexSmartHome
-
 _LOGGER = logging.getLogger(__name__)
 
 CONNECTION_TYPES = {ConnectionType.CLOUD: "Через облако", ConnectionType.DIRECT: "Напрямую"}
 DEFAULT_CONFIG_ENTRY_TITLE = "Yandex Smart Home"
+FILTER_SOURCE_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        mode=SelectSelectorMode.LIST,
+        translation_key=const.CONF_FILTER_SOURCE,
+        options=[
+            SelectOptionDict(value=EntityFilterSource.CONFIG_ENTRY, label=EntityFilterSource.CONFIG_ENTRY),
+            SelectOptionDict(value=EntityFilterSource.YAML, label=EntityFilterSource.YAML),
+        ],
+    ),
+)
 
 
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Yandex Smart Home."""
 
-    VERSION = 3
+    VERSION = 4
 
     def __init__(self) -> None:
         """Initialize a config flow handler."""
@@ -48,19 +57,32 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
 
-        if DOMAIN in self.hass.data:
-            component: YandexSmartHome = self.hass.data[DOMAIN]
-            if component.yaml_config_has_filter():
-                return await self.async_step_filter_yaml()
-
-        return await self.async_step_include_entities()
-
-    async def async_step_filter_yaml(self, user_input: ConfigType | None = None) -> FlowResult:
-        """Show warning about filter was configured in yaml."""
         if user_input is not None:
-            return await self.async_step_connection_type()
+            return await self.async_step_expose_settings()
 
-        return self.async_show_form(step_id="filter_yaml")
+        return self.async_show_form(step_id="user")
+
+    async def async_step_expose_settings(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose entity expose settings."""
+        if user_input is not None:
+            self._options.update(user_input)
+
+            match user_input[const.CONF_FILTER_SOURCE]:
+                case EntityFilterSource.CONFIG_ENTRY:
+                    return await self.async_step_include_entities()
+                case EntityFilterSource.YAML:
+                    return await self.async_step_connection_type()
+
+        return self.async_show_form(
+            step_id="expose_settings",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        const.CONF_FILTER_SOURCE, default=EntityFilterSource.CONFIG_ENTRY
+                    ): FILTER_SOURCE_SELECTOR
+                }
+            ),
+        )
 
     async def async_step_include_entities(self, user_input: ConfigType | None = None) -> FlowResult:
         """Choose entities that should be exposed."""
@@ -141,27 +163,38 @@ class OptionsFlowHandler(OptionsFlow):
 
     async def async_step_init(self, _: ConfigType | None = None) -> FlowResult:
         """Show menu."""
-        options = ["include_entities", "connection_type"]
+        options = ["expose_settings", "connection_type"]
         if self._data[const.CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
             options += ["cloud_info", "cloud_settings"]
 
         return self.async_show_menu(step_id="init", menu_options=options)
 
-    async def async_step_filter_yaml(self, user_input: ConfigType | None = None) -> FlowResult:
-        """Show warning about filter was configured in yaml."""
+    async def async_step_expose_settings(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose entity expose settings."""
         if user_input is not None:
-            return await self.async_step_init()
+            self._options.update(user_input)
 
-        return self.async_show_form(step_id="filter_yaml")
+            match user_input[const.CONF_FILTER_SOURCE]:
+                case EntityFilterSource.CONFIG_ENTRY:
+                    return await self.async_step_include_entities()
+
+            return await self.async_step_done()
+
+        return self.async_show_form(
+            step_id="expose_settings",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        const.CONF_FILTER_SOURCE, default=self._options[const.CONF_FILTER_SOURCE]
+                    ): FILTER_SOURCE_SELECTOR
+                }
+            ),
+        )
 
     async def async_step_include_entities(self, user_input: ConfigType | None = None) -> FlowResult:
         """Choose entities that should be exposed."""
-
         errors = {}
         entities: set[str] = set()
-        component: YandexSmartHome = self.hass.data[DOMAIN]
-        if component.yaml_config_has_filter():
-            return await self.async_step_filter_yaml()
 
         if const.CONF_FILTER in self._options:
             entities = set(self._options[const.CONF_FILTER].get(CONF_INCLUDE_ENTITIES, []))

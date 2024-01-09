@@ -20,6 +20,7 @@ CONF_USER_ID = "user_id"
 CONF_COLOR_PROFILE = "color_profile"
 CONF_ENTITY_CONFIG = "entity_config"
 CONF_FILTER = "filter"
+CONF_FILTER_SOURCE = "filter_source"
 CONF_NAME = "name"
 CONF_ROOM = "room"
 CONF_TYPE = "type"
@@ -163,6 +164,13 @@ class ConnectionType(StrEnum):
 
     DIRECT = "direct"
     CLOUD = "cloud"
+
+
+class EntityFilterSource(StrEnum):
+    """Possible sources for entity filter."""
+
+    CONFIG_ENTRY = "config_entry"
+    YAML = "yaml"
 
 
 class MediaPlayerFeature(StrEnum):

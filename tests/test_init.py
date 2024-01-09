@@ -11,7 +11,14 @@ from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture, patch_yaml_files
 
-from custom_components.yandex_smart_home import DOMAIN, ConnectionType, YandexSmartHome, cloud, const
+from custom_components.yandex_smart_home import (
+    DOMAIN,
+    ConnectionType,
+    EntityFilterSource,
+    YandexSmartHome,
+    cloud,
+    const,
+)
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 
 from . import test_cloud
@@ -294,6 +301,7 @@ async def test_setup_entry_filters(hass, hass_admin_user):
         version=ConfigFlowHandler.VERSION,
         data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
         options={
+            const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
             const.CONF_FILTER: {
                 "include_domains": [
                     "media_player",
@@ -345,7 +353,29 @@ yandex_smart_home:
         await hass.async_block_till_done()
 
         entry_data = component.get_entry_data(config_entry)
+        assert entry_data.should_expose("media_player.test") is True
+        assert entry_data.should_expose("climate.test") is True
+        assert entry_data.should_expose("climate.front_gate") is False
+
+        options = config_entry.options.copy()
+        options[const.CONF_FILTER_SOURCE] = EntityFilterSource.YAML
+        hass.config_entries.async_update_entry(config_entry, options=options)
+        await hass.async_block_till_done()
+
+        entry_data = component.get_entry_data(config_entry)
         assert entry_data.should_expose("light.test") is True
+        assert entry_data.should_expose("climate.test") is False
+
+    with patch_yaml_files({YAML_CONFIG_FILE: "default_config:"}):
+        await hass.services.async_call(
+            DOMAIN, SERVICE_RELOAD, blocking=True, context=Context(user_id=hass_admin_user.id)
+        )
+        await hass.async_block_till_done()
+
+        entry_data = component.get_entry_data(config_entry)
+        assert entry_data._entity_filter is None
+        assert entry_data.should_expose("media_player.test") is False
+        assert entry_data.should_expose("light.test") is False
         assert entry_data.should_expose("climate.test") is False
 
 
@@ -452,14 +482,18 @@ async def test_migrate_entity_v1(hass):
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 3
+    assert entity.version == 4
     assert entity.title == "Yandex Smart Home Test"
     assert entity.data == {
         "cloud_instance": {"id": "foo", "password": "bar", "token": "xxx"},
         "connection_type": "direct",
         "devices_discovered": False,
     }
-    assert entity.options == {"filter": {"include_entities": ["switch.ac"]}, "user_id": "user"}
+    assert entity.options == {
+        "filter_source": "config_entry",
+        "filter": {"include_entities": ["switch.ac"]},
+        "user_id": "user",
+    }
 
     entity = MockConfigEntry(
         domain=DOMAIN,
@@ -470,13 +504,13 @@ async def test_migrate_entity_v1(hass):
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 3
+    assert entity.version == 4
     assert entity.title == "Yandex Smart Home Test"
     assert entity.data == {
         "connection_type": "direct",
         "devices_discovered": True,
     }
-    assert entity.options == {}
+    assert entity.options == {"filter_source": "config_entry"}
 
 
 @pytest.mark.parametrize(
@@ -507,12 +541,41 @@ async def test_migrate_entity_v2(hass, source_title, connection_type, expected_t
         await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    assert entry.version == 3
+    assert entry.version == 4
     assert entry.title == expected_title
     assert entry.data == {
         "connection_type": connection_type,
         "cloud_instance": {"id": "1234567890", "password": "bar", "token": "xxx"},
         "bar": "foo",
     }
-    assert entry.options == {"foo": "bar"}
+    assert entry.options == {"filter_source": "config_entry", "foo": "bar"}
     await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_migrate_entity_v3_with_config(hass):
+    await async_setup_component(hass, DOMAIN, {DOMAIN: {"filter": {}}})
+
+    entity = MockConfigEntry(
+        domain=DOMAIN,
+        version=3,
+        title="Yandex Smart Home",
+        data={
+            "connection_type": "direct",
+            "devices_discovered": False,
+        },
+        options={"filter": {"include_entities": ["switch.ac"]}},
+    )
+    entity.add_to_hass(hass)
+    await hass.config_entries.async_setup(entity.entry_id)
+    await hass.async_block_till_done()
+
+    assert entity.version == 4
+    assert entity.title == "Yandex Smart Home"
+    assert entity.data == {
+        "connection_type": "direct",
+        "devices_discovered": False,
+    }
+    assert entity.options == {
+        "filter_source": "yaml",
+        "filter": {"include_entities": ["switch.ac"]},
+    }
