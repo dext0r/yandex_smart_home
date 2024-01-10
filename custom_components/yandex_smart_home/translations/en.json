@@ -114,6 +114,12 @@
     }
   },
   "selector": {
+    "connection_type": {
+      "options": {
+        "cloud": "Через облако",
+        "direct": "Напрямую"
+      }
+    },
     "filter_source": {
       "options": {
         "config_entry": "Через интерфейс (рекомендуется)",

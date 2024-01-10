@@ -32,9 +32,19 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-CONNECTION_TYPES = {ConnectionType.CLOUD: "Через облако", ConnectionType.DIRECT: "Напрямую"}
 DEFAULT_CONFIG_ENTRY_TITLE = "Yandex Smart Home"
 USER_NONE = "none"
+
+CONNECTION_TYPE_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        mode=SelectSelectorMode.LIST,
+        translation_key=const.CONF_CONNECTION_TYPE,
+        options=[
+            SelectOptionDict(value=ConnectionType.CLOUD, label=ConnectionType.CLOUD),
+            SelectOptionDict(value=ConnectionType.DIRECT, label=ConnectionType.DIRECT),
+        ],
+    ),
+)
 FILTER_SOURCE_SELECTOR = SelectSelector(
     SelectSelectorConfig(
         mode=SelectSelectorMode.LIST,
@@ -220,7 +230,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="connection_type",
             data_schema=vol.Schema(
-                {vol.Required(const.CONF_CONNECTION_TYPE, default=ConnectionType.CLOUD): vol.In(CONNECTION_TYPES)}
+                {vol.Required(const.CONF_CONNECTION_TYPE, default=ConnectionType.CLOUD): CONNECTION_TYPE_SELECTOR}
             ),
             errors=errors,
         )
@@ -284,9 +294,9 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
             step_id="connection_type",
             data_schema=vol.Schema(
                 {
-                    vol.Required(const.CONF_CONNECTION_TYPE, default=self._data[const.CONF_CONNECTION_TYPE]): vol.In(
-                        CONNECTION_TYPES
-                    )
+                    vol.Required(
+                        const.CONF_CONNECTION_TYPE, default=self._data[const.CONF_CONNECTION_TYPE]
+                    ): CONNECTION_TYPE_SELECTOR
                 }
             ),
             errors=errors,
