@@ -2,16 +2,16 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Mapping
 
 from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant.auth.const import GROUP_ID_READ_ONLY
 from homeassistant.config_entries import ConfigFlow, OptionsFlow
-from homeassistant.const import CONF_ENTITIES
+from homeassistant.const import CONF_ENTITIES, CONF_ID
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.data_entry_flow import FlowHandler, FlowResult
 from homeassistant.helpers import selector
-from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
+from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES, EntityFilter
 from homeassistant.helpers.selector import (
     BooleanSelector,
     SelectOptionDict,
@@ -41,13 +41,129 @@ FILTER_SOURCE_SELECTOR = SelectSelector(
         translation_key=const.CONF_FILTER_SOURCE,
         options=[
             SelectOptionDict(value=EntityFilterSource.CONFIG_ENTRY, label=EntityFilterSource.CONFIG_ENTRY),
+            SelectOptionDict(
+                value=EntityFilterSource.GET_FROM_CONFIG_ENTRY, label=EntityFilterSource.GET_FROM_CONFIG_ENTRY
+            ),
             SelectOptionDict(value=EntityFilterSource.YAML, label=EntityFilterSource.YAML),
         ],
     ),
 )
 
 
-class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
+class BaseFlowHandler(FlowHandler):
+    """Handle shared steps between config and options flow for Yandex Smart Home."""
+
+    _async_step_filter_settings_done: Callable[[ConfigType | None], Coroutine[Any, Any, FlowResult]]
+
+    def __init__(self) -> None:
+        """Initialize a flow handler."""
+        self._options: ConfigType = {}
+        self._entry: ConfigEntry | None = None
+
+        super().__init__()
+
+    async def async_step_expose_settings(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose entity expose settings."""
+        if user_input is not None:
+            self._options.update(user_input)
+
+            match user_input[const.CONF_FILTER_SOURCE]:
+                case EntityFilterSource.CONFIG_ENTRY:
+                    return await self.async_step_include_entities()
+                case EntityFilterSource.GET_FROM_CONFIG_ENTRY:
+                    return await self.async_step_update_filter()
+
+            return await self._async_step_filter_settings_done(None)
+
+        return self.async_show_form(
+            step_id="expose_settings",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        const.CONF_FILTER_SOURCE,
+                        default=self._options.get(const.CONF_FILTER_SOURCE, EntityFilterSource.CONFIG_ENTRY),
+                    ): FILTER_SOURCE_SELECTOR,
+                    vol.Required(
+                        const.CONF_ENTRY_ALIASES,
+                        default=self._options.get(const.CONF_ENTRY_ALIASES, True),
+                    ): BooleanSelector(),
+                }
+            ),
+        )
+
+    async def async_step_update_filter(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose a config entry from which the filter will be copied."""
+        if user_input is not None:
+            if entry := self.hass.config_entries.async_get_entry(user_input.get(CONF_ID, "")):
+                self._options.update(
+                    {
+                        const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
+                        const.CONF_FILTER: entry.options[const.CONF_FILTER],
+                    }
+                )
+
+                return await self.async_step_include_entities()
+
+        config_entries = [
+            entry
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
+            if const.CONF_FILTER in entry.options and (not self._entry or self._entry.entry_id != entry.entry_id)
+        ]
+        if not config_entries:
+            return self.async_show_form(step_id="update_filter", errors={"base": "missing_config_entry"})
+
+        return self.async_show_form(
+            step_id="update_filter",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_ID): SelectSelector(
+                        SelectSelectorConfig(
+                            mode=SelectSelectorMode.LIST,
+                            options=[
+                                SelectOptionDict(value=entry.entry_id, label=entry.title) for entry in config_entries
+                            ],
+                        ),
+                    )
+                }
+            ),
+        )
+
+    async def async_step_include_entities(self, user_input: ConfigType | None = None) -> FlowResult:
+        """Choose entities that should be exposed."""
+        errors = {}
+        entities: set[str] = set()
+
+        if entity_filter_config := self._options.get(const.CONF_FILTER):
+            entities.update(entity_filter_config.get(CONF_INCLUDE_ENTITIES, []))
+
+            if len(entity_filter_config) > 1 or CONF_INCLUDE_ENTITIES not in entity_filter_config:
+                entity_filter: EntityFilter = FILTER_SCHEMA(entity_filter_config)
+                if not entity_filter.empty_filter:
+                    entities.update([s.entity_id for s in self.hass.states.async_all() if entity_filter(s.entity_id)])
+
+        if user_input is not None:
+            if user_input[CONF_ENTITIES]:
+                self._options[const.CONF_FILTER] = {CONF_INCLUDE_ENTITIES: user_input[CONF_ENTITIES]}
+
+                return await self._async_step_filter_settings_done(None)
+            else:
+                errors["base"] = "entities_not_selected"
+                entities.clear()
+
+        return self.async_show_form(
+            step_id="include_entities",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_ENTITIES, default=sorted(entities)): selector.EntitySelector(
+                        selector.EntitySelectorConfig(multiple=True)
+                    )
+                }
+            ),
+            errors=errors,
+        )
+
+
+class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Yandex Smart Home."""
 
     VERSION = 4
@@ -57,7 +173,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         super().__init__()
 
         self._data: ConfigType = {const.CONF_DEVICES_DISCOVERED: False}
-        self._options: ConfigType = {}
+        self._async_step_filter_settings_done = self.async_step_connection_type
 
     async def async_step_user(self, user_input: ConfigType | None = None) -> FlowResult:
         """Handle a flow initialized by the user."""
@@ -68,47 +184,6 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             return await self.async_step_expose_settings()
 
         return self.async_show_form(step_id="user")
-
-    async def async_step_expose_settings(self, user_input: ConfigType | None = None) -> FlowResult:
-        """Choose entity expose settings."""
-        if user_input is not None:
-            self._options.update(user_input)
-
-            match user_input[const.CONF_FILTER_SOURCE]:
-                case EntityFilterSource.CONFIG_ENTRY:
-                    return await self.async_step_include_entities()
-                case EntityFilterSource.YAML:
-                    return await self.async_step_connection_type()
-
-        return self.async_show_form(
-            step_id="expose_settings",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        const.CONF_FILTER_SOURCE, default=EntityFilterSource.CONFIG_ENTRY
-                    ): FILTER_SOURCE_SELECTOR,
-                    vol.Required(const.CONF_ENTRY_ALIASES, default=True): BooleanSelector(),
-                },
-            ),
-        )
-
-    async def async_step_include_entities(self, user_input: ConfigType | None = None) -> FlowResult:
-        """Choose entities that should be exposed."""
-        errors = {}
-        if user_input is not None:
-            if user_input[CONF_ENTITIES]:
-                self._options[const.CONF_FILTER] = {CONF_INCLUDE_ENTITIES: user_input[CONF_ENTITIES]}
-                return await self.async_step_connection_type()
-            else:
-                errors["base"] = "entities_not_selected"
-
-        return self.async_show_form(
-            step_id="include_entities",
-            data_schema=vol.Schema(
-                {vol.Required(CONF_ENTITIES): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True))}
-            ),
-            errors=errors,
-        )
 
     async def async_step_connection_type(self, user_input: ConfigType | None = None) -> FlowResult:
         """Choose connection type."""
@@ -157,17 +232,17 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         return OptionsFlowHandler(entry)
 
 
-class OptionsFlowHandler(OptionsFlow):
+class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
     """Handle a options flow for Yandex Smart Home."""
 
     def __init__(self, entry: ConfigEntry):
         """Initialize an options flow handler."""
-
         super().__init__()
 
-        self._entry = entry
+        self._entry: ConfigEntry = entry
         self._data: ConfigType = entry.data.copy()
         self._options: ConfigType = entry.options.copy()
+        self._async_step_filter_settings_done = self.async_step_done
 
     async def async_step_init(self, _: ConfigType | None = None) -> FlowResult:
         """Show menu."""
@@ -176,65 +251,6 @@ class OptionsFlowHandler(OptionsFlow):
             options += ["cloud_info", "context_user"]
 
         return self.async_show_menu(step_id="init", menu_options=options)
-
-    async def async_step_expose_settings(self, user_input: ConfigType | None = None) -> FlowResult:
-        """Choose entity expose settings."""
-        if user_input is not None:
-            self._options.update(user_input)
-
-            match user_input[const.CONF_FILTER_SOURCE]:
-                case EntityFilterSource.CONFIG_ENTRY:
-                    return await self.async_step_include_entities()
-
-            return await self.async_step_done()
-
-        return self.async_show_form(
-            step_id="expose_settings",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        const.CONF_FILTER_SOURCE, default=self._options[const.CONF_FILTER_SOURCE]
-                    ): FILTER_SOURCE_SELECTOR,
-                    vol.Required(
-                        const.CONF_ENTRY_ALIASES, default=self._options.get(const.CONF_ENTRY_ALIASES, True)
-                    ): BooleanSelector(),
-                }
-            ),
-        )
-
-    async def async_step_include_entities(self, user_input: ConfigType | None = None) -> FlowResult:
-        """Choose entities that should be exposed."""
-        errors = {}
-        entities: set[str] = set()
-
-        if const.CONF_FILTER in self._options:
-            entities = set(self._options[const.CONF_FILTER].get(CONF_INCLUDE_ENTITIES, []))
-
-            # migration from include_exclude filters
-            entity_filter = FILTER_SCHEMA(self._options[const.CONF_FILTER])
-            if not entity_filter.empty_filter:
-                entities.update([s.entity_id for s in self.hass.states.async_all() if entity_filter(s.entity_id)])
-
-        if user_input is not None:
-            if user_input[CONF_ENTITIES]:
-                self._options[const.CONF_FILTER] = {CONF_INCLUDE_ENTITIES: user_input[CONF_ENTITIES]}
-
-                return await self.async_step_done()
-            else:
-                errors["base"] = "entities_not_selected"
-                entities.clear()
-
-        return self.async_show_form(
-            step_id="include_entities",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_ENTITIES, default=sorted(entities)): selector.EntitySelector(
-                        selector.EntitySelectorConfig(multiple=True)
-                    )
-                }
-            ),
-            errors=errors,
-        )
 
     async def async_step_connection_type(self, user_input: ConfigType | None = None) -> FlowResult:
         """Choose connection type."""
@@ -317,7 +333,7 @@ class OptionsFlowHandler(OptionsFlow):
             },
         )
 
-    async def async_step_done(self) -> FlowResult:
+    async def async_step_done(self, _: ConfigType | None = None) -> FlowResult:
         """Finish the flow."""
         return self.async_create_entry(data=self._options)
 

@@ -1,5 +1,8 @@
 from homeassistant import config_entries, data_entry_flow
-from homeassistant.const import CONF_ENTITIES
+from homeassistant.config_entries import SOURCE_IGNORE
+from homeassistant.const import CONF_ENTITIES, CONF_ID
+from homeassistant.data_entry_flow import FlowResult, FlowResultType
+from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.setup import async_setup_component
 import pytest
@@ -64,6 +67,20 @@ async def _async_forward_to_step_include_entites(hass) -> str:
     return result3["flow_id"]
 
 
+async def _async_forward_to_step_update_filter(hass) -> FlowResult:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    result2 = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "expose_settings"
+
+    return await hass.config_entries.flow.async_configure(
+        result["flow_id"], {const.CONF_FILTER_SOURCE: EntityFilterSource.GET_FROM_CONFIG_ENTRY}
+    )
+
+
 async def test_config_flow_duplicate(hass):
     config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT})
     config_entry.add_to_hass(hass)
@@ -80,6 +97,60 @@ async def test_config_flow_empty_entities(hass):
     assert result["type"] == "form"
     assert result["step_id"] == "include_entities"
     assert result["errors"] == {"base": "entities_not_selected"}
+
+
+async def test_config_flow_update_filter(hass):
+    result = await _async_forward_to_step_update_filter(hass)
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "update_filter"
+    assert result["errors"] == {"base": "missing_config_entry"}
+
+    entry1 = MockConfigEntry(domain=DOMAIN, title="Mock Entry 1", data={}, options={}, source=SOURCE_IGNORE)
+    entry1.add_to_hass(hass)
+
+    result = await _async_forward_to_step_update_filter(hass)
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "update_filter"
+    assert result["errors"] == {"base": "missing_config_entry"}
+
+    entry2 = MockConfigEntry(
+        domain=DOMAIN,
+        title="Mock Entry 2",
+        data={},
+        options={const.CONF_FILTER: {CONF_INCLUDE_ENTITIES: ["switch.foo"]}},
+        source=SOURCE_IGNORE,
+    )
+    entry2.add_to_hass(hass)
+    result = await _async_forward_to_step_update_filter(hass)
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "update_filter"
+    assert result["errors"] is None
+    assert len(result["data_schema"].schema.keys()) == 1
+    assert [o["label"] for o in result["data_schema"].schema["id"].config["options"]] == ["Mock Entry 2"]
+
+    result2 = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_ID: entry2.entry_id})
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "include_entities"
+    assert result2["data_schema"]({}) == {"entities": ["switch.foo"]}
+
+    entry3 = _mock_config_entry({const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT})
+    entry3.source = SOURCE_IGNORE
+    entry3.add_to_hass(hass)
+    result = await _async_forward_to_step_update_filter(hass)
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "update_filter"
+    assert result["errors"] is None
+    assert len(result["data_schema"].schema.keys()) == 1
+    assert [o["label"] for o in result["data_schema"].schema["id"].config["options"]] == ["Mock Entry 2", "YSH: Direct"]
+
+    hass.states.async_set("climate.foo", "off")
+    hass.states.async_set("fan.foo", "off")
+    await hass.async_block_till_done()
+
+    result2 = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_ID: entry3.entry_id})
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "include_entities"
+    assert result2["data_schema"]({}) == {"entities": ["climate.foo", "fan.foo", "lock.test"]}
 
 
 async def test_config_flow_cloud(hass, aioclient_mock):
@@ -414,6 +485,7 @@ async def test_options_step_contex_user_clear(hass, hass_admin_user):
     assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
     assert result2["step_id"] == "context_user"
     assert len(result2["data_schema"].schema["user_id"].config["options"]) == 2
+    assert result2["data_schema"].schema["user_id"].config["options"][1]["value"] == hass_admin_user.id
 
     result3 = await hass.config_entries.options.async_configure(result2["flow_id"], user_input={"user_id": "none"})
     assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
@@ -451,6 +523,74 @@ async def test_options_flow_expose_settings(hass, connection_type):
             "include_domains": ["fan", "humidifier", "vacuum", "media_player", "climate"],
             "include_entities": ["lock.test"],
         },
+    }
+
+
+@pytest.mark.parametrize("connection_type", [ConnectionType.CLOUD, ConnectionType.DIRECT])
+async def test_options_flow_update_filter(hass, connection_type):
+    await async_setup_component(hass, DOMAIN, {})
+
+    config_entry = _mock_config_entry({const.CONF_CONNECTION_TYPE: connection_type})
+    config_entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result["type"] == FlowResultType.MENU
+    assert result["step_id"] == "init"
+
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "expose_settings"}
+    )
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "expose_settings"
+
+    result3 = await hass.config_entries.options.async_configure(
+        result2["flow_id"], {const.CONF_FILTER_SOURCE: EntityFilterSource.GET_FROM_CONFIG_ENTRY}
+    )
+    assert result3["type"] == FlowResultType.FORM
+    assert result3["step_id"] == "update_filter"
+    assert result3["errors"] == {"base": "missing_config_entry"}
+
+    entry1 = MockConfigEntry(domain=DOMAIN, title="Mock Entry 1", data={}, options={}, source=SOURCE_IGNORE)
+    entry1.add_to_hass(hass)
+
+    result4 = await hass.config_entries.options.async_configure(
+        result3["flow_id"], {const.CONF_FILTER_SOURCE: EntityFilterSource.GET_FROM_CONFIG_ENTRY}
+    )
+    assert result4["type"] == FlowResultType.FORM
+    assert result4["step_id"] == "update_filter"
+    assert result4["errors"] == {"base": "missing_config_entry"}
+
+    entry2 = MockConfigEntry(
+        domain=DOMAIN,
+        title="Mock Entry 2",
+        data={},
+        options={const.CONF_FILTER: {CONF_INCLUDE_ENTITIES: ["switch.foo"]}},
+        source=SOURCE_IGNORE,
+    )
+    entry2.add_to_hass(hass)
+    result5 = await hass.config_entries.options.async_configure(
+        result4["flow_id"], {const.CONF_FILTER_SOURCE: EntityFilterSource.GET_FROM_CONFIG_ENTRY}
+    )
+    assert result5["type"] == FlowResultType.FORM
+    assert result5["step_id"] == "update_filter"
+    assert result5["errors"] is None
+    assert len(result5["data_schema"].schema.keys()) == 1
+    assert [o["label"] for o in result5["data_schema"].schema["id"].config["options"]] == ["Mock Entry 2"]
+
+    result6 = await hass.config_entries.options.async_configure(result["flow_id"], {CONF_ID: entry2.entry_id})
+    assert result6["type"] == FlowResultType.FORM
+    assert result6["step_id"] == "include_entities"
+    assert result6["data_schema"]({}) == {"entities": ["switch.foo"]}
+    entities = result6["data_schema"]({})["entities"]
+
+    result7 = await hass.config_entries.options.async_configure(
+        result6["flow_id"], user_input={CONF_ENTITIES: entities}
+    )
+    assert result7["type"] == FlowResultType.CREATE_ENTRY
+    assert config_entry.options == {
+        "entry_aliases": True,
+        "filter_source": "config_entry",
+        "filter": {"include_entities": ["switch.foo"]},
     }
 
 

@@ -171,6 +171,7 @@ class EntityFilterSource(StrEnum):
     """Possible sources for entity filter."""
 
     CONFIG_ENTRY = "config_entry"
+    GET_FROM_CONFIG_ENTRY = "get_from_config_entry"
     YAML = "yaml"
 
 
