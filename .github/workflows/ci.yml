@@ -50,6 +50,10 @@ jobs:
         run: |
           python -c 'from pathlib import Path; import homeassistant; (Path(homeassistant.__file__).parent / Path("py.typed")).touch()'
 
+      - name: Fix pytest_homeassistant_custom_component type checking
+        run: |
+          python -c 'from pathlib import Path; import pytest_homeassistant_custom_component; (Path(pytest_homeassistant_custom_component.__file__).parent / Path("py.typed")).touch()'
+
       - name: Type checking
         run: mypy .
 
