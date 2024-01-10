@@ -420,7 +420,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
                             CONTAINER_FULL
                         {% endif %}
                     {% elif capability.state.instance == 'backlight' and capability.state.value %}
-                        WAT?
+                        {{ entity_id }}: WAT?
                     {% endif %}
                 """
                 )
@@ -490,7 +490,9 @@ async def test_handler_devices_action_error_template(hass, caplog):
             ]
         }
 
-        assert caplog.records[-2].message == "Error code 'WAT?' is invalid for switch.test (INTERNAL_ERROR)"
+        assert (
+            caplog.records[-2].message == "Error code 'switch.test: WAT?' is invalid for switch.test (INTERNAL_ERROR)"
+        )
 
         hass.states.async_set("sensor.foo", "bar")
         payload = json.dumps(

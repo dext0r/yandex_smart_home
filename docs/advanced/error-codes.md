@@ -8,12 +8,16 @@
 
 Если шаблон определён: перед выполнением команды компонент его вычислит и если что-то будет возвращено - команда выполнена не будет, а Алиса ответит текстом, соответствующем возвращённому коду ошибки.
 
-В шаблон передаётся переменная `capability`, содержащая информацию об умении ([документация УДЯ](https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-action.html)). 
-Самый простой способ её узнать - [подпишитесь](https://my.home-assistant.io/redirect/developer_events/) на события `yandex_smart_home_device_action` и поуправляйте устройством. 
+В шаблон передаются переменные:
+
+* `entity_id`
+* `capability`: информация об умении ([документация УДЯ](https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-action.html))
+
+Простой способ увидеть реальные значения переменных - [подпишитесь](https://my.home-assistant.io/redirect/developer_events/) на события `yandex_smart_home_device_action` и поуправляйте устройством. 
 
 Список допустимых кодов ошибок **фиксирован** ([полный список](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/response-codes.html)).
 
-Для безусловного запрета включения или отключения устройства задайте параметры `turn_on` и/или `turn_off` в [параметрах устройства](../config/entity.md#turn_on-off).
+Для безусловного запрета включения или отключения устройства задайте параметры `turn_on` и/или `turn_off` равным `false` в [параметрах устройства](../config/entity.md#turn_on-off).
 
 ## Примеры { id=examples }
 

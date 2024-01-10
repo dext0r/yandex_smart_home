@@ -349,7 +349,9 @@ class Device:
             )
 
         if error_code_template := self._error_code_template:
-            if error_code := error_code_template.async_render(capability=action.as_dict(), parse_result=False):
+            if error_code := error_code_template.async_render(
+                capability=action.as_dict(), entity_id=self.id, parse_result=False
+            ):
                 try:
                     code = ResponseCode(error_code)
                 except ValueError:
