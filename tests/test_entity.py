@@ -21,11 +21,11 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import State
+from homeassistant.helpers import area_registry as ar
 import pytest
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     async_mock_service,
-    mock_area_registry,
     mock_device_registry,
     mock_registry,
 )
@@ -73,7 +73,6 @@ def registries(hass):
     ns = SimpleNamespace()
     ns.entity = mock_registry(hass)
     ns.device = mock_device_registry(hass)
-    ns.area = mock_area_registry(hass)
     return ns
 
 
@@ -192,8 +191,8 @@ async def test_yandex_entity_properties(hass):
     ]
 
 
-async def test_yandex_entity_devices_serialize_state(hass, registries):
-    ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
+async def test_yandex_entity_devices_serialize_state(hass, registries, area_registry: ar.AreaRegistry):
+    ent_reg, dev_reg, area_reg = registries.entity, registries.device, area_registry
 
     entity_unavailable = YandexEntity(hass, BASIC_CONFIG, State('switch.test', STATE_UNAVAILABLE))
     assert await entity_unavailable.devices_serialize(ent_reg, dev_reg, area_reg) is None
@@ -224,8 +223,8 @@ async def test_yandex_entity_devices_serialize_state(hass, registries):
     assert s['type'] == const.TYPE_OPENABLE
 
 
-async def test_yandex_entity_devices_serialize_device(hass, registries):
-    ent_reg, dev_reg, area_reg = registries.entity, registries.device, registries.area
+async def test_yandex_entity_devices_serialize_device(hass, registries, area_registry: ar.AreaRegistry):
+    ent_reg, dev_reg, area_reg = registries.entity, registries.device, area_registry
     area_kitchen = area_reg.async_get_or_create('Кухня')
     area_closet = area_reg.async_get_or_create('Кладовка')
 
