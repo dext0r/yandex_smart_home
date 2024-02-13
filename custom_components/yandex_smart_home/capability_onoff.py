@@ -191,13 +191,14 @@ class OnOffCapabilityScript(OnlyOnCapability):
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
-        await self._hass.services.async_call(
-            self.state.domain,
-            SERVICE_TURN_ON,
-            {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=self.state.domain != script.DOMAIN,
-            context=context,
-        )
+        if state.value:
+            await self._hass.services.async_call(
+                self.state.domain,
+                SERVICE_TURN_ON,
+                {ATTR_ENTITY_ID: self.state.entity_id},
+                blocking=self.state.domain != script.DOMAIN,
+                context=context,
+            )
 
 
 @STATE_CAPABILITIES_REGISTRY.register
@@ -211,13 +212,14 @@ class OnOffCapabilityButton(OnlyOnCapability):
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
-        await self._hass.services.async_call(
-            self.state.domain,
-            button.SERVICE_PRESS,
-            {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
-            context=context,
-        )
+        if state.value:
+            await self._hass.services.async_call(
+                self.state.domain,
+                button.SERVICE_PRESS,
+                {ATTR_ENTITY_ID: self.state.entity_id},
+                blocking=True,
+                context=context,
+            )
 
 
 @STATE_CAPABILITIES_REGISTRY.register
@@ -231,13 +233,14 @@ class OnOffCapabilityInputButton(OnlyOnCapability):
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
-        await self._hass.services.async_call(
-            self.state.domain,
-            input_button.SERVICE_PRESS,
-            {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
-            context=context,
-        )
+        if state.value:
+            await self._hass.services.async_call(
+                self.state.domain,
+                input_button.SERVICE_PRESS,
+                {ATTR_ENTITY_ID: self.state.entity_id},
+                blocking=True,
+                context=context,
+            )
 
 
 @STATE_CAPABILITIES_REGISTRY.register
