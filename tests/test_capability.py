@@ -72,14 +72,15 @@ async def test_capability_demo_platform(hass):
         "homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM",
         [
             Platform.BUTTON,
-            Platform.SWITCH,
-            Platform.LIGHT,
-            Platform.COVER,
-            Platform.MEDIA_PLAYER,
-            Platform.FAN,
             Platform.CLIMATE,
+            Platform.COVER,
+            Platform.FAN,
             Platform.HUMIDIFIER,
+            Platform.LIGHT,
             Platform.LOCK,
+            Platform.MEDIA_PLAYER,
+            Platform.REMOTE,
+            Platform.SWITCH,
         ],
     ):
         await async_setup_component(hass, core.DOMAIN, {})
@@ -390,6 +391,18 @@ async def test_capability_demo_platform(hass):
         ("devices.capabilities.toggle", "pause"),
         ("devices.capabilities.on_off", "on"),
     ]
+
+    state = hass.states.get("remote.remote_one")
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    assert device.type == "devices.types.switch"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    assert capabilities == [("devices.capabilities.on_off", "on")]
+
+    state = hass.states.get("remote.remote_two")
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    assert device.type == "devices.types.switch"
+    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("switch.ac")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
