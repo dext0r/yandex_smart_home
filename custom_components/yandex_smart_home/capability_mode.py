@@ -496,6 +496,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         ModeCapabilityMode.QUIET: [
             climate.const.FAN_OFF,
             climate.const.FAN_DIFFUSE,
+            const.FAN_SPEED_QUIET,
         ],
         ModeCapabilityMode.MIN: [
             const.TION_FAN_SPEED_1,

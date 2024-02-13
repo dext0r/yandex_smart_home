@@ -150,6 +150,9 @@ FAN_SPEED_MID_HIGH = "mid_high"
 # SmartIR
 FAN_SPEED_HIGHEST = "highest"
 
+# https://github.com/home-assistant/core/blob/2981d7ed0ec78f2271f5b6fac26a98d1b1b280df/homeassistant/components/esphome/climate.py#L110
+FAN_SPEED_QUIET = "quiet"
+
 # https://github.com/humbertogontijo/python-roborock/blob/1616217a06e20d51921de984134555bcc0775a92/roborock/code_mappings.py#L61
 CLEANUP_MODE_OFF = "off"
 CLEANUP_MODE_SILENT = "silent"
