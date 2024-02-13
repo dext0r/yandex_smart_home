@@ -12,6 +12,7 @@ from homeassistant.components import (
     light,
     lock,
     media_player,
+    remote,
     scene,
     script,
     switch,
@@ -188,6 +189,30 @@ async def test_capability_onoff_cover(hass):
     )
     assert cap_binary.retrievable is False
     assert cap_binary.parameters.dict() == {"split": True}
+
+
+async def test_capability_onoff_remote(hass):
+    state = State("remote.test", STATE_ON)
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.reportable is False
+    assert cap.retrievable is False
+    assert cap.parameters.as_dict() == {"split": True}
+    assert cap.get_value() is None
+
+    on_calls = async_mock_service(hass, remote.DOMAIN, SERVICE_TURN_ON)
+    await cap.set_instance_state(Context(), ACTION_STATE_ON)
+    await hass.async_block_till_done()
+    assert len(on_calls) == 1
+    assert on_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
+
+    off_calls = async_mock_service(hass, remote.DOMAIN, SERVICE_TURN_OFF)
+    await cap.set_instance_state(Context(), ACTION_STATE_OFF)
+    await hass.async_block_till_done()
+    assert len(off_calls) == 1
+    assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
 async def test_capability_onoff_media_player(hass):

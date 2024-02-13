@@ -15,6 +15,7 @@ from homeassistant.components import (
     light,
     lock,
     media_player,
+    remote,
     scene,
     script,
     switch,
@@ -290,6 +291,31 @@ class OnOffCapabilityCover(OnOffCapability):
 
         await self._hass.services.async_call(
             cover.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
+        )
+
+
+@STATE_CAPABILITIES_REGISTRY.register
+class OnOffCapabilityRemote(ActionOnlyCapabilityMixin, OnOffCapability):
+    """Capability to turn on or off a remote."""
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        return self.state.domain == remote.DOMAIN
+
+    @property
+    def parameters(self) -> OnOffCapabilityParameters | None:
+        """Return parameters for a devices list request."""
+        return OnOffCapabilityParameters(split=True)
+
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
+            remote.DOMAIN,
+            self._get_service(state),
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=False,
+            context=context,
         )
 
 
