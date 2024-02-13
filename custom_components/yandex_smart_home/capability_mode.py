@@ -270,6 +270,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
         ],
         ModeCapabilityMode.AUTO: [
             humidifier.const.MODE_AUTO,
+            const.XIAOMI_HUMIDIFIER_CONST_HUMIDITY,
         ],
         ModeCapabilityMode.ECO: [
             humidifier.const.MODE_ECO,
