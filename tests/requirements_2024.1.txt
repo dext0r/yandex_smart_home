@@ -1,5 +1,5 @@
 pytest-homeassistant-custom-component==0.13.88
 aiohttp-cors==0.7.0
 home_assistant_intents==2023.7.24
-hassil==1.2.0
+hassil==1.5.1
 voluptuous-stubs==0.1.1
