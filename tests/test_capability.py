@@ -1,10 +1,23 @@
 from __future__ import annotations
 
 from typing import Any, Optional
+from unittest.mock import patch
 
 from homeassistant import core
-from homeassistant.components import button, climate, cover, fan, humidifier, light, lock, media_player, switch
-from homeassistant.const import STATE_ON
+from homeassistant.components import (
+    button,
+    climate,
+    cover,
+    demo,
+    fan,
+    humidifier,
+    light,
+    lock,
+    media_player,
+    remote,
+    switch,
+)
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, STATE_ON, Platform
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
@@ -112,14 +125,34 @@ def test_capability(hass):
 
 
 async def test_capability_demo_platform(hass):
-    await async_setup_component(hass, core.DOMAIN, {})
-    components = [button, switch, light, cover, media_player, fan, climate, humidifier, lock]
+    if MAJOR_VERSION >= 2024 or (MAJOR_VERSION == 2023 and MINOR_VERSION >= 11):
+        with patch(
+            'homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM',
+            [
+                Platform.BUTTON,
+                Platform.CLIMATE,
+                Platform.COVER,
+                Platform.FAN,
+                Platform.HUMIDIFIER,
+                Platform.LIGHT,
+                Platform.LOCK,
+                Platform.MEDIA_PLAYER,
+                Platform.REMOTE,
+                Platform.SWITCH,
+            ],
+        ):
+            await async_setup_component(hass, core.DOMAIN, {})
+            await async_setup_component(hass, demo.DOMAIN, {})
+            await hass.async_block_till_done()
+    else:
+        await async_setup_component(hass, core.DOMAIN, {})
+        components = [button, switch, light, cover, media_player, fan, climate, humidifier, lock, remote]
 
-    for component in components:
-        await async_setup_component(
-            hass, component.DOMAIN, {component.DOMAIN: [{'platform': 'demo'}]}
-        )
-    await hass.async_block_till_done()
+        for component in components:
+            await async_setup_component(
+                hass, component.DOMAIN, {component.DOMAIN: [{'platform': 'demo'}]}
+            )
+        await hass.async_block_till_done()
 
     # for x in sorted(hass.states.async_all(), key=lambda e: e.entity_id):
     #     e = YandexEntity(hass, BASIC_CONFIG, x)
@@ -351,6 +384,18 @@ async def test_capability_demo_platform(hass):
     assert capabilities == [('devices.capabilities.range', 'volume'), ('devices.capabilities.range', 'channel'),
                             ('devices.capabilities.toggle', 'mute'), ('devices.capabilities.toggle', 'pause'),
                             ('devices.capabilities.on_off', 'on')]
+
+    state = hass.states.get('remote.remote_one')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == 'devices.types.switch'
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on')]
+
+    state = hass.states.get('remote.remote_two')
+    entity = YandexEntity(hass, BASIC_CONFIG, state)
+    assert entity.yandex_device_type == 'devices.types.switch'
+    capabilities = list((c.type, c.instance) for c in entity.capabilities())
+    assert capabilities == [('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('switch.ac')
     entity = YandexEntity(hass, BASIC_CONFIG, state)

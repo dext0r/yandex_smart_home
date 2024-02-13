@@ -10,6 +10,7 @@ from homeassistant.components import (
     light,
     lock,
     media_player,
+    remote,
     scene,
     script,
     switch,
@@ -160,6 +161,27 @@ async def test_capability_onoff_cover(hass):
     cap_binary = get_exact_one_capability(hass, config, state_binary, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert not cap_binary.retrievable
     assert cap_binary.parameters() == {'split': True}
+
+
+async def test_capability_onoff_remote(hass):
+    state = State('remote.test', STATE_ON)
+    cap_open = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+
+    assert cap_open.retrievable is False
+    assert cap_open.get_value() is None
+    assert cap_open.parameters() == {'split': True}
+
+    on_calls = async_mock_service(hass, remote.DOMAIN, SERVICE_TURN_ON)
+    await cap_open.set_state(BASIC_DATA, {'value': True})
+    await hass.async_block_till_done()
+    assert len(on_calls) == 1
+    assert on_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
+
+    off_calls = async_mock_service(hass, remote.DOMAIN, SERVICE_TURN_OFF)
+    await cap_open.set_state(BASIC_DATA, {'value': False})
+    await hass.async_block_till_done()
+    assert len(off_calls) == 1
+    assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
 async def test_capability_onoff_media_player(hass):
