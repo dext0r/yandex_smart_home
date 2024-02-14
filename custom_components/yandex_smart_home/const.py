@@ -716,6 +716,8 @@ XIAOMI_AIRPURIFIER_PRESET_MIDDLE = 'Middle'
 
 # https://github.com/home-assistant/core/blob/d5a8f1af1d2dc74a12fb6870a4f1cb5318f88bf9/homeassistant/components/xiaomi_miio/humidifier.py#L316
 XIAOMI_HUMIDIFIER_PRESET_MID = 'Mid'
+# leshow.humidifier.jsq1
+XIAOMI_HUMIDIFIER_CONST_HUMIDITY = 'Const Humidity'
 
 # https://github.com/airens/tion_home_assistant#climateset_fan_mode
 TION_FAN_SPEED_1 = '1'
@@ -746,7 +748,7 @@ FAN_SPEED_MID_HIGH = 'mid_high'
 FAN_SPEED_HIGHEST = 'highest'
 
 # https://github.com/home-assistant/core/blob/2981d7ed0ec78f2271f5b6fac26a98d1b1b280df/homeassistant/components/esphome/climate.py#L110
-FAN_SPEED_QUIET = "quiet"
+FAN_SPEED_QUIET = 'quiet'
 
 # https://github.com/humbertogontijo/python-roborock/blob/1616217a06e20d51921de984134555bcc0775a92/roborock/code_mappings.py#L61
 CLEANUP_MODE_OFF = 'off'
