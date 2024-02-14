@@ -480,6 +480,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         const.MODE_INSTANCE_MODE_QUIET: [
             climate.const.FAN_OFF,
             climate.const.FAN_DIFFUSE,
+            const.FAN_SPEED_QUIET,
         ],
         const.MODE_INSTANCE_MODE_MIN: [
             const.TION_FAN_SPEED_1,
