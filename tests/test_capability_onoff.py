@@ -131,8 +131,9 @@ async def test_capability_onoff_only_on(hass, domain, initial_state, service):
     if domain == script.DOMAIN:
         await hass.async_block_till_done()
 
-    assert len(on_calls) == 1
+    assert len(on_calls) == 2
     assert on_calls[0].data == {ATTR_ENTITY_ID: f"{domain}.test"}
+    assert on_calls[1].data == {ATTR_ENTITY_ID: f"{domain}.test"}
 
 
 async def test_capability_onoff_cover(hass):
