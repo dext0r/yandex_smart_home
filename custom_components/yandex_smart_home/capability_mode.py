@@ -744,7 +744,7 @@ class CleanupModeCapability(ModeCapability):
         const.MODE_INSTANCE_MODE_EXPRESS: ['express', '105'],
         const.MODE_INSTANCE_MODE_MEDIUM: ['medium', 'middle'],
         const.MODE_INSTANCE_MODE_NORMAL: ['normal', 'standard', 'basic', '103'],
-        const.MODE_INSTANCE_MODE_QUIET: ['quiet', 'low', 'min', const.CLEANUP_MODE_SILENT, 'eco', '101'],
+        const.MODE_INSTANCE_MODE_QUIET: ['quiet', 'low', 'min', const.CLEANUP_MODE_SILENT, 'slient', 'eco', '101'],
         const.MODE_INSTANCE_MODE_SMART: [const.CLEANUP_MODE_MAX_PLUS],
     }
 
