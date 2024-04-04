@@ -761,7 +761,7 @@ class CleanupModeCapability(StateModeCapability):
         ModeCapabilityMode.EXPRESS: ["express", "105"],
         ModeCapabilityMode.MEDIUM: ["medium", "middle"],
         ModeCapabilityMode.NORMAL: ["normal", "standard", "basic", "103"],
-        ModeCapabilityMode.QUIET: ["quiet", "low", "min", const.CLEANUP_MODE_SILENT, "eco", "101", "silent", "slient"],
+        ModeCapabilityMode.QUIET: ["quiet", "low", "min", const.CLEANUP_MODE_SILENT, "eco", "101", "slient"],
         ModeCapabilityMode.SMART: [const.CLEANUP_MODE_MAX_PLUS],
     }
 
