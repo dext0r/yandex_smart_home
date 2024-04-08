@@ -30,6 +30,11 @@ from homeassistant.helpers.event import async_call_later
 from multidict import MultiDictProxy
 import yarl
 
+try:
+    from homeassistant.helpers.http import KEY_HASS
+except ImportError:
+    KEY_HASS = 'hass'
+
 from .const import CLOUD_STREAM_BASE_URL
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,7 +59,7 @@ class ResponseMeta:
 
 class WebRequest:
     def __init__(self, hass: HomeAssistant, url: yarl.URL):
-        self.app = {'hass': hass}
+        self.app = {KEY_HASS: hass}
         self._url = url
 
     @property
