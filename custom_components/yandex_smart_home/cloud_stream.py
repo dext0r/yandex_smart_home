@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home cloud connection manager for video streaming."""
+
 import asyncio
 from datetime import timedelta
 import logging
@@ -29,6 +30,11 @@ from multidict import MultiDictProxy
 from pydantic import BaseModel
 import yarl
 
+try:
+    from homeassistant.helpers.http import KEY_HASS  # type: ignore
+except ImportError:
+    KEY_HASS = "hass"  # type: ignore
+
 from .const import CLOUD_STREAM_BASE_URL
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,7 +64,7 @@ class WebRequest:
 
     def __init__(self, hass: HomeAssistant, url: yarl.URL):
         """Initialize web request from url."""
-        self.app = {"hass": hass}
+        self.app = {KEY_HASS: hass}
         self._url = url
 
     @property

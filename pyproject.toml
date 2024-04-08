@@ -56,6 +56,10 @@ warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
 [[tool.mypy.overrides]]
+module = "custom_components.yandex_smart_home.cloud_stream"
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_calls = false
 
