@@ -490,9 +490,8 @@ async def test_handler_devices_action_error_template(hass, caplog):
             ]
         }
 
-        assert (
-            caplog.records[-2].message == "Error code 'switch.test: WAT?' is invalid for switch.test (INTERNAL_ERROR)"
-        )
+        records = list(filter(lambda x: x.module == "handlers", caplog.records))
+        assert records[0].message == "Error code 'switch.test: WAT?' is invalid for switch.test (INTERNAL_ERROR)"
 
         hass.states.async_set("sensor.foo", "bar")
         payload = json.dumps(
