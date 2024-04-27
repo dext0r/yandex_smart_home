@@ -11,6 +11,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA
 from homeassistant.helpers.reload import async_integration_yaml_config
+from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.helpers.typing import ConfigType
 import voluptuous as vol
 
@@ -191,7 +192,7 @@ async def async_setup(hass: HomeAssistant, yaml_config: ConfigType):
             hass.data[DOMAIN][YAML_CONFIG] = config.get(DOMAIN)
             _update_config_entries(hass)
 
-    hass.helpers.service.async_register_admin_service(DOMAIN, SERVICE_RELOAD, _handle_reload)
+    async_register_admin_service(hass, DOMAIN, SERVICE_RELOAD, _handle_reload)
 
     _update_config_entries(hass)
 
