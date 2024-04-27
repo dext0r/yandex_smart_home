@@ -5,7 +5,7 @@ import hashlib
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EVENT_HOMEASSISTANT_STOP, SERVICE_RELOAD
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, MAJOR_VERSION, MINOR_VERSION, SERVICE_RELOAD
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -251,8 +251,13 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry):
         await delete_cloud_instance(hass, entry)
 
 
-async def async_migrate_entry(_: HomeAssistant, entry: ConfigEntry) -> bool:
-    entry.version = 1
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    if int(MAJOR_VERSION) < 2024 or (int(MAJOR_VERSION) == 2024 and int(MINOR_VERSION) < 4):
+        entry.version = 1
+        hass.config_entries.async_update_entry(entry)
+    else:
+        hass.config_entries.async_update_entry(entry, version=1)
+
     return True
 
 
