@@ -1,0 +1,7 @@
+pytest-homeassistant-custom-component==0.13.116
+aiohttp-cors==0.7.0
+home_assistant_intents==2024.4.24
+hassil==1.7.0
+mutagen==1.47.0
+ha-ffmpeg==3.2.0
+voluptuous-stubs==0.1.1

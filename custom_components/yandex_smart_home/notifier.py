@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home event notification service (notifier)."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -191,7 +192,10 @@ class YandexNotifier(ABC):
 
     async def async_setup(self) -> None:
         """Set up the notifier."""
-        self._unsub_state_changed = self._hass.bus.async_listen(EVENT_STATE_CHANGED, self._async_state_changed)
+        self._unsub_state_changed = self._hass.bus.async_listen(
+            EVENT_STATE_CHANGED,
+            self._async_state_changed,  # type: ignore
+        )
         self._unsub_initial_report = async_call_later(
             self._hass, INITIAL_REPORT_DELAY, HassJob(self._async_initial_report)
         )
