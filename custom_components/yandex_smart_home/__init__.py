@@ -5,7 +5,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.const import SERVICE_RELOAD
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, SERVICE_RELOAD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA, EntityFilter
@@ -290,8 +290,13 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         data.setdefault(const.CONF_CONNECTION_TYPE, ConnectionType.DIRECT)
         data.setdefault(const.CONF_DEVICES_DISCOVERED, True)
 
-        version = entry.version = 2
-        hass.config_entries.async_update_entry(entry, data=data, options=options)
+        version = 2
+        if int(MAJOR_VERSION) < 2024 or (int(MAJOR_VERSION) == 2024 and int(MINOR_VERSION) < 4):
+            entry.version = version
+            hass.config_entries.async_update_entry(entry, data=data, options=options)
+        else:
+            hass.config_entries.async_update_entry(entry, data=data, options=options, version=version)  # type: ignore
+
         _LOGGER.debug(f"Migration to version {version} successful")
 
     if version == 2:
@@ -300,7 +305,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if entry.title == DEFAULT_CONFIG_ENTRY_TITLE:
             hass.config_entries.async_update_entry(entry, title=config_entry_title(data))
 
-        version = entry.version = 3
+        version = 3
         _LOGGER.debug(f"Migration to version {version} successful")
 
     if version == 3:
@@ -308,8 +313,12 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if const.CONF_FILTER in component._yaml_config:
             options[const.CONF_FILTER_SOURCE] = EntityFilterSource.YAML
 
-        version = entry.version = 4
-        hass.config_entries.async_update_entry(entry, data=data, options=options)
+        version = 4
+        if int(MAJOR_VERSION) < 2024 or (int(MAJOR_VERSION) == 2024 and int(MINOR_VERSION) < 5):
+            entry.version = version
+            hass.config_entries.async_update_entry(entry, data=data, options=options)
+        else:
+            hass.config_entries.async_update_entry(entry, data=data, options=options, version=version)  # type: ignore
         _LOGGER.debug(f"Migration to version {version} successful")
 
     return True
