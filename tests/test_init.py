@@ -557,7 +557,7 @@ async def test_async_setup_update_from_yaml(hass, hass_admin_user, expected_ling
     )
     entry.add_to_hass(hass)
 
-    assert await async_setup(hass, {})
+    await async_setup_component(hass, DOMAIN, {})
     assert await async_setup_entry(hass, entry)
 
     assert entry.data == {
@@ -596,7 +596,7 @@ async def test_async_setup_update_from_yaml_checksum(hass, hass_admin_user):
 yandex_smart_home:
   settings:
     pressure_unit: pa"""}):
-        assert await async_setup(hass, await async_integration_yaml_config(hass, DOMAIN))
+        await async_setup_component(hass, DOMAIN, await async_integration_yaml_config(hass, DOMAIN))
         assert await async_setup_entry(hass, entry)
 
     assert entry.data == {

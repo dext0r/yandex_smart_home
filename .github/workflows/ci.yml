@@ -67,6 +67,8 @@ jobs:
             python-version: '3.12'
           - ha-version: '2024.4'
             python-version: '3.12'
+          - ha-version: '2024.5'
+            python-version: '3.12'
             latest: true
     steps:
       - uses: actions/checkout@v3
