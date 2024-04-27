@@ -1,9 +1,10 @@
 """Implement the Yandex Smart Home range capabilities."""
+
 from abc import ABC, abstractmethod
+from functools import cached_property
 import logging
 from typing import Any, Protocol
 
-from homeassistant.backports.functools import cached_property
 from homeassistant.components import climate, cover, fan, humidifier, light, media_player, water_heater
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
