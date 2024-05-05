@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.280
+    rev: v0.4.3
     hooks:
       - id: ruff
 
@@ -10,6 +10,6 @@ repos:
       - id: black
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
+    rev: 5.13.2
     hooks:
       - id: isort
