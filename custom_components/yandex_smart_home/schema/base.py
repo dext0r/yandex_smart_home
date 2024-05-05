@@ -1,4 +1,5 @@
 """Base class for API response schemas."""
+
 from typing import Any
 
 from pydantic import BaseModel

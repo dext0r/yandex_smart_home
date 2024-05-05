@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home float properties."""
+
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import Protocol, Self

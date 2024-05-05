@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home video_stream capabilities."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

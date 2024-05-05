@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home event properties."""
+
 from abc import ABC, abstractmethod
 from functools import cached_property
 from itertools import chain

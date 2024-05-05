@@ -2,6 +2,7 @@
 
 https://yandex.ru/dev/dialogs/smart-home/doc/concepts/properties-types.html
 """
+
 from enum import StrEnum
 from typing import Any, Literal
 

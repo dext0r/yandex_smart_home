@@ -29,8 +29,7 @@ def get_properties(
     state: State,
     property_type: PropertyType.FLOAT,
     instance: FloatPropertyInstance,
-) -> list[FloatProperty]:
-    ...
+) -> list[FloatProperty]: ...
 
 
 @typing.overload
@@ -40,8 +39,7 @@ def get_properties(
     state: State,
     property_type: PropertyType.EVENT,
     instance: EventPropertyInstance,
-) -> list[StateEventProperty]:
-    ...
+) -> list[StateEventProperty]: ...
 
 
 def get_properties(
@@ -72,8 +70,7 @@ def get_exact_one_property(
     state: State,
     property_type: PropertyType.FLOAT,
     instance: FloatPropertyInstance,
-) -> FloatProperty:
-    ...
+) -> FloatProperty: ...
 
 
 @typing.overload
@@ -83,8 +80,7 @@ def get_exact_one_property(
     state: State,
     property_type: PropertyType.EVENT,
     instance: EventPropertyInstance,
-) -> StateEventProperty:
-    ...
+) -> StateEventProperty: ...
 
 
 def get_exact_one_property(

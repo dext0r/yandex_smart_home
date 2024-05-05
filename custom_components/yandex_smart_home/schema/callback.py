@@ -2,6 +2,7 @@
 
 https://yandex.ru/dev/dialogs/smart-home/doc/reference-alerts/resources-alerts.html
 """
+
 from enum import StrEnum
 import time
 

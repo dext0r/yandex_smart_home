@@ -1,4 +1,5 @@
 """Helper classes for Yandex Smart Home integration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

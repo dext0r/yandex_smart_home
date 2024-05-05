@@ -2,6 +2,7 @@
 
 https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event.html
 """
+
 from enum import StrEnum
 from typing import Any, Generic, Literal, TypeVar
 

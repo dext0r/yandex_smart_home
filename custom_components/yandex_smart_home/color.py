@@ -1,4 +1,5 @@
 """Color manipulation helpers."""
+
 from enum import StrEnum
 from math import sqrt
 from typing import Self

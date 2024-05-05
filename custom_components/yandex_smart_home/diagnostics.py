@@ -1,4 +1,5 @@
 """Diagnostics support for Yandex Smart Home."""
+
 from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data

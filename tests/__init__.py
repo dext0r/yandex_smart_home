@@ -1,4 +1,5 @@
 """Tests for yandex_smart_home integration."""
+
 from typing import Any
 from unittest.mock import MagicMock
 

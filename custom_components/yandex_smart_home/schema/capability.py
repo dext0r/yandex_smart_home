@@ -1,4 +1,5 @@
 """Schema for device capabilities."""
+
 from enum import StrEnum
 from typing import Annotated, Any, Literal, TypeVar, Union
 

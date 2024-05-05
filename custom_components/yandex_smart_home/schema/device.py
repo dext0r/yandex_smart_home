@@ -4,6 +4,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/reference/get-devices.html
 https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-devices-query.html
 https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-action.html
 """
+
 from enum import StrEnum
 from typing import Any, Literal
 

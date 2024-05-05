@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home mode capabilities."""
+
 from abc import ABC, abstractmethod
 import logging
 import math

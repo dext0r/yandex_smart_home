@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home cloud connection manager."""
+
 from __future__ import annotations
 
 from asyncio import TimeoutError

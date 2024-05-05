@@ -1,4 +1,5 @@
 """The Yandex Smart Home HTTP interface."""
+
 from __future__ import annotations
 
 import logging

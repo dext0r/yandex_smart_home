@@ -1,4 +1,5 @@
 """Global fixtures for yandex_smart_home integration."""
+
 import asyncio
 import logging
 from unittest.mock import patch

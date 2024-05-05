@@ -1,4 +1,5 @@
 """Constants for Yandex Smart Home."""
+
 from enum import StrEnum
 
 DOMAIN = "yandex_smart_home"

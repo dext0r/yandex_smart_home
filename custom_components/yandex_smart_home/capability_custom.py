@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home user specific capabilities."""
+
 from __future__ import annotations
 
 import itertools

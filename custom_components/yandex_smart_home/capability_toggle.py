@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home toggle capabilities."""
+
 from typing import Protocol
 
 from homeassistant.components import cover, fan, media_player, vacuum

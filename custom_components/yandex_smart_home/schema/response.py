@@ -2,6 +2,7 @@
 
 https://yandex.ru/dev/dialogs/smart-home/doc/concepts/response-codes.html
 """
+
 from enum import StrEnum
 
 from .base import APIModel

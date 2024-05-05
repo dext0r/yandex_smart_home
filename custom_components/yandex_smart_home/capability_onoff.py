@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home on_off capability."""
+
 from abc import ABC, abstractmethod
 from typing import Protocol
 

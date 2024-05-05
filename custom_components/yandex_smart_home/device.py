@@ -1,4 +1,5 @@
 """Yandex Smart Home user device."""
+
 from __future__ import annotations
 
 import logging

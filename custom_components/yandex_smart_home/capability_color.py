@@ -1,4 +1,5 @@
 """Implement the Yandex Smart Home color_setting capability."""
+
 from __future__ import annotations
 
 from abc import abstractmethod
