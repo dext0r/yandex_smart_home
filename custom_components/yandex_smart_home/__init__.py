@@ -297,7 +297,12 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             entry.version = version
             hass.config_entries.async_update_entry(entry, data=data, options=options)
         else:
-            hass.config_entries.async_update_entry(entry, data=data, options=options, version=version)  # type: ignore
+            hass.config_entries.async_update_entry(
+                entry,
+                data=data,
+                options=options,
+                version=version,
+            )  # type: ignore[call-arg]
 
         _LOGGER.debug(f"Migration to version {version} successful")
 
@@ -320,7 +325,12 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             entry.version = version
             hass.config_entries.async_update_entry(entry, data=data, options=options)
         else:
-            hass.config_entries.async_update_entry(entry, data=data, options=options, version=version)  # type: ignore
+            hass.config_entries.async_update_entry(
+                entry,
+                data=data,
+                options=options,
+                version=version,
+            )  # type: ignore[call-arg]
         _LOGGER.debug(f"Migration to version {version} successful")
 
     return True

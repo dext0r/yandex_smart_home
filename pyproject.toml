@@ -37,8 +37,13 @@ plugins = ["pydantic.mypy"]
 follow_imports_for_stubs = true
 local_partial_types = true
 strict_equality = true
+no_implicit_optional = true
+warn_incomplete_stub = true
 warn_redundant_casts = true
+warn_unused_configs = true
 warn_unused_ignores = true
+enable_error_code = ["ignore-without-code", "redundant-self", "truthy-iterable"]
+extra_checks = false
 check_untyped_defs = true
 disallow_incomplete_defs = true
 disallow_subclassing_any = true
@@ -57,6 +62,10 @@ warn_untyped_fields = true
 
 [[tool.mypy.overrides]]
 module = "custom_components.yandex_smart_home"
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = "custom_components.yandex_smart_home.config_flow"
 warn_unused_ignores = false
 
 [[tool.mypy.overrides]]

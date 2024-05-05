@@ -31,9 +31,9 @@ from pydantic import BaseModel
 import yarl
 
 try:
-    from homeassistant.helpers.http import KEY_HASS  # type: ignore
+    from homeassistant.helpers.http import KEY_HASS  # type: ignore[import-not-found]
 except ImportError:
-    KEY_HASS = "hass"  # type: ignore
+    KEY_HASS = "hass"  # type: ignore[assignment]
 
 from .const import CLOUD_STREAM_BASE_URL
 

@@ -186,7 +186,10 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         self._data: ConfigType = {const.CONF_DEVICES_DISCOVERED: False}
         self._async_step_filter_settings_done = self.async_step_connection_type
 
-    async def async_step_user(self, user_input: ConfigType | None = None) -> FlowResult:  # type: ignore
+    async def async_step_user(  # type: ignore[override]
+        self,
+        user_input: ConfigType | None = None,
+    ) -> FlowResult:
         """Handle a flow initialized by the user."""
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
