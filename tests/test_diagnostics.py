@@ -1,8 +1,11 @@
+from datetime import datetime
 from http import HTTPStatus
+from unittest import mock
 
 from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_TOKEN
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entityfilter
+from homeassistant.helpers import entityfilter, issue_registry
+from homeassistant.helpers.issue_registry import IssueSeverity
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
@@ -54,8 +57,15 @@ async def test_diagnostics(
         },
     )
     config_entry.add_to_hass(hass)
-    await hass.config_entries.async_setup(config_entry.entry_id)
-    await hass.async_block_till_done()
+
+    now = datetime(2024, 5, 7, 1, 10, 6)
+    with mock.patch("homeassistant.helpers.event.dt_util.utcnow", return_value=now):
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        issue_registry.async_create_issue(
+            hass, DOMAIN, "foo", is_fixable=False, severity=IssueSeverity.CRITICAL, translation_key="foo"
+        )
 
     client = await hass_client()
     response = await client.get(f"/api/diagnostics/config_entry/{config_entry.entry_id}")

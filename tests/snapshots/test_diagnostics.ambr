@@ -214,6 +214,22 @@
         'unique_id': None,
         'version': 5,
       }),
+      'issues': list([
+        dict({
+          'created': '2024-05-07T01:10:06',
+          'dismissed_version': None,
+          'domain': 'yandex_smart_home',
+          'is_persistent': False,
+          'issue_id': 'deprecated_yaml_notifier',
+        }),
+        dict({
+          'created': '2024-05-07T01:10:06',
+          'dismissed_version': None,
+          'domain': 'yandex_smart_home',
+          'is_persistent': False,
+          'issue_id': 'foo',
+        }),
+      ]),
       'yaml_config': dict({
         'entity_config': dict({
           'light.kitchen': dict({
