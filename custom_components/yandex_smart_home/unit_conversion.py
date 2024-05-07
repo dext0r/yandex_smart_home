@@ -9,8 +9,6 @@ from homeassistant.const import (
     CONCENTRATION_PARTS_PER_BILLION,
     CONCENTRATION_PARTS_PER_MILLION,
 )
-
-# noinspection PyProtectedMember
 from homeassistant.util.unit_conversion import (
     _IN_TO_M,
     _MERCURY_DENSITY,

@@ -786,7 +786,8 @@ async def test_options_flow_skill_yandex(
         assert result3x["step_id"] == "skill_yandex"
         assert result3x["errors"] == {"base": "already_configured"}
 
-        config_entry_dup.data = {**config_entry_dup.data, CONF_PLATFORM: "foo"}  # type: ignore[assignment]
+        hass.config_entries.async_update_entry(config_entry_dup, data={**config_entry_dup.data, CONF_PLATFORM: "foo"})
+        await hass.async_block_till_done()
 
     result4 = await hass.config_entries.options.async_configure(result3["flow_id"], user_input=skill)
     assert result4["type"] == FlowResultType.CREATE_ENTRY

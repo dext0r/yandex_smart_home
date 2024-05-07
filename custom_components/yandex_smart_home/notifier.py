@@ -184,10 +184,7 @@ class YandexNotifier(ABC):
 
     async def async_setup(self) -> None:
         """Set up the notifier."""
-        self._unsub_state_changed = self._hass.bus.async_listen(
-            EVENT_STATE_CHANGED,
-            self._async_state_changed,  # type: ignore[arg-type]
-        )
+        self._unsub_state_changed = self._hass.bus.async_listen(EVENT_STATE_CHANGED, self._async_state_changed)
         self._unsub_initial_report = async_call_later(
             self._hass, INITIAL_REPORT_DELAY, HassJob(self._async_initial_report)
         )
@@ -308,7 +305,6 @@ class YandexNotifier(ABC):
 
         return None
 
-    # noinspection PyBroadException
     async def _async_send_request(self, url: str, request: CallbackRequest) -> None:
         """Send a request to the url."""
         try:
@@ -372,7 +368,7 @@ class YandexNotifier(ABC):
 
         return self._schedule_report_states()
 
-    async def _async_state_changed(self, event: Event) -> None:
+    async def _async_state_changed(self, event: Event[EventStateChangedData]) -> None:
         """Handle state changes."""
         device_id = str(event.data.get(ATTR_ENTITY_ID))
         old_state: State | None = event.data.get("old_state")

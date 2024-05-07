@@ -3,8 +3,6 @@ from unittest.mock import patch
 
 from homeassistant.components import camera
 from homeassistant.components.camera import Camera, DynamicStreamSettings
-
-# noinspection PyProtectedMember
 from homeassistant.components.stream import OUTPUT_IDLE_TIMEOUT, Stream, StreamOutput, StreamSettings
 from homeassistant.config import async_process_ha_core_config
 from homeassistant.const import ATTR_SUPPORTED_FEATURES

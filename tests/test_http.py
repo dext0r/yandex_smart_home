@@ -337,7 +337,9 @@ async def test_http_user_devices_action(
         await async_setup_component(hass, demo.DOMAIN, {})
         await hass.async_block_till_done()
 
-    assert hass.states.get("switch.ac").state == "off"  # type: ignore[union-attr]
+    state = hass.states.get("switch.ac")
+    assert state is not None
+    assert state.state == "off"
 
     http_client = await hass_client(hass_access_token_yandex)
 
@@ -375,4 +377,6 @@ async def test_http_user_devices_action(
     }
 
     await hass.async_block_till_done()
-    assert hass.states.get("switch.ac").state == "on"  # type: ignore[union-attr]
+    state = hass.states.get("switch.ac")
+    assert state is not None
+    assert state.state == "on"

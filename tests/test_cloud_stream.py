@@ -6,8 +6,6 @@ from unittest.mock import MagicMock, patch
 from aiohttp import ClientConnectionError, ClientSession, WSMessage, WSMsgType
 from aiohttp.web import Response
 from homeassistant.components.camera import DynamicStreamSettings
-
-# noinspection PyProtectedMember
 from homeassistant.components.stream import OUTPUT_IDLE_TIMEOUT, Stream, StreamOutput, StreamSettings
 from homeassistant.components.stream.hls import HlsMasterPlaylistView
 from homeassistant.core import HomeAssistant
@@ -182,7 +180,7 @@ async def test_cloud_stream_handle_requests(hass, aioclient_mock):
     requests = [{"view": "master_playlist"}]
     stream = MockStream(hass)
     session = MockSession(
-        aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=json.dumps(r)) for r in requests]
+        aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra=None, data=json.dumps(r)) for r in requests]
     )
     cloud_stream = CloudStreamManager(hass, stream, cast(ClientSession, session))
     cloud_stream._running_stream_id = "foo"

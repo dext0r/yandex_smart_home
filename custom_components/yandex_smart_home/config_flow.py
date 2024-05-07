@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, cast
 
 from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant.auth.const import GROUP_ID_READ_ONLY
-from homeassistant.config_entries import ConfigFlow, OptionsFlow
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_PLATFORM, CONF_TOKEN
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import AbortFlow, FlowHandler, FlowResult
+from homeassistant.data_entry_flow import AbortFlow, FlowHandler
 from homeassistant.helpers import network, selector
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES, EntityFilter
 from homeassistant.helpers.selector import (
@@ -87,7 +87,7 @@ FILTER_SOURCE_SELECTOR = SelectSelector(
 )
 
 
-class BaseFlowHandler(FlowHandler):
+class BaseFlowHandler(FlowHandler[ConfigFlowResult]):
     """Handle shared steps between config and options flow for Yandex Smart Home."""
 
     def __init__(self) -> None:
@@ -98,7 +98,7 @@ class BaseFlowHandler(FlowHandler):
 
         super().__init__()
 
-    async def async_step_skill_yandex(self, user_input: ConfigType | None = None) -> FlowResult:
+    async def async_step_skill_yandex(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose skill settings for the Yandex Smart Home platform."""
         errors = {}
         description_placeholders = {"external_url": self._get_external_url()}
@@ -147,7 +147,7 @@ class BaseFlowHandler(FlowHandler):
             description_placeholders=description_placeholders,
         )
 
-    async def async_step_expose_settings(self, user_input: ConfigType | None = None) -> FlowResult:
+    async def async_step_expose_settings(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose entity expose settings."""
         if user_input is not None:
             self._options.update(user_input)
@@ -176,7 +176,7 @@ class BaseFlowHandler(FlowHandler):
             ),
         )
 
-    async def async_step_update_filter(self, user_input: ConfigType | None = None) -> FlowResult:
+    async def async_step_update_filter(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose a config entry from which the filter will be copied."""
         if user_input is not None:
             if entry := self.hass.config_entries.async_get_entry(user_input.get(CONF_ID, "")):
@@ -213,7 +213,7 @@ class BaseFlowHandler(FlowHandler):
             ),
         )
 
-    async def async_step_include_entities(self, user_input: ConfigType | None = None) -> FlowResult:
+    async def async_step_include_entities(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose entities that should be exposed."""
         errors = {}
         entities: set[str] = set()
@@ -246,7 +246,7 @@ class BaseFlowHandler(FlowHandler):
             errors=errors,
         )
 
-    async def async_step_done(self, _: ConfigType | None = None) -> FlowResult:
+    async def async_step_done(self, _: ConfigType | None = None) -> ConfigFlowResult:
         """Finish the flow."""
         raise NotImplementedError
 
@@ -286,17 +286,14 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
 
         self._data: ConfigType = {CONF_DEVICES_DISCOVERED: False}
 
-    async def async_step_user(  # type: ignore[override]
-        self,
-        user_input: ConfigType | None = None,
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Handle a flow initialized by the user."""
         if user_input is not None:
             return await self.async_step_connection_type()
 
         return self.async_show_form(step_id="user")
 
-    async def async_step_connection_type(self, user_input: ConfigType | None = None) -> FlowResult:
+    async def async_step_connection_type(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose connection type."""
         errors = {}
         if user_input is not None:
@@ -328,12 +325,12 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_platform(self, user_input: ConfigType | None = None) -> FlowResult:
+    async def async_step_platform(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose smart home platform."""
         if user_input is not None:
             self._data.update(user_input)
             step_fn = getattr(self, f"async_step_skill_{self._data[CONF_PLATFORM]}")
-            return cast(FlowResult, await step_fn())
+            return cast(ConfigFlowResult, await step_fn())
 
         return self.async_show_form(
             step_id="platform",
@@ -341,7 +338,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({vol.Required(CONF_PLATFORM): PLATFORM_SELECTOR}),
         )
 
-    async def async_step_done(self, _: ConfigType | None = None) -> FlowResult:
+    async def async_step_done(self, _: ConfigType | None = None) -> ConfigFlowResult:
         """Finish the flow."""
         return self.async_create_entry(
             title=await async_config_entry_title(self.hass, self._data, self._options),
@@ -358,7 +355,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         return OptionsFlowHandler(entry)
 
 
-class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
+class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
     """Handle a options flow for Yandex Smart Home."""
 
     def __init__(self, entry: ConfigEntry):
@@ -369,7 +366,7 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
         self._data: ConfigType = entry.data.copy()
         self._options: ConfigType = entry.options.copy()
 
-    async def async_step_init(self, _: ConfigType | None = None) -> FlowResult:
+    async def async_step_init(self, _: ConfigType | None = None) -> ConfigFlowResult:
         """Show menu."""
         options = ["expose_settings"]
         match self._data[CONF_CONNECTION_TYPE]:
@@ -380,7 +377,7 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
 
         return self.async_show_menu(step_id="init", menu_options=options)
 
-    async def async_step_cloud_credentials(self, user_input: ConfigType | None = None) -> FlowResult:
+    async def async_step_cloud_credentials(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Show cloud connection credentials."""
         if user_input is not None:
             return await self.async_step_init()
@@ -394,7 +391,7 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
             },
         )
 
-    async def async_step_context_user(self, user_input: ConfigType | None = None) -> FlowResult:
+    async def async_step_context_user(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose user for a service calls context."""
         if user_input is not None:
             if user_input[CONF_USER_ID] == USER_NONE:
@@ -415,7 +412,7 @@ class OptionsFlowHandler(BaseFlowHandler, OptionsFlow):
             ),
         )
 
-    async def async_step_done(self, _: ConfigType | None = None) -> FlowResult:
+    async def async_step_done(self, _: ConfigType | None = None) -> ConfigFlowResult:
         """Finish the flow."""
         return self.async_create_entry(data=self._options)
 

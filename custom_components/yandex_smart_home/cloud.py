@@ -69,7 +69,6 @@ class CloudManager:
 
     async def async_connect(self, *_: Any) -> None:
         """Connect to the cloud."""
-        # noinspection PyBroadException
         try:
             _LOGGER.debug(f"Connecting to {self._url}")
             self._ws = await self._session.ws_connect(
