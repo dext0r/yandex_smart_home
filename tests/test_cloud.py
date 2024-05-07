@@ -8,9 +8,9 @@ from unittest.mock import patch
 from aiohttp import WSMessage, WSMsgType
 from homeassistant import core
 from homeassistant.components import demo
-from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, Platform
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION
+from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION, _make_key
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -65,12 +65,7 @@ class MockSession:
 
 
 def mock_client_session(hass, session):
-    if MAJOR_VERSION > 2023 or (MAJOR_VERSION == 2023 and MINOR_VERSION >= 11):
-        from homeassistant.helpers.aiohttp_client import _make_key
-
-        hass.data[DATA_CLIENTSESSION] = {_make_key(): session}
-    else:
-        hass.data[DATA_CLIENTSESSION] = session
+    hass.data[DATA_CLIENTSESSION] = {_make_key(): session}
 
 
 async def async_setup_entry(
@@ -88,7 +83,6 @@ async def async_setup_entry(
 def _get_manager(hass: HomeAssistant, config_entry: MockConfigEntry) -> CloudManager:
     component: YandexSmartHome = hass.data[DOMAIN]
     entry_data = component.get_entry_data(config_entry)
-    # noinspection PyProtectedMember
     return entry_data._cloud_manager
 
 
@@ -222,7 +216,7 @@ async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, 
     hass = hass_platform
 
     requests = ["foo"]
-    session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=r) for r in requests])
+    session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra=None, data=r) for r in requests])
     with patch(
         "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
     ) as mock_reconnect:
@@ -231,7 +225,7 @@ async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, 
         await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
     requests = [json.dumps({"request_id": "req", "_action": "foo"})]
-    session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=r) for r in requests])
+    session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra=None, data=r) for r in requests])
     with patch(
         "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
     ) as mock_reconnect:
@@ -244,7 +238,7 @@ async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, 
             {"request_id": "req", "platform": "yandex", "action": "/user/devices/query", "message": "not_{_json"}
         )
     ]
-    session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=r) for r in requests])
+    session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra=None, data=r) for r in requests])
     with patch(
         "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
     ) as mock_reconnect:
@@ -262,7 +256,7 @@ async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclie
 
     requests = [{"request_id": "req_user_devices", "platform": "yandex", "action": "/user/devices"}]
     session = MockSession(
-        aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=json.dumps(r)) for r in requests]
+        aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra=None, data=json.dumps(r)) for r in requests]
     )
     with patch("homeassistant.config_entries.ConfigEntries.async_update_entry"):  # prevent reloading after discovery
         await async_setup_entry(hass, config_entry_cloud, session=session)
@@ -353,7 +347,7 @@ async def test_cloud_req_user_devices_query(hass_platform, config_entry_cloud, a
         },
     ]
     session = MockSession(
-        aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=json.dumps(r)) for r in requests]
+        aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra=None, data=json.dumps(r)) for r in requests]
     )
     await async_setup_entry(hass, config_entry_cloud, session=session)
 
@@ -412,7 +406,7 @@ async def test_cloud_req_user_devices_action(hass_platform, config_entry_cloud, 
     assert hass.states.get("switch.ac").state == "off"
 
     session = MockSession(
-        aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=json.dumps(r)) for r in requests]
+        aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra=None, data=json.dumps(r)) for r in requests]
     )
     await async_setup_entry(hass, config_entry_cloud, session=session)
     await hass.async_block_till_done()

@@ -27,18 +27,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - ha-version: '2023.10'
-            python-version: '3.11'
-          - ha-version: '2023.11'
-            python-version: '3.11'
-          - ha-version: '2023.12'
-            python-version: '3.11'
-          - ha-version: '2024.1'
-            python-version: '3.11'
-          - ha-version: '2024.1'
-            python-version: '3.11'
-          - ha-version: '2024.2'
-            python-version: '3.12'
           - ha-version: '2024.4'
             python-version: '3.12'
           - ha-version: '2024.5'

@@ -26,14 +26,10 @@ from homeassistant.components.stream.hls import (
 )
 from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
 from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.http import KEY_HASS
 from multidict import MultiDictProxy
 from pydantic import BaseModel
 import yarl
-
-try:
-    from homeassistant.helpers.http import KEY_HASS  # type: ignore[import-not-found]
-except ImportError:
-    KEY_HASS = "hass"  # type: ignore[assignment]
 
 from .const import CLOUD_STREAM_BASE_URL
 
@@ -122,7 +118,6 @@ class CloudStreamManager:
 
         ws_url = f"{CLOUD_STREAM_BASE_URL}/{self._running_stream_id}/connect"
 
-        # noinspection PyBroadException
         try:
             _LOGGER.debug(f"Connecting to {ws_url}")
             self._ws = await self._session.ws_connect(ws_url, heartbeat=30)

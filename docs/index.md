@@ -6,7 +6,7 @@
 * Мобильное приложение [Дом с Алисой](https://mobile.yandex.ru/apps/smarthome)
 * Веб-интерфейс [Квазар](https://yandex.ru/quasar/iot)
 
-Компонент работает на Home Assistant версии **2023.10** или новее.
+Компонент работает на Home Assistant версии **2024.4** или новее.
 
 ## Полезные ссылки
 * [Чат по компоненту в Телеграме :fontawesome-brands-telegram:](https://t.me/yandex_smart_home)
