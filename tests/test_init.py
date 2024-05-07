@@ -11,17 +11,8 @@ from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture, patch_yaml_files
 
-from custom_components.yandex_smart_home import (
-    DOMAIN,
-    ConnectionType,
-    EntityFilterSource,
-    YandexSmartHome,
-    cloud,
-    const,
-)
+from custom_components.yandex_smart_home import DOMAIN, ConnectionType, EntityFilterSource, YandexSmartHome, const
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
-
-from . import test_cloud
 
 
 async def test_bad_config(hass):
@@ -397,7 +388,7 @@ async def test_unload_entry(hass, config_entry_direct):
     assert entry_data.entry.state == ConfigEntryState.NOT_LOADED
 
 
-async def test_remove_entry_direct(hass, config_entry_direct):
+async def test_remove_entry(hass, config_entry_direct):
     config_entry_direct.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
 
@@ -407,43 +398,9 @@ async def test_remove_entry_direct(hass, config_entry_direct):
     assert len(component._entry_datas) == 0
 
 
-async def test_remove_entry_cloud(hass, config_entry_cloud, aioclient_mock, caplog):
-    await test_cloud.async_setup_entry(hass, config_entry_cloud, aiohttp_client=aioclient_mock)
-
-    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/i-test", status=500)
-    await hass.config_entries.async_remove(config_entry_cloud.entry_id)
-    assert aioclient_mock.call_count == 1
-    assert caplog.messages[-1] == "Failed to delete cloud instance, status code: 500"
-
-    aioclient_mock.clear_requests()
-    caplog.clear()
-
-    await test_cloud.async_setup_entry(hass, config_entry_cloud, aiohttp_client=aioclient_mock)
-    caplog.clear()
-
-    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/i-test", status=200)
-    await hass.config_entries.async_remove(config_entry_cloud.entry_id)
-    (method, url, data, headers) = aioclient_mock.mock_calls[0]
-    assert headers == {"Authorization": "Bearer token-foo"}
-
-    assert aioclient_mock.call_count == 1
-    assert len(caplog.records) == 0
-
-
-async def test_remove_entry_direct_unloaded(hass, config_entry_direct):
+async def test_remove_entry_unloaded(hass, config_entry_direct):
     config_entry_direct.add_to_hass(hass)
     await hass.config_entries.async_remove(config_entry_direct.entry_id)
-
-
-async def test_remove_entry_cloud_unloaded(hass, config_entry_cloud, aioclient_mock):
-    config_entry_cloud.add_to_hass(hass)
-
-    aioclient_mock.delete(f"{cloud.BASE_API_URL}/instance/i-test", status=200)
-    await hass.config_entries.async_remove(config_entry_cloud.entry_id)
-    (method, url, data, headers) = aioclient_mock.mock_calls[0]
-    assert headers == {"Authorization": "Bearer token-foo"}
-
-    assert aioclient_mock.call_count == 1
 
 
 async def test_remove_entry_unknown(hass):

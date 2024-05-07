@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from asyncio import TimeoutError
 from datetime import datetime, timedelta
-from http import HTTPStatus
 import logging
 from typing import TYPE_CHECKING, Any, AsyncIterable, cast
 
@@ -163,17 +162,3 @@ async def register_cloud_instance(hass: HomeAssistant) -> CloudInstanceData:
     response.raise_for_status()
 
     return CloudInstanceData.parse_raw(await response.text())
-
-
-async def delete_cloud_instance(hass: HomeAssistant, instance_id: str, token: str) -> None:
-    """Delete a cloud instance from the cloud."""
-    session = async_create_clientsession(hass)
-
-    response = await session.delete(
-        f"{BASE_API_URL}/instance/{instance_id}",
-        headers={hdrs.AUTHORIZATION: f"Bearer {token}"},
-    )
-    if response.status != HTTPStatus.OK:
-        _LOGGER.error(f"Failed to delete cloud instance, status code: {response.status}")
-
-    return None

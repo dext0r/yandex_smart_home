@@ -15,7 +15,6 @@ from homeassistant.helpers.service import async_register_admin_service
 import voluptuous as vol
 
 from . import config_validation as ycv, const
-from .cloud import delete_cloud_instance
 from .const import CONF_SKILL, CONF_USER_ID, DOMAIN, ConnectionType, EntityFilterSource
 from .entry_data import ConfigEntryData
 from .helpers import SmartHomePlatform
@@ -358,13 +357,6 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Remove a config entry."""
-    if entry.data.get(const.CONF_CONNECTION_TYPE) == ConnectionType.CLOUD:
-        await delete_cloud_instance(
-            hass,
-            instance_id=entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_ID],
-            token=entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN],
-        )
-
     component: YandexSmartHome | None = hass.data.get(DOMAIN)
     if component:
         await component.async_remove_entry(entry)
