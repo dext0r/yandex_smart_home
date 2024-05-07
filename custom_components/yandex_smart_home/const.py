@@ -56,6 +56,7 @@ CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE = "increase_value"
 CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE = "decrease_value"
 CONF_DEVICES_DISCOVERED = "devices_discovered"
 
+ISSUE_ID_DEPRECATED_PRESSURE_UNIT = "deprecated_pressure_unit"
 ISSUE_ID_DEPRECATED_YAML_NOTIFIER = "deprecated_yaml_notifier"
 ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS = "deprecated_yaml_several_notifiers"
 ISSUE_ID_MISSING_INTEGRATION = "missing_integration"

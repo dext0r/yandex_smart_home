@@ -29,6 +29,7 @@ from .const import (
     CONF_SKILL,
     CONF_USER_ID,
     DOMAIN,
+    ISSUE_ID_DEPRECATED_PRESSURE_UNIT,
     ISSUE_ID_DEPRECATED_YAML_NOTIFIER,
     ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS,
     ConnectionType,
@@ -91,10 +92,10 @@ class ConfigEntryData:
             ir.async_create_issue(
                 self._hass,
                 DOMAIN,
-                "deprecated_pressure_unit",
+                ISSUE_ID_DEPRECATED_PRESSURE_UNIT,
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
-                translation_key="deprecated_pressure_unit",
+                translation_key=ISSUE_ID_DEPRECATED_PRESSURE_UNIT,
                 learn_more_url="https://docs.yaha-cloud.ru/master/devices/sensor/float/#unit-conversion",
             )
         else:
