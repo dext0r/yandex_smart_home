@@ -10,7 +10,7 @@ from custom_components.yandex_smart_home import YandexSmartHome, const, handlers
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
 from custom_components.yandex_smart_home.const import CONF_DEVICES_DISCOVERED, DOMAIN, EVENT_DEVICE_ACTION
-from custom_components.yandex_smart_home.helpers import APIError, RequestData
+from custom_components.yandex_smart_home.helpers import APIError, RequestData, SmartHomePlatform
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     GetStreamInstanceActionResultValue,
@@ -91,7 +91,7 @@ async def test_handler_devices_query(hass, caplog):
         },
         entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]),
     )
-    data = RequestData(entry_data, Context(), "user", REQ_ID)
+    data = RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "user", REQ_ID)
     payload = json.dumps(
         {"devices": [{"id": switch_1.entity_id}, {"id": switch_not_expose.entity_id}, {"id": "invalid.foo"}]}
     )
@@ -154,22 +154,35 @@ async def test_handler_devices_query(hass, caplog):
     ]
 
 
-async def test_handler_devices_discovery(hass_platform_direct):
+async def test_handler_devices_discovery(hass_platform_direct, hass_admin_user):
     hass = hass_platform_direct
     component: YandexSmartHome = hass.data[DOMAIN]
-    entry_data = component.get_direct_connection_entry_data()
+    entry_data = component.get_direct_connection_entry_data(
+        platform=SmartHomePlatform.YANDEX, user_id=hass_admin_user.id
+    )
+    assert entry_data is not None
     assert entry_data.entry.data.get(CONF_DEVICES_DISCOVERED) is None
 
     with patch("homeassistant.config_entries.ConfigEntries.async_update_entry") as mock_update_entry:
-        await handlers.async_device_list(hass, RequestData(entry_data, Context(), "foo", REQ_ID), "")
+        await handlers.async_device_list(
+            hass, RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "foo", REQ_ID), ""
+        )
         mock_update_entry.assert_called_once()
 
-    await handlers.async_device_list(hass, RequestData(entry_data, Context(), "foo", REQ_ID), "")
+    await handlers.async_device_list(
+        hass, RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "foo", REQ_ID), ""
+    )
     assert entry_data.entry.data.get(CONF_DEVICES_DISCOVERED) is True
+    await hass.async_block_till_done()
 
     with patch("homeassistant.config_entries.ConfigEntries.async_update_entry") as mock_update_entry:
-        await handlers.async_device_list(hass, RequestData(entry_data, Context(), "foo", REQ_ID), "")
+        await handlers.async_device_list(
+            hass, RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "foo", REQ_ID), ""
+        )
         mock_update_entry.assert_not_called()
+
+    await hass.config_entries.async_unload(entry_data.entry.entry_id)
+    await hass.async_block_till_done()
 
 
 async def test_handler_devices_action(hass, caplog):
@@ -427,7 +440,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
             }
         }
     )
-    data = RequestData(entry_data, Context(), "test", REQ_ID)
+    data = RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "test", REQ_ID)
 
     switch = State("switch.test", STATE_OFF)
     hass.states.async_set(switch.entity_id, switch.state, switch.attributes)
@@ -532,7 +545,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
 
 async def test_handler_devices_action_not_allowed(hass, caplog):
     entry_data = MockConfigEntryData(entity_config={"switch.test": {"turn_on": False}})
-    data = RequestData(entry_data, Context(), "test", REQ_ID)
+    data = RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "test", REQ_ID)
 
     switch = State("switch.test", STATE_OFF)
     hass.states.async_set(switch.entity_id, switch.state, switch.attributes)

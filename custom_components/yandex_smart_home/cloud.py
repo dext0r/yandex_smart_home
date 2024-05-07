@@ -17,7 +17,7 @@ from pydantic import BaseModel
 
 from . import handlers
 from .const import CLOUD_BASE_URL, DOMAIN
-from .helpers import RequestData
+from .helpers import RequestData, SmartHomePlatform
 
 if TYPE_CHECKING:
     from homeassistant.core import CALLBACK_TYPE, HomeAssistant
@@ -45,6 +45,7 @@ class CloudRequest(BaseModel):
     """Request from the cloud."""
 
     request_id: str
+    platform: SmartHomePlatform
     action: str
     message: str = ""
 
@@ -121,6 +122,7 @@ class CloudManager:
         data = RequestData(
             entry_data=self._entry_data,
             context=Context(user_id=await self._entry_data.async_get_user_id()),
+            platform=request.platform,
             request_user_id=self._entry_data.cloud_instance_id,
             request_id=request.request_id,
         )

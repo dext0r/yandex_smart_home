@@ -12,7 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.yandex_smart_home import DOMAIN
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.entry_data import ConfigEntryData
-from custom_components.yandex_smart_home.helpers import STORE_CACHE_ATTRS, CacheStore, RequestData
+from custom_components.yandex_smart_home.helpers import STORE_CACHE_ATTRS, CacheStore, RequestData, SmartHomePlatform
 
 
 class MockConfigEntryData(ConfigEntryData):
@@ -73,5 +73,9 @@ BASIC_ENTRY_DATA: MockConfigEntryData = MockConfigEntryData(
 )
 
 BASIC_REQUEST_DATA: RequestData = RequestData(
-    entry_data=BASIC_ENTRY_DATA, context=Context(), request_user_id="test", request_id=REQ_ID
+    entry_data=BASIC_ENTRY_DATA,
+    context=Context(),
+    platform=SmartHomePlatform.YANDEX,
+    request_user_id="test",
+    request_id=REQ_ID,
 )

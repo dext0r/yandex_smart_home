@@ -20,6 +20,7 @@ skip_glob = [".venv*/*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+addopts = "-p no:aiohttp"
 
 [tool.coverage.report]
 exclude_also = [
@@ -150,10 +151,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "tests.test_helpers"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_http"
 ignore_errors = true
 
 [[tool.mypy.overrides]]

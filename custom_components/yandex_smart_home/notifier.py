@@ -20,8 +20,9 @@ from homeassistant.helpers.event import TrackTemplate, async_call_later, async_t
 from homeassistant.helpers.template import Template
 from pydantic import ValidationError
 
-from . import DOMAIN, const
+from . import DOMAIN
 from .capability import Capability
+from .const import CLOUD_BASE_URL
 from .device import Device
 from .helpers import APIError
 from .property import Property
@@ -53,21 +54,12 @@ REPORT_STATE_WINDOW = 1
 
 @dataclass
 class NotifierConfig:
-    """Hold configuration variables for a notifier."""
+    """Hold configuration for a notifier."""
 
     user_id: str
     token: str
-    hass_user_id: str | None = None
     skill_id: str | None = None
-    verbose_log: bool = False
-
-    async def async_validate(self, hass: HomeAssistant) -> None:
-        """Validates the configuration."""
-        if self.hass_user_id:
-            if await hass.auth.async_get_user(self.hass_user_id) is None:
-                raise ValueError(f"User {self.hass_user_id} does not exist")
-
-        return None
+    extended_log: bool = False
 
 
 class ReportableDeviceState(Protocol):
@@ -237,7 +229,7 @@ class YandexNotifier(ABC):
 
     async def async_send_discovery(self, *_: Any) -> None:
         """Send notification about change of devices' parameters."""
-        _LOGGER.debug(self._format_log_message("Sending discovery request"))
+        self._debug_log("Sending discovery request")
         request = CallbackDiscoveryRequest(payload=CallbackDiscoveryRequestPayload(user_id=self._config.user_id))
         return await self._async_send_request(f"{self._base_url}/discovery", request)
 
@@ -255,7 +247,17 @@ class YandexNotifier(ABC):
 
     def _format_log_message(self, message: str) -> str:
         """Format a message."""
+        if self._config.extended_log:
+            return f"{self._entry_data.entry.title}: {message}"
+
         return message
+
+    def _debug_log(self, message: str) -> None:
+        """Log a debug message."""
+        if self._config.extended_log:
+            message = f"({self._entry_data.entry.entry_id[:6]}) {message}"
+
+        _LOGGER.debug(message)
 
     async def _async_report_states(self, *_: Any) -> None:
         """Send notification about device state change."""
@@ -310,7 +312,7 @@ class YandexNotifier(ABC):
     async def _async_send_request(self, url: str, request: CallbackRequest) -> None:
         """Send a request to the url."""
         try:
-            _LOGGER.debug(f"Request: {url} (POST data: {request.as_json()})")
+            self._debug_log(f"Request: {url} (POST data: {request.as_json()})")
 
             r = await self._session.post(
                 url,
@@ -334,7 +336,7 @@ class YandexNotifier(ABC):
         except ClientConnectionError as e:
             _LOGGER.warning(self._format_log_message(f"Notification request failed: {e!r}"))
         except asyncio.TimeoutError as e:
-            _LOGGER.debug(self._format_log_message(f"Notification request failed: {e!r}"))
+            self._debug_log(f"Notification request failed: {e!r}")
         except Exception:
             _LOGGER.exception(self._format_log_message("Unexpected exception"))
 
@@ -364,10 +366,8 @@ class YandexNotifier(ABC):
                 new_state = state.new_with_value_template(new_value_template)
 
                 for pending_state in await self._pending.async_add([new_state], [old_state]):
-                    _LOGGER.debug(
-                        self._format_log_message(
-                            f"State report with value '{pending_state.get_value()}' scheduled for {pending_state!r}"
-                        )
+                    self._debug_log(
+                        f"State report with value '{pending_state.get_value()}' scheduled for {pending_state!r}"
                     )
 
         return self._schedule_report_states()
@@ -397,17 +397,13 @@ class YandexNotifier(ABC):
             old_states.extend(old_device.get_state_properties())
 
         for pending_state in await self._pending.async_add(new_states, old_states):
-            _LOGGER.debug(
-                self._format_log_message(
-                    f"State report with value '{pending_state.get_value()}' scheduled for {pending_state!r}"
-                )
-            )
+            self._debug_log(f"State report with value '{pending_state.get_value()}' scheduled for {pending_state!r}")
 
         return self._schedule_report_states()
 
     async def _async_initial_report(self, *_: Any) -> None:
         """Schedule initial report."""
-        _LOGGER.debug("Reporting initial states")
+        self._debug_log("Reporting initial states")
         for state in self._hass.states.async_all():
             device = Device(self._hass, self._entry_data, state.entity_id, state)
             if not device.should_expose:
@@ -445,13 +441,6 @@ class YandexDirectNotifier(YandexNotifier):
         """Return headers for a request."""
         return {hdrs.AUTHORIZATION: f"OAuth {self._config.token}"}
 
-    def _format_log_message(self, message: str) -> str:
-        """Format a message."""
-        if self._config.verbose_log:
-            return f"{message} ({self._config.user_id }@{self._config.skill_id})"
-
-        return message
-
 
 class YandexCloudNotifier(YandexNotifier):
     """Notifier for cloud connection."""
@@ -459,7 +448,7 @@ class YandexCloudNotifier(YandexNotifier):
     @property
     def _base_url(self) -> str:
         """Return base URL."""
-        return f"{const.CLOUD_BASE_URL}/api/home_assistant/v1/callback"
+        return f"{CLOUD_BASE_URL}/api/home_assistant/v1/callback"
 
     @property
     def _request_headers(self) -> dict[str, str]:

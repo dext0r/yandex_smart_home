@@ -1,11 +1,11 @@
-## Что-то работает не так { id=something-wrong }
-Смотрите [Устранение проблем и ошибок](./troubleshoot/index.md)
-
 ## Где найти ID и пароль для облачного подключения? { id=cloud-creds }
 Откройте [настройки интеграции](./config/getting-started.md#gui) --> `ID и пароль (облачное подключение)`
 
 ![](assets/images/config/gui-1.png){ width=750 }
 ![](assets/images/config/gui-2.png){ width=750 }
+
+## Как поменять тип подключения или какой тип подключения лучше? { id=connection-type }
+Подробнее в разделе [Тип подключения](./config/connection-type.md)
 
 ## Где найти entity_id объекта? { id=get-entity-id }
 1. На странице `Настройки` --> `Устройства и службы` --> [`Объекты`](https://my.home-assistant.io/redirect/entities/):<br>

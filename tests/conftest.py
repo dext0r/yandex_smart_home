@@ -4,19 +4,29 @@ import asyncio
 import logging
 from unittest.mock import patch
 
+from homeassistant.auth.models import User
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.demo.binary_sensor import DemoBinarySensor
 from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.demo.sensor import DemoSensor
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_TOKEN, UnitOfTemperature
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entityfilter
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
+from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 from syrupy import SnapshotAssertion
 
-from custom_components.yandex_smart_home import DOMAIN, ConnectionType, EntityFilterSource, const
+from custom_components.yandex_smart_home import (
+    CONF_USER_ID,
+    DOMAIN,
+    ConnectionType,
+    EntityFilterSource,
+    SmartHomePlatform,
+    const,
+)
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 
 pytest_plugins = "pytest_homeassistant_custom_component"
@@ -42,13 +52,13 @@ def skip_notifications_fixture():
 
 
 @pytest.fixture
-def socket_enabled(socket_enabled):
+def socket_enabled(socket_enabled: None) -> None:
     """Mark socket_enabled as fixture."""
     return socket_enabled
 
 
 @pytest.fixture
-def aiohttp_client(aiohttp_client, socket_enabled):
+def aiohttp_client(aiohttp_client: ClientSessionGenerator, socket_enabled: None):
     """Return aiohttp_client and allow opening sockets."""
     return aiohttp_client
 
@@ -60,14 +70,19 @@ def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
 
 
 @pytest.fixture
-def config_entry_direct():
+def config_entry_direct(hass_admin_user: User):
     return MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
+        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.YANDEX},
         options={
             const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
             const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]},
+            const.CONF_SKILL: {
+                CONF_USER_ID: hass_admin_user.id,
+                CONF_ID: "foo",
+                CONF_TOKEN: "token",
+            },
         },
     )
 
@@ -135,7 +150,9 @@ def hass_platform(hass):
 
 
 @pytest.fixture
-def hass_platform_direct(hass_platform, event_loop: asyncio.AbstractEventLoop, config_entry_direct):
+def hass_platform_direct(
+    hass_platform: HomeAssistant, event_loop: asyncio.AbstractEventLoop, config_entry_direct
+) -> HomeAssistant:
     config_entry_direct.add_to_hass(hass_platform)
     event_loop.run_until_complete(hass_platform.config_entries.async_setup(config_entry_direct.entry_id))
     event_loop.run_until_complete(hass_platform.async_block_till_done())

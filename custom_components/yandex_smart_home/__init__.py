@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, SERVICE_RELOAD
+from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_TOKEN, MAJOR_VERSION, MINOR_VERSION, SERVICE_RELOAD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA, EntityFilter
@@ -16,8 +16,9 @@ import voluptuous as vol
 
 from . import config_validation as ycv, const
 from .cloud import delete_cloud_instance
-from .const import DOMAIN, ConnectionType, EntityFilterSource
+from .const import CONF_SKILL, CONF_USER_ID, DOMAIN, ConnectionType, EntityFilterSource
 from .entry_data import ConfigEntryData
+from .helpers import SmartHomePlatform
 from .http import async_register_http
 
 if TYPE_CHECKING:
@@ -194,11 +195,20 @@ class YandexSmartHome:
         """Return a config entry data for a config entry."""
         return self._entry_datas[entry.entry_id]
 
-    def get_direct_connection_entry_data(self) -> ConfigEntryData | None:
-        """Return a config entry data for a config entry using direct connection."""
+    def get_direct_connection_entry_data(
+        self, platform: SmartHomePlatform, user_id: str | None
+    ) -> ConfigEntryData | None:
+        """Return a config entry data with direct connection config entry."""
         for data in self._entry_datas.values():
-            if data.connection_type == ConnectionType.DIRECT and data.entry.state == ConfigEntryState.LOADED:
-                return data
+            if (
+                data.connection_type == ConnectionType.DIRECT
+                and data.entry.state == ConfigEntryState.LOADED
+                and data.platform == platform
+            ):
+                if user_id and data.skill and data.skill.user_id == user_id:
+                    return data
+                if not user_id:
+                    return data
 
         return None
 
@@ -271,8 +281,8 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate the config entry upon new versions."""
     version = entry.version
     component: YandexSmartHome = hass.data[DOMAIN]
-    data = {**entry.data}
-    options = {**entry.options}
+    data: ConfigType = {**entry.data}
+    options: ConfigType = {**entry.options}
 
     _LOGGER.debug(f"Migrating from version {version}")
 
@@ -307,11 +317,6 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug(f"Migration to version {version} successful")
 
     if version == 2:
-        from .config_flow import DEFAULT_CONFIG_ENTRY_TITLE, config_entry_title
-
-        if entry.title == DEFAULT_CONFIG_ENTRY_TITLE:
-            hass.config_entries.async_update_entry(entry, title=config_entry_title(data))
-
         version = 3
         _LOGGER.debug(f"Migration to version {version} successful")
 
@@ -331,6 +336,45 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 options=options,
                 version=version,
             )  # type: ignore[call-arg]
+        _LOGGER.debug(f"Migration to version {version} successful")
+
+    if version == 4:
+        from .config_flow import DEFAULT_CONFIG_ENTRY_TITLE, PRE_V1_DIRECT_CONFIG_ENTRY_TITLE, async_config_entry_title
+
+        title = entry.title
+        data.setdefault(CONF_PLATFORM, SmartHomePlatform.YANDEX)
+
+        if (
+            len(hass.config_entries.async_entries(DOMAIN)) == 1
+            and data[const.CONF_CONNECTION_TYPE] == ConnectionType.DIRECT
+        ):
+            for notifier_config in component._yaml_config.get(const.CONF_NOTIFIER, []):
+                options.setdefault(
+                    CONF_SKILL,
+                    {
+                        CONF_USER_ID: notifier_config[const.CONF_NOTIFIER_USER_ID],
+                        CONF_ID: notifier_config[const.CONF_NOTIFIER_SKILL_ID],
+                        CONF_TOKEN: notifier_config[const.CONF_NOTIFIER_OAUTH_TOKEN],
+                    },
+                )
+                break
+
+        if entry.title in (DEFAULT_CONFIG_ENTRY_TITLE, PRE_V1_DIRECT_CONFIG_ENTRY_TITLE):
+            title = await async_config_entry_title(hass, data, options)
+
+        version = 5
+        if int(MAJOR_VERSION) < 2024 or (int(MAJOR_VERSION) == 2024 and int(MINOR_VERSION) < 5):
+            entry.version = version
+            hass.config_entries.async_update_entry(entry, title=title, data=data, options=options)
+        else:
+            hass.config_entries.async_update_entry(
+                entry,
+                title=title,
+                data=data,
+                options=options,
+                version=version,
+            )  # type: ignore[call-arg]
+
         _LOGGER.debug(f"Migration to version {version} successful")
 
     return True

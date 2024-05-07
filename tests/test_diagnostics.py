@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_TOKEN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entityfilter
 from homeassistant.setup import async_setup_component
@@ -7,7 +8,14 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUs
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 from syrupy import SnapshotAssertion
 
-from custom_components.yandex_smart_home import DOMAIN, ConnectionType, EntityFilterSource, const
+from custom_components.yandex_smart_home import (
+    CONF_USER_ID,
+    DOMAIN,
+    ConnectionType,
+    EntityFilterSource,
+    SmartHomePlatform,
+    const,
+)
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 
 
@@ -37,10 +45,12 @@ async def test_diagnostics(
         data={
             const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
             const.CONF_CLOUD_INSTANCE: {const.CONF_CLOUD_INSTANCE_PASSWORD: "foo"},
+            CONF_PLATFORM: SmartHomePlatform.YANDEX,
         },
         options={
             const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
             const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]},
+            const.CONF_SKILL: {CONF_ID: "skill_id", CONF_TOKEN: "oauth_token", CONF_USER_ID: "user_id"},
         },
     )
     config_entry.add_to_hass(hass)

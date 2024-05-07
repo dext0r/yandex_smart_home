@@ -193,6 +193,7 @@
         'data': dict({
           'cloud_instance': '**REDACTED**',
           'connection_type': 'direct',
+          'platform': 'yandex',
         }),
         'disabled_by': None,
         'domain': 'yandex_smart_home',
@@ -204,13 +205,14 @@
             ]),
           }),
           'filter_source': 'config_entry',
+          'skill': '**REDACTED**',
         }),
         'pref_disable_new_entities': False,
         'pref_disable_polling': False,
         'source': 'user',
         'title': 'Mock Title',
         'unique_id': None,
-        'version': 4,
+        'version': 5,
       }),
       'yaml_config': dict({
         'entity_config': dict({

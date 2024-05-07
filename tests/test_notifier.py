@@ -7,14 +7,14 @@ from unittest.mock import patch
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.components.light import ATTR_BRIGHTNESS
-from homeassistant.const import ATTR_DEVICE_CLASS, EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE
+from homeassistant.const import ATTR_DEVICE_CLASS, CONF_ID, CONF_TOKEN, EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE
 from homeassistant.core import CoreState, State
 from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import DOMAIN, ConnectionType, YandexSmartHome, const
+from custom_components.yandex_smart_home import CONF_USER_ID, DOMAIN, ConnectionType, YandexSmartHome, const
 from custom_components.yandex_smart_home.capability_custom import get_custom_capability
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
@@ -59,53 +59,20 @@ async def _assert_not_empty_list(coro):
     assert await coro != []
 
 
-async def test_notifier_setup_config_invalid(hass, hass_admin_user, config_entry_direct, caplog):
-    yaml_config = {
-        const.CONF_NOTIFIER: [
-            {
-                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
-                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
-            },
-            {
-                const.CONF_NOTIFIER_USER_ID: "invalid",
-                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
-                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
-            },
-        ],
-    }
-    await async_setup_component(hass, DOMAIN, {DOMAIN: yaml_config})
-    config_entry_direct.add_to_hass(hass)
-    await hass.config_entries.async_setup(config_entry_direct.entry_id)
-
-    component: YandexSmartHome = hass.data[DOMAIN]
-    with pytest.raises(KeyError):
-        component.get_entry_data(config_entry_direct)
-    assert caplog.messages[-1].startswith(
-        "Config entry 'Mock Title' for yandex_smart_home integration not ready yet: "
-        "User invalid does not exist; Retrying in"
-    )
-
-
 async def test_notifier_setup_not_discovered(hass, hass_admin_user, aioclient_mock):
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
-
-    yaml_config = {
-        const.CONF_NOTIFIER: [
-            {
-                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
-                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
-            },
-        ],
-    }
-    await async_setup_component(hass, DOMAIN, {DOMAIN: yaml_config})
-    component: YandexSmartHome = hass.data[DOMAIN]
 
     config_entry_direct = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
+        options={
+            const.CONF_SKILL: {
+                CONF_ID: "skill_id",
+                CONF_TOKEN: "token",
+                CONF_USER_ID: hass_admin_user.id,
+            }
+        },
     )
     config_entry_cloud = MockConfigEntry(
         domain=DOMAIN,
@@ -123,35 +90,25 @@ async def test_notifier_setup_not_discovered(hass, hass_admin_user, aioclient_mo
         config_entry.add_to_hass(hass)
         await hass.config_entries.async_setup(config_entry.entry_id)
 
-        assert len(component.get_entry_data(config_entry)._notifier_configs) == 1
+        component: YandexSmartHome = hass.data[DOMAIN]
+        assert component.get_entry_data(config_entry).is_reporting_states is True
         assert len(component.get_entry_data(config_entry)._notifiers) == 0
 
 
 async def test_notifier_lifecycle_discovered(hass, hass_admin_user, aioclient_mock):
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
-    yaml_config = {
-        const.CONF_NOTIFIER: [
-            {
-                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
-                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
-            },
-            {
-                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-                const.CONF_NOTIFIER_OAUTH_TOKEN: "token2",
-                const.CONF_NOTIFIER_SKILL_ID: "skill_id2",
-            },
-        ],
-    }
-
-    await async_setup_component(hass, DOMAIN, {DOMAIN: yaml_config})
-    component: YandexSmartHome = hass.data[DOMAIN]
-
     config_entry_direct = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT, const.CONF_DEVICES_DISCOVERED: True},
+        options={
+            const.CONF_SKILL: {
+                CONF_ID: "skill_id",
+                CONF_TOKEN: "token",
+                CONF_USER_ID: hass_admin_user.id,
+            }
+        },
     )
     config_entry_cloud = MockConfigEntry(
         domain=DOMAIN,
@@ -170,9 +127,8 @@ async def test_notifier_lifecycle_discovered(hass, hass_admin_user, aioclient_mo
         config_entry.add_to_hass(hass)
         await hass.config_entries.async_setup(config_entry.entry_id)
 
-    assert len(component.get_entry_data(config_entry_direct)._notifier_configs) == 2
-    assert len(component.get_entry_data(config_entry_direct)._notifiers) == 2
-    assert len(component.get_entry_data(config_entry_cloud)._notifier_configs) == 1
+    component: YandexSmartHome = hass.data[DOMAIN]
+    assert len(component.get_entry_data(config_entry_direct)._notifiers) == 1
     assert len(component.get_entry_data(config_entry_cloud)._notifiers) == 1
 
     for config_entry in [config_entry_direct, config_entry_cloud]:
@@ -192,41 +148,39 @@ async def test_notifier_lifecycle_discovered(hass, hass_admin_user, aioclient_mo
 
 
 async def test_notifier_postponed_setup(hass, hass_admin_user):
-    yaml_config = {
-        const.CONF_NOTIFIER: [
-            {
-                const.CONF_NOTIFIER_USER_ID: hass_admin_user.id,
-                const.CONF_NOTIFIER_OAUTH_TOKEN: "token",
-                const.CONF_NOTIFIER_SKILL_ID: "skill_id",
-            }
-        ],
-    }
-    await async_setup_component(hass, DOMAIN, {DOMAIN: yaml_config})
-    component: YandexSmartHome = hass.data[DOMAIN]
-
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT, const.CONF_DEVICES_DISCOVERED: True},
+        options={
+            const.CONF_SKILL: {
+                CONF_ID: "skill_id",
+                CONF_TOKEN: "token",
+                CONF_USER_ID: hass_admin_user.id,
+            }
+        },
     )
     with patch.object(hass, "state", return_value=CoreState.starting):
         config_entry.add_to_hass(hass)
         await hass.config_entries.async_setup(config_entry.entry_id)
+        component: YandexSmartHome = hass.data[DOMAIN]
         assert len(component.get_entry_data(config_entry)._notifiers) == 0
         hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
         await hass.async_block_till_done()
         assert len(component.get_entry_data(config_entry)._notifiers) == 1
 
 
-async def test_notifier_format_log_message(hass):
-    direct = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x"), {})
-    directv = YandexDirectNotifier(
-        hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="ivan", skill_id="sk", token="x", verbose_log=True), {}
-    )
-    cloud = YandexCloudNotifier(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x"), {})
-    assert direct._format_log_message("test") == "test"
-    assert directv._format_log_message("test") == "test (ivan@sk)"
-    assert cloud._format_log_message("test") == "test"
+@pytest.mark.parametrize("cls", [YandexDirectNotifier, YandexCloudNotifier])
+async def test_notifier_format_log_message(hass, cls, caplog):
+    n = cls(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x"), {})
+    ne = cls(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x", extended_log=True), {})
+    assert n._format_log_message("test") == "test"
+    assert ne._format_log_message("test") == "Mock Title: test"
+
+    caplog.clear()
+    n._debug_log("test")
+    ne._debug_log("test")
+    assert caplog.messages == ["test", f"({BASIC_ENTRY_DATA.entry.entry_id[:6]}) test"]
 
 
 async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):

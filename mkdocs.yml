@@ -29,15 +29,12 @@ nav:
           - Умения "Режимы работы": advanced/capabilities/mode.md
           - Умения "Выбор из диапазона": advanced/capabilities/range.md
           - Умения "Переключатели": advanced/capabilities/toggle.md
-      - Несколько интеграций: advanced/clone.md
       - События: advanced/events.md
       - Коды ошибок: advanced/error-codes.md
-  - Проблемы и отладка:
-      - Устранение проблем: troubleshoot/index.md
-      - Отладка: troubleshoot/debug.md
-  - Квазар и "Дом с Алисой": quasar.md
-  - Поддерживаемые устройства: supported-devices.md
+  - Устранение проблем: troubleshoot.md
   - Часто задаваемые вопросы: faq.md
+  - Поддерживаемые устройства: supported-devices.md
+  - Квазар и "Дом с Алисой": quasar.md
   - Обратная совместимость: breaking-changes.md
   - Рецепты: recipes.md
 

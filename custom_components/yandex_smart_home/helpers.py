@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
+from urllib.parse import urlparse
 
 from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
@@ -84,12 +86,28 @@ class CacheStore:
         return None
 
 
+class SmartHomePlatform(StrEnum):
+    """Supported smart home platform."""
+
+    YANDEX = "yandex"
+
+    @classmethod
+    def from_client_id(cls, client_id: str) -> SmartHomePlatform | None:
+        """Return platform for OAuth2 client id."""
+        host = urlparse(client_id).netloc
+        if "yandex" in host:
+            return cls.YANDEX
+
+        return None
+
+
 @dataclass
 class RequestData:
     """Hold data associated with a particular request."""
 
     entry_data: ConfigEntryData
     context: Context
+    platform: SmartHomePlatform
     request_user_id: str | None
     request_id: str | None
 

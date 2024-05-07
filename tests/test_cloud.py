@@ -239,7 +239,11 @@ async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, 
         mock_reconnect.assert_called_once()
         await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
-    requests = [json.dumps({"request_id": "req", "action": "/user/devices/query", "message": "not_{_json"})]
+    requests = [
+        json.dumps(
+            {"request_id": "req", "platform": "yandex", "action": "/user/devices/query", "message": "not_{_json"}
+        )
+    ]
     session = MockSession(aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=r) for r in requests])
     with patch(
         "custom_components.yandex_smart_home.cloud.CloudManager._try_reconnect", return_value=None
@@ -256,7 +260,7 @@ async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, 
 async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclient_mock):
     hass = hass_platform
 
-    requests = [{"request_id": "req_user_devices", "action": "/user/devices"}]
+    requests = [{"request_id": "req_user_devices", "platform": "yandex", "action": "/user/devices"}]
     session = MockSession(
         aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra={}, data=json.dumps(r)) for r in requests]
     )
@@ -337,11 +341,13 @@ async def test_cloud_req_user_devices_query(hass_platform, config_entry_cloud, a
     requests = [
         {
             "request_id": "req_user_devices_query_1",
+            "platform": "yandex",
             "action": "/user/devices/query",
             "message": json.dumps({"devices": [{"id": "sensor.outside_temp"}]}),
         },
         {
             "request_id": "req_user_devices_query_2",
+            "platform": "yandex",
             "action": "/user/devices/query",
             "message": json.dumps({"devices": [{"id": "sensor.not_existed"}]}),
         },
@@ -376,6 +382,7 @@ async def test_cloud_req_user_devices_action(hass_platform, config_entry_cloud, 
     requests = [
         {
             "request_id": "req_user_devices_action",
+            "platform": "yandex",
             "action": "/user/devices/action",
             "message": json.dumps(
                 {

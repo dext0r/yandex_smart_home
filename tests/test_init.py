@@ -482,11 +482,12 @@ async def test_migrate_entity_v1(hass):
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 4
+    assert entity.version == 5
     assert entity.title == "Yandex Smart Home Test"
     assert entity.data == {
         "cloud_instance": {"id": "foo", "password": "bar", "token": "xxx"},
         "connection_type": "direct",
+        "platform": "yandex",
         "devices_discovered": False,
     }
     assert entity.options == {
@@ -504,52 +505,14 @@ async def test_migrate_entity_v1(hass):
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 4
+    assert entity.version == 5
     assert entity.title == "Yandex Smart Home Test"
     assert entity.data == {
         "connection_type": "direct",
+        "platform": "yandex",
         "devices_discovered": True,
     }
     assert entity.options == {"filter_source": "config_entry"}
-
-
-@pytest.mark.parametrize(
-    "source_title,connection_type,expected_title",
-    [
-        ("Yandex Smart Home", "cloud", "Yaha Cloud (12345678)"),
-        ("Yandex Smart Home Foo", "cloud", "Yandex Smart Home Foo"),
-        ("Foo", "cloud", "Foo"),
-        ("Yandex Smart Home", "direct", "YSH: Direct"),
-        ("Yandex Smart Home Foo", "direct", "Yandex Smart Home Foo"),
-        ("Foo", "direct", "Foo"),
-    ],
-)
-async def test_migrate_entity_v2(hass, source_title, connection_type, expected_title):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        version=2,
-        title=source_title,
-        data={
-            "connection_type": connection_type,
-            "cloud_instance": {"id": "1234567890", "password": "bar", "token": "xxx"},
-            "bar": "foo",
-        },
-        options={"foo": "bar"},
-    )
-    entry.add_to_hass(hass)
-    with patch("custom_components.yandex_smart_home.entry_data.ConfigEntryData._async_setup_cloud_connection"):
-        await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
-
-    assert entry.version == 4
-    assert entry.title == expected_title
-    assert entry.data == {
-        "connection_type": connection_type,
-        "cloud_instance": {"id": "1234567890", "password": "bar", "token": "xxx"},
-        "bar": "foo",
-    }
-    assert entry.options == {"filter_source": "config_entry", "foo": "bar"}
-    await hass.config_entries.async_unload(entry.entry_id)
 
 
 async def test_migrate_entity_v3_with_config(hass):
@@ -569,13 +532,180 @@ async def test_migrate_entity_v3_with_config(hass):
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 4
-    assert entity.title == "Yandex Smart Home"
+    assert entity.version == 5
+    assert entity.title == "Yandex Smart Home: Direct"
     assert entity.data == {
         "connection_type": "direct",
+        "platform": "yandex",
         "devices_discovered": False,
     }
     assert entity.options == {
         "filter_source": "yaml",
         "filter": {"include_entities": ["switch.ac"]},
     }
+
+
+@pytest.mark.parametrize(
+    "connection_type,expect_migration",
+    [
+        ("cloud", False),
+        ("direct", True),
+    ],
+)
+async def test_migrate_entity_v5_single_notifier(hass, connection_type, expect_migration):
+    await async_setup_component(
+        hass,
+        DOMAIN,
+        {
+            DOMAIN: {
+                const.CONF_NOTIFIER: [
+                    {
+                        const.CONF_NOTIFIER_SKILL_ID: "foo",
+                        const.CONF_NOTIFIER_OAUTH_TOKEN: "bar",
+                        const.CONF_NOTIFIER_USER_ID: "baz",
+                    }
+                ]
+            }
+        },
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=2,
+        data={
+            "connection_type": connection_type,
+            "cloud_instance": {"id": "1234567890", "password": "bar", "token": "xxx"},
+            "bar": "foo",
+        },
+        options={"foo": "bar"},
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.yandex_smart_home.entry_data.ConfigEntryData._async_setup_cloud_connection"):
+        await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.version == 5
+    if expect_migration:
+        assert entry.options.get("skill", {}) == {"id": "foo", "token": "bar", "user_id": "baz"}
+    else:
+        assert entry.options.get("skill", {}) == {}
+
+    await hass.config_entries.async_unload(entry.entry_id)
+
+
+@pytest.mark.parametrize("connection_type", ["cloud", "direct"])
+async def test_migrate_entity_v5_several_notifiers(hass, connection_type):
+    await async_setup_component(
+        hass,
+        DOMAIN,
+        {
+            DOMAIN: {
+                const.CONF_NOTIFIER: [
+                    {
+                        const.CONF_NOTIFIER_SKILL_ID: "foo",
+                        const.CONF_NOTIFIER_OAUTH_TOKEN: "bar",
+                        const.CONF_NOTIFIER_USER_ID: "baz",
+                    }
+                ]
+            }
+        },
+    )
+    data = {
+        "connection_type": connection_type,
+        "cloud_instance": {"id": "1234567890", "password": "bar", "token": "xxx"},
+        "bar": "foo",
+    }
+    options = {"foo": "bar"}
+
+    entry1 = MockConfigEntry(domain=DOMAIN, version=2, data=data, options=options)
+    entry1.add_to_hass(hass)
+    entry2 = MockConfigEntry(domain=DOMAIN, version=2, data=data, options=options)
+    entry2.add_to_hass(hass)
+    with patch("custom_components.yandex_smart_home.entry_data.ConfigEntryData._async_setup_cloud_connection"):
+        await hass.config_entries.async_setup(entry1.entry_id)
+        await hass.config_entries.async_setup(entry2.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry1.version == 5
+    assert entry2.version == 5
+    assert entry1.options.get("skill", {}) == {}
+    assert entry2.options.get("skill", {}) == {}
+    await hass.config_entries.async_unload(entry1.entry_id)
+    await hass.config_entries.async_unload(entry2.entry_id)
+
+
+async def test_migrate_entity_v5_notifier_downgrade(hass):
+    await async_setup_component(
+        hass,
+        DOMAIN,
+        {
+            DOMAIN: {
+                const.CONF_NOTIFIER: [
+                    {
+                        const.CONF_NOTIFIER_SKILL_ID: "foo",
+                        const.CONF_NOTIFIER_OAUTH_TOKEN: "bar",
+                        const.CONF_NOTIFIER_USER_ID: "baz",
+                    }
+                ]
+            }
+        },
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=2,
+        data={"connection_type": "direct"},
+        options={"foo": "bar", "skill": {"id": "skill_id", "token": "token", "user_id": "user"}},
+    )
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.version == 5
+    assert entry.options == {
+        "filter_source": "config_entry",
+        "foo": "bar",
+        "skill": {"id": "skill_id", "token": "token", "user_id": "user"},
+    }
+    await hass.config_entries.async_unload(entry.entry_id)
+
+
+@pytest.mark.parametrize(
+    "source_title,connection_type,expected_title",
+    [
+        ("Yandex Smart Home", "cloud", "Yaha Cloud (12345678)"),
+        ("Yandex Smart Home Foo", "cloud", "Yandex Smart Home Foo"),
+        ("Foo", "cloud", "Foo"),
+        ("Yandex Smart Home", "direct", "Yandex Smart Home: Direct"),
+        ("YSH: Direct", "direct", "Yandex Smart Home: Direct"),
+        ("Yandex Smart Home Foo", "direct", "Yandex Smart Home Foo"),
+        ("Foo", "direct", "Foo"),
+    ],
+)
+async def test_migrate_entity_v5_title(hass, source_title, connection_type, expected_title):
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=2,
+        title=source_title,
+        data={
+            "connection_type": connection_type,
+            "cloud_instance": {"id": "1234567890", "password": "bar", "token": "xxx"},
+            "bar": "foo",
+        },
+        options={"foo": "bar"},
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.yandex_smart_home.entry_data.ConfigEntryData._async_setup_cloud_connection"):
+        await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.version == 5
+    assert entry.title == expected_title
+    assert entry.data == {
+        "connection_type": connection_type,
+        "platform": "yandex",
+        "cloud_instance": {"id": "1234567890", "password": "bar", "token": "xxx"},
+        "bar": "foo",
+    }
+    assert entry.options == {"filter_source": "config_entry", "foo": "bar"}
+    await hass.config_entries.async_unload(entry.entry_id)

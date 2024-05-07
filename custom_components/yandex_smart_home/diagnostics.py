@@ -8,7 +8,8 @@ from homeassistant.core import HomeAssistant
 
 from custom_components.yandex_smart_home.device import async_get_device_description, async_get_devices
 
-from . import DOMAIN, YandexSmartHome, const
+from . import DOMAIN, YandexSmartHome
+from .const import CONF_CLOUD_INSTANCE, CONF_SKILL
 
 
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, config_entry: ConfigEntry) -> dict[str, Any]:
@@ -17,7 +18,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, config_entry: 
     entry_data = component.get_entry_data(config_entry)
 
     diag = {
-        "entry": async_redact_data(config_entry.as_dict(), [const.CONF_CLOUD_INSTANCE]),
+        "entry": async_redact_data(config_entry.as_dict(), [CONF_CLOUD_INSTANCE, CONF_SKILL]),
         "devices": {},
     }
     diag.update(component.get_diagnostics())

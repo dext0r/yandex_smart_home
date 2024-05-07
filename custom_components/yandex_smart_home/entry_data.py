@@ -1,13 +1,20 @@
 """Config entry data for the Yandex Smart Home."""
 
 import asyncio
+from dataclasses import dataclass
+from functools import cached_property
 import logging
 from typing import Any, Self, cast
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT_STOP
+from homeassistant.const import (
+    CONF_ID,
+    CONF_PLATFORM,
+    CONF_TOKEN,
+    EVENT_HOMEASSISTANT_STARTED,
+    EVENT_HOMEASSISTANT_STOP,
+)
 from homeassistant.core import CoreState, HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.entityfilter import EntityFilter
 from homeassistant.helpers.template import Template
@@ -18,13 +25,29 @@ from . import capability_custom, const, property_custom
 from .capability_custom import CustomCapability, get_custom_capability
 from .cloud import CloudManager
 from .color import ColorProfiles
-from .const import DOMAIN, ConnectionType
-from .helpers import APIError, CacheStore
+from .const import (
+    CONF_SKILL,
+    CONF_USER_ID,
+    DOMAIN,
+    ISSUE_ID_DEPRECATED_YAML_NOTIFIER,
+    ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS,
+    ConnectionType,
+)
+from .helpers import APIError, CacheStore, SmartHomePlatform
 from .notifier import NotifierConfig, YandexCloudNotifier, YandexDirectNotifier, YandexNotifier
 from .property_custom import CustomProperty, get_custom_property
 from .schema import CapabilityType
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class SkillConfig:
+    """Class to hold configuration of a smart home skill."""
+
+    user_id: str
+    id: str
+    token: str
 
 
 class ConfigEntryData:
@@ -49,7 +72,6 @@ class ConfigEntryData:
         self._entity_filter = entity_filter
         self._cloud_manager: CloudManager | None = None
         self._notifiers: list[YandexNotifier] = []
-        self._notifier_configs: list[NotifierConfig] = []
 
     async def async_setup(self) -> Self:
         """Set up the config entry data."""
@@ -60,7 +82,6 @@ class ConfigEntryData:
         if self.connection_type == ConnectionType.CLOUD:
             await self._async_setup_cloud_connection()
 
-        self._notifier_configs = await self._get_notifier_configs()
         if self._hass.state == CoreState.running:
             await self._async_setup_notifiers()
         else:
@@ -78,6 +99,21 @@ class ConfigEntryData:
             )
         else:
             ir.async_delete_issue(self._hass, DOMAIN, "deprecated_pressure_unit")
+
+        if count := len(self._yaml_config.get(const.CONF_NOTIFIER, [])):
+            issue_id = ISSUE_ID_DEPRECATED_YAML_NOTIFIER if count == 1 else ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS
+            ir.async_create_issue(
+                self._hass,
+                DOMAIN,
+                issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=issue_id,
+                learn_more_url="https://docs.yaha-cloud.ru/master/breaking-changes/#v1-notifier",
+            )
+        else:
+            ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_DEPRECATED_YAML_NOTIFIER)
+            ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS)
 
         return self
 
@@ -100,10 +136,13 @@ class ConfigEntryData:
 
         return None
 
-    @property
+    @cached_property
     def is_reporting_states(self) -> bool:
         """Test if the config entry can report state changes."""
-        return bool(self._notifier_configs)
+        if self.connection_type == ConnectionType.CLOUD:
+            return True
+
+        return self.skill is not None
 
     @property
     def use_cloud_stream(self) -> bool:
@@ -141,6 +180,23 @@ class ConfigEntryData:
         raise ValueError("Config entry uses direct connection")
 
     @property
+    def platform(self) -> SmartHomePlatform | None:
+        """Return smart home platform."""
+        if self.connection_type == ConnectionType.CLOUD:
+            return None
+
+        return SmartHomePlatform(self.entry.data[CONF_PLATFORM])
+
+    @cached_property
+    def skill(self) -> SkillConfig | None:
+        """Return configuration for the skill."""
+        config = self.entry.options.get(CONF_SKILL)
+        if not config:
+            return None
+
+        return SkillConfig(user_id=config[CONF_USER_ID], id=config[CONF_ID], token=config[CONF_TOKEN])
+
+    @property
     def color_profiles(self) -> ColorProfiles:
         """Return color profiles."""
         return ColorProfiles.from_dict(self._yaml_config.get(const.CONF_COLOR_PROFILE, {}))
@@ -176,15 +232,28 @@ class ConfigEntryData:
 
     async def _async_setup_notifiers(self, *_: Any) -> None:
         """Set up notifiers."""
-        if not self.entry.data.get(const.CONF_DEVICES_DISCOVERED) or not self._notifier_configs:
+        if not self.is_reporting_states:
+            return
+        if not self.entry.data.get(const.CONF_DEVICES_DISCOVERED):
             return
 
         track_templates = self._get_trackable_states()
-        for config in self._notifier_configs:
-            match self.connection_type:
-                case ConnectionType.CLOUD:
-                    self._notifiers.append(YandexCloudNotifier(self._hass, self, config, track_templates))
-                case ConnectionType.DIRECT:
+        extended_log = len(self._hass.config_entries.async_entries(DOMAIN)) > 1
+
+        match self.connection_type:
+            case ConnectionType.CLOUD:
+                config = NotifierConfig(
+                    user_id=self.cloud_instance_id, token=self.cloud_connection_token, extended_log=extended_log
+                )
+                self._notifiers.append(YandexCloudNotifier(self._hass, self, config, track_templates))
+            case ConnectionType.DIRECT:
+                if self.skill:
+                    config = NotifierConfig(
+                        user_id=self.skill.user_id,
+                        token=self.skill.token,
+                        skill_id=self.skill.id,
+                        extended_log=extended_log,
+                    )
                     self._notifiers.append(YandexDirectNotifier(self._hass, self, config, track_templates))
 
         await asyncio.wait([asyncio.create_task(n.async_setup()) for n in self._notifiers])
@@ -199,34 +268,6 @@ class ConfigEntryData:
         return self.entry.async_on_unload(
             self._hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._cloud_manager.async_disconnect)
         )
-
-    async def _get_notifier_configs(self) -> list[NotifierConfig]:
-        """Return notifier configurations."""
-        configs: list[NotifierConfig] = []
-
-        match self.connection_type:
-            case ConnectionType.CLOUD:
-                configs.append(NotifierConfig(user_id=self.cloud_instance_id, token=self.cloud_connection_token))
-            case ConnectionType.DIRECT:
-                items = self._yaml_config.get(const.CONF_NOTIFIER, [])
-                for item in items:
-                    configs.append(
-                        NotifierConfig(
-                            user_id=item[const.CONF_NOTIFIER_USER_ID],
-                            hass_user_id=item[const.CONF_NOTIFIER_USER_ID],
-                            token=item[const.CONF_NOTIFIER_OAUTH_TOKEN],
-                            skill_id=item[const.CONF_NOTIFIER_SKILL_ID],
-                            verbose_log=len(items) > 1,
-                        )
-                    )
-
-        for config in configs:
-            try:
-                await config.async_validate(self._hass)
-            except Exception as exc:
-                raise ConfigEntryNotReady from exc
-
-        return configs
 
     def _get_trackable_states(self) -> dict[Template, list[CustomCapability | CustomProperty]]:
         """Return states with their value templates."""
