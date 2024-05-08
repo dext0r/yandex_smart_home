@@ -245,10 +245,7 @@ async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, 
         await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_not_called()
         await hass.config_entries.async_unload(config_entry_cloud.entry_id)
-        assert json.loads(session.ws.send_queue[0]) == {
-            "payload": {"error_code": "INTERNAL_ERROR"},
-            "request_id": "req",
-        }
+        assert json.loads(session.ws.send_queue[0]) == {"request_id": "req"}
 
 
 async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclient_mock):

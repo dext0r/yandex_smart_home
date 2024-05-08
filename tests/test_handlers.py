@@ -43,21 +43,18 @@ async def test_handle_request(hass, caplog):
     with patch("custom_components.yandex_smart_home.handlers.HANDLERS", r):
         assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "missing", "")).as_dict() == {
             "request_id": REQ_ID,
-            "payload": {"error_code": "INTERNAL_ERROR"},
         }
         assert caplog.messages == ["Unexpected action 'missing'"]
         caplog.clear()
 
         assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "error", "")).as_dict() == {
             "request_id": REQ_ID,
-            "payload": {"error_code": "INVALID_ACTION"},
         }
         assert caplog.messages == ["foo (INVALID_ACTION)"]
         caplog.clear()
 
         assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "exception", "")).as_dict() == {
             "request_id": REQ_ID,
-            "payload": {"error_code": "INTERNAL_ERROR"},
         }
         assert caplog.records[-1].message == "Unexpected exception"
         assert "boooo" in caplog.records[-1].exc_text

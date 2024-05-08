@@ -49,4 +49,4 @@ class Response(APIModel):
     """Base API response."""
 
     request_id: str | None
-    payload: ResponsePayload | None
+    payload: ResponsePayload | None = None

@@ -19,7 +19,6 @@ from .schema import (
     DeviceDescription,
     DeviceList,
     DeviceStates,
-    Error,
     FailedActionResult,
     Response,
     ResponseCode,
@@ -45,16 +44,17 @@ async def async_handle_request(hass: HomeAssistant, data: RequestData, action: s
 
     if handler is None:
         _LOGGER.error(f"Unexpected action '{action}'")
-        return Response(request_id=data.request_id, payload=Error(error_code=ResponseCode.INTERNAL_ERROR))
+        return Response(request_id=data.request_id)
 
     try:
         return Response(request_id=data.request_id, payload=await handler(hass, data, payload))
     except APIError as err:
         _LOGGER.error(f"{err.message} ({err.code})")
-        return Response(request_id=data.request_id, payload=Error(error_code=ResponseCode(err.code)))
+        return Response(request_id=data.request_id)
     except Exception:
+        # return always 200 due to blocking error on device page
         _LOGGER.exception("Unexpected exception")
-        return Response(request_id=data.request_id, payload=Error(error_code=ResponseCode.INTERNAL_ERROR))
+        return Response(request_id=data.request_id)
 
 
 @HANDLERS.register("/user/devices")
