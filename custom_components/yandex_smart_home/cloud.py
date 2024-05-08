@@ -156,7 +156,7 @@ class CloudManager:
                 is_fixable=False,
                 severity=ir.IssueSeverity.CRITICAL,
                 translation_key=ISSUE_ID_RECONNECTING_TOO_FAST,
-                translation_placeholders={"entity": self._entry_data.entry.title},
+                translation_placeholders={"entry_title": self._entry_data.entry.title},
             )
             _LOGGER.warning(f"Reconnecting too fast, next reconnection in {self._ws_reconnect_delay} seconds")
 

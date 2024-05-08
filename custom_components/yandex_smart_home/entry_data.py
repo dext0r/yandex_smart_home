@@ -33,6 +33,7 @@ from .const import (
     ISSUE_ID_DEPRECATED_PRESSURE_UNIT,
     ISSUE_ID_DEPRECATED_YAML_NOTIFIER,
     ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS,
+    ISSUE_ID_MISSING_SKILL_DATA,
     ConnectionType,
 )
 from .helpers import APIError, CacheStore, SmartHomePlatform
@@ -253,8 +254,20 @@ class ConfigEntryData:
 
     async def _async_setup_notifiers(self, *_: Any) -> None:
         """Set up notifiers."""
-        if not self.is_reporting_states:
+        if self.is_reporting_states:
+            ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_MISSING_SKILL_DATA)
+        else:
+            ir.async_create_issue(
+                self._hass,
+                DOMAIN,
+                ISSUE_ID_MISSING_SKILL_DATA,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=ISSUE_ID_MISSING_SKILL_DATA,
+                translation_placeholders={"entry_title": self.entry.title},
+            )
             return
+
         if not self.linked_platforms:
             return
 

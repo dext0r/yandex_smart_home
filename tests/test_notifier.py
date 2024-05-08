@@ -10,6 +10,7 @@ from homeassistant.auth.models import User
 from homeassistant.components.light import ATTR_BRIGHTNESS
 from homeassistant.const import ATTR_DEVICE_CLASS, CONF_ID, CONF_TOKEN, EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE
 from homeassistant.core import CoreState, HomeAssistant, State
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 import pytest
@@ -154,6 +155,37 @@ async def test_notifier_lifecycle_link_platform(
             assert notifier._unsub_initial_report is None
             assert notifier._unsub_report_states is None
             assert notifier._unsub_discovery is None
+
+
+async def test_notifier_missing_skill_data(
+    hass: HomeAssistant, hass_admin_user: User, issue_registry: ir.IssueRegistry
+) -> None:
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={
+            const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+        },
+    )
+    config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    assert issue_registry.async_get_issue(DOMAIN, "missing_skill_data") is not None
+
+    hass.config_entries.async_update_entry(
+        config_entry,
+        options={
+            const.CONF_SKILL: {
+                CONF_ID: "skill_id",
+                CONF_TOKEN: "token",
+                CONF_USER_ID: hass_admin_user.id,
+            }
+        },
+    )
+    await hass.async_block_till_done()
+    assert issue_registry.async_get_issue(DOMAIN, "missing_skill_data") is None
+
+    await hass.config_entries.async_unload(config_entry.entry_id)
 
 
 async def test_notifier_postponed_setup(hass, hass_admin_user):

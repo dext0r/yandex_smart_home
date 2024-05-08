@@ -60,6 +60,7 @@ ISSUE_ID_DEPRECATED_PRESSURE_UNIT = "deprecated_pressure_unit"
 ISSUE_ID_DEPRECATED_YAML_NOTIFIER = "deprecated_yaml_notifier"
 ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS = "deprecated_yaml_several_notifiers"
 ISSUE_ID_MISSING_INTEGRATION = "missing_integration"
+ISSUE_ID_MISSING_SKILL_DATA = "missing_skill_data"
 ISSUE_ID_RECONNECTING_TOO_FAST = "reconnecting_too_fast"
 
 # Legacy
