@@ -61,14 +61,14 @@ def test_entry_data_trackable_states(hass, caplog):
     assert caplog.messages == ["Failed to track custom capability: foo"]
 
 
-async def test_entry_data_get_user_id(hass, hass_read_only_user):
+async def test_entry_data_get_context_user_id(hass, hass_read_only_user):
     entry_data = MockConfigEntryData(
         hass=hass,
         entry=MockConfigEntry(
             domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={const.CONF_USER_ID: "foo"}
         ),
     )
-    assert await entry_data.async_get_user_id() is None
+    assert await entry_data.async_get_context_user_id() is None
 
     entry_data = MockConfigEntryData(
         hass=hass,
@@ -79,7 +79,7 @@ async def test_entry_data_get_user_id(hass, hass_read_only_user):
             options={const.CONF_USER_ID: hass_read_only_user.id},
         ),
     )
-    assert await entry_data.async_get_user_id() is hass_read_only_user.id
+    assert await entry_data.async_get_context_user_id() is hass_read_only_user.id
 
 
 async def test_deprecated_pressure_unit(hass, config_entry_direct):

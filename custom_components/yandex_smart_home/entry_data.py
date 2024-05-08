@@ -129,7 +129,7 @@ class ConfigEntryData:
 
         return None
 
-    async def async_get_user_id(self) -> str | None:
+    async def async_get_context_user_id(self) -> str | None:
         """Return user id for service calls (cloud connection only)."""
         if user_id := self.entry.options.get(const.CONF_USER_ID):
             if user := await self._hass.auth.async_get_user(user_id):

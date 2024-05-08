@@ -119,7 +119,7 @@ class CloudManager:
 
         data = RequestData(
             entry_data=self._entry_data,
-            context=Context(user_id=await self._entry_data.async_get_user_id()),
+            context=Context(user_id=await self._entry_data.async_get_context_user_id()),
             platform=request.platform,
             request_user_id=self._entry_data.cloud_instance_id,
             request_id=request.request_id,
