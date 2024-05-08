@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
 import logging
 from typing import TYPE_CHECKING, cast
 
@@ -24,8 +25,7 @@ from homeassistant.helpers.selector import (
 from homeassistant.setup import async_setup_component
 import voluptuous as vol
 
-from . import DOMAIN, FILTER_SCHEMA, SmartHomePlatform
-from .cloud import register_cloud_instance
+from . import DOMAIN, FILTER_SCHEMA, SmartHomePlatform, cloud
 from .const import (
     CONF_CLOUD_INSTANCE,
     CONF_CLOUD_INSTANCE_CONNECTION_TOKEN,
@@ -52,6 +52,13 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_CONFIG_ENTRY_TITLE = "Yandex Smart Home"
 PRE_V1_DIRECT_CONFIG_ENTRY_TITLE = "YSH: Direct"  # TODO: remove after v1.1 release
 USER_NONE = "none"
+
+
+class MaintenanceAction(StrEnum):
+    REVOKE_OAUTH_TOKENS = "revoke_oauth_tokens"
+    UNLINK_ALL_PLATFORMS = "unlink_all_platforms"
+    RESET_CLOUD_INSTANCE_CONNECTION_TOKEN = "reset_cloud_instance_connection_token"
+
 
 CONNECTION_TYPE_SELECTOR = SelectSelector(
     SelectSelectorConfig(
@@ -301,7 +308,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
 
             if user_input[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
                 try:
-                    instance = await register_cloud_instance(self.hass)
+                    instance = await cloud.register_instance(self.hass)
                     self._data[CONF_CLOUD_INSTANCE] = {
                         CONF_CLOUD_INSTANCE_ID: instance.id,
                         CONF_CLOUD_INSTANCE_PASSWORD: instance.password,
@@ -374,6 +381,7 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
                 options += ["cloud_credentials", "context_user"]
             case ConnectionType.DIRECT:
                 options += [f"skill_{self._data[CONF_PLATFORM]}"]
+        options += ["maintenance"]
 
         return self.async_show_menu(step_id="init", menu_options=options)
 
@@ -410,6 +418,63 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
                     ): await _async_get_user_selector(self.hass)
                 }
             ),
+        )
+
+    async def async_step_maintenance(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Show maintenance actions."""
+        errors: dict[str, str] = {}
+        description_placeholders = {}
+
+        if user_input is not None:
+            if user_input.get(MaintenanceAction.REVOKE_OAUTH_TOKENS):
+                match self._data[CONF_CONNECTION_TYPE]:
+                    case ConnectionType.CLOUD:
+                        try:
+                            await cloud.revoke_oauth_tokens(
+                                self.hass,
+                                self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
+                                self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_CONNECTION_TOKEN],
+                            )
+                        except Exception as e:
+                            errors[MaintenanceAction.REVOKE_OAUTH_TOKENS] = "unknown"
+                            description_placeholders["error"] = str(e)
+
+                    case ConnectionType.DIRECT:
+                        errors[MaintenanceAction.REVOKE_OAUTH_TOKENS] = "manual_revoke_oauth_tokens"
+
+            if user_input.get(MaintenanceAction.UNLINK_ALL_PLATFORMS):
+                self._data[CONF_LINKED_PLATFORMS] = []
+                self.hass.config_entries.async_update_entry(self._entry, data=self._data)
+
+            if user_input.get(MaintenanceAction.RESET_CLOUD_INSTANCE_CONNECTION_TOKEN):
+                try:
+                    instance = await cloud.reset_connection_token(
+                        self.hass,
+                        self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
+                        self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_CONNECTION_TOKEN],
+                    )
+                    self._data[CONF_CLOUD_INSTANCE] = {
+                        CONF_CLOUD_INSTANCE_ID: instance.id,
+                        CONF_CLOUD_INSTANCE_PASSWORD: self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_PASSWORD],
+                        CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: instance.connection_token,
+                    }
+                    self.hass.config_entries.async_update_entry(self._entry, data=self._data)
+                except Exception as e:
+                    errors[MaintenanceAction.RESET_CLOUD_INSTANCE_CONNECTION_TOKEN] = "unknown"
+                    description_placeholders["error"] = str(e)
+
+            if not errors:
+                return await self.async_step_done()
+
+        actions = [MaintenanceAction.REVOKE_OAUTH_TOKENS, MaintenanceAction.UNLINK_ALL_PLATFORMS]
+        if self._data[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
+            actions += [MaintenanceAction.RESET_CLOUD_INSTANCE_CONNECTION_TOKEN]
+
+        return self.async_show_form(
+            step_id="maintenance",
+            data_schema=vol.Schema({vol.Optional(action.value): BooleanSelector() for action in actions}),
+            errors=errors,
+            description_placeholders=description_placeholders,
         )
 
     async def async_step_done(self, _: ConfigType | None = None) -> ConfigFlowResult:

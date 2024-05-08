@@ -37,6 +37,7 @@ from . import test_cloud
 
 if TYPE_CHECKING:
     from homeassistant.auth.models import User
+    from homeassistant.config_entries import ConfigEntry
     from homeassistant.core import HomeAssistant
     from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
@@ -133,6 +134,19 @@ async def _async_forward_to_step_update_filter(hass: HomeAssistant, user: User) 
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "update_filter"
     return result
+
+
+async def _async_forward_to_step_maintenance(hass: HomeAssistant, config_entry: ConfigEntry) -> FlowResult:
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result["type"] == FlowResultType.MENU
+    assert result["step_id"] == "init"
+
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "maintenance"}
+    )
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "maintenance"
+    return result2
 
 
 async def test_config_flow_empty_entities(hass: HomeAssistant, hass_admin_user: User) -> None:
@@ -437,7 +451,7 @@ async def test_options_step_init_cloud(hass: HomeAssistant) -> None:
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == FlowResultType.MENU
     assert result["step_id"] == "init"
-    assert result["menu_options"] == ["expose_settings", "cloud_credentials", "context_user"]
+    assert result["menu_options"] == ["expose_settings", "cloud_credentials", "context_user", "maintenance"]
 
 
 @pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX])
@@ -450,7 +464,7 @@ async def test_options_step_init_direct(hass: HomeAssistant, platform: SmartHome
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == FlowResultType.MENU
     assert result["step_id"] == "init"
-    assert result["menu_options"] == ["expose_settings", f"skill_{platform}"]
+    assert result["menu_options"] == ["expose_settings", f"skill_{platform}", "maintenance"]
 
 
 async def test_options_step_cloud_credentinals(hass: HomeAssistant) -> None:
@@ -798,6 +812,118 @@ async def test_options_flow_skill_yandex(
         assert config_entry.data[CONF_LINKED_PLATFORMS] == []
         if attr_to_change == CONF_ID:
             assert config_entry.title == "Yandex Smart Home: Direct (Mock User / foobar)"
+
+
+async def test_options_flow_maintenance_direct(hass: HomeAssistant) -> None:
+    config_entry = await _async_mock_config_entry(
+        hass, data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_LINKED_PLATFORMS: ["foo"]}
+    )
+    config_entry.add_to_hass(hass)
+
+    result = await _async_forward_to_step_maintenance(hass, config_entry)
+    assert result["data_schema"] is not None
+    assert list(result["data_schema"].schema.keys()) == ["revoke_oauth_tokens", "unlink_all_platforms"]
+
+    result_rot = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"revoke_oauth_tokens": True}
+    )
+    assert result_rot["type"] == FlowResultType.FORM
+    assert result_rot["step_id"] == "maintenance"
+    assert result_rot["errors"] == {"revoke_oauth_tokens": "manual_revoke_oauth_tokens"}
+
+    assert config_entry.data[CONF_LINKED_PLATFORMS] == ["foo"]
+    result_uap = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"unlink_all_platforms": True}
+    )
+    assert result_uap["type"] == FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert config_entry.data[CONF_LINKED_PLATFORMS] == []
+
+
+async def test_options_flow_maintenance_cloud(hass: HomeAssistant) -> None:
+    config_entry = await _async_mock_config_entry(
+        hass, data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD, CONF_LINKED_PLATFORMS: ["foo"]}
+    )
+    config_entry.add_to_hass(hass)
+
+    result = await _async_forward_to_step_maintenance(hass, config_entry)
+    assert result["data_schema"] is not None
+    assert list(result["data_schema"].schema.keys()) == [
+        "revoke_oauth_tokens",
+        "unlink_all_platforms",
+        "reset_cloud_instance_connection_token",
+    ]
+
+    assert config_entry.data[CONF_LINKED_PLATFORMS] == ["foo"]
+    result_uap = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"unlink_all_platforms": True}
+    )
+    assert result_uap["type"] == FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    assert config_entry.data[CONF_LINKED_PLATFORMS] == []
+
+
+async def test_options_flow_maintenance_cloud_revoke_tokens(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    config_entry = await _async_mock_config_entry(hass, data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
+    config_entry.add_to_hass(hass)
+
+    result = await _async_forward_to_step_maintenance(hass, config_entry)
+
+    aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/test/oauth/revoke-all", status=401)
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"revoke_oauth_tokens": True}
+    )
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "maintenance"
+    assert result2["errors"] == {"revoke_oauth_tokens": "unknown"}
+    assert result2["description_placeholders"] == {"error": "401, message='', url='http://example.com'"}
+
+    aioclient_mock.clear_requests()
+    aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/test/oauth/revoke-all", status=200)
+    result3 = await hass.config_entries.options.async_configure(
+        result2["flow_id"], user_input={"revoke_oauth_tokens": True}
+    )
+    assert result3["type"] == FlowResultType.CREATE_ENTRY
+
+
+async def test_options_flow_maintenance_cloud_reset_token(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    config_entry = await _async_mock_config_entry(hass, data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
+    config_entry.add_to_hass(hass)
+
+    assert config_entry.data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_CONNECTION_TOKEN] == "foo"
+
+    result = await _async_forward_to_step_maintenance(hass, config_entry)
+
+    aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/test/reset-connection-token", status=401)
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"reset_cloud_instance_connection_token": True}
+    )
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "maintenance"
+    assert result2["errors"] == {"reset_cloud_instance_connection_token": "unknown"}
+    assert result2["description_placeholders"] == {"error": "401, message='', url='http://example.com'"}
+
+    aioclient_mock.clear_requests()
+    aioclient_mock.post(
+        f"{cloud.BASE_API_URL}/instance/test/reset-connection-token",
+        status=200,
+        json={"id": "1234567890", "password": "", "connection_token": "bar"},
+    )
+    result3 = await hass.config_entries.options.async_configure(
+        result2["flow_id"], user_input={"reset_cloud_instance_connection_token": True}
+    )
+    assert result3["type"] == FlowResultType.CREATE_ENTRY
+
+    await hass.async_block_till_done()
+    assert config_entry.data[CONF_CLOUD_INSTANCE] == {
+        CONF_CLOUD_INSTANCE_ID: "1234567890",
+        CONF_CLOUD_INSTANCE_PASSWORD: "secret",
+        CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "bar",
+    }
 
 
 async def test_config_entry_title_default(hass: HomeAssistant, hass_admin_user: User) -> None:

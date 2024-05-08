@@ -154,7 +154,7 @@ class CloudManager:
         return None
 
 
-async def register_cloud_instance(hass: HomeAssistant) -> CloudInstanceData:
+async def register_instance(hass: HomeAssistant) -> CloudInstanceData:
     """Register a new cloud instance."""
     session = async_create_clientsession(hass)
 
@@ -162,3 +162,27 @@ async def register_cloud_instance(hass: HomeAssistant) -> CloudInstanceData:
     response.raise_for_status()
 
     return CloudInstanceData.parse_raw(await response.text())
+
+
+async def reset_connection_token(hass: HomeAssistant, instance_id: str, token: str) -> CloudInstanceData:
+    """Reset a cloud instance connection token."""
+    session = async_create_clientsession(hass)
+
+    response = await session.post(
+        f"{BASE_API_URL}/instance/{instance_id}/reset-connection-token",
+        headers={hdrs.AUTHORIZATION: f"Bearer {token}"},
+    )
+    response.raise_for_status()
+
+    return CloudInstanceData.parse_raw(await response.text())
+
+
+async def revoke_oauth_tokens(hass: HomeAssistant, instance_id: str, token: str) -> None:
+    """Revoke all access and refresh tokens for a cloud instance."""
+    session = async_create_clientsession(hass)
+
+    response = await session.post(
+        f"{BASE_API_URL}/instance/{instance_id}/oauth/revoke-all",
+        headers={hdrs.AUTHORIZATION: f"Bearer {token}"},
+    )
+    response.raise_for_status()
