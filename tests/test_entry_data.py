@@ -95,9 +95,11 @@ async def test_entry_data_unsupported_linked_platform(hass: HomeAssistant, caplo
     assert caplog.messages == ["Unsupported platform: foo"]
 
 
-async def test_deprecated_pressure_unit(hass, config_entry_direct):
-    issue_registry = ir.async_get(hass)
-
+async def test_deprecated_pressure_unit(
+    hass: HomeAssistant,
+    config_entry_direct: MockConfigEntry,
+    issue_registry: ir.IssueRegistry,
+) -> None:
     config_entry_direct.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
     await hass.async_block_till_done()
@@ -116,9 +118,11 @@ async def test_deprecated_pressure_unit(hass, config_entry_direct):
     await hass.config_entries.async_unload(config_entry_direct.entry_id)
 
 
-async def test_deprecated_notifier(hass, config_entry_direct):
-    issue_registry = ir.async_get(hass)
-
+async def test_deprecated_notifier(
+    hass: HomeAssistant,
+    config_entry_direct: MockConfigEntry,
+    issue_registry: ir.IssueRegistry,
+) -> None:
     config_entry_direct.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
     await hass.async_block_till_done()

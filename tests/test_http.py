@@ -73,9 +73,9 @@ async def test_http_config_entry_selection(
     hass_client: ClientSessionGenerator,
     aiohttp_client: ClientSessionGenerator,
     caplog: pytest.LogCaptureFixture,
+    issue_registry: ir.IssueRegistry,
 ) -> None:
     hass = hass_platform
-    issue_registry = ir.async_get(hass)
 
     await async_setup_component(hass, DOMAIN, {})
 
