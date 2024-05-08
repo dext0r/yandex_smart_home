@@ -67,7 +67,7 @@ CONF_NOTIFIER_OAUTH_TOKEN = "oauth_token"
 CONF_NOTIFIER_SKILL_ID = "skill_id"
 CONF_NOTIFIER_USER_ID = "user_id"
 
-CLOUD_BASE_URL = "https://yaha-cloud.ru:4443"
+CLOUD_BASE_URL = "https://yaha-cloud.ru"
 CLOUD_STREAM_BASE_URL = "https://stream.yaha-cloud.ru"
 
 EVENT_DEVICE_ACTION = "yandex_smart_home_device_action"
