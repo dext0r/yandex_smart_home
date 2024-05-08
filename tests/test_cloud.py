@@ -3,13 +3,14 @@ from __future__ import annotations
 from asyncio import TimeoutError
 import json
 from typing import TYPE_CHECKING, Any
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from aiohttp import WSMessage, WSMsgType
 from homeassistant import core
 from homeassistant.components import demo
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION, _make_key
 from homeassistant.setup import async_setup_component
 import pytest
@@ -197,7 +198,14 @@ async def test_cloud_try_reconnect(hass_platform, config_entry_cloud, aioclient_
     mock_call_later.assert_not_called()
 
 
-async def test_cloud_fast_reconnect(hass_platform, config_entry_cloud, aioclient_mock, mock_call_later, caplog):
+async def test_cloud_fast_reconnect(
+    hass_platform: HomeAssistant,
+    config_entry_cloud: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    mock_call_later: AsyncMock,
+    caplog: pytest.LogCaptureFixture,
+    issue_registry: ir.IssueRegistry,
+) -> None:
     hass = hass_platform
     session = MockSession(aioclient_mock, ws_close_code=1001)
     await async_setup_entry(hass, config_entry_cloud, session=session)
@@ -210,6 +218,11 @@ async def test_cloud_fast_reconnect(hass_platform, config_entry_cloud, aioclient
     await manager.async_connect()
     assert manager._ws_reconnect_delay == 180
     assert caplog.messages[-2] == "Reconnecting too fast, next reconnection in 180 seconds"
+    assert issue_registry.async_get_issue(DOMAIN, "reconnecting_too_fast") is not None
+
+    manager._fast_reconnection_count = 0
+    await manager.async_connect()
+    assert issue_registry.async_get_issue(DOMAIN, "reconnecting_too_fast") is None
 
 
 async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, aioclient_mock):

@@ -9,13 +9,14 @@ from typing import TYPE_CHECKING, Any, AsyncIterable, cast
 
 from aiohttp import ClientConnectorError, ClientResponseError, ClientWebSocketResponse, WSMessage, WSMsgType, hdrs
 from homeassistant.core import Context, HassJob
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import SERVER_SOFTWARE, async_create_clientsession, async_get_clientsession
 from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt
 from pydantic import BaseModel
 
 from . import handlers
-from .const import CLOUD_BASE_URL, DOMAIN
+from .const import CLOUD_BASE_URL, DOMAIN, ISSUE_ID_RECONNECTING_TOO_FAST
 from .helpers import RequestData, SmartHomePlatform
 
 if TYPE_CHECKING:
@@ -83,6 +84,7 @@ class CloudManager:
             _LOGGER.debug("Connection to Yandex Smart Home cloud established")
             self._ws_reconnect_delay = DEFAULT_RECONNECTION_DELAY
             self._last_connection_at = dt.utcnow()
+            ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_RECONNECTING_TOO_FAST)
 
             async for msg in cast(AsyncIterable[WSMessage], self._ws):
                 if msg.type == WSMsgType.TEXT:
@@ -147,6 +149,15 @@ class CloudManager:
 
         if self._fast_reconnection_count >= FAST_RECONNECTION_THRESHOLD:
             self._ws_reconnect_delay = MAX_RECONNECTION_DELAY
+            ir.async_create_issue(
+                self._hass,
+                DOMAIN,
+                ISSUE_ID_RECONNECTING_TOO_FAST,
+                is_fixable=False,
+                severity=ir.IssueSeverity.CRITICAL,
+                translation_key=ISSUE_ID_RECONNECTING_TOO_FAST,
+                translation_placeholders={"entity": self._entry_data.entry.title},
+            )
             _LOGGER.warning(f"Reconnecting too fast, next reconnection in {self._ws_reconnect_delay} seconds")
 
         _LOGGER.debug(f"Trying to reconnect in {self._ws_reconnect_delay} seconds")
