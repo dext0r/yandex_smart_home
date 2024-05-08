@@ -158,9 +158,9 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
 
 
 @HANDLERS.register("/user/unlink")
-async def async_user_unlink(_hass: HomeAssistant, _data: RequestData, _payload: str) -> None:
+async def async_user_unlink(_hass: HomeAssistant, data: RequestData, _payload: str) -> None:
     """Handle request indicates that the user has unlink the account.
 
     https://yandex.ru/dev/dialogs/smart-home/doc/reference/unlink.html
     """
-    return None
+    data.entry_data.unlink_platform(data.platform)

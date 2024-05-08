@@ -183,6 +183,34 @@ async def test_handler_link_platform_direct(hass_platform_direct: HomeAssistant,
     await hass.async_block_till_done()
 
 
+async def test_handler_user_unlink(hass_platform_direct: HomeAssistant, hass_admin_user: User) -> None:
+    hass = hass_platform_direct
+    component: YandexSmartHome = hass.data[DOMAIN]
+    entry_data = component.get_direct_connection_entry_data(
+        platform=SmartHomePlatform.YANDEX, user_id=hass_admin_user.id
+    )
+    assert entry_data is not None
+
+    await handlers.async_device_list(
+        hass, RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "foo", REQ_ID), ""
+    )
+    assert entry_data.linked_platforms == {SmartHomePlatform.YANDEX}
+    await hass.async_block_till_done()
+
+    with patch("homeassistant.config_entries.ConfigEntries.async_update_entry") as mock_update_entry:
+        await handlers.async_user_unlink(
+            hass, RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "foo", REQ_ID), ""
+        )
+        mock_update_entry.assert_called_once()
+
+    for _ in range(0, 2):
+        await handlers.async_user_unlink(
+            hass, RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "foo", REQ_ID), ""
+        )
+        assert entry_data.linked_platforms == set()
+        await hass.async_block_till_done()
+
+
 async def test_handler_devices_action(hass, caplog):
     class MockCapability(StateToggleCapability):
         @property

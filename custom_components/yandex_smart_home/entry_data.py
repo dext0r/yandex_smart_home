@@ -232,7 +232,14 @@ class ConfigEntryData:
             return
 
         data = self.entry.data.copy()
-        data.setdefault(CONF_LINKED_PLATFORMS, []).append(platform)
+        data[CONF_LINKED_PLATFORMS] = data.get(CONF_LINKED_PLATFORMS, []) + [platform]
+
+        self._hass.config_entries.async_update_entry(self.entry, data=data)
+
+    def unlink_platform(self, platform: SmartHomePlatform) -> None:
+        """Unlink smart home platform."""
+        data = self.entry.data.copy()
+        data[CONF_LINKED_PLATFORMS] = list(self.linked_platforms - {platform})
 
         self._hass.config_entries.async_update_entry(self.entry, data=data)
 
