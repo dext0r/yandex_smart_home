@@ -6,19 +6,21 @@ from typing import cast
 from unittest.mock import patch
 
 from aiohttp.client_exceptions import ClientConnectionError
+from homeassistant.auth.models import User
 from homeassistant.components.light import ATTR_BRIGHTNESS
 from homeassistant.const import ATTR_DEVICE_CLASS, CONF_ID, CONF_TOKEN, EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE
-from homeassistant.core import CoreState, State
+from homeassistant.core import CoreState, HomeAssistant, State
 from homeassistant.helpers.template import Template
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.yandex_smart_home import CONF_USER_ID, DOMAIN, ConnectionType, YandexSmartHome, const
 from custom_components.yandex_smart_home.capability_custom import get_custom_capability
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
-from custom_components.yandex_smart_home.helpers import APIError
+from custom_components.yandex_smart_home.helpers import APIError, SmartHomePlatform
 from custom_components.yandex_smart_home.notifier import (
     NotifierConfig,
     PendingStates,
@@ -59,7 +61,9 @@ async def _assert_not_empty_list(coro):
     assert await coro != []
 
 
-async def test_notifier_setup_not_discovered(hass, hass_admin_user, aioclient_mock):
+async def test_notifier_setup_no_linked_platforms(
+    hass: HomeAssistant, hass_admin_user: User, aioclient_mock: AiohttpClientMocker
+) -> None:
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
     config_entry_direct = MockConfigEntry(
@@ -95,13 +99,18 @@ async def test_notifier_setup_not_discovered(hass, hass_admin_user, aioclient_mo
         assert len(component.get_entry_data(config_entry)._notifiers) == 0
 
 
-async def test_notifier_lifecycle_discovered(hass, hass_admin_user, aioclient_mock):
+async def test_notifier_lifecycle_link_platform(
+    hass: HomeAssistant, hass_admin_user: User, aioclient_mock: AiohttpClientMocker
+) -> None:
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
     config_entry_direct = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT, const.CONF_DEVICES_DISCOVERED: True},
+        data={
+            const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+        },
         options={
             const.CONF_SKILL: {
                 CONF_ID: "skill_id",
@@ -119,7 +128,7 @@ async def test_notifier_lifecycle_discovered(hass, hass_admin_user, aioclient_mo
                 const.CONF_CLOUD_INSTANCE_ID: "test",
                 const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
-            const.CONF_DEVICES_DISCOVERED: True,
+            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
     )
 
@@ -151,7 +160,10 @@ async def test_notifier_postponed_setup(hass, hass_admin_user):
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT, const.CONF_DEVICES_DISCOVERED: True},
+        data={
+            const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+        },
         options={
             const.CONF_SKILL: {
                 CONF_ID: "skill_id",

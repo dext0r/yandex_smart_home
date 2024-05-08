@@ -32,10 +32,10 @@ from .const import (
     CONF_CLOUD_INSTANCE_ID,
     CONF_CLOUD_INSTANCE_PASSWORD,
     CONF_CONNECTION_TYPE,
-    CONF_DEVICES_DISCOVERED,
     CONF_ENTRY_ALIASES,
     CONF_FILTER,
     CONF_FILTER_SOURCE,
+    CONF_LINKED_PLATFORMS,
     CONF_SKILL,
     CONF_USER_ID,
     ConnectionType,
@@ -121,7 +121,7 @@ class BaseFlowHandler(FlowHandler[ConfigFlowResult]):
                     if user_input[CONF_ID] != entry_skill.get(CONF_ID) or user_input[CONF_USER_ID] != entry_skill.get(
                         CONF_USER_ID
                     ):
-                        self._data[CONF_DEVICES_DISCOVERED] = False
+                        self._data[CONF_LINKED_PLATFORMS] = []
                         self.hass.config_entries.async_update_entry(
                             self._entry,
                             title=await async_config_entry_title(self.hass, self._data, self._options),
@@ -278,13 +278,13 @@ class BaseFlowHandler(FlowHandler[ConfigFlowResult]):
 class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Yandex Smart Home."""
 
-    VERSION = 5
+    VERSION = 6
 
     def __init__(self) -> None:
         """Initialize a config flow handler."""
         super().__init__()
 
-        self._data: ConfigType = {CONF_DEVICES_DISCOVERED: False}
+        self._data: ConfigType = {}
 
     async def async_step_user(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Handle a flow initialized by the user."""

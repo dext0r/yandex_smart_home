@@ -26,6 +26,7 @@ from .capability_custom import CustomCapability, get_custom_capability
 from .cloud import CloudManager
 from .color import ColorProfiles
 from .const import (
+    CONF_LINKED_PLATFORMS,
     CONF_SKILL,
     CONF_USER_ID,
     DOMAIN,
@@ -213,15 +214,27 @@ class ConfigEntryData:
 
         return False
 
-    def discover_devices(self) -> bool:
-        """Mark config entry has returned the device list once."""
-        if self.entry.data.get(const.CONF_DEVICES_DISCOVERED):
-            return False
+    @property
+    def linked_platforms(self) -> set[SmartHomePlatform]:
+        """Return list of smart home platforms linked with the config entry."""
+        platforms: set[SmartHomePlatform] = set()
+        for platform in self.entry.data.get(CONF_LINKED_PLATFORMS, []):
+            try:
+                platforms.add(SmartHomePlatform(platform))
+            except ValueError:
+                _LOGGER.error(f"Unsupported platform: {platform}")
+
+        return platforms
+
+    def link_platform(self, platform: SmartHomePlatform) -> None:
+        """Link smart home platform to this config entry (device discovery)."""
+        if platform in self.linked_platforms:
+            return
 
         data = self.entry.data.copy()
-        data[const.CONF_DEVICES_DISCOVERED] = True
+        data.setdefault(CONF_LINKED_PLATFORMS, []).append(platform)
 
-        return self._hass.config_entries.async_update_entry(self.entry, data=data, options=self.entry.options)
+        self._hass.config_entries.async_update_entry(self.entry, data=data)
 
     @property
     def version(self) -> str:
@@ -235,7 +248,7 @@ class ConfigEntryData:
         """Set up notifiers."""
         if not self.is_reporting_states:
             return
-        if not self.entry.data.get(const.CONF_DEVICES_DISCOVERED):
+        if not self.linked_platforms:
             return
 
         track_templates = self._get_trackable_states()

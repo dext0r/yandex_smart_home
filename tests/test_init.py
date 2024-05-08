@@ -439,7 +439,7 @@ async def test_migrate_entity_v1(hass):
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 5
+    assert entity.version == 6
     assert entity.title == "Yandex Smart Home Test"
     assert entity.data == {
         "cloud_instance": {"id": "foo", "password": "bar", "token": "xxx"},
@@ -462,11 +462,12 @@ async def test_migrate_entity_v1(hass):
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 5
+    assert entity.version == 6
     assert entity.title == "Yandex Smart Home Test"
     assert entity.data == {
         "connection_type": "direct",
         "platform": "yandex",
+        "linked_platforms": ["yandex"],
         "devices_discovered": True,
     }
     assert entity.options == {"filter_source": "config_entry"}
@@ -489,7 +490,7 @@ async def test_migrate_entity_v3_with_config(hass):
     await hass.config_entries.async_setup(entity.entry_id)
     await hass.async_block_till_done()
 
-    assert entity.version == 5
+    assert entity.version == 6
     assert entity.title == "Yandex Smart Home: Direct"
     assert entity.data == {
         "connection_type": "direct",
@@ -541,7 +542,7 @@ async def test_migrate_entity_v5_single_notifier(hass, connection_type, expect_m
         await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    assert entry.version == 5
+    assert entry.version == 6
     if expect_migration:
         assert entry.options.get("skill", {}) == {"id": "foo", "token": "bar", "user_id": "baz"}
     else:
@@ -583,8 +584,8 @@ async def test_migrate_entity_v5_several_notifiers(hass, connection_type):
         await hass.config_entries.async_setup(entry2.entry_id)
     await hass.async_block_till_done()
 
-    assert entry1.version == 5
-    assert entry2.version == 5
+    assert entry1.version == 6
+    assert entry2.version == 6
     assert entry1.options.get("skill", {}) == {}
     assert entry2.options.get("skill", {}) == {}
     await hass.config_entries.async_unload(entry1.entry_id)
@@ -618,7 +619,7 @@ async def test_migrate_entity_v5_notifier_downgrade(hass):
     await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    assert entry.version == 5
+    assert entry.version == 6
     assert entry.options == {
         "filter_source": "config_entry",
         "foo": "bar",
@@ -656,7 +657,7 @@ async def test_migrate_entity_v5_title(hass, source_title, connection_type, expe
         await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    assert entry.version == 5
+    assert entry.version == 6
     assert entry.title == expected_title
     assert entry.data == {
         "connection_type": connection_type,

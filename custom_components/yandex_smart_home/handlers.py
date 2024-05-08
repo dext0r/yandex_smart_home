@@ -70,7 +70,7 @@ async def async_device_list(hass: HomeAssistant, data: RequestData, _payload: st
         if (description := await async_get_device_description(hass, device)) is not None:
             devices.append(description)
 
-    data.entry_data.discover_devices()
+    data.entry_data.link_platform(data.platform)
     return DeviceList(user_id=data.request_user_id, devices=devices)
 
 

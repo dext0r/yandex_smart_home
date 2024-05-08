@@ -23,10 +23,10 @@ from custom_components.yandex_smart_home.const import (
     CONF_CLOUD_INSTANCE_ID,
     CONF_CLOUD_INSTANCE_PASSWORD,
     CONF_CONNECTION_TYPE,
-    CONF_DEVICES_DISCOVERED,
     CONF_ENTRY_ALIASES,
     CONF_FILTER,
     CONF_FILTER_SOURCE,
+    CONF_LINKED_PLATFORMS,
     CONF_SKILL,
     CONF_USER_ID,
     EntityFilterSource,
@@ -264,7 +264,6 @@ async def test_config_flow_cloud(hass: HomeAssistant, aioclient_mock: AiohttpCli
     assert result7["data"] == {
         "connection_type": "cloud",
         "cloud_instance": {"id": "1234567890", "password": "simple", "token": "foo"},
-        "devices_discovered": False,
     }
     assert result7["options"] == {
         "entry_aliases": True,
@@ -395,7 +394,7 @@ async def test_config_flow_direct_yandex(
     assert result4["type"] == FlowResultType.CREATE_ENTRY
     assert result4["description"] == "direct"
     assert result4["title"] == "Yandex Smart Home: Direct (Mock User / c8f46d6c)"
-    assert result4["data"] == {"connection_type": "direct", "platform": "yandex", "devices_discovered": False}
+    assert result4["data"] == {"connection_type": "direct", "platform": "yandex"}
     assert result4["options"] == {
         "entry_aliases": True,
         "filter_source": "config_entry",
@@ -420,7 +419,7 @@ async def test_config_flow_direct_filter_source_yaml(hass: HomeAssistant, hass_a
 
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["title"] == "Yandex Smart Home: Direct (Mock User / foo)"
-    assert result["data"] == {"connection_type": "direct", "platform": "yandex", "devices_discovered": False}
+    assert result["data"] == {"connection_type": "direct", "platform": "yandex"}
     assert result["options"] == {
         "entry_aliases": True,
         "filter_source": "yaml",
@@ -741,7 +740,7 @@ async def test_options_flow_skill_yandex(
         data={
             CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
             CONF_PLATFORM: SmartHomePlatform.YANDEX,
-            CONF_DEVICES_DISCOVERED: True,
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
         options={CONF_SKILL: skill.copy()},
     )
@@ -753,7 +752,7 @@ async def test_options_flow_skill_yandex(
         data={
             CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
             CONF_PLATFORM: SmartHomePlatform.YANDEX,
-            CONF_DEVICES_DISCOVERED: True,
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
         options={CONF_SKILL: skill.copy()},
     )
@@ -796,7 +795,7 @@ async def test_options_flow_skill_yandex(
     await hass.async_block_till_done()
 
     if expect_unlink:
-        assert config_entry.data[CONF_DEVICES_DISCOVERED] is False
+        assert config_entry.data[CONF_LINKED_PLATFORMS] == []
         if attr_to_change == CONF_ID:
             assert config_entry.title == "Yandex Smart Home: Direct (Mock User / foobar)"
 

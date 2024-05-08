@@ -15,7 +15,15 @@ from homeassistant.helpers.service import async_register_admin_service
 import voluptuous as vol
 
 from . import config_validation as ycv, const
-from .const import CONF_SKILL, CONF_USER_ID, DOMAIN, ConnectionType, EntityFilterSource
+from .const import (
+    CONF_DEVICES_DISCOVERED,
+    CONF_LINKED_PLATFORMS,
+    CONF_SKILL,
+    CONF_USER_ID,
+    DOMAIN,
+    ConnectionType,
+    EntityFilterSource,
+)
 from .entry_data import ConfigEntryData
 from .helpers import SmartHomePlatform
 from .http import async_register_http
@@ -350,6 +358,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             options=options,
             version=version,
         )
+        _LOGGER.debug(f"Migration to version {version} successful")
+
+    if version == 5:
+        if data.get(CONF_DEVICES_DISCOVERED):
+            data[CONF_LINKED_PLATFORMS] = [SmartHomePlatform.YANDEX]
+
+        version = 6
+        hass.config_entries.async_update_entry(entry, data=data, version=version)
         _LOGGER.debug(f"Migration to version {version} successful")
 
     return True

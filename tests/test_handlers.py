@@ -1,15 +1,16 @@
 import json
 from unittest.mock import Mock, patch
 
+from homeassistant.auth.models import User
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
-from homeassistant.core import Context, State
+from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers.template import Template
 from homeassistant.util.decorator import Registry
 
 from custom_components.yandex_smart_home import YandexSmartHome, const, handlers
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
-from custom_components.yandex_smart_home.const import CONF_DEVICES_DISCOVERED, DOMAIN, EVENT_DEVICE_ACTION
+from custom_components.yandex_smart_home.const import DOMAIN, EVENT_DEVICE_ACTION
 from custom_components.yandex_smart_home.helpers import APIError, RequestData, SmartHomePlatform
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -115,7 +116,7 @@ async def test_handler_devices_query(hass, caplog):
         "Unsupported value 'not-float' for instance temperature of float property of switch.test_1",
     ]
 
-    with patch.object(entry_data, "discover_devices"):
+    with patch.object(entry_data, "link_platform"):
         assert (await handlers.async_device_list(hass, data, "")).as_dict() == {
             "user_id": "user",
             "devices": [
@@ -154,14 +155,14 @@ async def test_handler_devices_query(hass, caplog):
     ]
 
 
-async def test_handler_devices_discovery(hass_platform_direct, hass_admin_user):
+async def test_handler_link_platform_direct(hass_platform_direct: HomeAssistant, hass_admin_user: User) -> None:
     hass = hass_platform_direct
     component: YandexSmartHome = hass.data[DOMAIN]
     entry_data = component.get_direct_connection_entry_data(
         platform=SmartHomePlatform.YANDEX, user_id=hass_admin_user.id
     )
     assert entry_data is not None
-    assert entry_data.entry.data.get(CONF_DEVICES_DISCOVERED) is None
+    assert entry_data.linked_platforms == set()
 
     with patch("homeassistant.config_entries.ConfigEntries.async_update_entry") as mock_update_entry:
         await handlers.async_device_list(
@@ -172,7 +173,7 @@ async def test_handler_devices_discovery(hass_platform_direct, hass_admin_user):
     await handlers.async_device_list(
         hass, RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "foo", REQ_ID), ""
     )
-    assert entry_data.entry.data.get(CONF_DEVICES_DISCOVERED) is True
+    assert entry_data.linked_platforms == {SmartHomePlatform.YANDEX}
     await hass.async_block_till_done()
 
     with patch("homeassistant.config_entries.ConfigEntries.async_update_entry") as mock_update_entry:

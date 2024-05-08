@@ -212,7 +212,7 @@
         'source': 'user',
         'title': 'Mock Title',
         'unique_id': None,
-        'version': 5,
+        'version': 6,
       }),
       'issues': list([
         dict({

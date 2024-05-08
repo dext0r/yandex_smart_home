@@ -1,7 +1,9 @@
 from unittest.mock import patch
 
 from homeassistant.const import CONF_PLATFORM
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import DOMAIN, ConnectionType, YandexSmartHome, const
@@ -80,6 +82,17 @@ async def test_entry_data_get_context_user_id(hass, hass_read_only_user):
         ),
     )
     assert await entry_data.async_get_context_user_id() is hass_read_only_user.id
+
+
+async def test_entry_data_unsupported_linked_platform(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+    entry_data = MockConfigEntryData(
+        hass=hass,
+        entry=MockConfigEntry(
+            domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={const.CONF_LINKED_PLATFORMS: ["foo"]}
+        ),
+    )
+    assert entry_data.linked_platforms == set()
+    assert caplog.messages == ["Unsupported platform: foo"]
 
 
 async def test_deprecated_pressure_unit(hass, config_entry_direct):
