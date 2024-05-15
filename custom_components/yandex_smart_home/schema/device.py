@@ -28,6 +28,8 @@ class DeviceType(StrEnum):
     """
 
     LIGHT = "devices.types.light"
+    LIGHT_STRIP = "devices.types.light.strip"
+    LIGHT_CEILING = "devices.types.light.ceiling"
     SOCKET = "devices.types.socket"
     SWITCH = "devices.types.switch"
     THERMOSTAT = "devices.types.thermostat"
