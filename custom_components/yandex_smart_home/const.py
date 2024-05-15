@@ -99,6 +99,8 @@ DEVICE_CLASS_BUTTON = 'button'
 # https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html
 PREFIX_TYPES = 'devices.types.'
 TYPE_LIGHT = PREFIX_TYPES + 'light'
+TYPE_LIGHT_STRIP = TYPE_LIGHT + '.strip'
+TYPE_LIGHT_CEILING = TYPE_LIGHT + '.ceiling'
 TYPE_SOCKET = PREFIX_TYPES + 'socket'
 TYPE_SWITCH = PREFIX_TYPES + 'switch'
 TYPE_THERMOSTAT = PREFIX_TYPES + 'thermostat'
@@ -142,6 +144,8 @@ TYPE_PET_FEEDER = PREFIX_TYPES + 'pet_feeder'
 TYPE_OTHER = PREFIX_TYPES + 'other'
 TYPES = (
     TYPE_LIGHT,
+    TYPE_LIGHT_STRIP,
+    TYPE_LIGHT_CEILING,
     TYPE_SOCKET,
     TYPE_SWITCH,
     TYPE_THERMOSTAT,
