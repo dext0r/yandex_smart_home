@@ -1,4 +1,5 @@
 from homeassistant.config import YAML_CONFIG_FILE
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.reload import async_integration_yaml_config
 import pytest
 from pytest_homeassistant_custom_component.common import patch_yaml_files
@@ -296,6 +297,32 @@ yandex_smart_home:
     assert (
         "Color name 'invalid' is not supported, see valid values at "
         "https://docs.yaha-cloud.ru/master/devices/light/#color-profile-config" in caplog.messages[-2]
+    )
+
+
+async def test_deprecated_device_type_fan(hass: HomeAssistant, caplog: pytest.LogCaptureFixture):
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    switch.foo:
+      type: devices.types.fan
+    switch.bar:
+      type: fan
+"""
+    }
+    with patch_yaml_files(files):
+        config = await async_integration_yaml_config(hass, DOMAIN)
+        assert config[DOMAIN]["entity_config"]["switch.foo"]["type"] == "devices.types.ventilation.fan"
+        assert config[DOMAIN]["entity_config"]["switch.bar"]["type"] == "devices.types.ventilation.fan"
+
+    assert (
+        "Device type 'fan' is deprecated, use 'devices.types.ventilation.fan' or 'ventilation.fan' instead"
+        == caplog.messages[-1]
+    )
+    assert (
+        "Device type 'devices.types.fan' is deprecated, use 'devices.types.ventilation.fan' "
+        "or 'ventilation.fan' instead" == caplog.messages[-2]
     )
 
 

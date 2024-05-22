@@ -172,6 +172,12 @@ def entity_features(value: list[str]) -> list[str]:
 
 
 def device_type(value: str) -> str:
+    if value in ("devices.types.fan", "fan"):
+        _LOGGER.warning(
+            f"Device type '{value}' is deprecated, use 'devices.types.ventilation.fan' or 'ventilation.fan' instead"
+        )
+        value = "devices.types.ventilation.fan"
+
     try:
         return str(DeviceType(value))
     except ValueError:

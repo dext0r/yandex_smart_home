@@ -46,7 +46,6 @@ class DeviceType(StrEnum):
     OPENABLE = "devices.types.openable"
     OPENABLE_CURTAIN = "devices.types.openable.curtain"
     HUMIDIFIER = "devices.types.humidifier"
-    FAN = "devices.types.fan"
     PURIFIER = "devices.types.purifier"
     VACUUM_CLEANER = "devices.types.vacuum_cleaner"
     WASHING_MACHINE = "devices.types.washing_machine"
@@ -70,6 +69,7 @@ class DeviceType(StrEnum):
     SMART_METER_HOT_WATER = "devices.types.smart_meter.hot_water"
     PET_DRINKING_FOUNTAIN = "devices.types.pet_drinking_fountain"
     PET_FEEDER = "devices.types.pet_feeder"
+    VENTILATION_FAN = "devices.types.ventilation.fan"
     OTHER = "devices.types.other"
 
 

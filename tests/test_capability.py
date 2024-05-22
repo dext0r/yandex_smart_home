@@ -179,13 +179,13 @@ async def test_capability_demo_platform(hass):
 
     state = hass.states.get("fan.ceiling_fan")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.fan"
+    assert device.type == "devices.types.ventilation.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.living_room_fan")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.fan"
+    assert device.type == "devices.types.ventilation.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.mode", "fan_speed"),
@@ -195,7 +195,7 @@ async def test_capability_demo_platform(hass):
 
     state = hass.states.get("fan.percentage_full_fan")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.fan"
+    assert device.type == "devices.types.ventilation.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [
         ("devices.capabilities.mode", "fan_speed"),
@@ -205,13 +205,13 @@ async def test_capability_demo_platform(hass):
 
     state = hass.states.get("fan.percentage_limited_fan")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.fan"
+    assert device.type == "devices.types.ventilation.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.preset_only_limited_fan")
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
-    assert device.type == "devices.types.fan"
+    assert device.type == "devices.types.ventilation.fan"
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 

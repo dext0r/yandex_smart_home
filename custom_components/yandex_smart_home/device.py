@@ -89,7 +89,7 @@ _DOMAIN_TO_DEVICE_TYPES: dict[str, DeviceType] = {
     camera.DOMAIN: DeviceType.CAMERA,
     climate.DOMAIN: DeviceType.THERMOSTAT,
     cover.DOMAIN: DeviceType.OPENABLE,
-    fan.DOMAIN: DeviceType.FAN,
+    fan.DOMAIN: DeviceType.VENTILATION_FAN,
     group.DOMAIN: DeviceType.SWITCH,
     humidifier.DOMAIN: DeviceType.HUMIDIFIER,
     input_boolean.DOMAIN: DeviceType.SWITCH,
