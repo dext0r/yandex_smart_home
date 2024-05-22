@@ -85,6 +85,10 @@ def entity_features(value: list[str]):
 
 
 def device_type(value: str) -> str:
+    if value == 'devices.types.fan':
+        _LOGGER.warning(f"Device type '{value}' is deprecated, use 'devices.types.ventilation.fan' instead")
+        value = 'devices.types.ventilation.fan'
+
     if value not in const.TYPES:
         _LOGGER.error(
             f'Device type {value!r} is not supported. '

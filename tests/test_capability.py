@@ -226,33 +226,33 @@ async def test_capability_demo_platform(hass):
 
     state = hass.states.get('fan.ceiling_fan')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == 'devices.types.fan'
+    assert entity.yandex_device_type == 'devices.types.ventilation.fan'
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [('devices.capabilities.mode', 'fan_speed'), ('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('fan.living_room_fan')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == 'devices.types.fan'
+    assert entity.yandex_device_type == 'devices.types.ventilation.fan'
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [('devices.capabilities.mode', 'fan_speed'), ('devices.capabilities.toggle', 'oscillation'),
                             ('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('fan.percentage_full_fan')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == 'devices.types.fan'
+    assert entity.yandex_device_type == 'devices.types.ventilation.fan'
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [('devices.capabilities.mode', 'fan_speed'), ('devices.capabilities.toggle', 'oscillation'),
                             ('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('fan.percentage_limited_fan')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == 'devices.types.fan'
+    assert entity.yandex_device_type == 'devices.types.ventilation.fan'
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [('devices.capabilities.mode', 'fan_speed'), ('devices.capabilities.on_off', 'on')]
 
     state = hass.states.get('fan.preset_only_limited_fan')
     entity = YandexEntity(hass, BASIC_CONFIG, state)
-    assert entity.yandex_device_type == 'devices.types.fan'
+    assert entity.yandex_device_type == 'devices.types.ventilation.fan'
     capabilities = list((c.type, c.instance) for c in entity.capabilities())
     assert capabilities == [('devices.capabilities.mode', 'fan_speed'), ('devices.capabilities.on_off', 'on')]
 

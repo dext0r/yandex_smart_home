@@ -100,6 +100,23 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
 
+async def test_deprecated_device_type_fan(hass, caplog):
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    switch.foo:
+      type: devices.types.fan
+"""
+    }
+    with patch_yaml_files(files):
+        config = await async_integration_yaml_config(hass, DOMAIN)
+        assert config[DOMAIN]['entity_config']['switch.foo']['type'] == 'devices.types.ventilation.fan'
+
+    assert ("Device type 'devices.types.fan' is deprecated, "
+            "use 'devices.types.ventilation.fan' instead") == caplog.messages[-1]
+
+
 async def test_color_value(hass):
     files = {YAML_CONFIG_FILE: """
 yandex_smart_home:
