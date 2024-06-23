@@ -3,3 +3,4 @@ aiohttp-cors==0.7.0
 home_assistant_intents==2024.2.2
 hassil==1.5.1
 voluptuous-stubs==0.1.1
+mypy-dev==1.11.0a8
