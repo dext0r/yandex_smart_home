@@ -25,6 +25,7 @@ class ModeCapabilityInstance(StrEnum):
     SWING = "swing"
     TEA_MODE = "tea_mode"
     THERMOSTAT = "thermostat"
+    VENTILATION_MODE = "ventilation_mode"
     WORK_SPEED = "work_speed"
 
 
@@ -34,6 +35,9 @@ class ModeCapabilityMode(StrEnum):
     https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html
     """
 
+    WET_CLEANING = "wet_cleaning"
+    DRY_CLEANING = "dry_cleaning"
+    MIXED_CLEANING = "mixed_cleaning"
     AUTO = "auto"
     ECO = "eco"
     SMART = "smart"
@@ -56,6 +60,8 @@ class ModeCapabilityMode(StrEnum):
     HORIZONTAL = "horizontal"
     STATIONARY = "stationary"
     VERTICAL = "vertical"
+    SUPPLY_AIR = "supply_air"
+    EXTRACTION_AIR = "extraction_air"
     ONE = "one"
     TWO = "two"
     THREE = "three"
