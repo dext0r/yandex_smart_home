@@ -1,3 +1,4 @@
+--extra-index-url https://packagecloud.io/dext0r/pypi/pypi/simple
 pytest-homeassistant-custom-component==0.13.112
 aiohttp-cors==0.7.0
 home_assistant_intents==2024.2.2

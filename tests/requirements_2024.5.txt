@@ -1,4 +1,5 @@
-pytest-homeassistant-custom-component==0.13.116
+--extra-index-url https://packagecloud.io/dext0r/pypi/pypi/simple
+pytest-homeassistant-custom-component==0.13.120
 aiohttp-cors==0.7.0
 home_assistant_intents==2024.4.24
 hassil==1.7.0
