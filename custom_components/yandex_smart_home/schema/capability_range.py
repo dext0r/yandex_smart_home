@@ -30,6 +30,7 @@ class RangeCapabilityInstance(StrEnum):
     OPEN = "open"
     TEMPERATURE = "temperature"
     VOLUME = "volume"
+    VALVE = "valve"
 
 
 class RangeCapabilityRange(APIModel):
@@ -63,6 +64,8 @@ class RangeCapabilityParameters(APIModel):
                 values["unit"] = RangeCapabilityUnit.PERCENT
             case RangeCapabilityInstance.TEMPERATURE:
                 values["unit"] = RangeCapabilityUnit.TEMPERATURE_CELSIUS
+            case RangeCapabilityInstance.VALVE:
+                values["unit"] = RangeCapabilityUnit.PERCENT
 
         return values
 
