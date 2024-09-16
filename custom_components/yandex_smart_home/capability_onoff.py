@@ -21,18 +21,22 @@ from homeassistant.components import (
     script,
     switch,
     vacuum,
+    valve,
     water_heater,
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     SERVICE_CLOSE_COVER,
+    SERVICE_CLOSE_VALVE,
     SERVICE_LOCK,
     SERVICE_OPEN_COVER,
+    SERVICE_OPEN_VALVE,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_UNLOCK,
     STATE_OFF,
     STATE_ON,
+    STATE_OPEN,
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN, Context
 from homeassistant.exceptions import ServiceNotFound
@@ -499,3 +503,28 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
                 return operation
 
         return None
+
+
+@STATE_CAPABILITIES_REGISTRY.register
+class OnOffCapabilityValve(OnOffCapability):
+    """Capability to open or close a valve."""
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        return bool(self.state.domain == valve.DOMAIN)
+
+    def get_value(self) -> bool | None:
+        """Return the current capability value."""
+        return self.state.state == STATE_OPEN
+
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        if state.value:
+            service = SERVICE_OPEN_VALVE
+        else:
+            service = SERVICE_CLOSE_VALVE
+
+        await self._hass.services.async_call(
+            valve.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
+        )
