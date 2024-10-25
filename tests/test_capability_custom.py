@@ -10,7 +10,7 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 from homeassistant.core import Context, State
-from homeassistant.helpers.config_validation import dynamic_template
+from homeassistant.helpers.config_validation import SERVICE_SCHEMA, dynamic_template
 from homeassistant.helpers.template import Template
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
@@ -204,11 +204,13 @@ async def test_capability_custom_mode(hass):
         hass,
         entry_data,
         {
-            const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {
-                CONF_SERVICE: "test.set_mode",
-                ATTR_ENTITY_ID: "switch.test",
-                CONF_SERVICE_DATA: {"service_mode": dynamic_template("mode: {{ mode }}")},
-            },
+            const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: SERVICE_SCHEMA(
+                {
+                    CONF_SERVICE: "test.set_mode",
+                    ATTR_ENTITY_ID: "switch.test",
+                    CONF_SERVICE_DATA: {"service_mode": dynamic_template("mode: {{ mode }}")},
+                }
+            ),
         },
         CapabilityType.MODE,
         ModeCapabilityInstance.CLEANUP_MODE,
@@ -224,11 +226,13 @@ async def test_capability_custom_mode(hass):
         entry_data,
         {
             const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
-            const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {
-                CONF_SERVICE: "test.set_mode",
-                ATTR_ENTITY_ID: "switch.test",
-                CONF_SERVICE_DATA: {"service_mode": dynamic_template("mode: {{ mode }}")},
-            },
+            const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: SERVICE_SCHEMA(
+                {
+                    CONF_SERVICE: "test.set_mode",
+                    ATTR_ENTITY_ID: "switch.test",
+                    CONF_SERVICE_DATA: {"service_mode": dynamic_template("mode: {{ mode }}")},
+                }
+            ),
         },
         CapabilityType.MODE,
         ModeCapabilityInstance.CLEANUP_MODE,
@@ -245,7 +249,7 @@ async def test_capability_custom_mode(hass):
         ModeCapabilityInstanceActionState(instance=ModeCapabilityInstance.CLEANUP_MODE, value=ModeCapabilityMode.ONE),
     )
     assert len(calls) == 1
-    assert calls[0].data == {"service_mode": "mode: mode_1", ATTR_ENTITY_ID: "switch.test"}
+    assert calls[0].data == {"service_mode": "mode: mode_1", ATTR_ENTITY_ID: ["switch.test"]}
 
     for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
         assert cap.new_with_value_template(Template(t)).get_value() is None
@@ -304,11 +308,13 @@ async def test_capability_custom_mode_scene(hass, domain):
                 },
                 const.CONF_ENTITY_CUSTOM_MODES: {
                     "scene": {
-                        const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {
-                            CONF_SERVICE: "test.set_mode",
-                            CONF_SERVICE_DATA: {"service_mode": dynamic_template("mode: {{ mode }}")},
-                            ATTR_ENTITY_ID: state.entity_id,
-                        },
+                        const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: SERVICE_SCHEMA(
+                            {
+                                CONF_SERVICE: "test.set_mode",
+                                CONF_SERVICE_DATA: {"service_mode": dynamic_template("mode: {{ mode }}")},
+                                ATTR_ENTITY_ID: state.entity_id,
+                            }
+                        ),
                     }
                 },
             }
@@ -330,7 +336,7 @@ async def test_capability_custom_mode_scene(hass, domain):
     calls = async_mock_service(hass, "test", "set_mode")
     await scene_cap.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene.FANTASY))
     assert len(calls) == 1
-    assert calls[0].data == {"service_mode": "mode: bar", ATTR_ENTITY_ID: state.entity_id}
+    assert calls[0].data == {"service_mode": "mode: bar", ATTR_ENTITY_ID: [state.entity_id]}
 
     for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
         assert scene_cap.new_with_value_template(Template(t)).get_value() is None
@@ -380,14 +386,18 @@ async def test_capability_custom_toggle(hass):
         BASIC_ENTRY_DATA,
         {
             const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
-            const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: {
-                CONF_SERVICE: "test.turn_on",
-                ATTR_ENTITY_ID: "switch.test1",
-            },
-            const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: {
-                CONF_SERVICE: "test.turn_off",
-                ATTR_ENTITY_ID: "switch.test2",
-            },
+            const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: SERVICE_SCHEMA(
+                {
+                    CONF_SERVICE: "test.turn_on",
+                    ATTR_ENTITY_ID: "switch.test1",
+                }
+            ),
+            const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: SERVICE_SCHEMA(
+                {
+                    CONF_SERVICE: "test.turn_off",
+                    ATTR_ENTITY_ID: "switch.test2",
+                }
+            ),
         },
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
@@ -407,7 +417,7 @@ async def test_capability_custom_toggle(hass):
         ToggleCapabilityInstanceActionState(instance=ToggleCapabilityInstance.IONIZATION, value=True),
     )
     assert len(calls_on) == 1
-    assert calls_on[0].data == {ATTR_ENTITY_ID: "switch.test1"}
+    assert calls_on[0].data == {ATTR_ENTITY_ID: ["switch.test1"]}
 
     calls_off = async_mock_service(hass, "test", "turn_off")
     await cap.set_instance_state(
@@ -415,7 +425,7 @@ async def test_capability_custom_toggle(hass):
         ToggleCapabilityInstanceActionState(instance=ToggleCapabilityInstance.IONIZATION, value=False),
     )
     assert len(calls_off) == 1
-    assert calls_off[0].data == {ATTR_ENTITY_ID: "switch.test2"}
+    assert calls_off[0].data == {ATTR_ENTITY_ID: ["switch.test2"]}
 
     for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
         assert cap.new_with_value_template(Template(t)).get_value() is None
@@ -442,11 +452,13 @@ async def test_capability_custom_range_random_access(hass):
                     const.CONF_ENTITY_RANGE_MAX: 50,
                     const.CONF_ENTITY_RANGE_PRECISION: 3,
                 },
-                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {
-                    CONF_SERVICE: "test.set_value",
-                    ATTR_ENTITY_ID: "input_number.test",
-                    CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
-                },
+                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: SERVICE_SCHEMA(
+                    {
+                        CONF_SERVICE: "test.set_value",
+                        ATTR_ENTITY_ID: "input_number.test",
+                        CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
+                    }
+                ),
             },
             CapabilityType.RANGE,
             RangeCapabilityInstance.OPEN,
@@ -474,7 +486,7 @@ async def test_capability_custom_range_random_access(hass):
 
     assert len(calls) == 5
     for i in range(0, len(calls)):
-        assert calls[i].data[ATTR_ENTITY_ID] == "input_number.test"
+        assert calls[i].data[ATTR_ENTITY_ID] == ["input_number.test"]
 
     assert calls[0].data["value"] == "value: 40"
     assert calls[1].data["value"] == "value: 100"
@@ -528,11 +540,13 @@ async def test_capability_custom_range_random_access_no_state(hass):
                     const.CONF_ENTITY_RANGE_MAX: 50,
                     const.CONF_ENTITY_RANGE_PRECISION: 3,
                 },
-                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {
-                    CONF_SERVICE: "test.set_value",
-                    ATTR_ENTITY_ID: "input_number.test",
-                    CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
-                },
+                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: SERVICE_SCHEMA(
+                    {
+                        CONF_SERVICE: "test.set_value",
+                        ATTR_ENTITY_ID: "input_number.test",
+                        CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
+                    }
+                ),
             },
             CapabilityType.RANGE,
             RangeCapabilityInstance.OPEN,
@@ -554,7 +568,7 @@ async def test_capability_custom_range_random_access_no_state(hass):
 
     assert len(calls) == 2
     for i in range(0, len(calls)):
-        assert calls[i].data[ATTR_ENTITY_ID] == "input_number.test"
+        assert calls[i].data[ATTR_ENTITY_ID] == ["input_number.test"]
 
     assert calls[0].data["value"] == "value: 40"
     assert calls[1].data["value"] == "value: 100"
@@ -584,21 +598,27 @@ async def test_capability_custom_range_relative_override_no_state(hass):
                     const.CONF_ENTITY_RANGE_MAX: 99,
                     const.CONF_ENTITY_RANGE_PRECISION: 3,
                 },
-                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {
-                    CONF_SERVICE: "test.set_value",
-                    ATTR_ENTITY_ID: "input_number.test",
-                    CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
-                },
-                const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: {
-                    CONF_SERVICE: "test.increase_value",
-                    ATTR_ENTITY_ID: "input_number.test",
-                    CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
-                },
-                const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE: {
-                    CONF_SERVICE: "test.decrease_value",
-                    ATTR_ENTITY_ID: "input_number.test",
-                    CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
-                },
+                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: SERVICE_SCHEMA(
+                    {
+                        CONF_SERVICE: "test.set_value",
+                        ATTR_ENTITY_ID: "input_number.test",
+                        CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
+                    }
+                ),
+                const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: SERVICE_SCHEMA(
+                    {
+                        CONF_SERVICE: "test.increase_value",
+                        ATTR_ENTITY_ID: "input_number.test",
+                        CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
+                    }
+                ),
+                const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE: SERVICE_SCHEMA(
+                    {
+                        CONF_SERVICE: "test.decrease_value",
+                        ATTR_ENTITY_ID: "input_number.test",
+                        CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
+                    }
+                ),
             },
             CapabilityType.RANGE,
             RangeCapabilityInstance.OPEN,
@@ -620,7 +640,7 @@ async def test_capability_custom_range_relative_override_no_state(hass):
 
     assert len(calls) == 2
     for i in range(0, len(calls)):
-        assert calls[i].data[ATTR_ENTITY_ID] == "input_number.test"
+        assert calls[i].data[ATTR_ENTITY_ID] == ["input_number.test"]
 
     assert calls[0].data["value"] == "value: 40"
     assert calls[1].data["value"] == "value: 100"
@@ -631,7 +651,7 @@ async def test_capability_custom_range_relative_override_no_state(hass):
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10, relative=True),
     )
     assert len(calls) == 1
-    assert calls[0].data == {"entity_id": "input_number.test", "value": "value: 10"}
+    assert calls[0].data == {"entity_id": ["input_number.test"], "value": "value: 10"}
 
     calls = async_mock_service(hass, "test", "decrease_value")
     for value in (0, -3, -50):
@@ -640,9 +660,9 @@ async def test_capability_custom_range_relative_override_no_state(hass):
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=value, relative=True),
         )
     assert len(calls) == 3
-    assert calls[0].data == {"entity_id": "input_number.test", "value": "value: 0"}
-    assert calls[1].data == {"entity_id": "input_number.test", "value": "value: -3"}
-    assert calls[2].data == {"entity_id": "input_number.test", "value": "value: -50"}
+    assert calls[1].data == {"entity_id": ["input_number.test"], "value": "value: -3"}
+    assert calls[2].data == {"entity_id": ["input_number.test"], "value": "value: -50"}
+    assert calls[0].data == {"entity_id": ["input_number.test"], "value": "value: 0"}
 
 
 async def test_capability_custom_range_only_relative(hass):
@@ -652,16 +672,20 @@ async def test_capability_custom_range_only_relative(hass):
             hass,
             BASIC_ENTRY_DATA,
             {
-                const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: {
-                    CONF_SERVICE: "test.increase_value",
-                    ATTR_ENTITY_ID: "input_number.test",
-                    CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
-                },
-                const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE: {
-                    CONF_SERVICE: "test.decrease_value",
-                    ATTR_ENTITY_ID: "input_number.test",
-                    CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
-                },
+                const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: SERVICE_SCHEMA(
+                    {
+                        CONF_SERVICE: "test.increase_value",
+                        ATTR_ENTITY_ID: "input_number.test",
+                        CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
+                    }
+                ),
+                const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE: SERVICE_SCHEMA(
+                    {
+                        CONF_SERVICE: "test.decrease_value",
+                        ATTR_ENTITY_ID: "input_number.test",
+                        CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
+                    }
+                ),
             },
             CapabilityType.RANGE,
             RangeCapabilityInstance.OPEN,
@@ -680,7 +704,7 @@ async def test_capability_custom_range_only_relative(hass):
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10, relative=True),
     )
     assert len(calls) == 1
-    assert calls[0].data == {"entity_id": "input_number.test", "value": "value: 10"}
+    assert calls[0].data == {"entity_id": ["input_number.test"], "value": "value: 10"}
 
     calls = async_mock_service(hass, "test", "decrease_value")
     for value in (0, -3, -50):
@@ -689,9 +713,9 @@ async def test_capability_custom_range_only_relative(hass):
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=value, relative=True),
         )
     assert len(calls) == 3
-    assert calls[0].data == {"entity_id": "input_number.test", "value": "value: 0"}
-    assert calls[1].data == {"entity_id": "input_number.test", "value": "value: -3"}
-    assert calls[2].data == {"entity_id": "input_number.test", "value": "value: -50"}
+    assert calls[0].data == {"entity_id": ["input_number.test"], "value": "value: 0"}
+    assert calls[1].data == {"entity_id": ["input_number.test"], "value": "value: -3"}
+    assert calls[2].data == {"entity_id": ["input_number.test"], "value": "value: -50"}
 
 
 async def test_capability_custom_range_no_service(hass):

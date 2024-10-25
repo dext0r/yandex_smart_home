@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from homeassistant.config import YAML_CONFIG_FILE
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import SERVICE_RELOAD
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, SERVICE_RELOAD
 from homeassistant.core import Context
 from homeassistant.exceptions import Unauthorized
 from homeassistant.helpers.reload import async_integration_yaml_config
@@ -23,6 +23,15 @@ async def test_bad_config(hass):
 async def test_valid_config(hass):
     with patch_yaml_files({YAML_CONFIG_FILE: load_fixture("valid-config.yaml")}):
         config = await async_integration_yaml_config(hass, DOMAIN)
+
+    if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 8) or MAJOR_VERSION >= 2025:
+        service_key = "action"
+    else:
+        service_key = "service"
+
+    hass_for_template = hass
+    if MAJOR_VERSION == 2024 and MINOR_VERSION == 8:
+        hass_for_template = None
 
     assert DOMAIN in config
 
@@ -59,17 +68,20 @@ async def test_valid_config(hass):
         "custom_ranges": {
             "channel": {
                 "set_value": {
-                    "service": "media_player.play_media",
+                    service_key: "media_player.play_media",
                     "entity_id": ["media_player.stupid_tv"],
-                    "data": {"media_content_type": "channel", "media_content_id": Template("{{ value }}", hass)},
+                    "data": {
+                        "media_content_type": "channel",
+                        "media_content_id": Template("{{ value }}", hass_for_template),
+                    },
                 },
-                "increase_value": {"service": "script.next_channel_via_ir"},
-                "decrease_value": {"service": "script.prev_channel_via_ir"},
+                "increase_value": {service_key: "script.next_channel_via_ir"},
+                "decrease_value": {service_key: "script.prev_channel_via_ir"},
                 "range": {"min": 0.0, "max": 999.0},
             },
             "volume": {
-                "increase_value": {"service": "script.increase_volume"},
-                "decrease_value": {"service": "script.decrease_volume"},
+                "increase_value": {service_key: "script.increase_volume"},
+                "decrease_value": {service_key: "script.decrease_volume"},
             },
         },
     }
@@ -118,13 +130,13 @@ async def test_valid_config(hass):
         "custom_toggles": {
             "ionization": {
                 "state_entity_id": "switch.ac_ionizer",
-                "turn_on": {"service": "switch.turn_on", "entity_id": ["switch.ac_ionizer"]},
-                "turn_off": {"service": "switch.turn_off", "entity_id": ["switch.ac_ionizer"]},
+                "turn_on": {service_key: "switch.turn_on", "entity_id": ["switch.ac_ionizer"]},
+                "turn_off": {service_key: "switch.turn_off", "entity_id": ["switch.ac_ionizer"]},
             },
             "backlight": {
                 "state_entity_id": "input_boolean.ac_lighting",
-                "turn_on": {"service": "input_boolean.turn_on", "entity_id": ["input_boolean.ac_lighting"]},
-                "turn_off": {"service": "input_boolean.turn_off", "entity_id": ["input_boolean.ac_lighting"]},
+                "turn_on": {service_key: "input_boolean.turn_on", "entity_id": ["input_boolean.ac_lighting"]},
+                "turn_off": {service_key: "input_boolean.turn_off", "entity_id": ["input_boolean.ac_lighting"]},
             },
         },
     }
@@ -138,8 +150,8 @@ async def test_valid_config(hass):
             "temperature": {
                 "state_attribute": "temperature",
                 "set_value": {
-                    "service": "climate.set_temperature",
-                    "data": {"temperature": Template("{{ value }}", hass)},
+                    service_key: "climate.set_temperature",
+                    "data": {"temperature": Template("{{ value }}", hass_for_template)},
                     "target": {"entity_id": ["climate.r4s1_kettle_temp"]},
                 },
                 "range": {"min": 40.0, "max": 90.0, "precision": 10.0},
@@ -169,17 +181,17 @@ async def test_valid_config(hass):
         "custom_modes": {"input_source": {"state_entity_id": "sensor.water_valve_input_source"}},
         "custom_ranges": {"open": {"state_entity_id": "sensor.water_valve_angel"}},
         "custom_toggles": {"backlight": {"state_entity_id": "sensor.water_valve_led"}},
-        "properties": [{"type": "temperature", "value_template": Template("{{ 3 + 5 }}", hass)}],
+        "properties": [{"type": "temperature", "value_template": Template("{{ 3 + 5 }}", hass_for_template)}],
     }
 
     assert entity_config["climate.ac"] == {
-        "turn_on": {"data": {"mode": "cool"}, "entity_id": ["climate.ac"], "service": "climate.turn_on"},
+        "turn_on": {"data": {"mode": "cool"}, "entity_id": ["climate.ac"], service_key: "climate.turn_on"},
     }
 
     assert entity_config["switch.templates"] == {
-        "custom_modes": {"input_source": {"state_template": Template("buz", hass)}},
-        "custom_ranges": {"open": {"state_template": Template("foo", hass)}},
-        "custom_toggles": {"backlight": {"state_template": Template("bar", hass)}},
+        "custom_modes": {"input_source": {"state_template": Template("buz", hass_for_template)}},
+        "custom_ranges": {"open": {"state_template": Template("foo", hass_for_template)}},
+        "custom_toggles": {"backlight": {"state_template": Template("bar", hass_for_template)}},
     }
 
     assert entity_config["sensor.sun"] == {
@@ -188,13 +200,13 @@ async def test_valid_config(hass):
                 "target_unit_of_measurement": "K",
                 "type": "temperature",
                 "unit_of_measurement": "°C",
-                "value_template": Template("{{ 15000000 }}", hass),
+                "value_template": Template("{{ 15000000 }}", hass_for_template),
             },
             {
                 "target_unit_of_measurement": "bar",
                 "type": "pressure",
                 "unit_of_measurement": "mmHg",
-                "value_template": Template("{{ 0 }}", hass),
+                "value_template": Template("{{ 0 }}", hass_for_template),
             },
         ]
     }
