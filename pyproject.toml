@@ -45,6 +45,7 @@ known_first_party = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.report]
 exclude_also = [
@@ -64,6 +65,11 @@ env_list = [
     "2024_2",
     "2024_4",
     "2024_5",
+    "2024_6",
+    "2024_7",
+    "2024_8",
+    "2024_9",
+    "2024_10",
 ]
 skipsdist = true
 
@@ -145,4 +151,54 @@ deps = [
     "hassil==1.7.0",
     "mutagen==1.47.0",
     "ha-ffmpeg==3.2.0",
+]
+
+[tool.tox.env.2024_6]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.132",
+    "home_assistant_intents==2024.4.24",
+    "hassil==1.7.0",
+    "mutagen==1.47.0",
+    "ha-ffmpeg==3.2.0",
+]
+
+[tool.tox.env.2024_7]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.144",
+    "home_assistant_intents==2024.4.24",
+    "hassil==1.7.0",
+    "mutagen==1.47.0",
+    "ha-ffmpeg==3.2.0",
+]
+
+[tool.tox.env.2024_8]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.152",
+    "home_assistant_intents==2024.4.24",
+    "hassil==1.7.0",
+    "mutagen==1.47.0",
+    "ha-ffmpeg==3.2.0",
+    "pymicro-vad==1.0.2",
+]
+
+[tool.tox.env.2024_9]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.161",
+    "home_assistant_intents==2024.4.24",
+    "hassil==1.7.0",
+    "mutagen==1.47.0",
+    "ha-ffmpeg==3.2.0",
+    "pymicro-vad==1.0.2",
+    "pyspeex_noise==1.0.2",
+]
+
+[tool.tox.env.2024_10]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.171",
+    "home_assistant_intents==2024.4.24",
+    "hassil==1.7.0",
+    "mutagen==1.47.0",
+    "ha-ffmpeg==3.2.0",
+    "pymicro-vad==1.0.2",
+    "pyspeex_noise==1.0.2",
 ]
