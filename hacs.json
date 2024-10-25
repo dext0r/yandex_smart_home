@@ -1,7 +1,7 @@
 {
-  "country": ["RU", "BY"],
-  "homeassistant": "2023.2",
   "name": "Yandex Smart Home",
+  "homeassistant": "2023.9",
+  "country": ["RU", "BY"],
   "render_readme": true,
   "zip_release": true,
   "filename": "yandex_smart_home.zip"
