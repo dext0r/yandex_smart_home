@@ -8,28 +8,28 @@
       
       
       
-        <link rel="canonical" href="https://docs.yaha-cloud.ru/master/devices/light/">
+        <link rel="canonical" href="https://docs.yaha-cloud.ru/master/devices/sensor/event/">
       
       
-        <link rel="prev" href="../sensor/event/">
+        <link rel="prev" href="../float/">
       
       
-        <link rel="next" href="../camera/">
+        <link rel="next" href="../../light/">
       
       
-      <link rel="icon" href="../../assets/logo/favicon.png">
+      <link rel="icon" href="../../../assets/logo/favicon.png">
       <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.3">
     
     
       
-        <title>Освещение - Yandex Smart Home</title>
+        <title>Событийные датчики - Yandex Smart Home</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.50c56a3b.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.50c56a3b.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -48,9 +48,9 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/extra.css">
+      <link rel="stylesheet" href="../../../assets/extra.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -58,9 +58,9 @@
     
     
 <meta property="og:title" content="Yandex Smart Home">
-<meta property="og:description" content="Освещение">
-<meta property="og:url" content="https://docs.yaha-cloud.ru/master/devices/light/">
-<meta property="og:image" content="../../assets/logo/logo.png">
+<meta property="og:description" content="Событийные датчики">
+<meta property="og:url" content="https://docs.yaha-cloud.ru/master/devices/sensor/event/">
+<meta property="og:image" content="../../../assets/logo/logo.png">
 
   </head>
   
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#color-profile" class="md-skip">
+        <a href="#properties" class="md-skip">
           Перейти к содержанию
         </a>
       
@@ -94,7 +94,7 @@
             <div class="md-banner__inner md-grid md-typeset">
               
 Это неактуальная версия документации!
-<a href="../../..">
+<a href="../../../..">
     <strong>Открыть актуальную версию.</strong>
 </a>
 
@@ -111,9 +111,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
-    <a href="../.." title="Yandex Smart Home" class="md-header__button md-logo" aria-label="Yandex Smart Home" data-md-component="logo">
+    <a href="../../.." title="Yandex Smart Home" class="md-header__button md-logo" aria-label="Yandex Smart Home" data-md-component="logo">
       
-  <img src="../../assets/logo/logo.png" alt="logo">
+  <img src="../../../assets/logo/logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -130,7 +130,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Освещение
+              Событийные датчики
             
           </span>
         </div>
@@ -217,9 +217,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Навигация" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Yandex Smart Home" class="md-nav__button md-logo" aria-label="Yandex Smart Home" data-md-component="logo">
+    <a href="../../.." title="Yandex Smart Home" class="md-nav__button md-logo" aria-label="Yandex Smart Home" data-md-component="logo">
       
-  <img src="../../assets/logo/logo.png" alt="logo">
+  <img src="../../../assets/logo/logo.png" alt="logo">
 
     </a>
     Yandex Smart Home
@@ -246,7 +246,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -266,7 +266,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../quirks/" class="md-nav__link">
+      <a href="../../../quirks/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -286,7 +286,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../install/component/" class="md-nav__link">
+      <a href="../../../install/component/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -306,7 +306,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../install/integration/" class="md-nav__link">
+      <a href="../../../install/integration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -363,7 +363,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config/getting-started/" class="md-nav__link">
+      <a href="../../../config/getting-started/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -384,7 +384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config/filter/" class="md-nav__link">
+      <a href="../../../config/filter/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -405,7 +405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config/entity/" class="md-nav__link">
+      <a href="../../../config/entity/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -426,7 +426,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config/modes/" class="md-nav__link">
+      <a href="../../../config/modes/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -447,7 +447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config/connection-type/" class="md-nav__link">
+      <a href="../../../config/connection-type/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -511,19 +511,21 @@
                 
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" checked>
         
           
           <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
@@ -537,7 +539,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6_1">
             <span class="md-nav__icon md-icon"></span>
             Датчики
@@ -551,7 +553,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sensor/about/" class="md-nav__link">
+      <a href="../about/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -572,7 +574,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sensor/float/" class="md-nav__link">
+      <a href="../float/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -581,35 +583,6 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sensor/event/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Событийные датчики
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -633,7 +606,7 @@
           
   
   <span class="md-ellipsis">
-    Освещение
+    Событийные датчики
   </span>
   
 
@@ -644,7 +617,7 @@
         
   
   <span class="md-ellipsis">
-    Освещение
+    Событийные датчики
   </span>
   
 
@@ -664,55 +637,37 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#color-profile" class="md-nav__link">
+  <a href="#properties" class="md-nav__link">
     <span class="md-ellipsis">
-      Цветовые профили
+      Ручное добавление
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Цветовые профили">
+    <nav class="md-nav" aria-label="Ручное добавление">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#color-profile-config" class="md-nav__link">
+  <a href="#property-type" class="md-nav__link">
     <span class="md-ellipsis">
-      Описание профилей
+      Тип датчика
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#internal-color-profile" class="md-nav__link">
+  <a href="#property-value-state" class="md-nav__link">
     <span class="md-ellipsis">
-      Встроенные профили
+      Источник состояния (объект)
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#color-profile-selection" class="md-nav__link">
+  <a href="#property-value-template" class="md-nav__link">
     <span class="md-ellipsis">
-      Назначение профилей
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#color-matching" class="md-nav__link">
-    <span class="md-ellipsis">
-      Подбор цвета
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#temperature-matching" class="md-nav__link">
-    <span class="md-ellipsis">
-      Подбор цветовой температуры
+      Источник состояния (шаблон)
     </span>
   </a>
   
@@ -724,32 +679,34 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scene" class="md-nav__link">
+  <a href="#event-types" class="md-nav__link">
     <span class="md-ellipsis">
-      Режимы
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Режимы">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#scene-list" class="md-nav__link">
-    <span class="md-ellipsis">
-      Доступные режимы
+      Типы событий
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#device-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      Выбор класса бинарного датчика
+    </span>
+  </a>
   
 </li>
       
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -763,7 +720,28 @@
   
   
     <li class="md-nav__item">
-      <a href="../camera/" class="md-nav__link">
+      <a href="../../light/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Освещение
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../camera/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -784,7 +762,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../climate/" class="md-nav__link">
+      <a href="../../climate/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -805,7 +783,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../button/" class="md-nav__link">
+      <a href="../../button/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -870,7 +848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/direct-connection/" class="md-nav__link">
+      <a href="../../../advanced/direct-connection/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -928,7 +906,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/capabilities/about/" class="md-nav__link">
+      <a href="../../../advanced/capabilities/about/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -949,7 +927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/capabilities/mode/" class="md-nav__link">
+      <a href="../../../advanced/capabilities/mode/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -970,7 +948,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/capabilities/range/" class="md-nav__link">
+      <a href="../../../advanced/capabilities/range/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -991,7 +969,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/capabilities/toggle/" class="md-nav__link">
+      <a href="../../../advanced/capabilities/toggle/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1020,7 +998,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/events/" class="md-nav__link">
+      <a href="../../../advanced/events/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1041,7 +1019,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/error-codes/" class="md-nav__link">
+      <a href="../../../advanced/error-codes/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1069,7 +1047,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../troubleshoot/" class="md-nav__link">
+      <a href="../../../troubleshoot/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1089,7 +1067,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../faq/" class="md-nav__link">
+      <a href="../../../faq/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1109,7 +1087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../supported-devices/" class="md-nav__link">
+      <a href="../../../supported-devices/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1129,7 +1107,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../quasar/" class="md-nav__link">
+      <a href="../../../quasar/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1149,7 +1127,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../breaking-changes/" class="md-nav__link">
+      <a href="../../../breaking-changes/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1169,7 +1147,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../recipes/" class="md-nav__link">
+      <a href="../../../recipes/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1207,55 +1185,37 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#color-profile" class="md-nav__link">
+  <a href="#properties" class="md-nav__link">
     <span class="md-ellipsis">
-      Цветовые профили
+      Ручное добавление
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Цветовые профили">
+    <nav class="md-nav" aria-label="Ручное добавление">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#color-profile-config" class="md-nav__link">
+  <a href="#property-type" class="md-nav__link">
     <span class="md-ellipsis">
-      Описание профилей
+      Тип датчика
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#internal-color-profile" class="md-nav__link">
+  <a href="#property-value-state" class="md-nav__link">
     <span class="md-ellipsis">
-      Встроенные профили
+      Источник состояния (объект)
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#color-profile-selection" class="md-nav__link">
+  <a href="#property-value-template" class="md-nav__link">
     <span class="md-ellipsis">
-      Назначение профилей
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#color-matching" class="md-nav__link">
-    <span class="md-ellipsis">
-      Подбор цвета
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#temperature-matching" class="md-nav__link">
-    <span class="md-ellipsis">
-      Подбор цветовой температуры
+      Источник состояния (шаблон)
     </span>
   </a>
   
@@ -1267,26 +1227,20 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scene" class="md-nav__link">
+  <a href="#event-types" class="md-nav__link">
     <span class="md-ellipsis">
-      Режимы
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Режимы">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#scene-list" class="md-nav__link">
-    <span class="md-ellipsis">
-      Доступные режимы
+      Типы событий
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#device-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      Выбор класса бинарного датчика
+    </span>
+  </a>
   
 </li>
       
@@ -1308,330 +1262,212 @@
   
 
 
-  <h1>Освещение</h1>
+  <h1>Событийные датчики</h1>
 
-<h2 id="color-profile">Цветовые профили<a class="headerlink" href="#color-profile" title="Permanent link">&para;</a></h2>
-<p>В УДЯ крайне ограничена возможность выбора цветов и температур для светильников. 
-Нам доступны только предустановленные значения: например, режим "Мягкий белый" - это температура в 3400 кельвинов, а цвет "Красный" - это RGB значение <code>255, 10, 10</code></p>
-<p>Для переопределения значений цветов/температур можно использовать "цветовые профили". </p>
-<p>Вы можете создать несколько профилей и назначить их на разные светильники. Переопределяйте только те значения, которые вас не устраивают.</p>
-<h3 id="color-profile-config">Описание профилей<a class="headerlink" href="#color-profile-config" title="Permanent link">&para;</a></h3>
-<p>Профили настраиваются и назначаются на светильники через <a href="../../config/getting-started/">YAML конфигурацию</a>. Проще всего показать их определение на примере:</p>
+<p>Событийные датчики используются для отображения свойств устройства в УДЯ. Например: открытие двери (закрыта/открыта) или уровень воды (пустой/низкий/нормальный). </p>
+<p>Для <a href="../../../supported-devices/#event-sensor">автоматически обнаруженных</a> датчиков из <code>binary_sensor</code> будут использоваться только два значения, 
+например для "Наличие газа": <code>on</code> - обнаружено, <code>off</code> - не обнаружено, а "Высокий уровень" (<code>high</code>) никак задействован не будет.</p>
+<p>Для задействования всех возможных событий используйте <code>sensor</code> на <a href="https://www.home-assistant.io/integrations/template/#state-based-template-binary-sensors-buttons-images-numbers-selects-and-sensors">шаблоне</a> или параметр <a href="#property-value-template"><code>value_template</code></a>.</p>
+<h2 id="properties">Ручное добавление<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
+<p>Событийные датчики могут быть добавлены к любому устройству вручную через список <code>properties</code> в <code>entity_config</code>. 
+Каждый датчик содержит один или несколько параметров. </p>
+<p>Устройство может иметь одновременно событийные и <a href="../float/">цифровые датчики</a>.</p>
 <div class="admonition example">
-<p class="admonition-title">configuration.yaml</p>
+<p class="admonition-title">Пример настройки датчиков</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">color_profile</span><span class="p">:</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">profile_1</span><span class="p">:</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="nt">green</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;255&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">red</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;255&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">warm_white</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3000</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">profile_2</span><span class="p">:</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="nt">daylight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5100</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">humidifier.room</span><span class="p">:</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="nt">properties</span><span class="p">:</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">float.water_level</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">          </span><span class="nt">entity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sensor.room_humidifier_water_level</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">open</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">          </span><span class="nt">value_template</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{{</span><span class="nv"> </span><span class="s">is_state(&quot;binary_sensor.room_humidifer_water_tank&quot;,</span><span class="nv"> </span><span class="s">&quot;off&quot;</span><span class="nv"> </span><span class="s">}}&#39;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="nt">media_player.tv</span><span class="p">:</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">      </span><span class="nt">properties</span><span class="p">:</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">motion</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">          </span><span class="nt">entity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">binary_sensor.motion_near_tv</span>
 </code></pre></div>
 </div>
-<ul>
-<li><code>profile_1</code> и <code>profile_2</code>: названия цветовых профилей, могут быть любыми</li>
-<li><code>green</code>, <code>red</code>: коды цветов в УДЯ, в значении - <a href="#color-matching">желаемый цвет</a> в RGB</li>
-<li><code>warm_white</code>, <code>daylight</code>: коды режимов/цветовых температур в УДЯ, в значении - <a href="#temperature-matching">желаемая температура</a> в кельвинах</li>
-</ul>
-<p>Список цветов:</p>
+<h3 id="property-type">Тип датчика<a class="headerlink" href="#property-type" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>Параметр: <code>type</code> (обязательный)</p>
+</blockquote>
+<p>Может быть задан в сокращённом или полном виде (<code>event.X</code>). Полный вид желательно использовать для датчиков, которые могут быть как числовыми, так и событийными (<code>battery_level</code>, <code>food_level</code>, <code>water_level</code>).</p>
 <table>
 <thead>
 <tr>
-<th>Цвет</th>
-<th>Код</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Красный</td>
-<td><code>red</code></td>
-</tr>
-<tr>
-<td>Коралловый</td>
-<td><code>coral</code></td>
-</tr>
-<tr>
-<td>Оранжевый</td>
-<td><code>orange</code></td>
-</tr>
-<tr>
-<td>Желтый</td>
-<td><code>yellow</code></td>
-</tr>
-<tr>
-<td>Салатовый</td>
-<td><code>lime</code></td>
-</tr>
-<tr>
-<td>Зелёный</td>
-<td><code>green</code></td>
-</tr>
-<tr>
-<td>Изумрудный</td>
-<td><code>emerald</code></td>
-</tr>
-<tr>
-<td>Бирюзовый</td>
-<td><code>turquoise</code></td>
-</tr>
-<tr>
-<td>Голубой</td>
-<td><code>cyan</code></td>
-</tr>
-<tr>
-<td>Синий</td>
-<td><code>blue</code></td>
-</tr>
-<tr>
-<td>Лунный</td>
-<td><code>moonlight</code></td>
-</tr>
-<tr>
-<td>Сиреневый</td>
-<td><code>lavender</code></td>
-</tr>
-<tr>
-<td>Фиолетовый</td>
-<td><code>violet</code></td>
-</tr>
-<tr>
-<td>Пурпурный</td>
-<td><code>purple</code></td>
-</tr>
-<tr>
-<td>Розовый</td>
-<td><code>orchid</code></td>
-</tr>
-<tr>
-<td>Малиновый</td>
-<td><code>raspberry</code></td>
-</tr>
-<tr>
-<td>Лиловый</td>
-<td><code>mauve</code></td>
-</tr>
-</tbody>
-</table>
-<p>Список температур:</p>
-<table>
-<thead>
-<tr>
-<th>Название</th>
-<th>Код</th>
-<th>По-умолчанию</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Огненный белый</td>
-<td><code>fiery_white</code></td>
-<td>1500</td>
-</tr>
-<tr>
-<td>Мягкий белый</td>
-<td><code>soft_white</code></td>
-<td>2700</td>
-</tr>
-<tr>
-<td>Теплый белый</td>
-<td><code>warm_white</code></td>
-<td>3400</td>
-</tr>
-<tr>
-<td>Белый</td>
-<td><code>white</code></td>
-<td>4500</td>
-</tr>
-<tr>
-<td>Дневной белый</td>
-<td><code>daylight</code></td>
-<td>5600</td>
-</tr>
-<tr>
-<td>Холодный белый</td>
-<td><code>cold_white</code></td>
-<td>6500</td>
-</tr>
-<tr>
-<td>Туманный белый</td>
-<td><code>misty_white</code></td>
-<td>7500</td>
-</tr>
-<tr>
-<td>Небесный белый</td>
-<td><code>heavenly_white</code></td>
-<td>9000</td>
-</tr>
-</tbody>
-</table>
-<h3 id="internal-color-profile">Встроенные профили<a class="headerlink" href="#internal-color-profile" title="Permanent link">&para;</a></h3>
-<p>В компонент уже встроены цветовые профили, которые можно сразу назначать на светильники без необходимости определения.</p>
-<table>
-<thead>
-<tr>
-<th>Профиль</th>
+<th>Тип (сокр.)</th>
+<th>Тип (полный)</th>
 <th>Описание</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>natural</code></td>
-<td>Коррекция цветов под RGB ленты ("реальные" RGB значения для красного, зелёного, синего и других цветов)</td>
+<td>battery_level</td>
+<td>event.battery_level</td>
+<td>Cобытия заряда батареи</td>
+</tr>
+<tr>
+<td>button</td>
+<td>event.button</td>
+<td>События нажатия кнопки</td>
+</tr>
+<tr>
+<td>food_level</td>
+<td>event.food_level</td>
+<td>События, связанные с уровнем корма</td>
+</tr>
+<tr>
+<td>gas</td>
+<td>event.gas</td>
+<td>Cобытия наличия газа в помещении</td>
+</tr>
+<tr>
+<td>motion</td>
+<td>event.motion</td>
+<td>События, связанные с наличием движения в области действия датчика</td>
+</tr>
+<tr>
+<td>open</td>
+<td>event.open</td>
+<td>Cобытия открытия/закрытия дверей, окон и т. п.</td>
+</tr>
+<tr>
+<td>smoke</td>
+<td>event.smoke</td>
+<td>События наличия дыма в помещении</td>
+</tr>
+<tr>
+<td>vibration</td>
+<td>event.vibration</td>
+<td>События физического воздействия: вибрация, падение, переворачивание</td>
+</tr>
+<tr>
+<td>water_leak</td>
+<td>event.water_leak</td>
+<td>События протечки воды</td>
+</tr>
+<tr>
+<td>water_level</td>
+<td>event.water_level</td>
+<td>События, связанные с уровнем воды</td>
 </tr>
 </tbody>
 </table>
-<h3 id="color-profile-selection">Назначение профилей<a class="headerlink" href="#color-profile-selection" title="Permanent link">&para;</a></h3>
-<p>Профили назначаются на светильники через параметр <code>color_profile</code> в <a href="../../config/entity/"><code>entity_config</code></a>. Один и тот же профиль может использоваться для нескольких светильников.</p>
-<div class="admonition example">
-<p class="admonition-title">configuration.yaml</p>
+<h3 id="property-value-state">Источник состояния (объект)<a class="headerlink" href="#property-value-state" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>Параметры: <code>entity</code> и/или <code>attribute</code></p>
+</blockquote>
+<p>Задают объект и/или его атрибут, в котором находится текущее состояние датчика. Нельзя использовать совместо с <a href="#property-value-template"><code>value_template</code></a>.</p>
+<div class="admonition info">
+<p class="admonition-title">Описание</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">color_profile</span><span class="p">:</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">profile_1</span><span class="p">:</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">green</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;255&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;0&#39;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">profile_2</span><span class="p">:</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">daylight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5100</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">light.lamp_1</span><span class="p">:</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">      </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile_1</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">light.lamp_2</span><span class="p">:</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">      </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile_1</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="nt">light.lamp_3</span><span class="p">:</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">      </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile_2</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="nt">light.lamp_4</span><span class="p">:</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">      </span><span class="nt">color_profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">natural</span><span class="w">  </span><span class="c1"># профиль, встроенный в компонент</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">humidifier.room</span><span class="p">:</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">properties</span><span class="p">:</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="c1"># Задан только атрибут, значение датчика будет взято из атрибута объекта, для которого задаются датчики</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="c1"># В даннном случае - атрибут humidifier.fault объекта humidifer.room</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">event.water_leak</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">          </span><span class="nt">attribute</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">humidifier.fault</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="c1"># Значение датчика будет взято из состояния объекта sensor.humidier_room_water_tank</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">event.open</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">          </span><span class="nt">entity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sensor.humidier_room_water_tank</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">        </span><span class="c1"># Значение датчика будет взято из атрибута action объекта sensor.button</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">event.button</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">          </span><span class="nt">entity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sensor.button</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">          </span><span class="nt">attribute</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">action</span>
 </code></pre></div>
 </div>
-<h3 id="color-matching">Подбор цвета<a class="headerlink" href="#color-matching" title="Permanent link">&para;</a></h3>
-<p>Для получения RGB значения желаемого цвета:</p>
-<ol>
-<li>Включите светильник</li>
-<li>Выберите желаемый цвет через цветовой круг в карточке светильника</li>
-<li>Найдите светильник в <code>Панель разработчика</code> &rarr; <code>Состояния</code>, в атрибуте <code>rgb_color</code> будет указан выбранный цвет</li>
-<li>При переносе значения из атрибута в цветовой профиль, возьмите каждое число в кавычки: <code>[10, 20, 30]</code> &rarr; <code>['10', '20', '30]</code></li>
-</ol>
-<h3 id="temperature-matching">Подбор цветовой температуры<a class="headerlink" href="#temperature-matching" title="Permanent link">&para;</a></h3>
-<p>Для получения желаемой температуры:</p>
-<ol>
-<li>Включите светильник</li>
-<li>Выберите желаемую температуру в карточке светильника</li>
-<li>Найдите светильник в <code>Панель разработчика</code> &rarr; <code>Состояния</code>, в атрибуте <code>color_temp_kelvin</code> будет указан температура в кельвинах</li>
-<li>Округлите значение до ближайшей сотни. Примеры: <code>2695</code> &rarr; <code>2700</code> или <code>1125</code> &rarr; <code>1100</code></li>
-</ol>
-<h2 id="scene">Режимы<a class="headerlink" href="#scene" title="Permanent link">&para;</a></h2>
-<p>Для возможности выбора режима светильника в УДЯ должно выполняться два условия:</p>
-<ol>
-<li>Светильник в Home Assistant должен поддерживать режимы (эффекты) в атрибуте <code>effect_list</code></li>
-<li>Настроено соответствие режимов между УДЯ и Home Assistant. Компонент пытается сам связать режимы, но ему это не всегда удаётся из-за большой вариативности в названиях со стороны HA.</li>
-</ol>
-<p>Связывание режимов выполняется через <code>entity_config</code> в <a href="../../config/getting-started/#yaml">YAML конфигурации</a>.</p>
-<div class="admonition example">
-<p class="admonition-title">Пример</p>
+<h3 id="property-value-template">Источник состояния (шаблон)<a class="headerlink" href="#property-value-template" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>Параметр: <code>value_template</code></p>
+</blockquote>
+<p>Задаёт шаблон для вычисления текущего состояние датчика. Нельзя использовать совместно с <a href="#property-value-state"><code>entity</code> и/или <code>attribute</code></a>.</p>
+<div class="admonition info">
+<p class="admonition-title">Описание</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">light.led_strip</span><span class="p">:</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="nt">modes</span><span class="p">:</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="nt">scene</span><span class="p">:</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">          </span><span class="nt">sunrise</span><span class="p">:</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Wake up</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">          </span><span class="nt">alarm</span><span class="p">:</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Blink</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">          </span><span class="nt">fantasy</span><span class="p">:</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Огоньки</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="nt">light.kitchen_lamp</span><span class="p">:</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="nt">modes</span><span class="p">:</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">        </span><span class="nt">scene</span><span class="p">:</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">          </span><span class="nt">ocean</span><span class="p">:</span><span class="w"> </span>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Много воды</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">humidifier.room</span><span class="p">:</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="nt">properties</span><span class="p">:</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">event.water_level</span><span class="w"> </span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">          </span><span class="nt">value_template</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span><span class="w"> </span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">            </span><span class="no">{% set water_level = states(&quot;sensor.humidier_room_water_level&quot;)|int(0) %}</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">            </span><span class="no">{% if water_level &gt; 60 %}</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">              </span><span class="no">normal</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">            </span><span class="no">{% elif water_level &gt; 20 %}</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">              </span><span class="no">empty</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">            </span><span class="no">{% else %}</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">              </span><span class="no">low </span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">            </span><span class="no">{% endif %}</span>
 </code></pre></div>
 </div>
-<ul>
-<li><code>sunrise</code>, <code>alarm</code>, <code>fantasy</code> - значение режима со стороны УДЯ</li>
-<li><code>Wake up</code>, <code>Blink</code>, <code>Огоньки</code> - названия режимов (эффектов) светильника со стороны Home Assistant (атрибут <code>effect_list</code>)</li>
-</ul>
-<h3 id="scene-list">Доступные режимы<a class="headerlink" href="#scene-list" title="Permanent link">&para;</a></h3>
+<h2 id="event-types">Типы событий<a class="headerlink" href="#event-types" title="Permanent link">&para;</a></h2>
+<p>Компонент автоматически пытается сопоставить значения датчика в Home Assistant со значением в УДЯ. Для каждого типа датчика поддерживается ограниченный набор событий. </p>
+<p>Если в HA происходит событие (например, нажатие на кнопку), но в УДЯ оно не появляется - начните отладку на странице интеграции Yandex Smart Home, сгенерирйте событие и поищите в журнале событий по <code>Unknown event</code>.</p>
 <table>
 <thead>
 <tr>
-<th>Значение</th>
-<th>Название в УДЯ</th>
+<th>Тип</th>
+<th>Поддерживаемые значения: HA - УДЯ</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>alarm</td>
-<td>Тревога</td>
+<td>battery_level</td>
+<td><code>on</code>, <code>low</code>- Низкий<br><code>off</code>, <code>normal</code> - Нормальный</td>
 </tr>
 <tr>
-<td>alice</td>
-<td>Алиса</td>
+<td>button</td>
+<td><code>click</code>, <code>single</code> - Одиночное нажатие<br><code>double_click</code>, <code>double</code>, <code>many</code> - Двойное нажатие<br><code>long_press</code>, <code>long</code>, <code>hold</code> - Долгое нажатие</td>
 </tr>
 <tr>
-<td>candle</td>
-<td>Свеча</td>
+<td>food_level</td>
+<td><code>empty</code> - Пустой<br><code>low</code>- Низкий<br><code>normal</code> - Нормальный</td>
 </tr>
 <tr>
-<td>dinner</td>
-<td>Ужин</td>
+<td>gas</td>
+<td><code>on</code>, <code>detected</code> - Обнаружено<br><code>off</code>, <code>not_detected</code> - Не обнаружено<br><code>high</code> - Высокий уровень</td>
 </tr>
 <tr>
-<td>fantasy</td>
-<td>Фантазия</td>
+<td>motion</td>
+<td><code>on</code>, <code>detected</code> - Обнаружено<br><code>off</code>, <code>not_detected</code> - Не обнаружено</td>
 </tr>
 <tr>
-<td>garland</td>
-<td>Гирлянда</td>
+<td>open</td>
+<td><code>on</code>, <code>opened</code> - Открыто<br ><code>off</code>, <code>closed</code> - Закрыто</td>
 </tr>
 <tr>
-<td>jungle</td>
-<td>Джунгли</td>
+<td>smoke</td>
+<td><code>on</code>, <code>detected</code> - Обнаружено<br><code>off</code>, <code>not_detected</code> - Не обнаружено<br><code>high</code> - Высокий уровень</td>
 </tr>
 <tr>
-<td>movie</td>
-<td>Кино</td>
+<td>vibration</td>
+<td><code>tilt</code>, <code>rotate</code> - Переворачивание<br><code>fall</code>, <code>drop</code> - Падение<br><code>on</code>, <code>vibration</code> - Вибрация</td>
 </tr>
 <tr>
-<td>neon</td>
-<td>Неон</td>
+<td>water_leak</td>
+<td><code>on</code>, <code>leak</code> - Протечка<br><code>off</code>, <code>dry</code> - Нет протечки</td>
 </tr>
 <tr>
-<td>night</td>
-<td>Ночь</td>
-</tr>
-<tr>
-<td>ocean</td>
-<td>Океан</td>
-</tr>
-<tr>
-<td>party</td>
-<td>Вечеринка</td>
-</tr>
-<tr>
-<td>reading</td>
-<td>Чтение</td>
-</tr>
-<tr>
-<td>rest</td>
-<td>Отдых</td>
-</tr>
-<tr>
-<td>romance</td>
-<td>Романтика</td>
-</tr>
-<tr>
-<td>siren</td>
-<td>Сирена</td>
-</tr>
-<tr>
-<td>sunrise</td>
-<td>Рассвет</td>
-</tr>
-<tr>
-<td>sunset</td>
-<td>Закат</td>
+<td>water_level</td>
+<td><code>empty</code> - Пустой<br><code>on</code>, <code>low</code>- Низкий<br><code>off</code>, <code>normal</code> - Нормальный</td>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<ul>
+<li><code>on</code>: Любая логическая истина: <code>on</code>, <code>true</code>, <code>yes</code>, <code>1</code></li>
+<li><code>off</code>: Любая логическая ложь: <code>off</code>, <code>false</code>, <code>no</code>, <code>0</code> </li>
+</ul>
+<p>Перечислена только часть поддерживаемых значений со стороны Home Assistant.</p>
+</div>
+<h2 id="device-class">Выбор класса бинарного датчика<a class="headerlink" href="#device-class" title="Permanent link">&para;</a></h2>
+<p>Некоторые интеграции создают бинарные датчики с пустым или неверным атрибутом <code>device_class</code>. Такие датчики автоматически обнаружены не будут, но по-прежнему могут
+быть добавлены <a href="#properties">вручную</a>.</p>
+<p>Вы можете самостоятельно задать атрибут <code>device_class</code> через параметр объекта <code>Отображать как</code> в <code>Настройки</code> &rarr; <code>Устройства и объекты</code> &rarr; <a href="https://my.home-assistant.io/redirect/entities/"><code>Объекты</code></a></p>
+<p><img alt="" src="../../../assets/images/devices/sensor/binary-device-class.png" width="750" /></p>
 
 
 
@@ -1667,7 +1503,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Нижний колонтитул" >
         
           
-          <a href="../sensor/event/" class="md-footer__link md-footer__link--prev" aria-label="Назад: Событийные датчики">
+          <a href="../float/" class="md-footer__link md-footer__link--prev" aria-label="Назад: Цифровые датчики">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -1677,20 +1513,20 @@
                 Назад
               </span>
               <div class="md-ellipsis">
-                Событийные датчики
+                Цифровые датчики
               </div>
             </div>
           </a>
         
         
           
-          <a href="../camera/" class="md-footer__link md-footer__link--next" aria-label="Вперед: Камеры">
+          <a href="../../light/" class="md-footer__link md-footer__link--next" aria-label="Вперед: Освещение">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Вперед
               </span>
               <div class="md-ellipsis">
-                Камеры
+                Освещение
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1739,10 +1575,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tracking", "navigation.top", "navigation.footer", "content.code.copy"], "search": "../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tracking", "navigation.top", "navigation.footer", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7c377c4.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7c377c4.min.js"></script>
       
     
   </body>

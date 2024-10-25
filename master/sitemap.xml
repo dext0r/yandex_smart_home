@@ -2,127 +2,147 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://docs.yaha-cloud.ru/master/</loc>
-         <lastmod>2023-02-20</lastmod>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/breaking-changes/</loc>
+         <lastmod>2024-05-07</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/master/faq/</loc>
-         <lastmod>2023-02-20</lastmod>
+         <lastmod>2024-05-07</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/master/quasar/</loc>
-         <lastmod>2023-02-20</lastmod>
+         <lastmod>2024-05-07</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/master/quirks/</loc>
-         <lastmod>2023-02-20</lastmod>
+         <lastmod>2024-05-07</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/master/recipes/</loc>
-         <lastmod>2023-02-20</lastmod>
+         <lastmod>2024-05-07</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/master/supported-devices/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/advanced/capabilities/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/advanced/clone/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/advanced/direct-connection/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/advanced/error-codes/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/advanced/events/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/config/connection-type/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/config/entity/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/config/filter/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/config/getting-started/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/config/modes/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/devices/button/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/devices/camera/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/devices/climate/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/devices/light/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/devices/sensor/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/install/component/</loc>
-         <lastmod>2023-02-20</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.yaha-cloud.ru/master/install/integration/</loc>
-         <lastmod>2023-02-20</lastmod>
+         <lastmod>2024-05-07</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/master/troubleshoot/</loc>
-         <lastmod>2023-02-20</lastmod>
+         <lastmod>2024-05-07</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.yaha-cloud.ru/master/troubleshoot/debug/</loc>
-         <lastmod>2023-02-20</lastmod>
+         <loc>https://docs.yaha-cloud.ru/master/advanced/direct-connection/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/advanced/error-codes/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/advanced/events/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/advanced/capabilities/about/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/advanced/capabilities/mode/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/advanced/capabilities/range/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/advanced/capabilities/toggle/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/config/connection-type/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/config/entity/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/config/filter/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/config/getting-started/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/config/modes/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/devices/button/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/devices/camera/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/devices/climate/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/devices/light/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/devices/sensor/about/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/devices/sensor/event/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/devices/sensor/float/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/install/component/</loc>
+         <lastmod>2024-05-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/master/install/integration/</loc>
+         <lastmod>2024-05-07</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
