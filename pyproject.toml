@@ -205,16 +205,17 @@ module = "tests.test_schema"
 ignore_errors = true
 
 [tool.tox]
-env_list = ["2024_4", "2024_5"]
+env_list = [
+    "type",
+    "2024_4",
+    "2024_5",
+]
 skipsdist = true
 
 [tool.tox.env_run_base]
 description = "Run test under {env_python}"
 base_python = ["py312"]
 commands = [
-    # https://github.com/python/mypy/issues/8545
-    ["python", "-c", "from pathlib import Path; import pytest_homeassistant_custom_component; (Path(pytest_homeassistant_custom_component.__file__).parent / Path(\"py.typed\")).touch()"],
-    ["mypy", "."],
     ["pytest", "--cov", "--cov-report=xml:{env_dir}/coverage.xml", "-n=auto"],
 ]
 
@@ -226,10 +227,6 @@ MYPY_CACHE_DIR = "{env_dir}/.cache/mypy"
 UV_EXTRA_INDEX_URL = "https://packagecloud.io/dext0r/pypi/pypi/simple"
 
 [tool.tox.env.2024_4]
-commands_pre = [
-    ["python", "-c", "from pathlib import Path; import homeassistant; (Path(homeassistant.__file__).parent / Path(\"py.typed\")).touch()"],
-    ["uv", "pip", "install", "--no-deps", "voluptuous-stubs==0.1.1"],
-]
 deps = [
     "pytest-homeassistant-custom-component==0.13.112",
     "home_assistant_intents==2024.2.2",
@@ -237,11 +234,25 @@ deps = [
 ]
 
 [tool.tox.env.2024_5]
-commands_pre = [["uv", "pip", "install", "--no-deps", "voluptuous-stubs==0.1.1"]]
 deps = [
     "pytest-homeassistant-custom-component==0.13.121",
     "home_assistant_intents==2024.4.24",
     "hassil==1.7.0",
     "mutagen==1.47.0",
     "ha-ffmpeg==3.2.0",
+]
+
+[tool.tox.env.type]
+description = "Run type checks under {env_python}"
+# https://github.com/python/mypy/issues/8545
+commands_pre = [
+    ["python", "-c", "from pathlib import Path; import pytest_homeassistant_custom_component; (Path(pytest_homeassistant_custom_component.__file__).parent / Path(\"py.typed\")).touch()"],
+    ["python", "-c", "from pathlib import Path; import homeassistant; (Path(homeassistant.__file__).parent / Path(\"py.typed\")).touch()"],
+    ["uv", "pip", "install", "--no-deps", "voluptuous-stubs==0.1.1"],
+]
+commands = [
+    ["mypy", "."],
+]
+deps = [
+    { replace = "ref", of = ["tool", "tox", "env", "2024_5", "deps"], extend = true },
 ]

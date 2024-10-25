@@ -27,6 +27,9 @@ jobs:
     strategy:
       matrix:
         include:
+          - tox-env: type
+            python-version: '3.12'
+
           - tox-env: 2024_4
             python-version: '3.12'
 
