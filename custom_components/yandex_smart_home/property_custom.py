@@ -326,7 +326,7 @@ def get_custom_property(
     """Return initialized custom property based on property configuration."""
     cls: type[CustomEventProperty] | type[CustomFloatProperty]
     property_type: str = config[CONF_ENTITY_PROPERTY_TYPE]
-    value_template = get_value_template(device_id, config)
+    value_template = get_value_template(hass, device_id, config)
     value_template.hass = hass
 
     if property_type.startswith(f"{PropertyInstanceType.EVENT}."):
@@ -362,7 +362,7 @@ def get_custom_property(
     return cls(hass, entry_data, config, device_id, value_template)
 
 
-def get_value_template(device_id: str, property_config: ConfigType) -> Template:
+def get_value_template(hass: HomeAssistant, device_id: str, property_config: ConfigType) -> Template:
     """Return property value template from property configuration."""
     if template := property_config.get(CONF_ENTITY_PROPERTY_VALUE_TEMPLATE):
         return cast(Template, template)
@@ -371,6 +371,6 @@ def get_value_template(device_id: str, property_config: ConfigType) -> Template:
     attribute = property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
 
     if attribute:
-        return Template("{{ state_attr('%s', '%s') }}" % (entity_id, attribute))
+        return Template("{{ state_attr('%s', '%s') }}" % (entity_id, attribute), hass)
 
-    return Template("{{ states('%s') }}" % entity_id)
+    return Template("{{ states('%s') }}" % entity_id, hass)

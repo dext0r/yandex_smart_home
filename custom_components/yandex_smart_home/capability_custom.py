@@ -350,7 +350,7 @@ def get_custom_capability(
     device_id: str,
 ) -> CustomCapability:
     """Return initialized custom capability based on parameters."""
-    value_template = get_value_template(device_id, capability_config)
+    value_template = get_value_template(hass, device_id, capability_config)
 
     match capability_type:
         case CapabilityType.MODE:
@@ -374,7 +374,7 @@ def get_custom_capability(
     raise APIError(ResponseCode.INTERNAL_ERROR, f"Unsupported capability type: {capability_type}")
 
 
-def get_value_template(device_id: str, capability_config: ConfigType) -> Template | None:
+def get_value_template(hass: HomeAssistant, device_id: str, capability_config: ConfigType) -> Template | None:
     """Return capability value template from capability configuration."""
     if template := capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE):
         return cast(Template, template)
@@ -383,8 +383,8 @@ def get_value_template(device_id: str, capability_config: ConfigType) -> Templat
     attribute = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
 
     if attribute:
-        return Template("{{ state_attr('%s', '%s') }}" % (entity_id or device_id, attribute))
+        return Template("{{ state_attr('%s', '%s') }}" % (entity_id or device_id, attribute), hass)
     elif entity_id:
-        return Template("{{ states('%s') }}" % entity_id)
+        return Template("{{ states('%s') }}" % entity_id, hass)
 
     return None

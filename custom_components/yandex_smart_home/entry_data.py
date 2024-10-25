@@ -332,7 +332,7 @@ class ConfigEntryData:
                             _LOGGER.debug(f"Failed to track custom capability: {e}")
                             continue
 
-                        template = capability_custom.get_value_template(device_id, capability_config)
+                        template = capability_custom.get_value_template(self._hass, device_id, capability_config)
 
                         if template:
                             templates.setdefault(template, [])
@@ -340,7 +340,7 @@ class ConfigEntryData:
 
             for property_config in entity_config.get(const.CONF_ENTITY_PROPERTIES, []):
                 try:
-                    template = property_custom.get_value_template(device_id, property_config)
+                    template = property_custom.get_value_template(self._hass, device_id, property_config)
                     templates.setdefault(template, [])
                     templates[template].append(get_custom_property(self._hass, self, property_config, device_id))
                 except APIError as e:
