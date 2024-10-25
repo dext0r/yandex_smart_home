@@ -25,7 +25,7 @@ from .schema import (
 from .unit_conversion import UnitOfPressure, UnitOfTemperature
 
 if TYPE_CHECKING:
-    from homeassistant.helpers import ConfigType
+    from homeassistant.helpers.typing import ConfigType
 
 _LOGGER = logging.getLogger(__name__)
 

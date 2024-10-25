@@ -22,7 +22,7 @@ from .schema import (
 
 if TYPE_CHECKING:
     from homeassistant.core import Context, HomeAssistant, State
-    from homeassistant.helpers import ConfigType
+    from homeassistant.helpers.typing import ConfigType
 
     from .entry_data import ConfigEntryData
     from .helpers import CacheStore

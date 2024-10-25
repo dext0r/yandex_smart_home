@@ -303,12 +303,11 @@ description = "Run type checks under {env_python}"
 # https://github.com/python/mypy/issues/8545
 commands_pre = [
     ["python", "-c", "from pathlib import Path; import pytest_homeassistant_custom_component; (Path(pytest_homeassistant_custom_component.__file__).parent / Path(\"py.typed\")).touch()"],
-    ["python", "-c", "from pathlib import Path; import homeassistant; (Path(homeassistant.__file__).parent / Path(\"py.typed\")).touch()"],
-    ["uv", "pip", "install", "--no-deps", "voluptuous-stubs==0.1.1"],
 ]
 commands = [
     ["mypy", "."],
 ]
 deps = [
-    { replace = "ref", of = ["tool", "tox", "env", "2024_5", "deps"], extend = true },
+    { replace = "ref", of = ["tool", "tox", "env", "2024_10", "deps"], extend = true },
+    "mypy-dev==1.12.0a5",
 ]

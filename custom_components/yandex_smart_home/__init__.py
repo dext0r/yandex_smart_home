@@ -29,7 +29,7 @@ from .helpers import SmartHomePlatform
 from .http import async_register_http
 
 if TYPE_CHECKING:
-    from homeassistant.helpers import ConfigType
+    from homeassistant.helpers.typing import ConfigType
 
     from .cloud_stream import CloudStreamManager
 

@@ -10,7 +10,7 @@ import itertools
 import logging
 from typing import TYPE_CHECKING, Any, Mapping, Protocol, Self, Sequence
 
-from aiohttp import JsonPayload, hdrs
+from aiohttp import ClientTimeout, JsonPayload, hdrs
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED
 from homeassistant.core import HassJob
@@ -314,7 +314,7 @@ class YandexNotifier(ABC):
                 url,
                 headers=self._request_headers,
                 data=JsonPayload(request.as_json(), dumps=lambda p: p),
-                timeout=5,
+                timeout=ClientTimeout(total=5),
             )
 
             response_body, error_message = await r.read(), ""
