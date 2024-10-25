@@ -660,7 +660,7 @@ async def test_capability_range_channel_set_random(hass, caplog):
     assert calls_set[0].data == {
         ATTR_ENTITY_ID: state.entity_id,
         media_player.ATTR_MEDIA_CONTENT_ID: 15,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL
     }
 
     with pytest.raises(SmartHomeError) as e:
@@ -693,7 +693,7 @@ async def test_capability_range_channel_set_random_with_value(hass, caplog):
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
         ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV,
         media_player.ATTR_MEDIA_CONTENT_ID: 15,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
     assert cap.retrievable
@@ -717,19 +717,19 @@ async def test_capability_range_channel_set_random_with_value(hass, caplog):
     assert calls_set[0].data == {
         ATTR_ENTITY_ID: state.entity_id,
         media_player.ATTR_MEDIA_CONTENT_ID: 20,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL
     }
     assert calls_set[1].data == {
         ATTR_ENTITY_ID: state.entity_id,
         media_player.ATTR_MEDIA_CONTENT_ID: 12,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL
     }
 
 
 async def test_capability_range_channel_value(hass, caplog):
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
         media_player.ATTR_MEDIA_CONTENT_ID: '5'
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)
@@ -745,7 +745,7 @@ async def test_capability_range_channel_value(hass, caplog):
 
     state = State('media_player.test', STATE_OFF, {
         ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
         media_player.ATTR_MEDIA_CONTENT_ID: 'foo'
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_CHANNEL)

@@ -28,6 +28,8 @@ from homeassistant.components import (
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_SUPPORTED_FEATURES,
+    MAJOR_VERSION,
+    MINOR_VERSION,
     SERVICE_CLOSE_COVER,
     SERVICE_LOCK,
     SERVICE_OPEN_COVER,
@@ -230,7 +232,10 @@ class OnOffCapabilityInputButton(OnlyOnCapability):
 @register_capability
 class OnOffCapabilityLock(OnOffCapability):
     def get_value(self) -> bool:
-        return self.state.state == lock.STATE_UNLOCKED
+        if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
+            return self.state.state == lock.LockState.UNLOCKED
+        else:
+            return self.state.state == lock.STATE_UNLOCKED
 
     def supported(self) -> bool:
         return self.state.domain == lock.DOMAIN
