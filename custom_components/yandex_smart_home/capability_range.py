@@ -567,7 +567,7 @@ class ChannelCapability(StateRangeCapability):
                 {
                     ATTR_ENTITY_ID: self.state.entity_id,
                     media_player.ATTR_MEDIA_CONTENT_ID: int(value),
-                    media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
+                    media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
                 },
                 blocking=False,  # some tv's do it too slow
                 context=context,
@@ -586,7 +586,7 @@ class ChannelCapability(StateRangeCapability):
         """Return the current capability value (unguarded)."""
         media_content_type = self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_TYPE)
 
-        if media_content_type == media_player.const.MEDIA_TYPE_CHANNEL:
+        if media_content_type == media_player.MediaType.CHANNEL:
             return self._convert_to_float(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID), strict=False)
 
         return None

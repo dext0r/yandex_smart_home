@@ -25,6 +25,8 @@ from homeassistant.components import (
 )
 from homeassistant.const import (
     ATTR_ENTITY_ID,
+    MAJOR_VERSION,
+    MINOR_VERSION,
     SERVICE_CLOSE_COVER,
     SERVICE_LOCK,
     SERVICE_OPEN_COVER,
@@ -253,7 +255,10 @@ class OnOffCapabilityLock(OnOffCapability):
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
-        return self.state.state == lock.STATE_UNLOCKED
+        if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
+            return bool(self.state.state == lock.LockState.UNLOCKED)
+        else:
+            return bool(self.state.state == lock.STATE_UNLOCKED)
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""

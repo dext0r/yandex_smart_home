@@ -743,7 +743,7 @@ async def test_capability_range_channel_set_random(hass):
     assert calls_set[0].data == {
         ATTR_ENTITY_ID: state.entity_id,
         media_player.ATTR_MEDIA_CONTENT_ID: 15,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
     }
 
     with pytest.raises(APIError) as e:
@@ -798,7 +798,7 @@ async def test_capability_range_channel_set_random_with_value(hass):
             ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
             ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV,
             media_player.ATTR_MEDIA_CONTENT_ID: 15,
-            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
+            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
         },
     )
     cap = cast(
@@ -828,12 +828,12 @@ async def test_capability_range_channel_set_random_with_value(hass):
     assert calls_set[0].data == {
         ATTR_ENTITY_ID: state.entity_id,
         media_player.ATTR_MEDIA_CONTENT_ID: 20,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MediaType.CHANNEL,
     }
     assert calls_set[1].data == {
         ATTR_ENTITY_ID: state.entity_id,
         media_player.ATTR_MEDIA_CONTENT_ID: 12,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MediaType.CHANNEL,
     }
 
 
@@ -843,7 +843,7 @@ async def test_capability_range_channel_value(hass, caplog):
         STATE_OFF,
         {
             ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
+            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
             media_player.ATTR_MEDIA_CONTENT_ID: "5",
         },
     )
@@ -873,7 +873,7 @@ async def test_capability_range_channel_value(hass, caplog):
         STATE_OFF,
         {
             ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_TYPE_CHANNEL,
+            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
             media_player.ATTR_MEDIA_CONTENT_ID: "foo",
         },
     )

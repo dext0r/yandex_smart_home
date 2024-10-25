@@ -24,6 +24,8 @@ from homeassistant.const import (
     ATTR_SUPPORTED_FEATURES,
     CONF_ENTITY_ID,
     CONF_SERVICE,
+    MAJOR_VERSION,
+    MINOR_VERSION,
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     STATE_OFF,
@@ -281,7 +283,10 @@ async def test_capability_onoff_media_player(hass):
 
 
 async def test_capability_onoff_lock(hass):
-    state = State("lock.test", lock.STATE_UNLOCKED)
+    if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
+        state = State("lock.test", lock.LockState.UNLOCKED)
+    else:
+        state = State("lock.test", lock.STATE_UNLOCKED)
     cap = cast(
         OnOffCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
@@ -301,7 +306,12 @@ async def test_capability_onoff_lock(hass):
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
-    for s in [lock.STATE_UNLOCKING, lock.STATE_LOCKING]:
+    if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
+        states = [lock.LockState.UNLOCKING, lock.LockState.LOCKING]
+    else:
+        states = [lock.STATE_UNLOCKING, lock.STATE_LOCKING]
+
+    for s in states:
         state_other = State("lock.test", s)
         cap = cast(
             OnOffCapability,
