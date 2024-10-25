@@ -13,98 +13,85 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
-      - name: Install dependencies
-        run: pip install -r requirements_dev.txt
-
-      - name: Flake8 lint
-        uses: TrueBrain/actions-flake8@v2
-        with:
-          path: custom_components
-
-      - name: Flake8 lint tests
-        uses: TrueBrain/actions-flake8@v2
-        with:
-          path: tests
-
-      - name: Verify import sorting
-        run: isort --diff --check-only tests custom_components
+      - uses: pre-commit/action@v3.0.1
 
   tests:
-    name: Run tests (${{ matrix.ha-version }})
+    name: Run tests (${{ matrix.tox-env }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - ha-version: '2023.3'
-            python-version: '3.10'
-          - ha-version: '2023.4'
-            python-version: '3.10'
-          - ha-version: '2023.5'
-            python-version: '3.10'
-          - ha-version: '2023.6'
-            python-version: '3.10'
-          - ha-version: '2023.7'
-            python-version: '3.10'
-          - ha-version: '2023.8'
+          - tox-env: 2023_9
             python-version: '3.11'
-          - ha-version: '2023.9'
+          - tox-env: 2023_10
             python-version: '3.11'
-          - ha-version: '2023.10'
+          - tox-env: 2023_11
             python-version: '3.11'
-          - ha-version: '2023.11'
+          - tox-env: 2023_12
             python-version: '3.11'
-          - ha-version: '2023.12'
+          - tox-env: 2024_1
             python-version: '3.11'
-          - ha-version: '2024.1'
+          - tox-env: 2024_2
             python-version: '3.11'
-          - ha-version: '2024.2'
+          - tox-env: 2024_4
             python-version: '3.12'
-          - ha-version: '2024.4'
-            python-version: '3.12'
-          - ha-version: '2024.5'
+
+          - tox-env: 2024_5
             python-version: '3.12'
             latest: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: tests/requirements_${{ matrix.ha-version }}.txt
+
+      - name: Load ~/.local cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local
+          key: dotlocal-${{ hashFiles('.github/workflows/ci.yml') }}
+
+      - name: Load virtual environment cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            .tox
+          key: venv-${{ hashFiles('pyproject.toml', 'poetry.lock') }}-${{ matrix.tox-env }}
+
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: '1.8.3'
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
 
       - name: Install dependencies
-        run: |
-          pip install -r tests/requirements_${{ matrix.ha-version }}.txt 
+        run: poetry install --only tox
 
-      - name: Test with pytest
-        run: |
-          pytest \
-            -qq \
-            --timeout 9 \
-            --durations 10 \
-            -n auto \
-            --cov custom_components.yandex_smart_home \
-            --cov-report xml \
-            -o console_output_style=count \
-            -p no:sugar \
-            tests
+      - name: Run tests
+        run: poetry run tox -e ${{ matrix.tox-env }}
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v2
         if: ${{ matrix.latest == true }}
+        uses: codecov/codecov-action@v4
+        with:
+          files: .tox/${{ matrix.tox-env }}/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   validate:
     name: Validate for HACS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: HACS validation
         uses: hacs/action@main

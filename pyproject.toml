@@ -1,0 +1,148 @@
+[tool.poetry]
+name = "yandex_smart_home_lts"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.0.1"
+ruff = "^0.7.0"
+isort = "^5.13.2"
+
+[tool.poetry.group.test.dependencies]
+pytest-homeassistant-custom-component = "0.13.107"
+home-assistant-intents = "*"
+hassil = "*"
+
+[tool.poetry.group.tox.dependencies]
+tox = "4.23.2"
+tox-uv = "1.13.1"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "1.3.0"
+mkdocs-material = "8.3.4"
+mike = "2.1.3"
+
+[tool.poetry.group.homeassistant.dependencies]
+homeassistant = "2024.3.0"
+colorlog = "*"
+numpy = "*"
+
+[tool.ruff]
+line-length = 120
+
+[tool.isort]
+line_length = 120
+multi_line_output = 3
+force_sort_within_sections = true
+combine_as_imports = true
+include_trailing_comma = true
+known_first_party = [
+    "custom_components.yandex_smart_home",
+    "tests",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.coverage.report]
+exclude_also = [
+    "raise NotImplementedError",
+    "@abstractmethod",
+    "if TYPE_CHECKING:",
+]
+omit = ["tests/*"]
+
+[tool.tox]
+env_list = [
+    "2023_9",
+    "2023_10",
+    "2023_11",
+    "2023_12",
+    "2024_1",
+    "2024_2",
+    "2024_4",
+    "2024_5",
+]
+skipsdist = true
+
+[tool.tox.env_run_base]
+description = "Run test under {env_python}"
+base_python = ["py312"]
+commands = [
+    ["pytest", "--cov", "--cov-report=xml:{env_dir}/coverage.xml", "-n=auto"],
+]
+
+[tool.tox.env_run_base.setenv]
+PATH = "{env_dir}/bin:/usr/local/bin:/usr/bin:/bin"
+PYTHONPATH = "{tox_root}"
+PYTHONDONTWRITEBYTECODE = "1"
+UV_EXTRA_INDEX_URL = "https://packagecloud.io/dext0r/pypi/pypi/simple"
+
+[tool.tox.env.2023_9]
+base_python = ["py311"]
+deps = [
+    "aiohttp-cors==0.7.0",
+    "pytest-homeassistant-custom-component==0.13.54",
+    "home_assistant_intents==2023.7.25",
+    "hassil==1.2.5",
+]
+
+[tool.tox.env.2023_10]
+base_python = ["py311"]
+deps = [
+    "aiohttp-cors==0.7.0",
+    "pytest-homeassistant-custom-component==0.13.63",
+    "home_assistant_intents==2023.7.25",
+    "hassil==1.2.5",
+]
+
+[tool.tox.env.2023_11]
+base_python = ["py311"]
+deps = [
+    "aiohttp-cors==0.7.0",
+    "pytest-homeassistant-custom-component==0.13.74",
+    "home_assistant_intents==2023.7.25",
+    "hassil==1.2.5",
+]
+
+[tool.tox.env.2023_12]
+base_python = ["py311"]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.82",
+    "home_assistant_intents==2023.7.25",
+    "hassil==1.2.5",
+]
+
+[tool.tox.env.2024_1]
+base_python = ["py311"]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.91",
+    "home_assistant_intents==2023.7.25",
+    "hassil==1.2.5",
+]
+
+[tool.tox.env.2024_2]
+base_python = ["py311"]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.100",
+    "home_assistant_intents==2024.2.2",
+    "hassil==1.5.1",
+]
+
+[tool.tox.env.2024_4]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.112",
+    "home_assistant_intents==2024.2.2",
+    "hassil==1.5.1",
+]
+
+[tool.tox.env.2024_5]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.121",
+    "home_assistant_intents==2024.4.24",
+    "hassil==1.7.0",
+    "mutagen==1.47.0",
+    "ha-ffmpeg==3.2.0",
+]

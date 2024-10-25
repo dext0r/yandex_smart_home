@@ -1,4 +1,0 @@
-pytest-homeassistant-custom-component==0.13.100
-aiohttp-cors==0.7.0
-home_assistant_intents==2024.2.2
-hassil==1.5.1

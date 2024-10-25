@@ -1,2 +1,6 @@
-__pycache__/
+.config
 site
+
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
