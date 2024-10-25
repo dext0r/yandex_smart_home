@@ -17,19 +17,20 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1
 
   tests:
-    name: Run tests (${{ matrix.ha-version }})
+    name: Run tests (${{ matrix.tox-env }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
-          - ha-version: '2024.4'
+          - tox-env: 2024_4
             python-version: '3.12'
-          - ha-version: '2024.5'
+
+          - tox-env: 2024_5
             python-version: '3.12'
             latest: true
     steps:
@@ -38,31 +39,41 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: tests/requirements_${{ matrix.ha-version }}.txt
+
+      - name: Load ~/.local cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local
+          key: dotlocal-${{ hashFiles('.github/workflows/ci.yml') }}
+
+      - name: Load virtual environment cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            .tox
+          key: venv-${{ hashFiles('pyproject.toml', 'poetry.lock') }}-${{ matrix.tox-env }}
+
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: '1.8.3'
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
 
       - name: Install dependencies
-        run: |
-          pip install -r tests/requirements_${{ matrix.ha-version }}.txt 
+        run: poetry install --only tox
 
-      # https://github.com/python/mypy/issues/8545
-      - name: Fix homeassistant type checking
-        run: |
-          python -c 'from pathlib import Path; import homeassistant; (Path(homeassistant.__file__).parent / Path("py.typed")).touch()'
-
-      - name: Fix pytest_homeassistant_custom_component type checking
-        run: |
-          python -c 'from pathlib import Path; import pytest_homeassistant_custom_component; (Path(pytest_homeassistant_custom_component.__file__).parent / Path("py.typed")).touch()'
-
-      - name: Type checking
-        run: mypy .
-
-      - name: Test with pytest
-        run: pytest --cov-report xml --cov
+      - name: Run tests
+        run: poetry run tox -e ${{ matrix.tox-env }}
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v4
         if: ${{ matrix.latest == true }}
+        uses: codecov/codecov-action@v4
+        with:
+          files: .tox/${{ matrix.tox-env }}/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   validate:
     name: Validate for HACS
