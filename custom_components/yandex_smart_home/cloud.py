@@ -9,14 +9,7 @@ import json
 import logging
 from typing import Any
 
-from aiohttp import (
-    ClientConnectorError,
-    ClientResponseError,
-    ClientSession,
-    ClientWebSocketResponse,
-    WSMessage,
-    WSMsgType,
-)
+from aiohttp import ClientConnectorError, ClientResponseError, ClientSession, ClientWebSocketResponse, WSMsgType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HassJob, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession

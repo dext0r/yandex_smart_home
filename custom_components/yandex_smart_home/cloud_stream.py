@@ -8,14 +8,7 @@ import json
 import logging
 from typing import Any, cast
 
-from aiohttp import (
-    ClientConnectionError,
-    ClientResponseError,
-    ClientSession,
-    ClientWebSocketResponse,
-    WSMessage,
-    WSMsgType,
-)
+from aiohttp import ClientConnectionError, ClientResponseError, ClientSession, ClientWebSocketResponse, WSMsgType
 from aiohttp.web_request import Request as AIOWebRequest
 from homeassistant.components.stream import Stream
 from homeassistant.components.stream.hls import (

@@ -124,7 +124,7 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
         if not self.retrievable:
             return None
 
-        return not super().get_value() in [STATE_OFF, False]
+        return super().get_value() not in [STATE_OFF, False]
 
     async def set_state(self, data: RequestData, state: dict[str, Any]):
         """Set device state."""
