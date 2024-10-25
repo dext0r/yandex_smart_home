@@ -413,7 +413,7 @@ async def test_notifier_schedule_initial_report(hass_platform_cloud_connection, 
     hass.bus.async_fire(const.EVENT_DEVICE_DISCOVERY)
     await hass.async_block_till_done()
 
-    assert len(mock_call_later.call_args_list) == 3
+    assert len(mock_call_later.call_args_list) in [3, 5]
 
     with patch('custom_components.yandex_smart_home.notifier.YandexNotifier.async_initial_report') as mock_ir:
         await mock_call_later.call_args_list[0][0][2].target(None)

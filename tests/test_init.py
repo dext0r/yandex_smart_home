@@ -39,6 +39,13 @@ async def test_valid_config(hass):
     hass_template = None
     if (MAJOR_VERSION == 2023 and MINOR_VERSION >= 4) or MAJOR_VERSION >= 2024:
         hass_template = hass
+    if MAJOR_VERSION == 2024 and MINOR_VERSION == 8:
+        hass_template = None
+
+    if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 8) or MAJOR_VERSION >= 2025:
+        service_key = "action"
+    else:
+        service_key = "service"
 
     assert config[DOMAIN]['notifier'] == [{
         'oauth_token': 'AgAAAAAEEo2aYYR7m-CEyS7SEiUJjnKez3v3GZe',
@@ -115,7 +122,7 @@ async def test_valid_config(hass):
         'custom_ranges': {
             'channel': {
                 'set_value': {
-                    'service': 'media_player.play_media',
+                    service_key: 'media_player.play_media',
                     'entity_id': [
                         'media_player.stupid_tv'
                     ],
@@ -125,10 +132,10 @@ async def test_valid_config(hass):
                     }
                 },
                 'increase_value': {
-                    'service': 'script.next_channel_via_ir'
+                    service_key: 'script.next_channel_via_ir'
                 },
                 'decrease_value': {
-                    'service': 'script.prev_channel_via_ir'
+                    service_key: 'script.prev_channel_via_ir'
                 },
                 'range': {
                     'min': 0.0,
@@ -137,10 +144,10 @@ async def test_valid_config(hass):
             },
             'volume': {
                 'increase_value': {
-                    'service': 'script.increase_volume'
+                    service_key: 'script.increase_volume'
                 },
                 'decrease_value': {
-                    'service': 'script.decrease_volume'
+                    service_key: 'script.decrease_volume'
                 }
             }
         },
@@ -253,13 +260,13 @@ async def test_valid_config(hass):
             'ionization': {
                 'state_entity_id': 'switch.ac_ionizer',
                 'turn_on': {
-                    'service': 'switch.turn_on',
+                    service_key: 'switch.turn_on',
                     'entity_id': [
                         'switch.ac_ionizer'
                     ]
                 },
                 'turn_off': {
-                    'service': 'switch.turn_off',
+                    service_key: 'switch.turn_off',
                     'entity_id': [
                         'switch.ac_ionizer'
                     ]
@@ -268,13 +275,13 @@ async def test_valid_config(hass):
             'backlight': {
                 'state_entity_id': 'input_boolean.ac_lighting',
                 'turn_on': {
-                    'service': 'input_boolean.turn_on',
+                    service_key: 'input_boolean.turn_on',
                     'entity_id': [
                         'input_boolean.ac_lighting'
                     ]
                 },
                 'turn_off': {
-                    'service': 'input_boolean.turn_off',
+                    service_key: 'input_boolean.turn_off',
                     'entity_id': [
                         'input_boolean.ac_lighting'
                     ]
@@ -295,7 +302,7 @@ async def test_valid_config(hass):
             'temperature': {
                 'state_attribute': 'temperature',
                 'set_value': {
-                    'service': 'climate.set_temperature',
+                    service_key: 'climate.set_temperature',
                     'data': {
                         'temperature': Template('{{ value }}', hass_template)
                     },
@@ -629,7 +636,9 @@ yandex_smart_home:
 
     assert entry.options[const.CONF_PRESSURE_UNIT] == 'mmHg'
 
-    if (MAJOR_VERSION == 2023 and MINOR_VERSION >= 4) or MAJOR_VERSION >= 2024:
+    if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 8) or MAJOR_VERSION >= 2025:
+        assert entry.data[const.YAML_CONFIG_HASH] == 'e6b81905257fbba74930f7cb95183602'  # service -> action
+    elif (MAJOR_VERSION == 2023 and MINOR_VERSION >= 4) or MAJOR_VERSION >= 2024:
         assert entry.data[const.YAML_CONFIG_HASH] == '0eedd9f5ee18739bf910b36d2f9f1c6e'
     else:
         assert entry.data[const.YAML_CONFIG_HASH] == 'cbe26e947d35ed6222f97e493b32d94f'

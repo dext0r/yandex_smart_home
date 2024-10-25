@@ -193,7 +193,7 @@ def hass_platform_cloud_connection(loop, hass, config_entry_cloud_connection):
     demo_sensor.hass = hass
     demo_sensor.entity_id = 'sensor.outside_temp'
     demo_binary_sensor.hass = hass
-    demo_binary_sensor.entity_id = 'binary_sensor.front_Door'
+    demo_binary_sensor.entity_id = 'binary_sensor.front_door'
     demo_light.hass = hass
     demo_light.entity_id = 'light.kitchen'
 
