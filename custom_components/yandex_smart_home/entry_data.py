@@ -1,6 +1,7 @@
 """Config entry data for the Yandex Smart Home."""
 
 import asyncio
+from contextlib import suppress
 from dataclasses import dataclass
 from functools import cached_property
 import logging
@@ -19,7 +20,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.entityfilter import EntityFilter
 from homeassistant.helpers.template import Template
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.loader import DATA_CUSTOM_COMPONENTS
+from homeassistant.loader import async_get_custom_components
 
 from . import capability_custom, const, property_custom
 from .capability_custom import CustomCapability, get_custom_capability
@@ -71,6 +72,8 @@ class ConfigEntryData:
         self.entity_config: ConfigType = entity_config or {}
         self._yaml_config: ConfigType = yaml_config or {}
 
+        self.component_version = "unknown"
+
         self._hass = hass
         self._entity_filter = entity_filter
         self._cloud_manager: CloudManager | None = None
@@ -117,6 +120,10 @@ class ConfigEntryData:
         else:
             ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_DEPRECATED_YAML_NOTIFIER)
             ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS)
+
+        with suppress(KeyError):
+            integration = (await async_get_custom_components(self._hass))[DOMAIN]
+            self.component_version = str(integration.version)
 
         return self
 
@@ -243,14 +250,6 @@ class ConfigEntryData:
         data[CONF_LINKED_PLATFORMS] = list(self.linked_platforms - {platform})
 
         self._hass.config_entries.async_update_entry(self.entry, data=data)
-
-    @property
-    def version(self) -> str:
-        """Return component version."""
-        try:
-            return str(self._hass.data[DATA_CUSTOM_COMPONENTS][DOMAIN].version)
-        except KeyError:
-            return "unknown"
 
     async def _async_setup_notifiers(self, *_: Any) -> None:
         """Set up notifiers."""

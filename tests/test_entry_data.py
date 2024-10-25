@@ -17,7 +17,7 @@ from . import MockConfigEntryData, generate_entity_filter
 
 def test_entry_data_unknown_version(hass):
     entry_data = ConfigEntryData(hass, MockConfigEntry())
-    assert entry_data.version == "unknown"
+    assert entry_data.component_version == "unknown"
 
 
 def test_entry_data_platform(hass):

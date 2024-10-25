@@ -77,7 +77,7 @@ class CloudManager:
                 compress=15,
                 headers={
                     hdrs.AUTHORIZATION: f"Bearer {self._entry_data.cloud_connection_token}",
-                    hdrs.USER_AGENT: f"{SERVER_SOFTWARE} {DOMAIN}/{self._entry_data.version}",
+                    hdrs.USER_AGENT: f"{SERVER_SOFTWARE} {DOMAIN}/{self._entry_data.component_version}",
                 },
             )
 

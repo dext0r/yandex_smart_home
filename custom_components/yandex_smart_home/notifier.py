@@ -451,5 +451,5 @@ class YandexCloudNotifier(YandexNotifier):
         """Return headers for a request."""
         return {
             hdrs.AUTHORIZATION: f"Bearer {self._config.token}",
-            hdrs.USER_AGENT: f"{SERVER_SOFTWARE} {DOMAIN}/{self._entry_data.version}",
+            hdrs.USER_AGENT: f"{SERVER_SOFTWARE} {DOMAIN}/{self._entry_data.component_version}",
         }
