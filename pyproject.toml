@@ -202,3 +202,15 @@ deps = [
     "pymicro-vad==1.0.2",
     "pyspeex_noise==1.0.2",
 ]
+
+[tool.tox.env.2024_11]
+deps = [
+    "pytest-homeassistant-custom-component==0.13.176",
+    "home_assistant_intents==2024.4.24",
+    "hassil==1.7.0",
+    "mutagen==1.47.0",
+    "ha-ffmpeg==3.2.0",
+    "pymicro-vad==1.0.2",
+    "pyspeex_noise==1.0.2",
+]
+pip_pre = true
