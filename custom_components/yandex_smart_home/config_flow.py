@@ -47,6 +47,11 @@ if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.typing import ConfigType
 
+try:
+    from homeassistant.config_entries import ConfigFlowContext
+except ImportError:
+    ConfigFlowContext = ...  # type: ignore[assignment, misc]
+
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_CONFIG_ENTRY_TITLE = "Yandex Smart Home"
@@ -94,7 +99,7 @@ FILTER_SOURCE_SELECTOR = SelectSelector(
 )
 
 
-class BaseFlowHandler(FlowHandler[ConfigFlowResult]):
+class BaseFlowHandler(FlowHandler[ConfigFlowContext, ConfigFlowResult]):
     """Handle shared steps between config and options flow for Yandex Smart Home."""
 
     def __init__(self) -> None:

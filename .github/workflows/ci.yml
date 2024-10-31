@@ -42,8 +42,10 @@ jobs:
             python-version: '3.12'
           - tox-env: 2024_9
             python-version: '3.12'
-
           - tox-env: 2024_10
+            python-version: '3.12'
+
+          - tox-env: 2024_11
             python-version: '3.12'
             latest: true
     steps:

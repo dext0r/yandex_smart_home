@@ -4,10 +4,9 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 from homeassistant.components import http
-from homeassistant.config import async_process_ha_core_config
 from homeassistant.config_entries import SOURCE_IGNORE, SOURCE_USER
 from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_PLATFORM, CONF_TOKEN
-from homeassistant.data_entry_flow import FlowResult, FlowResultType
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.setup import async_setup_component
@@ -35,9 +34,15 @@ from custom_components.yandex_smart_home.http import YandexSmartHomeUnauthorized
 
 from . import test_cloud
 
+try:
+    from homeassistant.core_config import async_process_ha_core_config
+except ImportError:
+    from homeassistant.config import async_process_ha_core_config  # type: ignore[attr-defined, no-redef]
+
+
 if TYPE_CHECKING:
     from homeassistant.auth.models import User
-    from homeassistant.config_entries import ConfigEntry
+    from homeassistant.config_entries import ConfigEntry, ConfigFlowResult
     from homeassistant.core import HomeAssistant
     from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
@@ -79,7 +84,7 @@ async def _async_mock_config_entry(
     )
 
 
-async def _async_forward_to_step_skill_yandex(hass: HomeAssistant) -> FlowResult:
+async def _async_forward_to_step_skill_yandex(hass: HomeAssistant) -> ConfigFlowResult:
     await async_process_ha_core_config(hass, {"external_url": "https://example.com"})
 
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
@@ -105,7 +110,7 @@ async def _async_forward_to_step_skill_yandex(hass: HomeAssistant) -> FlowResult
     return result4
 
 
-async def _async_forward_to_step_expose_settings(hass: HomeAssistant, user: User) -> FlowResult:
+async def _async_forward_to_step_expose_settings(hass: HomeAssistant, user: User) -> ConfigFlowResult:
     result = await hass.config_entries.flow.async_configure(
         (await _async_forward_to_step_skill_yandex(hass))["flow_id"],
         {CONF_ID: "foo", CONF_TOKEN: "foo", CONF_USER_ID: user.id},
@@ -115,7 +120,7 @@ async def _async_forward_to_step_expose_settings(hass: HomeAssistant, user: User
     return result
 
 
-async def _async_forward_to_step_include_entities(hass: HomeAssistant, user: User) -> FlowResult:
+async def _async_forward_to_step_include_entities(hass: HomeAssistant, user: User) -> ConfigFlowResult:
     result = await hass.config_entries.flow.async_configure(
         (await _async_forward_to_step_expose_settings(hass, user))["flow_id"],
         {CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY},
@@ -125,7 +130,7 @@ async def _async_forward_to_step_include_entities(hass: HomeAssistant, user: Use
     return result
 
 
-async def _async_forward_to_step_update_filter(hass: HomeAssistant, user: User) -> FlowResult:
+async def _async_forward_to_step_update_filter(hass: HomeAssistant, user: User) -> ConfigFlowResult:
     result = await hass.config_entries.flow.async_configure(
         (await _async_forward_to_step_expose_settings(hass, user))["flow_id"],
         {CONF_FILTER_SOURCE: EntityFilterSource.GET_FROM_CONFIG_ENTRY},
@@ -136,7 +141,7 @@ async def _async_forward_to_step_update_filter(hass: HomeAssistant, user: User) 
     return result
 
 
-async def _async_forward_to_step_maintenance(hass: HomeAssistant, config_entry: ConfigEntry) -> FlowResult:
+async def _async_forward_to_step_maintenance(hass: HomeAssistant, config_entry: ConfigEntry) -> ConfigFlowResult:
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
     assert result["type"] == FlowResultType.MENU
     assert result["step_id"] == "init"
