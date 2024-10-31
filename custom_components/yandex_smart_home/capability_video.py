@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from homeassistant.components import camera
-from homeassistant.components.camera import StreamType, _get_camera_from_entity_id
+from homeassistant.components.camera import StreamType
 from homeassistant.components.stream import Stream
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, State
@@ -16,6 +16,11 @@ from .cloud_stream import CloudStream
 from .const import CLOUD_STREAMS, DOMAIN, ERR_NOT_SUPPORTED_IN_CURRENT_MODE, VIDEO_STREAM_INSTANCE_GET_STREAM
 from .error import SmartHomeError
 from .helpers import Config, RequestData
+
+try:
+    from homeassistant.components.camera import get_camera_from_entity_id
+except ImportError:
+    from homeassistant.components.camera import _get_camera_from_entity_id as get_camera_from_entity_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -80,7 +85,7 @@ class VideoStreamCapability(AbstractCapability):
         }
 
     async def _async_request_stream(self, entity_id: str) -> Stream:
-        camera_entity = _get_camera_from_entity_id(self.hass, self.state.entity_id)
+        camera_entity = get_camera_from_entity_id(self.hass, self.state.entity_id)
         stream = await camera_entity.async_create_stream()
 
         if not stream:

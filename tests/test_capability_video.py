@@ -5,7 +5,6 @@ from unittest.mock import patch
 from homeassistant.components import camera, http
 from homeassistant.components.camera import Camera, DynamicStreamSettings
 from homeassistant.components.stream import OUTPUT_IDLE_TIMEOUT, Stream, StreamOutput, StreamSettings
-from homeassistant.config import async_process_ha_core_config
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
@@ -23,6 +22,11 @@ from custom_components.yandex_smart_home.error import SmartHomeError
 
 from . import BASIC_CONFIG, BASIC_DATA, MockConfig
 from .test_capability import assert_no_capabilities, get_exact_one_capability
+
+try:
+    from homeassistant.core_config import async_process_ha_core_config
+except ImportError:
+    from homeassistant.config import async_process_ha_core_config
 
 
 class MockStream(Stream):
@@ -102,13 +106,13 @@ async def test_capability_video_stream_request_stream(hass):
     cap = VideoStreamCapability(hass, config, state)
 
     with patch(
-        'custom_components.yandex_smart_home.capability_video._get_camera_from_entity_id',
+        'custom_components.yandex_smart_home.capability_video.get_camera_from_entity_id',
         return_value=MockCamera(),
     ):
         assert isinstance(await cap._async_request_stream(state.entity_id), MockStream)
 
     with patch(
-        'custom_components.yandex_smart_home.capability_video._get_camera_from_entity_id',
+        'custom_components.yandex_smart_home.capability_video.get_camera_from_entity_id',
         return_value=MockCameraUnsupported(),
     ):
         with pytest.raises(SmartHomeError) as e:
