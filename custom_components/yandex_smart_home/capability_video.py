@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from homeassistant.components import camera
-from homeassistant.components.camera import StreamType, _get_camera_from_entity_id
+from homeassistant.components.camera import StreamType
 from homeassistant.components.stream import Stream
 from homeassistant.helpers import network
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -22,6 +22,14 @@ from .schema import (
     VideoStreamCapabilityInstance,
     VideoStreamCapabilityParameters,
 )
+
+try:
+    from homeassistant.components.camera import get_camera_from_entity_id
+except ImportError:
+    from homeassistant.components.camera import (  # type: ignore[no-redef]
+        _get_camera_from_entity_id as get_camera_from_entity_id,
+    )
+
 
 if TYPE_CHECKING:
     from homeassistant.core import Context
@@ -79,7 +87,7 @@ class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStream
         return GetStreamInstanceActionResultValue(stream_url=stream_url, protocol="hls")
 
     async def _async_request_stream(self, entity_id: str) -> Stream:
-        camera_entity = _get_camera_from_entity_id(self._hass, self.state.entity_id)
+        camera_entity = get_camera_from_entity_id(self._hass, self.state.entity_id)
         stream = await camera_entity.async_create_stream()
 
         if not stream:
