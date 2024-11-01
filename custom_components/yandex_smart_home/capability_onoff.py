@@ -44,6 +44,7 @@ from homeassistant.core import DOMAIN as HA_DOMAIN, Context
 from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.service import async_call_from_config
 
+from . import const
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
 from .const import CONF_FEATURES, CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON, MediaPlayerFeature
 from .helpers import ActionNotAllowed, APIError
@@ -449,7 +450,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
     """Capability to turn on or off a water heater."""
 
     _water_heater_operations = {
-        STATE_ON: [STATE_ON, "On", "ON", water_heater.STATE_ELECTRIC],
+        STATE_ON: [STATE_ON, "On", "ON", water_heater.STATE_ELECTRIC, const.SKYKETTLE_MODE_BOIL],
         STATE_OFF: [STATE_OFF, "Off", "OFF"],
     }
 
