@@ -605,7 +605,7 @@ class ChannelCapability(StateRangeCapability):
 class ValvePositionCapability(StateRangeCapability):
     """Capability to control position of a device."""
 
-    instance = RangeCapabilityInstance.VALVE
+    instance = RangeCapabilityInstance.OPEN
 
     @property
     def supported(self) -> bool:
