@@ -11,6 +11,7 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_MODEL,
     ATTR_SUPPORTED_FEATURES,
+    MAJOR_VERSION,
     STATE_OFF,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
@@ -568,3 +569,41 @@ class ChannelCapability(RangeCapability):
 
         if media_content_type == media_player.MediaType.CHANNEL:
             return self._convert_to_float(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID), strict=False)
+
+if MAJOR_VERSION >= 2024:
+    from homeassistant.components import valve
+
+    @register_capability
+    class ValvePositionCapability(RangeCapability):
+        """Set cover level"""
+
+        instance = const.RANGE_INSTANCE_OPEN
+
+        def supported(self) -> bool:
+            """Test if capability is supported."""
+            features = self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0)
+
+            return self.state.domain == valve.DOMAIN and features & valve.ValveEntityFeature.SET_POSITION
+
+        @property
+        def support_random_access(self) -> bool:
+            """Test if capability supports random access."""
+            return True
+
+        async def set_state(self, data: RequestData, state: dict[str, Any]):
+            """Set device state."""
+            value = state['value'] if not state.get('relative') else self.get_absolute_value(state['value'])
+
+            await self.hass.services.async_call(
+                valve.DOMAIN,
+                valve.SERVICE_SET_VALVE_POSITION, {
+                    ATTR_ENTITY_ID: self.state.entity_id,
+                    valve.ATTR_POSITION: value
+                },
+                blocking=True,
+                context=data.context
+            )
+
+        @property
+        def _value(self) -> float | None:
+            return self._convert_to_float(self.state.attributes.get(valve.ATTR_CURRENT_POSITION))

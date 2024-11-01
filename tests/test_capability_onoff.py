@@ -165,6 +165,43 @@ async def test_capability_onoff_cover(hass):
     assert cap_binary.parameters() == {'split': True}
 
 
+if MAJOR_VERSION >= 2024:
+    from homeassistant.components import valve
+
+    async def test_capability_onoff_valve(hass):
+        state_open = State('valve.test', valve.STATE_OPEN,
+                        attributes={ATTR_SUPPORTED_FEATURES: valve.ValveEntityFeature.SET_POSITION})
+        cap_open = get_exact_one_capability(hass, BASIC_CONFIG, state_open, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+
+        assert cap_open.retrievable
+        assert cap_open.get_value()
+        assert cap_open.parameters() is None
+
+        on_calls = async_mock_service(hass, valve.DOMAIN, valve.SERVICE_OPEN_VALVE)
+        await cap_open.set_state(BASIC_DATA, {'value': True})
+        assert len(on_calls) == 1
+        assert on_calls[0].data == {ATTR_ENTITY_ID: 'valve.test'}
+
+        off_calls = async_mock_service(hass, valve.DOMAIN, valve.SERVICE_CLOSE_VALVE)
+        await cap_open.set_state(BASIC_DATA, {'value': False})
+        assert len(off_calls) == 1
+        assert off_calls[0].data == {ATTR_ENTITY_ID: 'valve.test'}
+
+        for state in [valve.STATE_CLOSED, valve.STATE_CLOSING, valve.STATE_OPENING]:
+            state_other = State('valve.test', state,
+                                attributes={ATTR_SUPPORTED_FEATURES: valve.ValveEntityFeature.SET_POSITION})
+            cap = get_exact_one_capability(hass, BASIC_CONFIG, state_other, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+
+            assert not cap.get_value()
+
+        state_no_features = State('valve.test', cover.STATE_OPEN)
+        cap_no_features = get_exact_one_capability(hass, BASIC_CONFIG, state_no_features,
+                                                CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
+        assert cap_no_features.retrievable
+        assert cap_no_features.get_value()
+        assert cap_no_features.parameters() is None
+
+
 async def test_capability_onoff_remote(hass):
     state = State('remote.test', STATE_ON)
     cap_open = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)

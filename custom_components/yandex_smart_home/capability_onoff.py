@@ -38,6 +38,7 @@ from homeassistant.const import (
     SERVICE_UNLOCK,
     STATE_OFF,
     STATE_ON,
+    STATE_OPEN,
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN
 from homeassistant.exceptions import ServiceNotFound
@@ -278,6 +279,34 @@ class OnOffCapabilityCover(OnOffCapability):
             blocking=True,
             context=data.context
         )
+
+
+if MAJOR_VERSION >= 2024:
+    from homeassistant.components import valve
+    from homeassistant.const import SERVICE_CLOSE_VALVE, SERVICE_OPEN_VALVE
+
+    @register_capability
+    class OnOffCapabilityValve(OnOffCapability):
+        def get_value(self) -> bool:
+            return self.state.state == STATE_OPEN
+
+        def supported(self) -> bool:
+            return self.state.domain == valve.DOMAIN
+
+        async def _set_state(self, data: RequestData, state: dict[str, Any]):
+            if state['value']:
+                service = SERVICE_OPEN_VALVE
+            else:
+                service = SERVICE_CLOSE_VALVE
+
+            await self.hass.services.async_call(
+                valve.DOMAIN,
+                service, {
+                    ATTR_ENTITY_ID: self.state.entity_id
+                },
+                blocking=True,
+                context=data.context
+            )
 
 
 @register_capability

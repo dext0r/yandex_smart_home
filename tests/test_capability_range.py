@@ -8,6 +8,7 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_MODEL,
     ATTR_SUPPORTED_FEATURES,
+    MAJOR_VERSION,
     STATE_OFF,
     STATE_ON,
     STATE_UNAVAILABLE,
@@ -133,12 +134,22 @@ async def test_capability_range(hass):
     assert 'turned off' in e.value.message
 
 
-async def test_capability_range_cover(hass):
-    state = State('cover.test', cover.STATE_OPEN)
+@pytest.mark.parametrize(
+    'domain,set_position_feature,set_position_service',
+    [
+        (cover.DOMAIN, cover.CoverEntityFeature.SET_POSITION, cover.SERVICE_SET_COVER_POSITION),
+        ('valve', 4, 'set_valve_position'),
+    ],
+)
+async def test_capability_range_open(hass, domain, set_position_feature, set_position_service):
+    if domain == 'valve' and MAJOR_VERSION < 2024:
+        pytest.skip('unsupported version')
+
+    state = State(f'{domain}.test', 'open')
     assert_no_capabilities(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_OPEN)
 
-    state = State('cover.test', cover.STATE_OPEN, {
-        ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION
+    state = State(f'{domain}.test', 'open', {
+        ATTR_SUPPORTED_FEATURES: set_position_feature
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_OPEN)
     assert cap.retrievable
@@ -155,14 +166,14 @@ async def test_capability_range_cover(hass):
     }
     assert cap.get_value() is None
 
-    state = State('cover.test', cover.STATE_OPEN, {
-        ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION,
+    state = State(f'{domain}.test', 'open', {
+        ATTR_SUPPORTED_FEATURES: set_position_feature,
         cover.ATTR_CURRENT_POSITION: '30',
     })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_RANGE, RANGE_INSTANCE_OPEN)
     assert cap.get_value() == 30
 
-    calls = async_mock_service(hass, cover.DOMAIN, cover.SERVICE_SET_COVER_POSITION)
+    calls = async_mock_service(hass, domain, set_position_service)
     await cap.set_state(BASIC_DATA, {'value': 0})
     await cap.set_state(BASIC_DATA, {'value': 20})
     await cap.set_state(BASIC_DATA, {'value': -15, 'relative': True})
