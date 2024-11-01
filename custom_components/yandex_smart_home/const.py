@@ -746,6 +746,9 @@ TION_FAN_SPEED_4 = '4'
 TION_FAN_SPEED_5 = '5'
 TION_FAN_SPEED_6 = '6'
 
+# https://github.com/ClusterM/skykettle-ha/blob/c1b61c4a22693d6e2b7c2f57a989df418011f2c2/custom_components/skykettle/skykettle.py#L53
+SKYKETTLE_MODE_BOIL = "Boil"
+
 # https://github.com/home-assistant/core/pull/67743
 FAN_SPEED_OFF = 'off'
 FAN_SPEED_LOW = 'low'

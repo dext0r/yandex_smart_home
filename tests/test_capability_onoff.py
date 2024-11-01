@@ -594,7 +594,7 @@ async def test_capability_onoff_water_heater(hass):
     assert cap.parameters() == {'split': True}
 
 
-@pytest.mark.parametrize('op_on', ['on', 'On', 'ON', 'electric'])
+@pytest.mark.parametrize('op_on', ['on', 'On', 'ON', 'electric', 'Boil'])
 @pytest.mark.parametrize('op_off', ['off', 'Off', 'OFF'])
 async def test_capability_onoff_water_heater_set_op_mode(hass, op_on, op_off):
     state = State('water_heater.test', op_on, {

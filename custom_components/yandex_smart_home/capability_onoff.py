@@ -459,7 +459,7 @@ class OnOffCapabilityClimate(OnOffCapability):
 @register_capability
 class OnOffCapabilityWaterHeater(OnOffCapability):
     water_heater_operations = {
-        STATE_ON: [STATE_ON, 'On', 'ON', water_heater.STATE_ELECTRIC],
+        STATE_ON: [STATE_ON, 'On', 'ON', water_heater.STATE_ELECTRIC, const.SKYKETTLE_MODE_BOIL],
         STATE_OFF: [STATE_OFF, 'Off', 'OFF'],
     }
 
