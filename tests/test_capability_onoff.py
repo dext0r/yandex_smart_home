@@ -17,6 +17,7 @@ from homeassistant.components import (
     script,
     switch,
     vacuum,
+    valve,
     water_heater,
 )
 from homeassistant.const import (
@@ -32,7 +33,7 @@ from homeassistant.const import (
     STATE_ON,
     STATE_UNKNOWN,
 )
-from homeassistant.core import DOMAIN as HA_DOMAIN, Context, State
+from homeassistant.core import DOMAIN as HA_DOMAIN, Context, HomeAssistant, State
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
@@ -192,6 +193,53 @@ async def test_capability_onoff_cover(hass):
     )
     assert cap_binary.retrievable is False
     assert cap_binary.parameters.dict() == {"split": True}
+
+
+async def test_capability_onoff_valve(hass: HomeAssistant) -> None:
+    state_open = State(
+        "valve.test", valve.STATE_OPEN, attributes={ATTR_SUPPORTED_FEATURES: valve.ValveEntityFeature.SET_POSITION}
+    )
+    cap_open = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state_open, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+
+    assert cap_open.retrievable is True
+    assert cap_open.get_value() is True
+    assert cap_open.parameters is None
+
+    on_calls = async_mock_service(hass, valve.DOMAIN, valve.SERVICE_OPEN_VALVE)
+    await cap_open.set_instance_state(Context(), ACTION_STATE_ON)
+    assert len(on_calls) == 1
+    assert on_calls[0].data == {ATTR_ENTITY_ID: "valve.test"}
+
+    off_calls = async_mock_service(hass, valve.DOMAIN, valve.SERVICE_CLOSE_VALVE)
+    await cap_open.set_instance_state(Context(), ACTION_STATE_OFF)
+    assert len(off_calls) == 1
+    assert off_calls[0].data == {ATTR_ENTITY_ID: "valve.test"}
+
+    for state in [valve.STATE_CLOSED, valve.STATE_CLOSING, valve.STATE_OPENING]:
+        state_other = State(
+            "valve.test", state, attributes={ATTR_SUPPORTED_FEATURES: valve.ValveEntityFeature.SET_POSITION}
+        )
+        cap = cast(
+            OnOffCapability,
+            get_exact_one_capability(
+                hass, BASIC_ENTRY_DATA, state_other, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
+            ),
+        )
+        assert cap.get_value() is False
+
+    state_no_features = State("valve.test", valve.STATE_OPEN)
+    cap_no_features = cast(
+        OnOffCapability,
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state_no_features, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
+        ),
+    )
+    assert cap_no_features.retrievable is True
+    assert cap_no_features.get_value() is True
+    assert cap_no_features.parameters is None
 
 
 async def test_capability_onoff_remote(hass):

@@ -1,8 +1,9 @@
 from abc import ABC
+from enum import IntFlag
 from typing import cast
 from unittest.mock import patch
 
-from homeassistant.components import climate, cover, humidifier, light, media_player, water_heater
+from homeassistant.components import climate, cover, humidifier, light, media_player, valve, water_heater
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
@@ -13,7 +14,7 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
-from homeassistant.core import Context, State
+from homeassistant.core import Context, HomeAssistant, State
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
@@ -132,11 +133,20 @@ async def test_capability_range(hass, caplog):
     assert e.value.message == "Device switch.test probably turned off"
 
 
-async def test_capability_range_cover(hass):
-    state = State("cover.test", cover.STATE_OPEN)
+@pytest.mark.parametrize(
+    "domain,set_position_feature,set_position_service",
+    [
+        (cover.DOMAIN, cover.CoverEntityFeature.SET_POSITION, cover.SERVICE_SET_COVER_POSITION),
+        (valve.DOMAIN, valve.ValveEntityFeature.SET_POSITION, valve.SERVICE_SET_VALVE_POSITION),
+    ],
+)
+async def test_capability_range_open(
+    hass: HomeAssistant, domain: str, set_position_feature: IntFlag, set_position_service: str
+) -> None:
+    state = State(f"{domain}.test", "open")
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN)
 
-    state = State("cover.test", cover.STATE_OPEN, {ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION})
+    state = State("cover.test", "open", {ATTR_SUPPORTED_FEATURES: set_position_feature})
     cap = cast(
         RangeCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
@@ -152,10 +162,10 @@ async def test_capability_range_cover(hass):
     assert cap.get_value() is None
 
     state = State(
-        "cover.test",
-        cover.STATE_OPEN,
+        f"{domain}.test",
+        "open",
         {
-            ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.SET_POSITION,
+            ATTR_SUPPORTED_FEATURES: set_position_feature,
             cover.ATTR_CURRENT_POSITION: "30",
         },
     )
@@ -165,7 +175,7 @@ async def test_capability_range_cover(hass):
     )
     assert cap.get_value() == 30
 
-    calls = async_mock_service(hass, cover.DOMAIN, cover.SERVICE_SET_COVER_POSITION)
+    calls = async_mock_service(hass, domain, set_position_service)
     for value, relative in ((0, False), (20, False), (-15, True), (-40, True)):
         await cap.set_instance_state(
             Context(),
