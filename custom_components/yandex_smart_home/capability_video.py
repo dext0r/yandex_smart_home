@@ -25,7 +25,7 @@ from .schema import (
 
 try:
     from homeassistant.components.camera import get_camera_from_entity_id
-except ImportError:
+except ImportError:  # pragma: no cover
     from homeassistant.components.camera import (  # type: ignore[no-redef]
         _get_camera_from_entity_id as get_camera_from_entity_id,
     )

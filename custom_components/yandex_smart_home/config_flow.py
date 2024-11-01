@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
 try:
     from homeassistant.config_entries import ConfigFlowContext
-except ImportError:
+except ImportError:  # pragma: no cover
     ConfigFlowContext = ...  # type: ignore[assignment, misc]
 
 _LOGGER = logging.getLogger(__name__)
