@@ -70,6 +70,7 @@ class DeviceType(StrEnum):
     SMART_METER_HOT_WATER = "devices.types.smart_meter.hot_water"
     PET_DRINKING_FOUNTAIN = "devices.types.pet_drinking_fountain"
     PET_FEEDER = "devices.types.pet_feeder"
+    VENTILATION = "devices.types.ventilation"
     VENTILATION_FAN = "devices.types.ventilation.fan"
     OTHER = "devices.types.other"
 
