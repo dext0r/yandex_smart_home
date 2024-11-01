@@ -29,6 +29,7 @@ from homeassistant.components import (
     sensor,
     switch,
     vacuum,
+    valve,
     water_heater,
 )
 from homeassistant.const import ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES, CONF_NAME, STATE_UNAVAILABLE
@@ -104,6 +105,7 @@ _DOMAIN_TO_DEVICE_TYPES: dict[str, DeviceType] = {
     sensor.DOMAIN: DeviceType.SENSOR,
     switch.DOMAIN: DeviceType.SWITCH,
     vacuum.DOMAIN: DeviceType.VACUUM_CLEANER,
+    valve.DOMAIN: DeviceType.OPENABLE_VALVE,
     water_heater.DOMAIN: DeviceType.KETTLE,
 }
 

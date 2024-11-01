@@ -5,7 +5,7 @@ from functools import cached_property
 import logging
 from typing import Any, Protocol
 
-from homeassistant.components import climate, cover, fan, humidifier, light, media_player, water_heater
+from homeassistant.components import climate, cover, fan, humidifier, light, media_player, valve, water_heater
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
@@ -599,3 +599,34 @@ class ChannelCapability(StateRangeCapability):
             max=999,
             precision=1,
         )
+
+
+@STATE_CAPABILITIES_REGISTRY.register
+class ValvePositionCapability(StateRangeCapability):
+    """Capability to control position of a device."""
+
+    instance = RangeCapabilityInstance.OPEN
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        return self.state.domain == valve.DOMAIN and bool(self._state_features & valve.ValveEntityFeature.SET_POSITION)
+
+    @property
+    def support_random_access(self) -> bool:
+        """Test if the capability accept arbitrary values to be set."""
+        return True
+
+    async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
+            valve.DOMAIN,
+            valve.SERVICE_SET_VALVE_POSITION,
+            {ATTR_ENTITY_ID: self.state.entity_id, valve.ATTR_POSITION: self._get_service_call_value(state)},
+            blocking=True,
+            context=context,
+        )
+
+    def _get_value(self) -> float | None:
+        """Return the current capability value (unguarded)."""
+        return self._convert_to_float(self.state.attributes.get(valve.ATTR_CURRENT_POSITION))
