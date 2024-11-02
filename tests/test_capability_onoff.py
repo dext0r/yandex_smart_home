@@ -567,7 +567,9 @@ async def test_capability_onoff_water_heater(hass):
     assert cap.parameters() is None
     assert bool(cap.get_value())
 
-    state = State('water_heater.test', STATE_OFF)
+    state = State('water_heater.test', STATE_OFF, {
+        ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.ON_OFF,
+    })
     cap = get_exact_one_capability(hass, BASIC_CONFIG, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert not bool(cap.get_value())
 
@@ -588,7 +590,9 @@ async def test_capability_onoff_water_heater(hass):
             }
         }
     )
-    state = State('water_heater.test', STATE_ON)
+    state = State('water_heater.test', STATE_ON, {
+        ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.ON_OFF,
+    })
     cap = get_exact_one_capability(hass, config, state, CAPABILITIES_ONOFF, ON_OFF_INSTANCE_ON)
     assert not cap.retrievable
     assert cap.parameters() == {'split': True}

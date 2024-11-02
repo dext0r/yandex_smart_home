@@ -41,7 +41,6 @@ from homeassistant.const import (
     STATE_OPEN,
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN
-from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.service import async_call_from_config
 
 from . import const
@@ -477,27 +476,28 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
         return self.state.domain == water_heater.DOMAIN
 
     async def _set_state(self, data: RequestData, state: dict[str, Any]):
+        if self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0) & water_heater.WaterHeaterEntityFeature.ON_OFF:
+            await self._set_state_on_off(data, state)
+        else:
+            await self._set_state_operation_mode(data, state)
+
+    async def _set_state_on_off(self, data: RequestData, state: dict[str, Any]):
         if state['value']:
             service = water_heater.SERVICE_TURN_ON
         else:
             service = water_heater.SERVICE_TURN_OFF
 
-        try:
-            await self.hass.services.async_call(
-                water_heater.DOMAIN,
-                service, {
-                    ATTR_ENTITY_ID: self.state.entity_id,
-                },
-                blocking=True,
-                context=data.context
-            )
+        await self.hass.services.async_call(
+            water_heater.DOMAIN,
+            service, {
+                ATTR_ENTITY_ID: self.state.entity_id,
+            },
+            blocking=True,
+            context=data.context
+        )
 
-            return
-        except (AttributeError, ServiceNotFound):
-            # turn_on/turn_off is not supported
-            pass
-
-        operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST)
+    async def _set_state_operation_mode(self, data: RequestData, state: dict[str, Any]):
+        operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST, [])
 
         if state['value']:
             mode = self.get_water_heater_operation(STATE_ON, operation_list)
