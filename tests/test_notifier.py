@@ -91,7 +91,19 @@ async def test_notifier_setup_no_linked_platforms(
         },
     )
 
-    for config_entry in [config_entry_direct, config_entry_cloud]:
+    config_entry_cloud_plus = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={
+            const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
+            const.CONF_CLOUD_INSTANCE: {
+                const.CONF_CLOUD_INSTANCE_ID: "test",
+                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+            },
+        },
+    )
+
+    for config_entry in [config_entry_direct, config_entry_cloud, config_entry_cloud_plus]:
         config_entry.add_to_hass(hass)
         await hass.config_entries.async_setup(config_entry.entry_id)
 
@@ -133,15 +145,35 @@ async def test_notifier_lifecycle_link_platform(
         },
     )
 
-    for config_entry in [config_entry_direct, config_entry_cloud]:
+    config_entry_cloud_plus = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={
+            const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
+            const.CONF_CLOUD_INSTANCE: {
+                const.CONF_CLOUD_INSTANCE_ID: "test",
+                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+            },
+            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+        },
+        options={
+            const.CONF_SKILL: {
+                CONF_ID: "skill_id",
+                CONF_TOKEN: "token",
+            }
+        },
+    )
+
+    for config_entry in [config_entry_direct, config_entry_cloud, config_entry_cloud_plus]:
         config_entry.add_to_hass(hass)
         await hass.config_entries.async_setup(config_entry.entry_id)
 
     component: YandexSmartHome = hass.data[DOMAIN]
     assert len(component.get_entry_data(config_entry_direct)._notifiers) == 1
     assert len(component.get_entry_data(config_entry_cloud)._notifiers) == 1
+    assert len(component.get_entry_data(config_entry_cloud_plus)._notifiers) == 1
 
-    for config_entry in [config_entry_direct, config_entry_cloud]:
+    for config_entry in [config_entry_direct, config_entry_cloud, config_entry_cloud_plus]:
         for notifier in component.get_entry_data(config_entry)._notifiers:
             assert notifier._unsub_state_changed is not None
             assert notifier._unsub_initial_report is not None

@@ -185,6 +185,7 @@ class ConnectionType(StrEnum):
 
     DIRECT = "direct"
     CLOUD = "cloud"
+    CLOUD_PLUS = "cloud_plus"
 
 
 class EntityFilterSource(StrEnum):

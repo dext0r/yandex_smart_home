@@ -27,6 +27,7 @@ import voluptuous as vol
 
 from . import DOMAIN, FILTER_SCHEMA, SmartHomePlatform, cloud
 from .const import (
+    CLOUD_BASE_URL,
     CONF_CLOUD_INSTANCE,
     CONF_CLOUD_INSTANCE_CONNECTION_TOKEN,
     CONF_CLOUD_INSTANCE_ID,
@@ -36,6 +37,7 @@ from .const import (
     CONF_FILTER,
     CONF_FILTER_SOURCE,
     CONF_LINKED_PLATFORMS,
+    CONF_NAME,
     CONF_SKILL,
     CONF_USER_ID,
     ConnectionType,
@@ -71,6 +73,7 @@ CONNECTION_TYPE_SELECTOR = SelectSelector(
         translation_key=CONF_CONNECTION_TYPE,
         options=[
             SelectOptionDict(value=ConnectionType.CLOUD, label=ConnectionType.CLOUD),
+            SelectOptionDict(value=ConnectionType.CLOUD_PLUS, label=ConnectionType.CLOUD_PLUS),
             SelectOptionDict(value=ConnectionType.DIRECT, label=ConnectionType.DIRECT),
         ],
     ),
@@ -110,8 +113,8 @@ class BaseFlowHandler(FlowHandler[ConfigFlowContext, ConfigFlowResult]):
 
         super().__init__()
 
-    async def async_step_skill_yandex(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
-        """Choose skill settings for the Yandex Smart Home platform."""
+    async def async_step_skill_yandex_direct(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Choose skill settings for direct connection to the Yandex Smart Home platform."""
         errors = {}
         description_placeholders = {"external_url": self._get_external_url()}
         entry_skill = self._options.get(CONF_SKILL, {})
@@ -145,12 +148,54 @@ class BaseFlowHandler(FlowHandler[ConfigFlowContext, ConfigFlowResult]):
                 return await self.async_step_expose_settings()
 
         return self.async_show_form(
-            step_id="skill_yandex",
+            step_id="skill_yandex_direct",
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_USER_ID, default=entry_skill.get(CONF_USER_ID)): await _async_get_user_selector(
                         self.hass, mode=SelectSelectorMode.DROPDOWN, required=True
                     ),
+                    vol.Required(CONF_ID, default=entry_skill.get(CONF_ID)): TextSelector(),
+                    vol.Required(CONF_TOKEN, default=entry_skill.get(CONF_TOKEN)): TextSelector(),
+                },
+            ),
+            errors=errors,
+            description_placeholders=description_placeholders,
+        )
+
+    async def async_step_skill_yandex_cloud_plus(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Choose skill settings for cloud plus connection to the Yandex Smart Home platform."""
+        errors: dict[str, str] = {}
+        description_placeholders = {
+            "cloud_base_url": CLOUD_BASE_URL,
+            "instance_id": self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
+        }
+        entry_skill = self._options.get(CONF_SKILL, {})
+
+        if user_input is not None:
+            self._options[CONF_SKILL] = user_input
+
+            if self._entry:
+                if user_input[CONF_ID] != entry_skill.get(CONF_ID):
+                    self._data[CONF_LINKED_PLATFORMS] = []
+
+                if user_input[CONF_ID] != entry_skill.get(CONF_ID) or user_input[CONF_NAME] != entry_skill.get(
+                    CONF_NAME
+                ):
+                    self.hass.config_entries.async_update_entry(
+                        self._entry,
+                        title=await async_config_entry_title(self.hass, self._data, self._options),
+                        data=self._data,
+                    )
+
+                return await self.async_step_done()
+
+            return await self.async_step_expose_settings()
+
+        return self.async_show_form(
+            step_id="skill_yandex_cloud_plus",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_NAME, default=entry_skill.get(CONF_NAME)): TextSelector(),
                     vol.Required(CONF_ID, default=entry_skill.get(CONF_ID)): TextSelector(),
                     vol.Required(CONF_TOKEN, default=entry_skill.get(CONF_TOKEN)): TextSelector(),
                 },
@@ -311,7 +356,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._data.update(user_input)
 
-            if user_input[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
+            if user_input[CONF_CONNECTION_TYPE] in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
                 try:
                     instance = await cloud.register_instance(self.hass)
                     self._data[CONF_CLOUD_INSTANCE] = {
@@ -324,8 +369,11 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
                     _LOGGER.exception("Failed to register instance in Yandex Smart Home cloud")
 
             if not errors:
-                if user_input[CONF_CONNECTION_TYPE] == ConnectionType.DIRECT:
-                    return await self.async_step_platform()
+                match user_input[CONF_CONNECTION_TYPE]:
+                    case ConnectionType.DIRECT:
+                        return await self.async_step_platform_direct()
+                    case ConnectionType.CLOUD_PLUS:
+                        return await self.async_step_platform_cloud_plus()
 
                 return await self.async_step_expose_settings()
 
@@ -337,25 +385,41 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_platform(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
-        """Choose smart home platform."""
+    async def async_step_platform_direct(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Choose smart home platform for direct connection."""
         if user_input is not None:
             self._data.update(user_input)
-            step_fn = getattr(self, f"async_step_skill_{self._data[CONF_PLATFORM]}")
+            step_fn = getattr(self, f"async_step_skill_{self._data[CONF_PLATFORM]}_direct")
             return cast(ConfigFlowResult, await step_fn())
 
         return self.async_show_form(
-            step_id="platform",
+            step_id="platform_direct",
             description_placeholders={"external_url": self._get_external_url()},
+            data_schema=vol.Schema({vol.Required(CONF_PLATFORM): PLATFORM_SELECTOR}),
+        )
+
+    async def async_step_platform_cloud_plus(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Choose smart home platform for cloud p connection."""
+        if user_input is not None:
+            self._data.update(user_input)
+            step_fn = getattr(self, f"async_step_skill_{self._data[CONF_PLATFORM]}_cloud_plus")
+            return cast(ConfigFlowResult, await step_fn())
+
+        return self.async_show_form(
+            step_id="platform_cloud_plus",
             data_schema=vol.Schema({vol.Required(CONF_PLATFORM): PLATFORM_SELECTOR}),
         )
 
     async def async_step_done(self, _: ConfigType | None = None) -> ConfigFlowResult:
         """Finish the flow."""
+        description_placeholders: dict[str, str] = self._data.get(CONF_CLOUD_INSTANCE, {}).copy()
+        if self._data[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD_PLUS:
+            description_placeholders[CONF_SKILL] = self._options[CONF_SKILL][CONF_NAME]
+
         return self.async_create_entry(
             title=await async_config_entry_title(self.hass, self._data, self._options),
             description=self._data[CONF_CONNECTION_TYPE],
-            description_placeholders=self._data.get(CONF_CLOUD_INSTANCE),
+            description_placeholders=description_placeholders,
             data=self._data,
             options=self._options,
         )
@@ -384,8 +448,10 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
         match self._data[CONF_CONNECTION_TYPE]:
             case ConnectionType.CLOUD:
                 options += ["cloud_credentials", "context_user"]
+            case ConnectionType.CLOUD_PLUS:
+                options += ["cloud_credentials", f"skill_{self._data[CONF_PLATFORM]}_cloud_plus", "context_user"]
             case ConnectionType.DIRECT:
-                options += [f"skill_{self._data[CONF_PLATFORM]}"]
+                options += [f"skill_{self._data[CONF_PLATFORM]}_direct"]
         options += ["maintenance"]
 
         return self.async_show_menu(step_id="init", menu_options=options)
@@ -395,14 +461,15 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
         if user_input is not None:
             return await self.async_step_init()
 
-        instance = self._data[CONF_CLOUD_INSTANCE]
-        return self.async_show_form(
-            step_id="cloud_credentials",
-            description_placeholders={
-                CONF_CLOUD_INSTANCE_ID: instance[CONF_CLOUD_INSTANCE_ID],
-                CONF_CLOUD_INSTANCE_PASSWORD: instance[CONF_CLOUD_INSTANCE_PASSWORD],
-            },
-        )
+        description_placeholders = {
+            CONF_SKILL: "Yaha Cloud",
+            CONF_CLOUD_INSTANCE_ID: self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
+            CONF_CLOUD_INSTANCE_PASSWORD: self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_PASSWORD],
+        }
+        if self._data[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD_PLUS:
+            description_placeholders[CONF_SKILL] = self._options[CONF_SKILL][CONF_NAME]
+
+        return self.async_show_form(step_id="cloud_credentials", description_placeholders=description_placeholders)
 
     async def async_step_context_user(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose user for a service calls context."""
@@ -472,7 +539,7 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
                 return await self.async_step_done()
 
         actions = [MaintenanceAction.REVOKE_OAUTH_TOKENS, MaintenanceAction.UNLINK_ALL_PLATFORMS]
-        if self._data[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
+        if self._data[CONF_CONNECTION_TYPE] in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             actions += [MaintenanceAction.RESET_CLOUD_INSTANCE_CONNECTION_TOKEN]
 
         return self.async_show_form(
@@ -517,9 +584,16 @@ async def async_config_entry_title(hass: HomeAssistant, data: ConfigType, option
         return f"Yaha Cloud ({instance_id[:8]})"
 
     title = DEFAULT_CONFIG_ENTRY_TITLE
+    connection_type = ""
+    match data.get(CONF_CONNECTION_TYPE):
+        case ConnectionType.CLOUD_PLUS:
+            connection_type = "Cloud Plus"
+        case ConnectionType.DIRECT:
+            connection_type = "Direct"
+
     match data.get(CONF_PLATFORM):
         case SmartHomePlatform.YANDEX:
-            title = "Yandex Smart Home: Direct"
+            title = f"Yandex Smart Home: {connection_type}"
 
     if skill := options.get(CONF_SKILL):
         parts: list[str] = []

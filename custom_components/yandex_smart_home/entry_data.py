@@ -85,7 +85,7 @@ class ConfigEntryData:
         self.cache = CacheStore(self._hass)
         await self.cache.async_load()
 
-        if self.connection_type == ConnectionType.CLOUD:
+        if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             await self._async_setup_cloud_connection()
 
         if self._hass.state == CoreState.running:
@@ -149,7 +149,7 @@ class ConfigEntryData:
     @cached_property
     def is_reporting_states(self) -> bool:
         """Test if the config entry can report state changes."""
-        if self.connection_type == ConnectionType.CLOUD:
+        if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             return True
 
         return self.skill is not None
@@ -157,7 +157,7 @@ class ConfigEntryData:
     @property
     def use_cloud_stream(self) -> bool:
         """Test if the config entry use video streaming through the cloud."""
-        if self.connection_type == ConnectionType.CLOUD:
+        if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             return True
 
         settings = self._yaml_config.get(const.CONF_SETTINGS, {})
@@ -176,7 +176,7 @@ class ConfigEntryData:
     @property
     def cloud_instance_id(self) -> str:
         """Return cloud instance id."""
-        if self.connection_type == ConnectionType.CLOUD:
+        if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             return str(self.entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_ID])
 
         raise ValueError("Config entry uses direct connection")
@@ -184,7 +184,7 @@ class ConfigEntryData:
     @property
     def cloud_connection_token(self) -> str:
         """Return cloud connection token."""
-        if self.connection_type == ConnectionType.CLOUD:
+        if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             return str(self.entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN])
 
         raise ValueError("Config entry uses direct connection")
@@ -204,7 +204,8 @@ class ConfigEntryData:
         if not config:
             return None
 
-        return SkillConfig(user_id=config[CONF_USER_ID], id=config[CONF_ID], token=config[CONF_TOKEN])
+        user_id = self.cloud_instance_id if self.connection_type == ConnectionType.CLOUD_PLUS else config[CONF_USER_ID]
+        return SkillConfig(user_id=user_id, id=config[CONF_ID], token=config[CONF_TOKEN])
 
     @property
     def color_profiles(self) -> ColorProfiles:
@@ -279,6 +280,17 @@ class ConfigEntryData:
                     user_id=self.cloud_instance_id, token=self.cloud_connection_token, extended_log=extended_log
                 )
                 self._notifiers.append(YandexCloudNotifier(self._hass, self, config, track_templates))
+
+            case ConnectionType.CLOUD_PLUS:
+                if self.skill:
+                    config = NotifierConfig(
+                        user_id=self.cloud_instance_id,
+                        token=self.skill.token,
+                        skill_id=self.skill.id,
+                        extended_log=extended_log,
+                    )
+                    self._notifiers.append(YandexDirectNotifier(self._hass, self, config, track_templates))
+
             case ConnectionType.DIRECT:
                 if self.skill:
                     config = NotifierConfig(
