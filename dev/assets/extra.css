@@ -1,0 +1,24 @@
+body {
+    --md-typeset-a-color: var(--md-primary-fg-color);
+}
+
+.md-typeset {
+    line-height: 1.5;
+}
+
+.md-typeset h1 {
+    margin-bottom: 0.8em;
+}
+
+.md-typeset h2 {
+    font-weight: 400;
+}
+
+.md-typeset td code, .md-typeset tr code {
+    white-space: nowrap;
+}
+
+.md-banner {
+    background: rgba(255, 23, 68, 0.8);
+    font-weight: 600;
+}
