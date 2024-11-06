@@ -4,10 +4,24 @@
     {
       "label": "mkdocs: serve",
       "type": "shell",
-      "command": "mkdocs serve",
+      "command": "${command:python.interpreterPath} -m mkdocs serve",
       "isBackground": true,
       "presentation": {
         "reveal": "never"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Code Coverage",
+      "type": "shell",
+      "command": "${command:python.interpreterPath} -m pytest --cov --cov-report term-missing",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
       },
       "problemMatcher": []
     }
