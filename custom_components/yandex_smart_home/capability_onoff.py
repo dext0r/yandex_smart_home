@@ -41,7 +41,6 @@ from homeassistant.const import (
     STATE_OPEN,
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN, Context
-from homeassistant.exceptions import ServiceNotFound
 from homeassistant.helpers.service import async_call_from_config
 
 from . import const
@@ -465,22 +464,23 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state (if wasn't overriden by the user)."""
-        try:
-            await self._hass.services.async_call(
-                water_heater.DOMAIN,
-                self._get_service(state),
-                {
-                    ATTR_ENTITY_ID: self.state.entity_id,
-                },
-                blocking=True,
-                context=context,
-            )
+        if self._state_features & water_heater.WaterHeaterEntityFeature.ON_OFF:
+            await self._set_state_on_off(context, state)
+        else:
+            await self._set_state_operation_mode(context, state)
 
-            return
-        except (AttributeError, ServiceNotFound):
-            # turn_on/turn_off is not supported
-            pass
+    async def _set_state_on_off(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        await self._hass.services.async_call(
+            water_heater.DOMAIN,
+            self._get_service(state),
+            {
+                ATTR_ENTITY_ID: self.state.entity_id,
+            },
+            blocking=True,
+            context=context,
+        )
 
+    async def _set_state_operation_mode(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST, [])
 
         if state.value:

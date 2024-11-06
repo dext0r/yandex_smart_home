@@ -600,7 +600,9 @@ async def test_capability_onoff_custom_service(hass):
     state_media = State("media_player.test", STATE_ON)
     state_vacuum = State("vacuum.test", STATE_ON)
     state_lock = State("lock.test", STATE_OFF)
-    state_water_heater = State("water_heater.test", STATE_ON)
+    state_water_heater = State(
+        "water_heater.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.ON_OFF}
+    )
     entry_data = MockConfigEntryData(
         entity_config={
             state_media.entity_id: {
@@ -676,7 +678,9 @@ async def test_capability_onoff_water_heater(hass):
     assert cap.parameters is None
     assert cap.get_value() is True
 
-    state = State("water_heater.test", STATE_OFF)
+    state = State(
+        "water_heater.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.ON_OFF}
+    )
     cap = cast(
         OnOffCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
