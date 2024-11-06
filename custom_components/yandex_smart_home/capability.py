@@ -149,10 +149,49 @@ class ActionOnlyCapabilityMixin:
         """Test if the capability can report value changes."""
         return False
 
-    # noinspection PyMethodMayBeStatic
     def get_value(self) -> None:
         """Return the current capability value."""
         return None
+
+
+class DummyCapability(Capability[CapabilityInstanceActionState]):
+    """Represents a capability that user has disabled."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry_data: ConfigEntryData,
+        type: CapabilityType,
+        instance: CapabilityInstance,
+        device_id: str,
+    ):
+        """Initialize a dummy capability."""
+        self._hass = hass
+        self._entry_data = entry_data
+
+        self.type = type
+        self.instance = instance
+        self.device_id = device_id
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        raise NotImplementedError
+
+    @property
+    def parameters(self) -> CapabilityParameters | None:
+        """Return parameters for a devices list request."""
+        raise NotImplementedError
+
+    def get_value(self) -> Any:
+        """Return the current capability value."""
+        raise NotImplementedError
+
+    async def set_instance_state(
+        self, context: Context, state: CapabilityInstanceActionState
+    ) -> CapabilityInstanceActionResultValue:
+        """Change the capability state."""
+        raise NotImplementedError
 
 
 @runtime_checkable

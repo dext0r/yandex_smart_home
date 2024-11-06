@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import cover, media_player, switch
@@ -7,6 +10,7 @@ from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
+    ATTR_SUPPORTED_FEATURES,
     ATTR_UNIT_OF_MEASUREMENT,
     PERCENTAGE,
     SERVICE_TURN_OFF,
@@ -31,8 +35,13 @@ from custom_components.yandex_smart_home.capability_custom import (
     CustomRangeCapability,
     CustomToggleCapability,
 )
-from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic, OnOffCapabilityButton
-from custom_components.yandex_smart_home.capability_range import BrightnessCapability
+from custom_components.yandex_smart_home.capability_mode import InputSourceCapability
+from custom_components.yandex_smart_home.capability_onoff import (
+    OnOffCapabilityBasic,
+    OnOffCapabilityButton,
+    OnOffCapabilityMediaPlayer,
+)
+from custom_components.yandex_smart_home.capability_range import BrightnessCapability, VolumeCapability
 from custom_components.yandex_smart_home.capability_toggle import MuteCapability, StateToggleCapability
 from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
@@ -71,6 +80,9 @@ from custom_components.yandex_smart_home.schema import (
 )
 
 from . import BASIC_ENTRY_DATA, MockConfigEntryData, generate_entity_filter
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
 
 
 async def test_device_duplicate_capabilities(hass):
@@ -149,6 +161,45 @@ async def test_device_capabilities(hass):
         BrightnessCapability,
         OnOffCapabilityBasic,
     ]
+
+
+async def test_device_disabled_capabilities(hass: HomeAssistant) -> None:
+    state = State(
+        "media_player.foo",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_MUTE
+            | media_player.MediaPlayerEntityFeature.TURN_ON
+            | media_player.MediaPlayerEntityFeature.VOLUME_SET
+            | media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            media_player.ATTR_INPUT_SOURCE_LIST: ["foo", "bar"],
+        },
+    )
+
+    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    assert [type(c) for c in device.get_capabilities()] == [
+        InputSourceCapability,
+        VolumeCapability,
+        MuteCapability,
+        OnOffCapabilityMediaPlayer,
+    ]
+
+    entry_data = MockConfigEntryData(
+        entity_filter=generate_entity_filter(include_entity_globs=["*"]),
+        entity_config={
+            state.entity_id: {
+                const.CONF_ENTITY_CUSTOM_RANGES: {"volume": False},
+                const.CONF_ENTITY_CUSTOM_TOGGLES: {"mute": False},
+                const.CONF_ENTITY_CUSTOM_MODES: {"input_source": False},
+            }
+        },
+    )
+
+    device = Device(hass, entry_data, state.entity_id, state)
+    assert [type(c) for c in device.get_capabilities()] == [
+        OnOffCapabilityMediaPlayer,
+    ]
+    assert len(entry_data._get_trackable_states()) == 0
 
 
 async def test_device_duplicate_properties(hass):

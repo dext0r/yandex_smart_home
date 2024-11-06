@@ -50,7 +50,7 @@ from . import (  # noqa: F401
     property_float,
 )
 from . import const  # noqa: F401
-from .capability import STATE_CAPABILITIES_REGISTRY, StateCapability
+from .capability import STATE_CAPABILITIES_REGISTRY, DummyCapability, StateCapability
 from .capability_custom import get_custom_capability
 from .helpers import ActionNotAllowed, APIError
 from .property import STATE_PROPERTIES_REGISTRY, StateProperty
@@ -163,6 +163,7 @@ class Device:
     def get_capabilities(self) -> list[Capability[Any]]:
         """Return all capabilities of the device."""
         capabilities: list[Capability[Any]] = []
+        disabled_capabilities: list[Capability[Any]] = []
 
         for capability_type, config_key in (
             (CapabilityType.MODE, const.CONF_ENTITY_CUSTOM_MODES),
@@ -171,21 +172,32 @@ class Device:
         ):
             if config_key in self._config:
                 for instance in self._config[config_key]:
-                    custom_capability = get_custom_capability(
-                        self._hass,
-                        self._entry_data,
-                        self._config[config_key][instance],
-                        capability_type,
-                        instance,
-                        self.id,
-                    )
+                    capability_config = self._config[config_key][instance]
+                    match capability_config:
+                        case False:
+                            disabled_capabilities.append(
+                                DummyCapability(self._hass, self._entry_data, capability_type, instance, self.id)
+                            )
+                        case dict():
+                            custom_capability = get_custom_capability(
+                                self._hass,
+                                self._entry_data,
+                                capability_config,
+                                capability_type,
+                                instance,
+                                self.id,
+                            )
 
-                    if custom_capability.supported and custom_capability not in capabilities:
-                        capabilities.append(custom_capability)
+                            if custom_capability.supported and custom_capability not in capabilities:
+                                capabilities.append(custom_capability)
 
         for CapabilityT in STATE_CAPABILITIES_REGISTRY:
             state_capability = CapabilityT(self._hass, self._entry_data, self._state)
-            if state_capability.supported and state_capability not in capabilities:
+            if (
+                state_capability.supported
+                and state_capability not in capabilities
+                and state_capability not in disabled_capabilities
+            ):
                 capabilities.append(state_capability)
 
         return capabilities

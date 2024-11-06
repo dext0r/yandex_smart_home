@@ -189,9 +189,9 @@ async def test_valid_config(hass):
     }
 
     assert entity_config["switch.templates"] == {
-        "custom_modes": {"input_source": {"state_template": Template("buz", hass_for_template)}},
-        "custom_ranges": {"open": {"state_template": Template("foo", hass_for_template)}},
-        "custom_toggles": {"backlight": {"state_template": Template("bar", hass_for_template)}},
+        "custom_modes": {"input_source": {"state_template": Template("buz", hass_for_template)}, "thermostat": False},
+        "custom_ranges": {"open": {"state_template": Template("foo", hass_for_template)}, "volume": False},
+        "custom_toggles": {"backlight": {"state_template": Template("bar", hass_for_template)}, "mute": False},
     }
 
     assert entity_config["sensor.sun"] == {

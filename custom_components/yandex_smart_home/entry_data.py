@@ -330,6 +330,9 @@ class ConfigEntryData:
                 if config_key in entity_config:
                     for instance in entity_config[config_key]:
                         capability_config = entity_config[config_key][instance]
+                        if not isinstance(capability_config, dict):
+                            continue
+
                         try:
                             capability = get_custom_capability(
                                 self._hass,

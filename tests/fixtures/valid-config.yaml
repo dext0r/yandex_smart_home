@@ -173,12 +173,15 @@ yandex_smart_home:
       custom_ranges:
         open:
           state_template: foo
+        volume: false
       custom_toggles:
         backlight:
           state_template: bar
+        mute: false
       custom_modes:
         input_source:
           state_template: buz
+        thermostat: false
     sensor.sun:
       properties:
         - type: temperature
