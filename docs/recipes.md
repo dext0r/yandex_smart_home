@@ -5,6 +5,7 @@
 [Предложить свой рецепт](https://forms.yandex.ru/u/62b456db0c134229d975d1e3/){ .md-button }
 
 ## Увлажнитель Xiaomi Smartmi { id=xiaomi-smartmi-humidifier }
+
 ```yaml
 yandex_smart_home:
   entity_config:
@@ -40,6 +41,7 @@ yandex_smart_home:
 ```
 
 ## Xiaomi Smart Humidifier 2 { id=xiaomi-smart-humidifier-2 }
+
 > Интеграция: [Xiaomi Miot](https://github.com/al-one/hass-xiaomi-miot)
 
 ```yaml
@@ -87,6 +89,7 @@ yandex_smart_home:
 ```
 
 ## Xiaomi Mijia Pure Smart Humidifier Pro { id=xiaomi-mijia-pure-smart-humidifier-pro }
+
 > Интеграция: [Xiaomi Miot](https://github.com/al-one/hass-xiaomi-miot)
 
 ```yaml
@@ -127,6 +130,7 @@ yandex_smart_home:
 ```
 
 ## Xiaomi Mi Air Purifier 2S { id=xiaomi-mi-air-purifier-2s }
+
 > Интеграция: [Xiaomi Miio](https://www.home-assistant.io/integrations/xiaomi_miio/)
 
 ```yaml
@@ -163,6 +167,7 @@ yandex_smart_home:
 ```
 
 ## Mi Air Purifier 3C { id=xiaomi-mi-air-purifier-3с }
+
 > Интеграция: [Xiaomi Miio](https://www.home-assistant.io/integrations/xiaomi_miio/)
 
 ```yaml
@@ -219,6 +224,7 @@ yandex_smart_home:
 ```
 
 ## Чайник Redmond (KomX/ESPHome-Ready4Sky) { id=redmond-kettle-komx }
+
 > Интеграция: [KomX/ESPHome-Ready4Sky](https://github.com/KomX/ESPHome-Ready4Sky)
 
 ```yaml
@@ -263,6 +269,7 @@ yandex_smart_home:
 ```
 
 ## Чайник Redmond (ClusterM/skykettle-ha) { id=redmond-kettle-clusterm }
+
 > Интеграция: [ClusterM/skykettle-ha](https://github.com/ClusterM/skykettle-ha)
 
 ```yaml
@@ -309,6 +316,7 @@ yandex_smart_home:
 ```
 
 ## Телевизор TCL 65C828 { id=android-tv-tcl }
+
 > Интеграция: [Android TV](https://www.home-assistant.io/integrations/androidtv/)
 
 Может использоваться и с другими телевизорами на Android TV.
@@ -352,7 +360,7 @@ script:
               - ru.kinopoisk.tv
               - ru.more.play
               - YouTube
-              - uknown
+              - unknown
     sequence:
       - choose:
           - conditions:
@@ -478,8 +486,8 @@ yandex_smart_home:
               input_source: '{{ mode }}'
 ```
 
-
 ## Управление подсветкой Tasmota-IRVAC { id=tasmota-irhvac }
+
 > Интеграция: [Tasmota-IRHVAC](https://github.com/hristo-atanasov/Tasmota-IRHVAC)
 
 ```yaml
@@ -505,6 +513,7 @@ yandex_smart_home:
 ```
 
 ## Бойлер Thermex Lima 80v  { id=thermex-lima-80v }
+
 > Интеграция: [Tuya Local](https://github.com/make-all/tuya-local)
 
 ```yaml

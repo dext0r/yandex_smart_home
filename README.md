@@ -4,6 +4,7 @@
 [![Yaha Cloud](https://img.shields.io/badge/-Yaha%20Cloud-0d83bb.svg)](https://dialogs.yandex.ru/store/skills/cef326b2-home-assistant)
 
 # Компонент Yandex Smart Home для Home Assistant
+
 Компонент позволяет добавить устройства из Home Assistant в платформу [умного дома Яндекса](https://yandex.ru/dev/dialogs/smart-home)
 и управлять ими с любого устройства с Алисой:
 
@@ -14,6 +15,7 @@
 Компонент работает на Home Assistant версии **2023.2** или новее.
 
 ## Ссылки
+
 * [**Документация**](https://docs.yaha-cloud.ru/v0.6.x/)
 * [Чат в Телеграме](https://t.me/yandex_smart_home)
 
