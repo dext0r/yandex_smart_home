@@ -80,7 +80,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
         return self.modes_map_config or self._modes_map_default
 
     @property
-    def modes_map_config(self) -> dict[ModeCapabilityMode, list[str]] | None:
+    def modes_map_config(self) -> dict[ModeCapabilityMode, list[str]]:
         """Return a modes mapping from a entity configuration."""
         if CONF_ENTITY_MODE_MAP in self._entity_config:
             return {
@@ -88,7 +88,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                 for k, v in self._entity_config[CONF_ENTITY_MODE_MAP].get(self.instance, {}).items()
             }
 
-        return None
+        return {}
 
     def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings: bool = False) -> ModeCapabilityMode | None:
         """Return Yandex mode for HA mode."""
@@ -104,8 +104,8 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                 f"Unsupported HA mode '{ha_mode}' for {self}: not in {self.supported_ha_modes}",
             )
 
-        if mode is None:
-            if self.modes_map_config is None and ha_mode.lower() != STATE_OFF:
+        if mode is None and ha_mode.lower() != STATE_OFF:
+            if not self.modes_map_config:
                 try:
                     mode = self._modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
                 except (IndexError, ValueError, KeyError):
@@ -130,7 +130,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                 if am.lower() == ha_mode.lower():
                     return am
 
-        if self.modes_map_config is None:
+        if not self.modes_map_config:
             for ha_idx, yandex_mode_idx in self._modes_map_index_fallback.items():
                 if yandex_mode_idx == yandex_mode:
                     return self.supported_ha_modes[ha_idx]

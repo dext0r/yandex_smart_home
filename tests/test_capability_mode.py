@@ -156,6 +156,26 @@ async def test_capability_mode_fallback_index(hass):
     assert cap.get_yandex_mode_by_ha_mode("foo") == ModeCapabilityMode.THREE
     assert cap.get_yandex_mode_by_ha_mode("mode_1") == ModeCapabilityMode.FOWL
 
+    entry_data = MockConfigEntryData(
+        entity_config={
+            state.entity_id: {
+                const.CONF_ENTITY_MODE_MAP: {
+                    "thermostat": {
+                        ModeCapabilityMode.BABY_FOOD: ["mode_1"],
+                        ModeCapabilityMode.AMERICANO: ["mode_3"],
+                    }
+                }
+            }
+        }
+    )
+    cap = MockModeCapabilityA(hass, entry_data, state)
+    assert cap.supported is True
+    assert cap.supported_yandex_modes == [
+        ModeCapabilityMode.FOWL,
+        ModeCapabilityMode.ONE,
+        ModeCapabilityMode.THREE,
+    ]
+
     state = State("switch.test", STATE_OFF, {"modes_list": [f"mode_{v}" for v in range(0, 11)]})
     cap = MockModeCapabilityA(hass, BASIC_ENTRY_DATA, state)
     assert cap.supported is True
