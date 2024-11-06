@@ -370,8 +370,11 @@ async def test_capability_mode_input_source(hass, caplog):
     state = State("media_player.test", STATE_OFF)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
 
-    state = State("media_player.test", STATE_ON)
+    state = State("media_player.test", STATE_OFF)
     entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["select_source"]}})
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
+
+    entry_data.cache.save_attr_value(state.entity_id, media_player.ATTR_INPUT_SOURCE_LIST, ["foo"])
     assert_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
 
     state = State(
