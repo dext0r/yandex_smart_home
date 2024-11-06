@@ -1311,6 +1311,7 @@
 <ol>
 <li>Объект, для которого будет создано устройство, выбран в <a href="../config/filter/">списке объектов для передачи в УДЯ</a></li>
 <li>Объект есть в <a href="../supported-devices/">списке поддерживаемых устройств</a> (особенно актуально для датчиков без <code>device_class</code>)</li>
+<li>Состояние объекта не <code>unavailable</code> (если устройство отключено от питания - включите его)</li>
 <li>В <a href="https://my.home-assistant.io/redirect/logs/"><code>Журнале сервера</code></a> нет ошибок</li>
 </ol>
 </li>
@@ -1327,11 +1328,13 @@
   <img alt="" src="../assets/images/entity-state.png" width="700" /></p>
 </li>
 <li>
-<p>YAML конфигурацию <code>yandex_smart_home</code> (если имеется, лучше целиком, или только <code>filter</code> и <code>entity_config</code> для проблемного объекта)</p>
+<p>Диагностические данные интеграции (<code>Настройки</code> &rarr; <code>Устройства и службы</code> &rarr; <a href="https://my.home-assistant.io/redirect/integrations/"><code>Интеграции</code></a> &rarr; <code>Yandex Smart Home</code> &rarr; Три точки &rarr; <code>Скачать диагностические данные</code>)</p>
 </li>
-<li>Для облачного подключения:</li>
+<li>Для облачного подключения:<ul>
 <li>Первые 6 символов вашего ID (можно посмотреть в <a href="../config/getting-started/#gui">настройках интеграции</a>)</li>
 <li>Дату и время обновления списка устройств</li>
+</ul>
+</li>
 </ul>
 <h2 id="blinking-features">Устройство в УДЯ поддерживает не все функции<a class="headerlink" href="#blinking-features" title="Permanent link">&para;</a></h2>
 <p>Некоторые устройства изменяют список поддерживаемых функций в зависимости от своего состояния. Особенно часто это поведение замечено за <code>media_player</code>.</p>

@@ -1386,11 +1386,11 @@
 <li>Рекомендуемые значения режимов: <code>normal</code>, <code>eco</code>, <code>min</code>, <code>turbo</code>, <code>medium</code>, <code>max</code>, <code>quiet</code>, <code>auto</code>, <code>high</code></li>
 <li>
 <p>Атрибут в Home Assistant:</p>
-</li>
-<li>
-<p><code>humidifier</code>: <code>available_modes</code></p>
-</li>
+<ul>
+<li><code>humidifier</code>: <code>available_modes</code></li>
 <li><code>fan</code>: <code>preset_modes</code> (если поддерживается установка скорости в процентах)</li>
+</ul>
+</li>
 </ul>
 <h3 id="fan_speed">fan_speed<a class="headerlink" href="#fan_speed" title="Permanent link">&para;</a></h3>
 <p>Установка режима работы скорости вентиляции, например, в кондиционере, вентиляторе или обогревателе.</p>
@@ -1399,11 +1399,11 @@
 <li>Рекомендуемые значения режимов: <code>auto</code>, <code>quiet</code>, <code>low</code>, <code>medium</code>, <code>high</code>, <code>turbo</code></li>
 <li>
 <p>Атрибут в Home Assistant:</p>
-</li>
-<li>
-<p><code>fan</code>: <code>preset_modes</code> (если не поддерживается установка скорости в процентах, сервис <code>fan.set_speed_percentage</code>)</p>
-</li>
+<ul>
+<li><code>fan</code>: <code>preset_modes</code> (если не поддерживается установка скорости в процентах, сервис <code>fan.set_speed_percentage</code>)</li>
 <li><code>climate</code>: <code>fan_modes</code></li>
+</ul>
+</li>
 </ul>
 <h3 id="fan_speed-percentage">fan_speed (скорость в процентах)<a class="headerlink" href="#fan_speed-percentage" title="Permanent link">&para;</a></h3>
 <p>Некоторые вентиляторы позволяют устанавливать скорость вентиляции в процентах, используя сервис <code>fan.set_speed_percentage</code>.
