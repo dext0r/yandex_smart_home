@@ -868,7 +868,7 @@
           <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
-      Внутренная ошибка навыка
+      Внутренняя ошибка навыка
     </span>
   </a>
   
@@ -1292,7 +1292,7 @@
           <li class="md-nav__item">
   <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
-      Внутренная ошибка навыка
+      Внутренняя ошибка навыка
     </span>
   </a>
   
@@ -1331,7 +1331,7 @@
 <div class="admonition danger">
 <p class="admonition-title">Только для продвинутых пользователей!</p>
 </div>
-<p>Для использования прямого подключения вы самостоятельно создаёте приватный навык в Яндекс.Диалогах, 
+<p>Для использования прямого подключения вы самостоятельно создаёте приватный навык в Яндекс.Диалогах,
 который будет напрямую подключаться к вашему Home Assistant (не используя навык Yaha Cloud).</p>
 <h2 id="requirements">Предварительные требования<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ul>
@@ -1431,11 +1431,14 @@
 </tbody>
 </table>
 <ul>
-<li>На вкладке <code>Настройки</code> <strong>обязательно нажмите</strong> <code>Опубликовать</code> (для приватных навыков публикация автоматическая и моментальная). 
+<li>На вкладке <code>Настройки</code> <strong>обязательно нажмите</strong> <code>Опубликовать</code> (для приватных навыков публикация автоматическая и моментальная).
 В этот момент УДЯ попробует подключиться к вашему Home Assistant, и если у него не получится - появятся <a href="#validation-errors">ошибки валидации</a>.</li>
 </ul>
+<div class="admonition info">
+<p class="admonition-title">Все параметры навыка также продублированы в настройках интеграции в разделе Параметры навыка</p>
+</div>
 <div class="admonition fail">
-<p class="admonition-title">Не используйте навык в режиме "Черновик", это может вызывать различные проблемы (дубли уcтройств, ошибки в нотификаторе)</p>
+<p class="admonition-title">Не используйте навык в режиме "Черновик", это может вызывать различные проблемы (дубли устройств, ошибки в нотификаторе)</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">При публикации навыка в журнале Home Assistant возникает ошибка <code>Login attempt or request with invalid authentication</code>. Это <strong>нормально</strong> и не влияет на работу компонента.</p>
@@ -1453,7 +1456,7 @@
 <li>
 <p>Проверьте доступность Home Assistant из интернета через сервис <a href="https://httpstatus.io">httpstatus.io</a>:</p>
 <ul>
-<li>Вставьте ссылку <code>https://YOUR_HA_DOMAIN:PORT/manifest.json</code> и нажмите <code>Check status</code>.<br> 
+<li>Вставьте ссылку <code>https://YOUR_HA_DOMAIN:PORT/manifest.json</code> и нажмите <code>Check status</code>.<br>
    Альтернативная ссылка для проверки <code>https://YOUR_HA_DOMAIN:PORT/api/yandex_smart_home/v1.0/ping</code> – будет доступна только если добавлена хотя бы одна интеграция Yandex Smart Home, в остальных случаях по ней возвращается <code>404</code>.</li>
 <li>Убедитесь, что возвращается код <code>200</code> (столбец <code>Status codes</code>)</li>
 <li>Если возвращаются другие ошибки - нажмите на стрелку слева от ссылки, чтобы узнать подробнее. Пример ошибки некорректной настройки SSL сертификата:</li>
@@ -1462,24 +1465,24 @@
 </li>
 <li>
 <p>Если сертификат настраивался вручную: убедитесь, что используется fullchain сертификат
-   (в случае штатного аддона Let's Encrypt он в файле fullchain.cer):
-  <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">http</span><span class="p">:</span>
+   (в случае штатного аддона Let's Encrypt он в файле fullchain.cer):</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">http</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">ssl_certificate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/config/acme.sh/YOUR_HA_DOMAIN/fullchain.cer</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">ssl_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/config/acme.sh/YOUR_HA_DOMAIN/YOUR_HA_DOMAIN.key</span>
 </code></pre></div>
-  Корректность установки сертификата можно проверить через <a href="https://www.sslshopper.com/ssl-checker.html">этот</a> сервис.</p>
-</li>
-<li>Если DNS запись добавлялась вручную: убедитесь, что у используемого домена нет AAAA записи (должна быть только A).</li>
-</ol>
+<p>Корректность установки сертификата можно проверить через <a href="https://www.sslshopper.com/ssl-checker.html">этот</a> сервис.
+3. Если DNS запись добавлялась вручную: убедитесь, что у используемого домена нет AAAA записи (должна быть только A).</p>
 <h3 id="dups">Появляются дубли устройств<a class="headerlink" href="#dups" title="Permanent link">&para;</a></h3>
-<p>Скорее всего часть устройств были добавлены в <code>Черновик</code> навыка. 
+<p>Скорее всего часть устройств были добавлены в <code>Черновик</code> навыка.
 Удалите их оттуда вручную через <a href="https://dialogs.yandex.ru/developer">dialogs.yandex.ru/developer</a> (вкладка <code>Тестирование</code>).</p>
 <h3 id="validation-errors">Ошибки при публикации навыка<a class="headerlink" href="#validation-errors" title="Permanent link">&para;</a></h3>
-<p>При публикации навыка кнопкой <code>Опубликовать</code> могут появляться ошибки валидации. 
+<p>При публикации навыка кнопкой <code>Опубликовать</code> могут появляться ошибки валидации.
 Подробнее об ошибке можно узнать, нажав на стрелочку вниз в правом верхнем углу ошибки.</p>
 <p><img alt="" src="../../assets/images/direct-connection/validation-error.png" /></p>
 <h4 id="timeout">Превышено время ожидания ответа<a class="headerlink" href="#timeout" title="Permanent link">&para;</a></h4>
-<p>Если Home Assistant <a href="#no-connection">доступен из интернета</a>, но публикация навыка даёт ошибку <code>Превышено время ожидания ответа</code>, 
+<p>Если Home Assistant <a href="#no-connection">доступен из интернета</a>, но публикация навыка даёт ошибку <code>Превышено время ожидания ответа</code>,
 скорее всего проблема в неработающем (или частично работающем) DNSе внутри контейнера Home Assistant.</p>
 <p>Такое иногда встречается на NAS (например QNAP). Для исправления:</p>
 <ul>
@@ -1487,17 +1490,17 @@
 <li>Укажите DNS сервер Яндекса: <code>echo nameserver 77.88.8.8 &gt; /etc/resolv.conf</code></li>
 </ul>
 <p>Исправление актуально только для публикации навыка и не требуется для обычной работы УДЯ.</p>
-<p>Другая причина возникновения проблемы - использование <a href="https://help.keenetic.com/hc/ru/articles/360000563939-Интернет-фильтр-Яндекс-DNS">Яндекс.DNS с фильтрацией</a>. 
+<p>Другая причина возникновения проблемы - использование <a href="https://help.keenetic.com/hc/ru/articles/360000563939-Интернет-фильтр-Яндекс-DNS">Яндекс.DNS с фильтрацией</a>.
 Попробуйте отключить фильтрацию, если вы её используете.</p>
 <h4 id="not-found">URL не найден<a class="headerlink" href="#not-found" title="Permanent link">&para;</a></h4>
 <p>Возможные причины:</p>
 <ol>
 <li>Некорректно задан <code>Endpoint URL</code> в <a href="#config">настройках навыка</a></li>
-<li>Компонент Yandex Smart Home <a href="../../install/component/">не установлен</a> </li>
-<li>Интеграция Yandex Smart Home <a href="../../install/integration/">не добавлена</a> </li>
+<li>Компонент Yandex Smart Home <a href="../../install/component/">не установлен</a></li>
+<li>Интеграция Yandex Smart Home <a href="../../install/integration/">не добавлена</a></li>
 </ol>
-<h4 id="_1">Внутренная ошибка навыка<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h4>
-<p>Обычно возникает из-за проблем в разрешении IP-адреса из имени. 
+<h4 id="_1">Внутренняя ошибка навыка<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h4>
+<p>Обычно возникает из-за проблем в разрешении IP-адреса из имени.
 По состоянию на конец октября 2021 замечено, что без видимой причины могут не работать домены <code>*.tplinkdns.com</code> (попробуйте использовать другой динамический DNS).</p>
 
 

@@ -1260,7 +1260,7 @@
   
 
 
-<h1 id="_1">Трансляция видепотока с камеры<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="_1">Трансляция видеопотока с камеры<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
 <div class="admonition bug">
 <p class="admonition-title">Функциональность находится в режиме бета-тестирования!</p>
 </div>
@@ -1269,15 +1269,15 @@
 </div>
 <h2 id="requirements">Предварительные требования<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Камера должна быть добавлена в Home Assistant в виде устройства в домене <code>camera</code> и поддерживать трансляцию в формате <code>hls</code> 
+<li>Камера должна быть добавлена в Home Assistant в виде устройства в домене <code>camera</code> и поддерживать трансляцию в формате <code>hls</code>
 (атрибуты <code>frontend_stream_type: hls</code> и <code>supported_features: 2 или 3</code> в панели разработчика)</li>
-<li>Должна быть включена интеграция <a href="https://www.home-assistant.io/integrations/stream/">Stream</a>. 
+<li>Должна быть включена интеграция <a href="https://www.home-assistant.io/integrations/stream/">Stream</a>.
 Для включения добавьте <code>stream:</code> в <code>configuration.yaml</code> если не используете <code>default_config:</code></li>
 <li>Видеопоток должен отображаться по нажатию на иконку (I) в Панели разработчика</li>
 </ol>
 <h3 id="direct-connection">Прямое подключение<a class="headerlink" href="#direct-connection" title="Permanent link">&para;</a></h3>
-<p>Необходимо задать в настройках внешний адрес Home Assistant (например <code>https://myha.dyndns.com</code>), 
-по этому адресу Home Assistant должен быть доступ как из домашней сети, так и через интернет. </p>
+<p>Необходимо задать в настройках внешний адрес Home Assistant (например <code>https://myha.dyndns.com</code>),
+по этому адресу Home Assistant должен быть доступ как из домашней сети, так и через интернет.</p>
 <p>Сделать это можно несколькими способами:</p>
 <ul>
 <li>На странице <code>Настройки</code> &rarr; <code>Система</code> &rarr; <code>Сеть</code> &rarr; <code>URL-адрес сервера</code> &rarr; <code>Интернет</code> (включите <code>Расширенный режим</code> в профиле пользователя)</li>
@@ -1285,7 +1285,7 @@
 </ul>
 <h2 id="known-bugs">Известные проблемы<a class="headerlink" href="#known-bugs" title="Permanent link">&para;</a></h2>
 <h3 id="known-bugs-keedns">Не загружается поток при доступе к HA через KeenDNS<a class="headerlink" href="#known-bugs-keedns" title="Permanent link">&para;</a></h3>
-<p>Для решения требуется обновить прошивку роутера (на 01.04.2022 исправленная прошивка пока не выпущена). 
+<p>Для решения требуется обновить прошивку роутера (на 01.04.2022 исправленная прошивка пока не выпущена).
 В качестве временного решения добавьте в YAML конфигурацию параметр <code>cloud_stream: true</code> для использования облачного сервера:</p>
 <div class="admonition example">
 <p class="admonition-title">configuration.yaml</p>

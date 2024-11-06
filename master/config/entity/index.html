@@ -1294,9 +1294,9 @@
 <blockquote>
 <p>Параметр: <code>type</code> (<a href="https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html"><strong>возможные значения</strong></a>)</p>
 </blockquote>
-<p>Переопределяет автоматически вычисленный тип устройства. Влияет только на визуальную составлющую в "Дом с Алисой" (и глаголы управления). Никак не влияет на функции устройства.</p>
-<p>Например, домен <code>switch</code> по умолчанию передаётся как "выключатель" (<code>switch</code>) и реагирует на команду "Алиса, включи ХХХ". 
-Если задать <code>openable</code>, то у такого устройства изменится иконка на дверь и фраза на "Алиса, <strong>открой</strong> XXX". </p>
+<p>Переопределяет автоматически вычисленный тип устройства. Влияет только на визуальную составляющую в "Дом с Алисой" (и глаголы управления). Никак не влияет на функции устройства.</p>
+<p>Например, домен <code>switch</code> по умолчанию передаётся как "выключатель" (<code>switch</code>) и реагирует на команду "Алиса, включи ХХХ".
+Если задать <code>openable</code>, то у такого устройства изменится иконка на дверь и фраза на "Алиса, <strong>открой</strong> XXX".</p>
 <p>Поддерживается как полное, так и краткое наименование: вместо <code>devices.types.dishwasher</code> можно использовать <code>dishwasher</code>, или вместо <code>devices.types.thermostat.ac</code> можно использовать <code>thermostat.ac</code>.</p>
 <div class="admonition attention">
 <p class="admonition-title">Обратите внимание</p>
@@ -1314,15 +1314,17 @@
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openable</span>
 </code></pre></div>
 </div>
-<p>Рекомендуемые альтернативные типы: </p>
+<p>Рекомендуемые альтернативные типы:</p>
 <ul>
 <li><code>switch</code> для светильников: Предотвращает включение по команде "Алиса, включи свет"</li>
 <li><code>thermostat.ac</code>: Кондиционер</li>
 <li><code>cooking.kettle</code>: Чайник</li>
 </ul>
 <h2 id="turn_on-off">Сервис включения/выключения<a class="headerlink" href="#turn_on-off" title="Permanent link">&para;</a></h2>
+<blockquote>
 <p>Параметр: <code>turn_on</code> и <code>turn_off</code></p>
-<p>Переопределяет сервис, который будет вызван при включении или отключении устройства через УДЯ. </p>
+</blockquote>
+<p>Переопределяет сервис, который будет вызван при включении или отключении устройства через УДЯ.</p>
 <p>Параметр может быть использован, например, для <a href="../../devices/climate/">выбора режима включения</a> кондиционера.</p>
 <div class="admonition example">
 <p class="admonition-title">Переопределение сервиса включения/выключения телевизора</p>
@@ -1373,8 +1375,8 @@
 <p>Параметр: <code>support_set_channel</code> (только для <code>media_player</code>)</p>
 <p>Возможные значения: <code>false</code></p>
 </blockquote>
-<p>Отключает функцию выбора канала для <code>media_player</code> через цифровую панель и сервис <code>media_player.play_media</code>. </p>
-<p>Может потребоваться для устройств, которые не поддерживают выбор канала, но поддерживают сервис <code>play_media</code> и переключение треков.                                                                                                                                                                                                   </p>
+<p>Отключает функцию выбора канала для <code>media_player</code> через цифровую панель и сервис <code>media_player.play_media</code>.</p>
+<p>Может потребоваться для устройств, которые не поддерживают выбор канала, но поддерживают сервис <code>play_media</code> и переключение треков.</p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
@@ -1388,8 +1390,8 @@
 <p>Параметр: <code>state_unknown</code></p>
 <p>Возможные значения: <code>true</code></p>
 </blockquote>
-<p>Включает раздельное отображение кнопок для включение и отключения устройства. </p>
-<p>Рекомендуется использовать для устройств, которые не возвращают своё актуальное состояние (например шторы или вентилятор, управляемые по IR каналу). </p>
+<p>Включает раздельное отображение кнопок для включение и отключения устройства.</p>
+<p>Рекомендуется использовать для устройств, которые не возвращают своё актуальное состояние (например шторы или вентилятор, управляемые по IR каналу).</p>
 <p><img alt="" src="../../assets/images/config/state_unknown.png" /></p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>

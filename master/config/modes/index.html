@@ -1330,7 +1330,7 @@
 (<code>fan_speed</code>) значения могут быть не только "низкое", "высокое", но и совсем от другого типа устройств, например "дичь" или "эспрессо".</p>
 <p>Если маппинг не удался - управление функцией через УДЯ будет недоступно.</p>
 <p>Если часть режимов не удалось связать, в <a href="https://my.home-assistant.io/redirect/logs/"><code>Журнале сервера</code></a> будут появляться ошибки <code>Unsupported mode "XXX"</code>.</p>
-<p>Для их устранения задайте соответствия режимов УДЯ &harr; HA используя пример ниже, 
+<p>Для их устранения задайте соответствия режимов УДЯ &harr; HA используя пример ниже,
 или напишите в <a href="https://t.me/yandex_smart_home">чат</a> в Telegram, и эта ошибка будет устранена в следующей версии.</p>
 <div class="admonition example">
 <p class="admonition-title">Пример сопоставления режимов</p>
@@ -1384,25 +1384,29 @@
 <ul>
 <li>Домены: <code>humidifier</code>, <code>fan</code></li>
 <li>Рекомендуемые значения режимов: <code>normal</code>, <code>eco</code>, <code>min</code>, <code>turbo</code>, <code>medium</code>, <code>max</code>, <code>quiet</code>, <code>auto</code>, <code>high</code></li>
-<li>Атрибут в Home Assistant:<ul>
-<li><code>humidifier</code>: <code>available_modes</code></li>
-<li><code>fan</code>: <code>preset_modes</code> (если поддерживается установка скорости в процентах)</li>
-</ul>
+<li>
+<p>Атрибут в Home Assistant:</p>
 </li>
+<li>
+<p><code>humidifier</code>: <code>available_modes</code></p>
+</li>
+<li><code>fan</code>: <code>preset_modes</code> (если поддерживается установка скорости в процентах)</li>
 </ul>
 <h3 id="fan_speed">fan_speed<a class="headerlink" href="#fan_speed" title="Permanent link">&para;</a></h3>
 <p>Установка режима работы скорости вентиляции, например, в кондиционере, вентиляторе или обогревателе.</p>
 <ul>
 <li>Домены: <code>fan</code>, <code>climate</code></li>
 <li>Рекомендуемые значения режимов: <code>auto</code>, <code>quiet</code>, <code>low</code>, <code>medium</code>, <code>high</code>, <code>turbo</code></li>
-<li>Атрибут в Home Assistant:<ul>
-<li><code>fan</code>: <code>preset_modes</code> (если не поддерживается установка скорости в процентах, сервис <code>fan.set_speed_percentage</code>)</li>
+<li>
+<p>Атрибут в Home Assistant:</p>
+</li>
+<li>
+<p><code>fan</code>: <code>preset_modes</code> (если не поддерживается установка скорости в процентах, сервис <code>fan.set_speed_percentage</code>)</p>
+</li>
 <li><code>climate</code>: <code>fan_modes</code></li>
 </ul>
-</li>
-</ul>
 <h3 id="fan_speed-percentage">fan_speed (скорость в процентах)<a class="headerlink" href="#fan_speed-percentage" title="Permanent link">&para;</a></h3>
-<p>Некоторые вентиляторы позволяют устанавливать скорость вентиляции в процентах, используя сервис <code>fan.set_speed_percentage</code>. 
+<p>Некоторые вентиляторы позволяют устанавливать скорость вентиляции в процентах, используя сервис <code>fan.set_speed_percentage</code>.
 Для таких вентиляторов компонент автоматически соотнесёт режим в УДЯ и скорость в процентах для функции "Скорость вентиляции".</p>
 <p>Автоматическое соотношение можно переопределить путём указания числа с процентами в качестве режима со стороны HA:</p>
 <div class="admonition example">

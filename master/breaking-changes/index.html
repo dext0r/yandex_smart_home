@@ -1226,11 +1226,11 @@
 
 <h2 id="0x-1x">Переход с 0.x на 1.x<a class="headerlink" href="#0x-1x" title="Permanent link">&para;</a></h2>
 <h3 id="v1-notifier">Прямое подключение: настройки нотификатора<a class="headerlink" href="#v1-notifier" title="Permanent link">&para;</a></h3>
-<p>С версии 1.x для прямого подключения служба уведомленией о состоянии устройств (<a href="https://docs.yaha-cloud.ru/v0.6.x/advanced/direct-connection/#notifier">нотификатор</a>) настраивается через <a href="../config/getting-started/#gui">интерфейс</a> (раздел <code>Параметры навыка</code>), а не YAML конфигурацию.</p>
+<p>С версии 1.x для прямого подключения служба уведомлений о состоянии устройств (<a href="https://docs.yaha-cloud.ru/v0.6.x/advanced/direct-connection/#notifier">нотификатор</a>) настраивается через <a href="../config/getting-started/#gui">интерфейс</a> (раздел <code>Параметры навыка</code>), а не YAML конфигурацию.</p>
 <p>Параметры из секции <code>notifier</code> YAML конфигурации будут перенесены <strong>автоматически</strong> если в ней задан только один навык/пользователь.</p>
-<p>Если у вас несколько записей в секции <code>notifier</code> (например задействованы несколько пользователей) – необходимо перенести параметры вручную. Для каждого пользователя/навыка потребуется создать отдельную интеграцию с прямым типом подключения. </p>
+<p>Если у вас несколько записей в секции <code>notifier</code> (например задействованы несколько пользователей) – необходимо перенести параметры вручную. Для каждого пользователя/навыка потребуется создать отдельную интеграцию с прямым типом подключения.</p>
 <h3 id="v1-custom-toggles">Состояние для custom_toggles<a class="headerlink" href="#v1-custom-toggles" title="Permanent link">&para;</a></h3>
-<p>Пользовательские умения типа "Переключатели" теперь ожидают бинарные значения (<code>on/off/yes/no/True/False/1/0</code>) при определении своего состояния. 
+<p>Пользовательские умения типа "Переключатели" теперь ожидают бинарные значения (<code>on/off/yes/no/True/False/1/0</code>) при определении своего состояния.
 До версии 1.0 умение считалось включенным, когда состояние отличалось от <code>off</code>.</p>
 <div class="admonition example">
 <p class="admonition-title">До 1.х</p>
@@ -1250,7 +1250,7 @@
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">humidifier.humidifier</span><span class="p">:</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">custom_toggles</span><span class="p">:</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="nt">backlight</span><span class="p">:</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">          </span><span class="nt">state_template</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{{</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">is_state(&quot;select.humidifier_led_brightness&quot;,</span><span class="nv"> </span><span class="s">&quot;off&quot;)</span><span class="nv"> </span><span class="s">}}&#39;</span><span class="w"> </span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">          </span><span class="nt">state_template</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{{</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">is_state(&quot;select.humidifier_led_brightness&quot;,</span><span class="nv"> </span><span class="s">&quot;off&quot;)</span><span class="nv"> </span><span class="s">}}&#39;</span>
 </code></pre></div>
 <h3 id="v1-pressure-unit">Параметр pressure_unit<a class="headerlink" href="#v1-pressure-unit" title="Permanent link">&para;</a></h3>
 <p>Параметр <code>pressure_unit</code> (раздел <code>settings</code>) больше не поддерживается, удалите его из YAML конфигурации.</p>

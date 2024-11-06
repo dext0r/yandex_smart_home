@@ -1246,12 +1246,12 @@
 
   <h1>Умения "Выбор из диапазона"</h1>
 
-<p>Управление параметрами устройства, которые имеют диапазон регулировки (громкость, яркость, температура). 
+<p>Управление параметрами устройства, которые имеют диапазон регулировки (громкость, яркость, температура).
 <a href="../about/">Настраиваются</a> через словарь <code>custom_ranges</code>. В <a href="../about/#state">состоянии</a> ожидается числовое значение.</p>
 <h2 id="settings">Параметры<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
 <ul>
 <li>
-<p><code>set_value</code>: Сервис вызываемый при установке абсолютного значения функции. В переменной <code>value</code> абсолютное или относительное значение (в зависимости от настроек <code>range</code> и наличия <code>increase_value</code> и <code>decrease_value</code>). 
+<p><code>set_value</code>: Сервис вызываемый при установке абсолютного значения функции. В переменной <code>value</code> абсолютное или относительное значение (в зависимости от настроек <code>range</code> и наличия <code>increase_value</code> и <code>decrease_value</code>).
 Если не задан - установка абсолютного значения поддерживаться не будет.</p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>
@@ -1315,7 +1315,7 @@
 </tr>
 <tr>
 <td>volume</td>
-<td>Изменение громкости устройстваой технике</td>
+<td>Изменение громкости устройства</td>
 </tr>
 <tr>
 <td>tea_mode</td>
@@ -1347,7 +1347,7 @@
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">fan.xiaomi_airfresh_a1</span><span class="p">:</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">custom_ranges</span><span class="p">:</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="nt">volume</span><span class="p">:</span><span class="w">  </span><span class="c1"># как самое подходящее</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">          </span><span class="nt">state_entity_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fan.xiaomi_airfresh_a1</span><span class="w"> </span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">          </span><span class="nt">state_entity_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fan.xiaomi_airfresh_a1</span>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">          </span><span class="nt">state_attribute</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">favorit_speed</span>
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">          </span><span class="nt">set_value</span><span class="p">:</span>
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xiaomi_miio_airpurifier.fan_set_favorite_speed</span>

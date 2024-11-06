@@ -1057,7 +1057,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#notifier-unathorized" class="md-nav__link">
+  <a href="#notifier-unauthorized" class="md-nav__link">
     <span class="md-ellipsis">
       Notification request failed: Unauthorized
     </span>
@@ -1269,7 +1269,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#notifier-unathorized" class="md-nav__link">
+  <a href="#notifier-unauthorized" class="md-nav__link">
     <span class="md-ellipsis">
       Notification request failed: Unauthorized
     </span>
@@ -1309,7 +1309,7 @@
 <li>
 <p>Убедитесь, что:</p>
 <ol>
-<li>Объект, для которого будет создано устройство, выбран в <a href="../config/filter/">cписке объектов для передачи в УДЯ</a></li>
+<li>Объект, для которого будет создано устройство, выбран в <a href="../config/filter/">списке объектов для передачи в УДЯ</a></li>
 <li>Объект есть в <a href="../supported-devices/">списке поддерживаемых устройств</a> (особенно актуально для датчиков без <code>device_class</code>)</li>
 <li>В <a href="https://my.home-assistant.io/redirect/logs/"><code>Журнале сервера</code></a> нет ошибок</li>
 </ol>
@@ -1319,33 +1319,31 @@
 </li>
 <li>Выполните ручное <a href="../quasar/#discovery">Обновление списка устройств</a></li>
 </ul>
-<p>Если это не помогло - cоздайте <a href="https://github.com/dext0r/yandex_smart_home/issues">issue</a> или напишите в <a href="https://t.me/yandex_smart_home">чат</a>. 
+<p>Если это не помогло - создайте <a href="https://github.com/dext0r/yandex_smart_home/issues">issue</a> или напишите в <a href="https://t.me/yandex_smart_home">чат</a>.
 К сообщению приложите:</p>
 <ul>
 <li>
 <p><strong>ID</strong> и <strong>атрибуты</strong> проблемных объектов: их можно найти в <code>Панель разработчика</code> &gt; <code>Состояния</code>
-    <img alt="" src="../assets/images/entity-state.png" width="700" /></p>
+  <img alt="" src="../assets/images/entity-state.png" width="700" /></p>
 </li>
 <li>
 <p>YAML конфигурацию <code>yandex_smart_home</code> (если имеется, лучше целиком, или только <code>filter</code> и <code>entity_config</code> для проблемного объекта)</p>
 </li>
-<li>Для облачного подключения:<ul>
+<li>Для облачного подключения:</li>
 <li>Первые 6 символов вашего ID (можно посмотреть в <a href="../config/getting-started/#gui">настройках интеграции</a>)</li>
 <li>Дату и время обновления списка устройств</li>
 </ul>
-</li>
-</ul>
 <h2 id="blinking-features">Устройство в УДЯ поддерживает не все функции<a class="headerlink" href="#blinking-features" title="Permanent link">&para;</a></h2>
-<p>Некоторые устройства изменяют список поддерживаемых фукнций в зависимости от своего состояния. Особенно часто это поведение замечено за <code>media_player</code>.</p>
+<p>Некоторые устройства изменяют список поддерживаемых функций в зависимости от своего состояния. Особенно часто это поведение замечено за <code>media_player</code>.</p>
 <p>Если в УДЯ у устройства отсутствует функция, которая точно должна быть - попробуйте <a href="../quasar/#discovery">Обновить список устройств</a> при включенном устройстве.</p>
 <p>Так же может помочь настройка <a href="../config/entity/#features"><code>features</code></a> для явного указания поддерживаемых устройством функций.</p>
 <h2 id="unlinked">Устройство отвязалось<a class="headerlink" href="#unlinked" title="Permanent link">&para;</a></h2>
 <p>Необходимо вручную <a href="../quasar/#discovery">Обновить список устройств</a>, но сделать это не из списка навыков, а <strong>зайти в навык</strong> и нажать там кнопку <code>Обновить список устройств</code> или <code>Привязать к Яндексу</code>.</p>
 <h2 id="unexposed-entity">State requested for unexposed entity<a class="headerlink" href="#unexposed-entity" title="Permanent link">&para;</a></h2>
-<p>В УДЯ присутствует устройство, но объект по которому оно создано не выбран в <a href="../config/filter/">объектах для передачи в УДЯ</a>. </p>
+<p>В УДЯ присутствует устройство, но объект по которому оно создано не выбран в <a href="../config/filter/">объектах для передачи в УДЯ</a>.</p>
 <p>Для исправления: удалите устройство из УДЯ или добавьте <a href="../faq/#get-entity-id-quasar">объект</a> в список устройств для передачи.</p>
 <h2 id="unsupported-mode">Unsupported mode "XXX"<a class="headerlink" href="#unsupported-mode" title="Permanent link">&para;</a></h2>
-<p>Не удалось связать режимы между УДЯ и Home Assistant. Если нет необходимости выбирать проблемные режимы - ошибку можно игнорировать. </p>
+<p>Не удалось связать режимы между УДЯ и Home Assistant. Если нет необходимости выбирать проблемные режимы - ошибку можно игнорировать.</p>
 <p>Для исправления: настройте <a href="../config/modes/">связь режимов</a> УДЯ &harr; HA</p>
 <h2 id="notification-request-failed">Notification request failed<a class="headerlink" href="#notification-request-failed" title="Permanent link">&para;</a></h2>
 <p>Ряд ошибок, которые могут возникает при отправке в УДЯ уведомлений об изменении состояний устройств. Ошибки могут возникать периодически - это нормально. Если ошибок мало - просто очистите журнал.</p>
@@ -1354,7 +1352,7 @@
 <li>Вручную <a href="../quasar/#discovery">обновите список устройств</a></li>
 <li>Для прямого подключения: убедитесь, что в параметрах навыка в <a href="../config/getting-started/#gui">настройках интеграции</a> выбран пользователь, который использовался при привязке Home Assistant к УДЯ</li>
 </ul>
-<h3 id="notifier-unathorized">Notification request failed: Unauthorized<a class="headerlink" href="#notifier-unathorized" title="Permanent link">&para;</a></h3>
+<h3 id="notifier-unauthorized">Notification request failed: Unauthorized<a class="headerlink" href="#notifier-unauthorized" title="Permanent link">&para;</a></h3>
 <p>Только для прямого подключения: обновите токен в параметрах навыка в <a href="../config/getting-started/#gui">настройках интеграции</a> и убедитесь, что указан верный Идентификатор диалога</p>
 
 

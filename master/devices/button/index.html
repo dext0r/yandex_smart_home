@@ -1281,7 +1281,7 @@
   <h1>Кнопки</h1>
 
 <h2 id="easy">Простая настройка<a class="headerlink" href="#easy" title="Permanent link">&para;</a></h2>
-<p>Достаточно просто можно настроить кнопки, у которых имеется объект, в состоянии которого появляется текст (событие) при нажатии на кпопку.</p>
+<p>Достаточно просто можно настроить кнопки, у которых имеется объект, в состоянии которого появляется текст (событие) при нажатии на кнопку.</p>
 <p>Поддерживаемые события: <code>single</code>, <code>click</code>, <code>double</code>, <code>double_click</code>, <code>long</code>, <code>long_click</code>, <code>long_click_press</code>, <code>hold</code></p>
 <p>Такие кнопки, как правило, добавляются через интеграцию AlexxIT/Xiaomi Gateway 3 или Zigbee2MQTT с включенным <code>legacy</code> режимом.</p>
 <p><img alt="" src="../../assets/images/devices/button/easy.png" width="750" /></p>
@@ -1302,12 +1302,12 @@
 </li>
 </ul>
 <h2 id="advanced">Сложная настройка<a class="headerlink" href="#advanced" title="Permanent link">&para;</a></h2>
-<p>Позволяет сделать "виртуальную" кнопку из любого события в Home Assistant. </p>
+<p>Позволяет сделать "виртуальную" кнопку из любого события в Home Assistant.</p>
 <p>В качестве примера будем использовать переключатель IKEA Tradfri, подключенный через Zigbee2MQTT (с отключенным <code>Home Assistant legacy triggers</code>).</p>
 <p>Как можно заметить, в этой кнопке нет никаких объектов, только уровень заряда:</p>
 <p><img alt="" src="../../assets/images/devices/button/advanced-1.png" width="750" /></p>
 <h3 id="advanced-step-1">Шаг 1<a class="headerlink" href="#advanced-step-1" title="Permanent link">&para;</a></h3>
-<p>На странице <code>Настройки</code> &rarr; <code>Устройства и службы</code> &rarr; <a href="https://my.home-assistant.io/redirect/helpers/"><code>Вспомогательное</code></a> 
+<p>На странице <code>Настройки</code> &rarr; <code>Устройства и службы</code> &rarr; <a href="https://my.home-assistant.io/redirect/helpers/"><code>Вспомогательное</code></a>
 создайте вспомогательный элемент типа Текст с любым названием.</p>
 <p>Из этого вспомогательного элемента будет создана кнопка в УДЯ.</p>
 <p><img alt="" src="../../assets/images/devices/button/advanced-2.png" width="750" /></p>
@@ -1332,7 +1332,7 @@
 <li>
 <p>Тип действия: <code>Вызвать службу</code></p>
 <p>Служба: <code>input_text.set_value</code></p>
-<p>Цели: Вспомогательный элемент из Шага 1   </p>
+<p>Цели: Вспомогательный элемент из Шага 1</p>
 <p>Значение: событие в УДЯ, на выбор: <code>click</code> (одиночное нажатие), <code>double_click</code> - двойное нажатие, <code>long_press</code> - долгое нажатие</p>
 </li>
 <li>
