@@ -127,11 +127,14 @@
 
 При создании пользовательских умений может возникнуть желание отключить автоматически обнаруженные умения. Для этого вместо конфигурации функции необходимо задать значение `false`.
 
-!!! example "Пример отключения регулировки открытия штор"
+!!! example "Пример отключения регулировки громкости и выбора режима уборки"
     ```yaml
     yandex_smart_home:
       entity_config:
-        cover.bedroom:
+        media_player.tv:
           custom_ranges:
-            open: false
+            volume: false
+        vacuum.roborock:
+          custom_modes:
+            cleanup_mode: false
     ```
