@@ -328,11 +328,13 @@ class YandexNotifier(ABC):
                 error_message = response_body.decode("utf-8").strip()[:100]
 
             if r.status != 202 or error_message:
-                _LOGGER.warning(self._format_log_message(f"Notification request failed: {error_message or r.status}"))
+                _LOGGER.warning(
+                    self._format_log_message(f"State notification request failed: {error_message or r.status}")
+                )
         except ClientConnectionError as e:
-            _LOGGER.warning(self._format_log_message(f"Notification request failed: {e!r}"))
+            _LOGGER.warning(self._format_log_message(f"State notification request failed: {e!r}"))
         except asyncio.TimeoutError as e:
-            self._debug_log(f"Notification request failed: {e!r}")
+            self._debug_log(f"State notification request failed: {e!r}")
         except Exception:
             _LOGGER.exception(self._format_log_message("Unexpected exception"))
 

@@ -578,13 +578,13 @@ async def test_notifier_send_callback_exception(hass, caplog):
     with patch.object(notifier._session, "post", side_effect=ClientConnectionError()):
         caplog.clear()
         await notifier.async_send_discovery()
-        assert caplog.records[-1].message == "Notification request failed: ClientConnectionError()"
+        assert caplog.records[-1].message == "State notification request failed: ClientConnectionError()"
         assert caplog.records[-1].levelno == logging.WARN
         caplog.clear()
 
     with patch.object(notifier._session, "post", side_effect=asyncio.TimeoutError()):
         await notifier.async_send_discovery()
-        assert caplog.records[-1].message == "Notification request failed: TimeoutError()"
+        assert caplog.records[-1].message == "State notification request failed: TimeoutError()"
         assert caplog.records[-1].levelno == logging.DEBUG
 
 
@@ -652,7 +652,7 @@ async def test_notifier_send_direct(hass, aioclient_mock, caplog):
     await notifier.async_send_discovery()
 
     assert aioclient_mock.call_count == 1
-    assert caplog.messages[-1] == "Notification request failed: some error"
+    assert caplog.messages[-1] == "State notification request failed: some error"
     aioclient_mock.clear_requests()
     caplog.clear()
 
@@ -664,7 +664,7 @@ async def test_notifier_send_direct(hass, aioclient_mock, caplog):
     await notifier.async_send_discovery()
 
     assert aioclient_mock.call_count == 1
-    assert caplog.messages[-1] == "Notification request failed: some code"
+    assert caplog.messages[-1] == "State notification request failed: some code"
     aioclient_mock.clear_requests()
     caplog.clear()
 
@@ -675,7 +675,7 @@ async def test_notifier_send_direct(hass, aioclient_mock, caplog):
     )
     await notifier.async_send_discovery()
     assert aioclient_mock.call_count == 1
-    assert caplog.messages[-1] == "Notification request failed: ERROR"
+    assert caplog.messages[-1] == "State notification request failed: ERROR"
     aioclient_mock.clear_requests()
     caplog.clear()
 
@@ -752,7 +752,7 @@ async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
     await notifier.async_send_discovery()
 
     assert aioclient_mock.call_count == 1
-    assert caplog.messages[-1] == "Notification request failed: some error"
+    assert caplog.messages[-1] == "State notification request failed: some error"
     aioclient_mock.clear_requests()
     caplog.clear()
 
@@ -764,7 +764,7 @@ async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
     await notifier.async_send_discovery()
 
     assert aioclient_mock.call_count == 1
-    assert caplog.messages[-1] == "Notification request failed: some code"
+    assert caplog.messages[-1] == "State notification request failed: some code"
     aioclient_mock.clear_requests()
     caplog.clear()
 
@@ -775,7 +775,7 @@ async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
     )
     await notifier.async_send_discovery()
     assert aioclient_mock.call_count == 1
-    assert caplog.messages[-1] == "Notification request failed: ERROR"
+    assert caplog.messages[-1] == "State notification request failed: ERROR"
     aioclient_mock.clear_requests()
     caplog.clear()
 

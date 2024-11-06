@@ -47,15 +47,15 @@
 
 Для исправления: настройте [связь режимов](./config/modes.md) УДЯ <--> HA
 
-## Notification request failed
+## State notification request failed
 
 Ряд ошибок, которые могут возникает при отправке в УДЯ уведомлений об изменении состояний устройств. Ошибки могут возникать периодически - это нормально. Если ошибок мало - просто очистите журнал.
 
-### Notification request failed: UNKNOWN_USER { id=unknown-user }
+### State notification request failed: UNKNOWN_USER { id=unknown-user }
 
 * Вручную [обновите список устройств](./quasar.md#discovery)
 * Для прямого подключения: убедитесь, что в параметрах навыка в [настройках интеграции](./config/getting-started.md#gui) выбран пользователь, который использовался при привязке Home Assistant к УДЯ
 
-### Notification request failed: Unauthorized { id=notifier-unauthorized }
+### State notification request failed: Unauthorized { id=notifier-unauthorized }
 
 Только для прямого подключения: обновите токен в параметрах навыка в [настройках интеграции](./config/getting-started.md#gui) и убедитесь, что указан верный Идентификатор диалога
