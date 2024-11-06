@@ -2,7 +2,9 @@
   {
     "version": "dev",
     "title": "dev",
-    "aliases": []
+    "aliases": [
+      "master"
+    ]
   },
   {
     "version": "v0.6.x",
