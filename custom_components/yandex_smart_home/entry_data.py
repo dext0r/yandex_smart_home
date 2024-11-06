@@ -101,7 +101,7 @@ class ConfigEntryData:
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=ISSUE_ID_DEPRECATED_PRESSURE_UNIT,
-                learn_more_url="https://docs.yaha-cloud.ru/master/devices/sensor/float/#unit-conversion",
+                learn_more_url="https://docs.yaha-cloud.ru/dev/devices/sensor/float/#unit-conversion",
             )
         else:
             ir.async_delete_issue(self._hass, DOMAIN, "deprecated_pressure_unit")
@@ -115,7 +115,7 @@ class ConfigEntryData:
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=issue_id,
-                learn_more_url="https://docs.yaha-cloud.ru/master/breaking-changes/#v1-notifier",
+                learn_more_url="https://docs.yaha-cloud.ru/dev/breaking-changes/#v1-notifier",
             )
         else:
             ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_DEPRECATED_YAML_NOTIFIER)

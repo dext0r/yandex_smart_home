@@ -39,7 +39,7 @@ def property_type(value: str) -> str:
         except ValueError:
             raise vol.Invalid(
                 f"Event property type '{instance}' is not supported, "
-                f"see valid event types at https://docs.yaha-cloud.ru/master/devices/sensor/event/#type"
+                f"see valid event types at https://docs.yaha-cloud.ru/dev/devices/sensor/event/#type"
             )
 
     if value.startswith(f"{PropertyInstanceType.FLOAT}."):
@@ -50,7 +50,7 @@ def property_type(value: str) -> str:
         except ValueError:
             raise vol.Invalid(
                 f"Float property type '{instance}' is not supported, "
-                f"see valid float types at https://docs.yaha-cloud.ru/master/devices/sensor/float/#type"
+                f"see valid float types at https://docs.yaha-cloud.ru/dev/devices/sensor/float/#type"
             )
 
     for enum in [FloatPropertyInstance, EventPropertyInstance]:
@@ -62,8 +62,8 @@ def property_type(value: str) -> str:
 
     raise vol.Invalid(
         f"Property type '{value}' is not supported, "
-        f"see valid types at https://docs.yaha-cloud.ru/master/devices/sensor/event/#type and "
-        f"https://docs.yaha-cloud.ru/master/devices/sensor/float/#type"
+        f"see valid types at https://docs.yaha-cloud.ru/dev/devices/sensor/event/#type and "
+        f"https://docs.yaha-cloud.ru/dev/devices/sensor/float/#type"
     )
 
 
@@ -96,7 +96,7 @@ def property_attributes(value: ConfigType) -> ConfigType:
             raise vol.Invalid(
                 f"Target unit of measurement '{target_unit_of_measurement}' is not supported "
                 f"for {property_type_value} property, see valid values "
-                f"at https://docs.yaha-cloud.ru/master/devices/sensor/float/#property-target-unit-of-measurement"
+                f"at https://docs.yaha-cloud.ru/dev/devices/sensor/float/#property-target-unit-of-measurement"
             )
 
     return value
@@ -111,7 +111,7 @@ def mode_instance(value: str) -> str:
     except ValueError:
         _LOGGER.error(
             f"Mode instance '{value}' is not supported, "
-            f"see valid modes at https://docs.yaha-cloud.ru/master/advanced/capabilities/mode/#instance"
+            f"see valid modes at https://docs.yaha-cloud.ru/dev/advanced/capabilities/mode/#instance"
         )
         raise vol.Invalid(f"Mode instance '{value}' is not supported")
 
@@ -129,7 +129,7 @@ def mode(value: str) -> str:
     _LOGGER.error(
         f"Mode '{value}' is not supported, "
         f"see valid modes at https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html and "
-        f"https://docs.yaha-cloud.ru/master/devices/light/#scene-list"
+        f"https://docs.yaha-cloud.ru/dev/devices/light/#scene-list"
     )
 
     raise vol.Invalid(f"Mode '{value}' is not supported")
@@ -141,7 +141,7 @@ def toggle_instance(value: str) -> str:
     except ValueError:
         _LOGGER.error(
             f"Toggle instance '{value}' is not supported, "
-            f"see valid values at https://docs.yaha-cloud.ru/master/advanced/capabilities/toggle/#instance"
+            f"see valid values at https://docs.yaha-cloud.ru/dev/advanced/capabilities/toggle/#instance"
         )
         raise vol.Invalid(f"Toggle instance '{value}' is not supported")
 
@@ -154,7 +154,7 @@ def range_instance(value: str) -> str:
     except ValueError:
         _LOGGER.error(
             f"Range instance '{value}' is not supported, "
-            f"see valid values at https://docs.yaha-cloud.ru/master/advanced/capabilities/range/#instance"
+            f"see valid values at https://docs.yaha-cloud.ru/dev/advanced/capabilities/range/#instance"
         )
         raise vol.Invalid(f"Range instance '{value}' is not supported")
 
@@ -199,7 +199,7 @@ def color_name(value: str) -> str:
     except ValueError:
         _LOGGER.error(
             f"Color name '{value}' is not supported, "
-            f"see valid values at https://docs.yaha-cloud.ru/master/devices/light/#color-profile-config"
+            f"see valid values at https://docs.yaha-cloud.ru/dev/devices/light/#color-profile-config"
         )
         raise vol.Invalid(f"Color name '{value}' is not supported")
 

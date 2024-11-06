@@ -117,7 +117,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                     _LOGGER.warning(
                         f"Failed to get Yandex mode for mode '{ha_mode}' for {self}. "
                         f"It may cause inconsistencies between Yandex and HA. "
-                        f"See https://docs.yaha-cloud.ru/master/config/modes/"
+                        f"See https://docs.yaha-cloud.ru/dev/config/modes/"
                     )
 
         return mode
@@ -137,7 +137,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
 
         raise APIError(
             ResponseCode.INVALID_VALUE,
-            f"Unsupported mode '{yandex_mode}' for {self}, see https://docs.yaha-cloud.ru/master/config/modes/",
+            f"Unsupported mode '{yandex_mode}' for {self}, see https://docs.yaha-cloud.ru/dev/config/modes/",
         )
 
     @abstractmethod
@@ -679,7 +679,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
             if not ha_modes:
                 raise APIError(
                     ResponseCode.INVALID_VALUE,
-                    f"Unsupported mode '{state.value}' for {self}, see https://docs.yaha-cloud.ru/master/config/modes/",
+                    f"Unsupported mode '{state.value}' for {self}, see https://docs.yaha-cloud.ru/dev/config/modes/",
                 )
 
             ha_mode = self._convert_mapping_speed_value(ha_modes[0])

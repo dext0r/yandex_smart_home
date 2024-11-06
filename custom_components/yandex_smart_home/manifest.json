@@ -2,7 +2,7 @@
   "domain": "yandex_smart_home",
   "name": "Yandex Smart Home",
   "config_flow": true,
-  "documentation": "https://docs.yaha-cloud.ru/master/",
+  "documentation": "https://docs.yaha-cloud.ru/dev/",
   "issue_tracker": "https://github.com/dext0r/yandex_smart_home/issues",
   "requirements": [],
   "after_dependencies": ["local_calendar"],
