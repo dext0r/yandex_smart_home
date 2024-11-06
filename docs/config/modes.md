@@ -74,8 +74,8 @@
 * Рекомендуемые значения режимов: `normal`, `eco`, `min`, `turbo`, `medium`, `max`, `quiet`, `auto`, `high`
 * Атрибут в Home Assistant:
 
-  * `humidifier`: `available_modes`
-  * `fan`: `preset_modes` (если поддерживается установка скорости в процентах)
+    * `humidifier`: `available_modes`
+    * `fan`: `preset_modes` (если поддерживается установка скорости в процентах)
 
 ### fan_speed
 
@@ -85,8 +85,8 @@
 * Рекомендуемые значения режимов: `auto`, `quiet`, `low`, `medium`, `high`, `turbo`
 * Атрибут в Home Assistant:
 
-  * `fan`: `preset_modes` (если не поддерживается установка скорости в процентах, сервис `fan.set_speed_percentage`)
-  * `climate`: `fan_modes`
+    * `fan`: `preset_modes` (если не поддерживается установка скорости в процентах, сервис `fan.set_speed_percentage`)
+    * `climate`: `fan_modes`
 
 ### fan_speed (скорость в процентах) { id=fan_speed-percentage }
 
