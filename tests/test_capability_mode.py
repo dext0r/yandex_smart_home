@@ -48,18 +48,11 @@ class MockModeCapabilityA(MockModeCapability):
         return self.state.attributes.get("current_mode")
 
 
-class MockFallbackModeCapability(MockModeCapabilityA):
+class MockModeCapabilityAShortIndexFallback(MockModeCapabilityA):
     _modes_map_index_fallback = {
         0: ModeCapabilityMode.ONE,
         1: ModeCapabilityMode.TWO,
         2: ModeCapabilityMode.THREE,
-        3: ModeCapabilityMode.FOUR,
-        4: ModeCapabilityMode.FIVE,
-        5: ModeCapabilityMode.SIX,
-        6: ModeCapabilityMode.SEVEN,
-        7: ModeCapabilityMode.EIGHT,
-        8: ModeCapabilityMode.NINE,
-        9: ModeCapabilityMode.TEN,
     }
 
 
@@ -70,29 +63,33 @@ async def test_capability_mode_unsupported(hass):
 
     state = State("switch.test", STATE_OFF, {"modes_list": ["foo", "bar"]})
     cap = MockModeCapabilityA(hass, BASIC_ENTRY_DATA, state)
-    assert cap.supported is False
+    assert cap.supported is True
 
 
 async def test_capability_mode_auto_mapping(hass, caplog):
-    state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3", "mode_4"]})
-    cap = MockModeCapabilityA(hass, BASIC_ENTRY_DATA, state)
+    state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3", "mode_4", "mode_5"]})
+    cap = MockModeCapabilityAShortIndexFallback(hass, BASIC_ENTRY_DATA, state)
 
     assert cap.supported is True
-    assert cap.supported_ha_modes == ["mode_1", "mode_3", "mode_4"]
-    assert cap.supported_yandex_modes == [ModeCapabilityMode.FOWL, ModeCapabilityMode.PUERH_TEA]
+    assert cap.supported_ha_modes == ["mode_1", "mode_3", "mode_4", "mode_5"]
+    assert cap.supported_yandex_modes == [
+        ModeCapabilityMode.FOWL,
+        ModeCapabilityMode.PUERH_TEA,
+        ModeCapabilityMode.THREE,
+    ]
     assert cap.parameters.dict() == {
         "instance": "swing",
-        "modes": [{"value": "fowl"}, {"value": "puerh_tea"}],
+        "modes": [{"value": "fowl"}, {"value": "puerh_tea"}, {"value": "three"}],
     }
 
     assert cap.get_yandex_mode_by_ha_mode("invalid") is None
     assert len(caplog.records) == 0
 
-    assert cap.get_yandex_mode_by_ha_mode("mode_4") is None
+    assert cap.get_yandex_mode_by_ha_mode("mode_5") is None
     assert len(caplog.records) == 1
     for record in caplog.records:
         assert record.message == (
-            "Failed to get Yandex mode for mode 'mode_4' for instance swing of mode "
+            "Failed to get Yandex mode for mode 'mode_5' for instance swing of mode "
             "capability of switch.test. It may cause inconsistencies between Yandex and "
             "HA. See https://docs.yaha-cloud.ru/master/config/modes/"
         )
@@ -103,12 +100,13 @@ async def test_capability_mode_auto_mapping(hass, caplog):
 
     assert cap.get_yandex_mode_by_ha_mode("mode_1") == ModeCapabilityMode.FOWL
     assert cap.get_yandex_mode_by_ha_mode("mode_3") == ModeCapabilityMode.PUERH_TEA
+    assert cap.get_yandex_mode_by_ha_mode("mode_4") == ModeCapabilityMode.THREE
     with pytest.raises(APIError) as e:  # strange case o_O
         assert cap.get_yandex_mode_by_ha_mode("MODE_1")
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
         "Unsupported HA mode 'MODE_1' for instance swing of mode capability of "
-        "switch.test: not in ['mode_1', 'mode_3', 'mode_4']"
+        "switch.test: not in ['mode_1', 'mode_3', 'mode_4', 'mode_5']"
     )
 
     with pytest.raises(APIError) as e:
@@ -144,10 +142,10 @@ async def test_capability_mode_custom_mapping(hass):
 
 
 async def test_capability_mode_fallback_index(hass):
-    state = State("switch.test", STATE_OFF, {"modes_list": ["some", "mode_1", "foo"]})
-    cap = MockFallbackModeCapability(hass, BASIC_ENTRY_DATA, state)
+    state = State("switch.test", STATE_OFF, {"modes_list": ["some", "mode_1", "foo", "off"]})
+    cap = MockModeCapabilityA(hass, BASIC_ENTRY_DATA, state)
     assert cap.supported is True
-    assert cap.supported_ha_modes == ["some", "mode_1", "foo"]
+    assert cap.supported_ha_modes == ["some", "mode_1", "foo", "off"]
     assert cap.supported_yandex_modes == [
         ModeCapabilityMode.FOWL,
         ModeCapabilityMode.ONE,
@@ -159,7 +157,7 @@ async def test_capability_mode_fallback_index(hass):
     assert cap.get_yandex_mode_by_ha_mode("mode_1") == ModeCapabilityMode.FOWL
 
     state = State("switch.test", STATE_OFF, {"modes_list": [f"mode_{v}" for v in range(0, 11)]})
-    cap = MockFallbackModeCapability(hass, BASIC_ENTRY_DATA, state)
+    cap = MockModeCapabilityA(hass, BASIC_ENTRY_DATA, state)
     assert cap.supported is True
     assert cap.get_yandex_mode_by_ha_mode("mode_9") == "ten"
     assert cap.get_yandex_mode_by_ha_mode("mode_11") is None
@@ -176,7 +174,7 @@ async def test_capability_mode_fallback_index(hass):
             }
         }
     )
-    cap = MockFallbackModeCapability(hass, entry_data, state)
+    cap = MockModeCapabilityA(hass, entry_data, state)
     assert cap.supported is True
     assert cap.supported_yandex_modes == ["americano", "baby_food"]
 
@@ -209,7 +207,10 @@ async def test_capability_mode_thermostat(hass):
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.THERMOSTAT),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "thermostat", "modes": [{"value": "auto"}, {"value": "fan_only"}]}
+    assert cap.parameters.dict() == {
+        "instance": "thermostat",
+        "modes": [{"value": "auto"}, {"value": "fan_only"}],
+    }
     assert cap.get_value() is None
 
     cap.state.state = climate.HVACMode.FAN_ONLY

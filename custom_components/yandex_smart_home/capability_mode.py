@@ -36,7 +36,18 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
     instance: ModeCapabilityInstance
 
     _modes_map_default: dict[ModeCapabilityMode, list[str]] = {}
-    _modes_map_index_fallback: dict[int, ModeCapabilityMode] = {}
+    _modes_map_index_fallback: dict[int, ModeCapabilityMode] = {
+        0: ModeCapabilityMode.ONE,
+        1: ModeCapabilityMode.TWO,
+        2: ModeCapabilityMode.THREE,
+        3: ModeCapabilityMode.FOUR,
+        4: ModeCapabilityMode.FIVE,
+        5: ModeCapabilityMode.SIX,
+        6: ModeCapabilityMode.SEVEN,
+        7: ModeCapabilityMode.EIGHT,
+        8: ModeCapabilityMode.NINE,
+        9: ModeCapabilityMode.TEN,
+    }
 
     @property
     def supported(self) -> bool:
@@ -87,17 +98,18 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                 mode = yandex_mode
                 break
 
-        if mode is None and self.modes_map_config is None and self._modes_map_index_fallback:
-            try:
-                mode = self._modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
-            except (IndexError, ValueError, KeyError):
-                pass
-
         if mode is not None and ha_mode not in self.supported_ha_modes:
             raise APIError(
                 ResponseCode.INVALID_VALUE,
                 f"Unsupported HA mode '{ha_mode}' for {self}: not in {self.supported_ha_modes}",
             )
+
+        if mode is None:
+            if self.modes_map_config is None and ha_mode.lower() != STATE_OFF:
+                try:
+                    mode = self._modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
+                except (IndexError, ValueError, KeyError):
+                    pass
 
         if mode is None and not hide_warnings:
             if ha_mode.lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
@@ -246,19 +258,6 @@ class ProgramCapability(StateModeCapability, ABC):
     """Base capability to control a device program."""
 
     instance = ModeCapabilityInstance.PROGRAM
-
-    _modes_map_index_fallback = {
-        0: ModeCapabilityMode.ONE,
-        1: ModeCapabilityMode.TWO,
-        2: ModeCapabilityMode.THREE,
-        3: ModeCapabilityMode.FOUR,
-        4: ModeCapabilityMode.FIVE,
-        5: ModeCapabilityMode.SIX,
-        6: ModeCapabilityMode.SEVEN,
-        7: ModeCapabilityMode.EIGHT,
-        8: ModeCapabilityMode.NINE,
-        9: ModeCapabilityMode.TEN,
-    }
 
 
 @STATE_CAPABILITIES_REGISTRY.register
@@ -419,19 +418,6 @@ class InputSourceCapability(StateModeCapability):
     """Capability to control the input source of a media player device."""
 
     instance = ModeCapabilityInstance.INPUT_SOURCE
-
-    _modes_map_index_fallback = {
-        0: ModeCapabilityMode.ONE,
-        1: ModeCapabilityMode.TWO,
-        2: ModeCapabilityMode.THREE,
-        3: ModeCapabilityMode.FOUR,
-        4: ModeCapabilityMode.FIVE,
-        5: ModeCapabilityMode.SIX,
-        6: ModeCapabilityMode.SEVEN,
-        7: ModeCapabilityMode.EIGHT,
-        8: ModeCapabilityMode.NINE,
-        9: ModeCapabilityMode.TEN,
-    }
 
     @property
     def supported(self) -> bool:
