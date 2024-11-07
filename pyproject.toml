@@ -58,6 +58,7 @@ known_first_party = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "-p no:aiohttp"
+verbosity_assertions = 2
 asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.report]
