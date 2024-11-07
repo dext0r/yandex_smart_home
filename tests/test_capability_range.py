@@ -66,36 +66,6 @@ async def test_capability_range(hass, caplog):
     assert cap.support_random_access
     assert cap._range == RangeCapabilityRange(min=0.0, max=100.0, precision=1.0)
 
-    for range_min in [0, 1, 5, None]:
-        for range_max in [50, 100, None]:
-            for range_prec in [0.3, 1, None]:
-                entity_range_config = {}
-                if range_min:
-                    entity_range_config[const.CONF_ENTITY_RANGE_MIN] = range_min
-                if range_max:
-                    entity_range_config[const.CONF_ENTITY_RANGE_MAX] = range_max
-                if range_prec:
-                    entity_range_config[const.CONF_ENTITY_RANGE_PRECISION] = range_prec
-
-                entry_data = MockConfigEntryData(
-                    entity_config={"switch.test": {const.CONF_ENTITY_RANGE: entity_range_config}}
-                )
-                cap = MockCapabilityRandomAccess(hass, entry_data, State("switch.test", STATE_ON))
-                assert cap._range == RangeCapabilityRange(
-                    min=range_min or cap._default_range.min,
-                    max=range_max or cap._default_range.max,
-                    precision=range_prec or cap._default_range.precision,
-                )
-                assert cap.parameters.as_dict() == {
-                    "instance": "volume",
-                    "random_access": True,
-                    "range": {
-                        "min": range_min or cap._default_range.min,
-                        "max": range_max or cap._default_range.max,
-                        "precision": range_prec or cap._default_range.precision,
-                    },
-                }
-
     for v in [STATE_UNAVAILABLE, STATE_UNKNOWN, "None"]:
         assert cap._convert_to_float(v) is None
 
@@ -581,6 +551,60 @@ async def test_capability_range_volume_support_random(hass, features):
     assert calls[2].data[media_player.ATTR_MEDIA_VOLUME_LEVEL] == 1.26
     assert calls[3].data[media_player.ATTR_MEDIA_VOLUME_LEVEL] == 0.86
     assert calls[4].data[media_player.ATTR_MEDIA_VOLUME_LEVEL] == 0.46
+
+
+async def test_capability_range_volume_custom_range(hass: HomeAssistant) -> None:
+    state = State(
+        "media_player.test",
+        STATE_OFF,
+        {ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_SET},
+    )
+    cap = cast(
+        RangeCapability,
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+    )
+    assert cap.retrievable is True
+    assert cap.support_random_access is True
+    assert cap.parameters.as_dict() == {
+        "instance": "volume",
+        "random_access": True,
+        "range": {"max": 100, "min": 0, "precision": 1},
+    }
+
+    for range_min in [0, 1, 5, None]:
+        for range_max in [50, 100, None]:
+            for range_prec in [0.3, 1, None]:
+                entity_range_config = {}
+                if range_min:
+                    entity_range_config[const.CONF_ENTITY_RANGE_MIN] = range_min
+                if range_max:
+                    entity_range_config[const.CONF_ENTITY_RANGE_MAX] = range_max
+                if range_prec:
+                    entity_range_config[const.CONF_ENTITY_RANGE_PRECISION] = range_prec
+
+                entry_data = MockConfigEntryData(
+                    entity_config={state.entity_id: {const.CONF_ENTITY_RANGE: entity_range_config}}
+                )
+                cap = cast(
+                    RangeCapability,
+                    get_exact_one_capability(
+                        hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME
+                    ),
+                )
+                assert cap._range == RangeCapabilityRange(
+                    min=range_min or 0,
+                    max=range_max or 100,
+                    precision=range_prec or 1,
+                )
+                assert cap.parameters.as_dict() == {
+                    "instance": "volume",
+                    "random_access": True,
+                    "range": {
+                        "min": range_min or 0,
+                        "max": range_max or 100,
+                        "precision": range_prec or 1,
+                    },
+                }
 
 
 @pytest.mark.parametrize("precision", [2, 10, None])

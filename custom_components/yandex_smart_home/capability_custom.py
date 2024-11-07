@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import cached_property
 import itertools
 import logging
 from typing import TYPE_CHECKING, Any, Iterable, Protocol, Self, cast
@@ -279,14 +280,14 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
 
         return max(min(value + relative_value, self._range.max), self._range.min)
 
-    @property
-    def _default_range(self) -> RangeCapabilityRange:
-        """Return a default supporting range. Can be overrided by user."""
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Return supporting value range."""
         return RangeCapabilityRange(
-            min=self._config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, super()._default_range.min),
-            max=self._config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, super()._default_range.max),
+            min=self._config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, super()._range.min),
+            max=self._config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, super()._range.max),
             precision=self._config.get(CONF_ENTITY_RANGE, {}).get(
-                CONF_ENTITY_RANGE_PRECISION, super()._default_range.precision
+                CONF_ENTITY_RANGE_PRECISION, super()._range.precision
             ),
         )
 

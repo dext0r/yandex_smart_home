@@ -65,11 +65,6 @@ class RangeCapability(Capability[RangeCapabilityInstanceActionState], Protocol):
         ...
 
     @property
-    def _default_range(self) -> RangeCapabilityRange:
-        """Return a default supporting range. Can be overrided by user."""
-        return RangeCapabilityRange(min=0, max=100, precision=1)
-
-    @property
     def retrievable(self) -> bool:
         """Test if the capability can return the current value."""
         return self.support_random_access
@@ -125,14 +120,8 @@ class RangeCapability(Capability[RangeCapabilityInstanceActionState], Protocol):
 
     @cached_property
     def _range(self) -> RangeCapabilityRange:
-        """Return supporting range."""
-        return RangeCapabilityRange(
-            min=self._entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, self._default_range.min),
-            max=self._entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, self._default_range.max),
-            precision=self._entity_config.get(CONF_ENTITY_RANGE, {}).get(
-                CONF_ENTITY_RANGE_PRECISION, self._default_range.precision
-            ),
-        )
+        """Return supporting value range."""
+        return RangeCapabilityRange(min=0, max=100, precision=1)
 
     def _convert_to_float(self, value: Any, strict: bool = True) -> float | None:
         """Return float of a value, ignore some states, catch errors."""
@@ -231,9 +220,9 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
         """Return the current capability value (unguarded)."""
         return self._convert_to_float(self.state.attributes.get(water_heater.ATTR_TEMPERATURE))
 
-    @property
-    def _default_range(self) -> RangeCapabilityRange:
-        """Return a default supporting range. Can be overrided by user."""
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Return supporting value range."""
         return RangeCapabilityRange(
             min=self.state.attributes.get(water_heater.ATTR_MIN_TEMP, 0),
             max=self.state.attributes.get(water_heater.ATTR_MAX_TEMP, 100),
@@ -266,9 +255,9 @@ class TemperatureCapabilityClimate(TemperatureCapability):
         """Return the current capability value (unguarded)."""
         return self._convert_to_float(self.state.attributes.get(climate.ATTR_TEMPERATURE))
 
-    @property
-    def _default_range(self) -> RangeCapabilityRange:
-        """Return a default supporting range. Can be overrided by user."""
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Return supporting value range."""
         return RangeCapabilityRange(
             min=self.state.attributes.get(climate.ATTR_MIN_TEMP, 0),
             max=self.state.attributes.get(climate.ATTR_MAX_TEMP, 100),
@@ -310,9 +299,9 @@ class HumidityCapabilityHumidifier(HumidityCapability):
         """Return the current capability value (unguarded)."""
         return self._convert_to_float(self.state.attributes.get(humidifier.ATTR_HUMIDITY))
 
-    @property
-    def _default_range(self) -> RangeCapabilityRange:
-        """Return a default supporting range. Can be overrided by user."""
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Return supporting value range."""
         return RangeCapabilityRange(
             min=self.state.attributes.get(humidifier.ATTR_MIN_HUMIDITY, 0),
             max=self.state.attributes.get(humidifier.ATTR_MAX_HUMIDITY, 100),
@@ -394,14 +383,10 @@ class BrightnessCapability(StateRangeCapability):
 
         return None
 
-    @property
-    def _default_range(self) -> RangeCapabilityRange:
-        """Return a default supporting range. Can be overrided by user."""
-        return RangeCapabilityRange(
-            min=1,
-            max=100,
-            precision=1,
-        )
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Return supporting value range."""
+        return RangeCapabilityRange(min=1, max=100, precision=1)
 
 
 @STATE_CAPABILITIES_REGISTRY.register
@@ -483,6 +468,15 @@ class VolumeCapability(StateRangeCapability):
             return int(level * 100)
 
         return None
+
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Return supporting value range."""
+        return RangeCapabilityRange(
+            min=self._entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, 0),
+            max=self._entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, 100),
+            precision=self._entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, 1),
+        )
 
 
 @STATE_CAPABILITIES_REGISTRY.register
@@ -591,9 +585,9 @@ class ChannelCapability(StateRangeCapability):
 
         return None
 
-    @property
-    def _default_range(self) -> RangeCapabilityRange:
-        """Return a default supporting range. Can be overrided by user."""
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Return supporting value range."""
         return RangeCapabilityRange(
             min=0,
             max=999,
