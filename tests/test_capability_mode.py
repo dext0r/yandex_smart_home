@@ -7,6 +7,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home import const
+from custom_components.yandex_smart_home.capability import STATE_CAPABILITIES_REGISTRY
 from custom_components.yandex_smart_home.capability_mode import (
     FanSpeedCapabilityFanViaPercentage,
     FanSpeedCapabilityFanViaPreset,
@@ -53,6 +54,7 @@ class MockModeCapabilityAShortIndexFallback(MockModeCapabilityA):
         0: ModeCapabilityMode.ONE,
         1: ModeCapabilityMode.TWO,
         2: ModeCapabilityMode.THREE,
+        3: ModeCapabilityMode.FOUR,
     }
 
 
@@ -67,19 +69,20 @@ async def test_capability_mode_unsupported(hass):
 
 
 async def test_capability_mode_auto_mapping(hass, caplog):
-    state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3", "mode_4", "mode_5"]})
+    state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3", "mode_4", "eco", "mode_5"]})
     cap = MockModeCapabilityAShortIndexFallback(hass, BASIC_ENTRY_DATA, state)
 
     assert cap.supported is True
-    assert cap.supported_ha_modes == ["mode_1", "mode_3", "mode_4", "mode_5"]
+    assert cap.supported_ha_modes == ["mode_1", "mode_3", "mode_4", "eco", "mode_5"]
     assert cap.supported_yandex_modes == [
+        ModeCapabilityMode.ECO,
         ModeCapabilityMode.FOWL,
         ModeCapabilityMode.PUERH_TEA,
         ModeCapabilityMode.THREE,
     ]
     assert cap.parameters.dict() == {
         "instance": "swing",
-        "modes": [{"value": "fowl"}, {"value": "puerh_tea"}, {"value": "three"}],
+        "modes": [{"value": "eco"}, {"value": "fowl"}, {"value": "puerh_tea"}, {"value": "three"}],
     }
 
     assert cap.get_yandex_mode_by_ha_mode("invalid") is None
@@ -101,12 +104,13 @@ async def test_capability_mode_auto_mapping(hass, caplog):
     assert cap.get_yandex_mode_by_ha_mode("mode_1") == ModeCapabilityMode.FOWL
     assert cap.get_yandex_mode_by_ha_mode("mode_3") == ModeCapabilityMode.PUERH_TEA
     assert cap.get_yandex_mode_by_ha_mode("mode_4") == ModeCapabilityMode.THREE
+    assert cap.get_yandex_mode_by_ha_mode("eco") == ModeCapabilityMode.ECO
     with pytest.raises(APIError) as e:  # strange case o_O
         assert cap.get_yandex_mode_by_ha_mode("MODE_1")
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
         "Unsupported HA mode 'MODE_1' for instance swing of mode capability of "
-        "switch.test: not in ['mode_1', 'mode_3', 'mode_4', 'mode_5']"
+        "switch.test: not in ['mode_1', 'mode_3', 'mode_4', 'eco', 'mode_5']"
     )
 
     with pytest.raises(APIError) as e:
@@ -119,10 +123,11 @@ async def test_capability_mode_auto_mapping(hass, caplog):
 
     assert cap.get_ha_mode_by_yandex_mode(ModeCapabilityMode.FOWL) == "mode_1"
     assert cap.get_ha_mode_by_yandex_mode(ModeCapabilityMode.PUERH_TEA) == "mode_3"
+    assert cap.get_ha_mode_by_yandex_mode(ModeCapabilityMode.ECO) == "eco"
 
 
 async def test_capability_mode_custom_mapping(hass):
-    state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_foo", "mode_bar"]})
+    state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_foo", "mode_bar", "americano"]})
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
@@ -137,7 +142,7 @@ async def test_capability_mode_custom_mapping(hass):
     )
     cap = MockModeCapabilityA(hass, entry_data, state)
     assert cap.supported is True
-    assert cap.supported_ha_modes == ["mode_1", "mode_foo", "mode_bar"]  # yeap, strange too
+    assert cap.supported_ha_modes == ["mode_1", "mode_foo", "mode_bar", "americano"]  # yeap, strange too
     assert cap.supported_yandex_modes == [ModeCapabilityMode.ECO, ModeCapabilityMode.LATTE]
 
 
@@ -851,7 +856,7 @@ async def test_capability_mode_cleanup_mode(hass):
         STATE_OFF,
         {
             ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.FAN_SPEED,
-            vacuum.ATTR_FAN_SPEED_LIST: ["gentle", "mop"],
+            vacuum.ATTR_FAN_SPEED_LIST: ["gentle", "performance"],
         },
     )
     cap = cast(
@@ -861,7 +866,7 @@ async def test_capability_mode_cleanup_mode(hass):
         ),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "cleanup_mode", "modes": [{"value": "low"}, {"value": "min"}]}
+    assert cap.parameters.dict() == {"instance": "cleanup_mode", "modes": [{"value": "low"}, {"value": "turbo"}]}
     assert cap.get_value() is None
 
     state = State(
@@ -869,8 +874,8 @@ async def test_capability_mode_cleanup_mode(hass):
         STATE_OFF,
         {
             ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.FAN_SPEED,
-            vacuum.ATTR_FAN_SPEED_LIST: ["gentle", "mop"],
-            vacuum.ATTR_FAN_SPEED: "mop",
+            vacuum.ATTR_FAN_SPEED_LIST: ["gentle", "performance"],
+            vacuum.ATTR_FAN_SPEED: "performance",
         },
     )
     cap = cast(
@@ -879,7 +884,7 @@ async def test_capability_mode_cleanup_mode(hass):
             hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.CLEANUP_MODE
         ),
     )
-    assert cap.get_value() == ModeCapabilityMode.MIN
+    assert cap.get_value() == ModeCapabilityMode.TURBO
 
     calls = async_mock_service(hass, vacuum.DOMAIN, vacuum.SERVICE_SET_FAN_SPEED)
     await cap.set_instance_state(
@@ -888,3 +893,19 @@ async def test_capability_mode_cleanup_mode(hass):
     )
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, vacuum.ATTR_FAN_SPEED: "gentle"}
+
+
+async def test_capability_mode_unique_modes():
+    for capability in STATE_CAPABILITIES_REGISTRY:
+        if capability.type != CapabilityType.MODE:
+            continue
+
+        capability = cast(ModeCapability, capability)
+        seen: dict[str, ModeCapabilityMode] = {}
+        for ya_mode, ha_modes in capability._modes_map_default.items():
+            for ha_mode in ha_modes:
+                ha_mode = ha_mode.lower()
+                if ha_mode in seen and ha_mode != ya_mode:
+                    pytest.fail(f"mode {ya_mode}:{ha_mode} already used for {seen[ha_mode]} of {capability.__name__}")
+
+                seen[ha_mode] = ya_mode

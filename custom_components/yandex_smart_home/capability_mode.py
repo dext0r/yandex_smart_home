@@ -1,18 +1,20 @@
 """Implement the Yandex Smart Home mode capabilities."""
 
 from abc import ABC, abstractmethod
+from contextlib import suppress
+from enum import StrEnum
 import logging
 import math
 from typing import Any, Iterable, Protocol
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
+from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Context
 from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item
 
-from . import const
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
-from .const import CONF_ENTITY_MODE_MAP, STATE_NONE, MediaPlayerFeature
+from .const import CONF_ENTITY_MODE_MAP, CONF_FEATURES, STATE_NONE, MediaPlayerFeature
 from .helpers import APIError
 from .schema import (
     CapabilityType,
@@ -24,6 +26,116 @@ from .schema import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class GenericMode(StrEnum):
+    """Generic HA mode for various devices."""
+
+    GENTLE = "gentle"  # tuya vacuum?
+    MAX_PLUS_SIGN = "max+"  # deebot?
+    HIGHEST = "highest"  # smartir
+
+
+class SmartThinQFanMode(StrEnum):
+    """Fan mode for ollo69/ha-smartthinq-sensors integration."""
+
+    LOW_MID = "low_mid"
+    MID_HIGH = "mid_high"
+
+
+class RoborockCleanupMode(StrEnum):
+    """Cleanup mode for humbertogontijo/python-roborock library.
+
+    https://github.com/humbertogontijo/python-roborock/blob/1616217a06e20d51921de984134555bcc0775a92/roborock/code_mappings.py#L61
+    """
+
+    OFF = "off"
+    SILENT = "silent"
+    BALANCED = "balanced"
+    TURBO = "turbo"
+    MAX = "max"
+    MAX_PLUS = "max_plus"
+    CUSTOM = "custom"
+
+
+class RoombaCleanupMode(StrEnum):
+    """Cleanup mode for roomba integration."""
+
+    AUTOMATIC = "Automatic"
+    ECO = "Eco"
+    PERFORMANCE = "Performance"
+    STANDARD = "Standard"
+
+
+class TionFanSpeed(StrEnum):
+    """Fan speed for airens/tion_home_assistant integration.
+
+    https://github.com/airens/tion_home_assistant#climateset_fan_mode
+    """
+
+    S1 = "1"
+    S2 = "2"
+    S3 = "3"
+    S4 = "4"
+    S5 = "5"
+    S6 = "6"
+
+
+class XiaomiHumidifierMode(StrEnum):
+    """Humidifer mode for xiaomi_miio integration."""
+
+    MID = "mid"
+
+
+class XiaomiMiotHumidifierMode(StrEnum):
+    """Humidifer mode for al-one/hass-xiaomi-miot integration."""
+
+    CONST_HUMIDITY = "Const Humidity"  # leshow.humidifier.jsq1
+
+
+class XiaomiFanMode(StrEnum):
+    """Fan mode for xiaomi_miio integration."""
+
+    AUTO = "Auto"
+    SILENT = "Silent"
+    LOW = "Low"
+    FAVORITE = "Favorite"
+    IDLE = "Idle"
+    MEDIUM = "Medium"
+    MIDDLE = "Middle"
+    HIGH = "High"
+    STRONG = "Strong"
+    FAN = "Fan"
+    NATURE = "Nature"
+
+
+class XiaomiMiotFanMode(StrEnum):
+    """Fan mode for al-one/hass-xiaomi-miot and syssi/xiaomi_airpurifier integrations.
+
+    https://github.com/syssi/xiaomi_airpurifier#service-fanset_preset_mode
+    https://github.com/al-one/hass-xiaomi-miot/blob/fdca601c409f619b1c98a20e6ea990317cce20c7/custom_components/xiaomi_miot/core/templates.py#L102
+    """
+
+    LEVEL_1 = "Level 1"
+    LEVEL_2 = "Level 2"
+    LEVEL_3 = "Level 3"
+    LEVEL_4 = "Level 4"
+    LEVEL_5 = "Level 5"
+
+
+class XiaomiMiotCleanupMode(StrEnum):
+    """Cleanup mode for al-one/hass-xiaomi-miot integration.
+
+    https://github.com/al-one/hass-xiaomi-miot/blob/fdca601c409f619b1c98a20e6ea990317cce20c7/custom_components/xiaomi_miot/core/miot_specs_extend.json#L641
+    """
+
+    SILENT = "Silent"
+    SLIENT = "slient"  # https://github.com/al-one/hass-xiaomi-miot/issues/1605
+    BASIC = "Basic"
+    STRONG = "Strong"
+    FULL_SPEED = "Full Speed"
+    MOP_ONLY = "Mop Only"
+    CUSTOM = "Custom"
 
 
 class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
@@ -104,8 +216,12 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                 f"Unsupported HA mode '{ha_mode}' for {self}: not in {self.supported_ha_modes}",
             )
 
-        if mode is None and ha_mode.lower() != STATE_OFF:
-            if not self.modes_map_config:
+        if not self.modes_map_config:
+            if mode is None:
+                with suppress(ValueError):
+                    mode = ModeCapabilityMode(ha_mode.lower())
+
+            if mode is None and ha_mode.lower() != STATE_OFF:
                 try:
                     mode = self._modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
                 except (IndexError, ValueError, KeyError):
@@ -125,6 +241,9 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
     def get_ha_mode_by_yandex_mode(self, yandex_mode: ModeCapabilityMode) -> str:
         """Return HA mode for Yandex mode."""
         ha_modes = self.modes_map.get(yandex_mode, [])
+        if not self.modes_map_config:
+            ha_modes.append(yandex_mode.value)
+
         for ha_mode in ha_modes:
             for am in self.supported_ha_modes:
                 if am.lower() == ha_mode.lower():
@@ -175,11 +294,11 @@ class ThermostatCapability(StateModeCapability):
     instance = ModeCapabilityInstance.THERMOSTAT
 
     _modes_map_default = {
-        ModeCapabilityMode.HEAT: [climate.HVACMode.HEAT],
-        ModeCapabilityMode.COOL: [climate.HVACMode.COOL],
-        ModeCapabilityMode.AUTO: [climate.HVACMode.HEAT_COOL, climate.HVACMode.AUTO],
-        ModeCapabilityMode.DRY: [climate.HVACMode.DRY],
-        ModeCapabilityMode.FAN_ONLY: [climate.HVACMode.FAN_ONLY],
+        ModeCapabilityMode.HEAT: [HVACMode.HEAT],
+        ModeCapabilityMode.COOL: [HVACMode.COOL],
+        ModeCapabilityMode.AUTO: [HVACMode.HEAT_COOL, climate.HVACMode.AUTO],
+        ModeCapabilityMode.DRY: [HVACMode.DRY],
+        ModeCapabilityMode.FAN_ONLY: [HVACMode.FAN_ONLY],
     }
 
     @property
@@ -216,10 +335,10 @@ class SwingCapability(StateModeCapability):
     instance = ModeCapabilityInstance.SWING
 
     _modes_map_default = {
-        ModeCapabilityMode.VERTICAL: [climate.const.SWING_VERTICAL, "ud"],
-        ModeCapabilityMode.HORIZONTAL: [climate.const.SWING_HORIZONTAL, "lr"],
-        ModeCapabilityMode.STATIONARY: [climate.const.SWING_OFF],
-        ModeCapabilityMode.AUTO: [climate.const.SWING_BOTH, "all"],
+        ModeCapabilityMode.VERTICAL: ["ud"],
+        ModeCapabilityMode.HORIZONTAL: ["lr"],
+        ModeCapabilityMode.STATIONARY: [climate.SWING_OFF],
+        ModeCapabilityMode.AUTO: [climate.SWING_BOTH, "all"],
     }
 
     @property
@@ -266,44 +385,41 @@ class ProgramCapabilityHumidifier(ProgramCapability):
 
     _modes_map_default = {
         ModeCapabilityMode.FAN_ONLY: [
-            const.XIAOMI_AIRPURIFIER_PRESET_FAN,
+            XiaomiFanMode.FAN,
         ],
         ModeCapabilityMode.AUTO: [
-            humidifier.const.MODE_AUTO,
-            const.XIAOMI_HUMIDIFIER_CONST_HUMIDITY,
+            humidifier.MODE_AUTO,
+            XiaomiMiotHumidifierMode.CONST_HUMIDITY,
         ],
         ModeCapabilityMode.ECO: [
             humidifier.const.MODE_ECO,
-            const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
+            XiaomiFanMode.IDLE,
         ],
         ModeCapabilityMode.QUIET: [
             humidifier.const.MODE_SLEEP,
-            const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
+            XiaomiFanMode.SILENT,
         ],
-        ModeCapabilityMode.LOW: [
-            const.XIAOMI_AIRPURIFIER_PRESET_LOW,
+        ModeCapabilityMode.MIN: [
+            humidifier.MODE_AWAY,
         ],
-        ModeCapabilityMode.MIN: [humidifier.const.MODE_AWAY],
         ModeCapabilityMode.MEDIUM: [
             humidifier.const.MODE_COMFORT,
-            const.XIAOMI_AIRPURIFIER_PRESET_MEDIUM,
-            const.XIAOMI_AIRPURIFIER_PRESET_MIDDLE,
-            const.XIAOMI_HUMIDIFIER_PRESET_MID,
+            XiaomiFanMode.MIDDLE,
+            XiaomiHumidifierMode.MID,
         ],
         ModeCapabilityMode.NORMAL: [
-            humidifier.const.MODE_NORMAL,
-            const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
+            humidifier.MODE_NORMAL,
+            XiaomiFanMode.FAVORITE,
         ],
         ModeCapabilityMode.MAX: [
             humidifier.const.MODE_HOME,
         ],
         ModeCapabilityMode.HIGH: [
             humidifier.const.MODE_BABY,
-            const.XIAOMI_AIRPURIFIER_PRESET_HIGH,
         ],
         ModeCapabilityMode.TURBO: [
             humidifier.const.MODE_BOOST,
-            const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
+            XiaomiFanMode.STRONG,
         ],
     }
 
@@ -344,35 +460,30 @@ class ProgramCapabilityFan(ProgramCapability):
     """Capability to control the mode preset of a fan device."""
 
     _modes_map_default = {
-        ModeCapabilityMode.AUTO: [
-            climate.const.FAN_AUTO,
-        ],
         ModeCapabilityMode.ECO: [
-            const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
+            XiaomiFanMode.IDLE,
         ],
         ModeCapabilityMode.QUIET: [
-            const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
-            const.XIAOMI_FAN_PRESET_LEVEL_1,
-            const.XIAOMI_FAN_PRESET_NATURE,
+            XiaomiFanMode.SILENT,
+            XiaomiFanMode.NATURE,
+            XiaomiMiotFanMode.LEVEL_1,
         ],
         ModeCapabilityMode.LOW: [
-            const.XIAOMI_AIRPURIFIER_PRESET_LOW,
-            const.XIAOMI_FAN_PRESET_LEVEL_2,
+            XiaomiMiotFanMode.LEVEL_2,
         ],
         ModeCapabilityMode.MEDIUM: [
-            const.XIAOMI_HUMIDIFIER_PRESET_MID,
-            const.XIAOMI_FAN_PRESET_LEVEL_3,
+            XiaomiHumidifierMode.MID,
+            XiaomiMiotFanMode.LEVEL_3,
         ],
         ModeCapabilityMode.NORMAL: [
-            const.XIAOMI_FAN_PRESET_NORMAL,
-            const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
+            XiaomiFanMode.FAVORITE,
         ],
         ModeCapabilityMode.HIGH: [
-            const.XIAOMI_FAN_PRESET_LEVEL_4,
+            XiaomiMiotFanMode.LEVEL_4,
         ],
         ModeCapabilityMode.TURBO: [
-            const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
-            const.XIAOMI_FAN_PRESET_LEVEL_5,
+            XiaomiFanMode.STRONG,
+            XiaomiMiotFanMode.LEVEL_5,
         ],
     }
 
@@ -423,7 +534,7 @@ class InputSourceCapability(StateModeCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
-            if MediaPlayerFeature.SELECT_SOURCE in self._entity_config.get(const.CONF_FEATURES, []):
+            if MediaPlayerFeature.SELECT_SOURCE in self._entity_config.get(CONF_FEATURES, []):
                 return super().supported
 
             if self._state_features & media_player.MediaPlayerEntityFeature.SELECT_SOURCE:
@@ -477,43 +588,40 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
 
     _modes_map_default = {
         ModeCapabilityMode.AUTO: [
-            climate.const.FAN_AUTO,
-            climate.const.FAN_ON,
-            const.SMARTTHINQ_FAN_PRESET_NATURE,
+            climate.FAN_AUTO,
+            climate.FAN_ON,
+            XiaomiFanMode.NATURE,
         ],
         ModeCapabilityMode.QUIET: [
-            climate.const.FAN_OFF,
-            climate.const.FAN_DIFFUSE,
-            const.FAN_SPEED_QUIET,
+            climate.FAN_OFF,
+            climate.FAN_DIFFUSE,
         ],
         ModeCapabilityMode.MIN: [
-            const.TION_FAN_SPEED_1,
-            const.FAN_SPEED_LOW_MID,
+            TionFanSpeed.S1,
+            SmartThinQFanMode.LOW_MID,
         ],
         ModeCapabilityMode.LOW: [
-            climate.const.FAN_LOW,
-            const.FAN_SPEED_MIN,
-            const.TION_FAN_SPEED_2,
+            climate.FAN_LOW,
+            TionFanSpeed.S2,
         ],
         ModeCapabilityMode.MEDIUM: [
-            climate.const.FAN_MEDIUM,
-            climate.const.FAN_MIDDLE,
-            const.FAN_SPEED_MID,
-            const.TION_FAN_SPEED_3,
+            climate.FAN_MEDIUM,
+            climate.FAN_MIDDLE,
+            XiaomiHumidifierMode.MID,
+            TionFanSpeed.S3,
         ],
         ModeCapabilityMode.HIGH: [
-            climate.const.FAN_HIGH,
-            const.FAN_SPEED_MAX,
-            const.TION_FAN_SPEED_4,
+            climate.FAN_HIGH,
+            TionFanSpeed.S4,
         ],
         ModeCapabilityMode.TURBO: [
-            climate.const.FAN_FOCUS,
-            const.FAN_SPEED_HIGHEST,
-            const.TION_FAN_SPEED_5,
+            climate.FAN_FOCUS,
+            GenericMode.HIGHEST,
+            TionFanSpeed.S5,
         ],
         ModeCapabilityMode.MAX: [
-            const.TION_FAN_SPEED_6,
-            const.FAN_SPEED_MID_HIGH,
+            TionFanSpeed.S6,
+            SmartThinQFanMode.MID_HIGH,
         ],
     }
 
@@ -544,8 +652,8 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         modes = self.state.attributes.get(climate.ATTR_FAN_MODES, []) or []
 
         # esphome default state for some devices
-        if self._ha_value == climate.const.FAN_ON and climate.const.FAN_ON not in modes:
-            modes.append(climate.const.FAN_ON)
+        if self._ha_value == climate.FAN_ON and climate.FAN_ON not in modes:
+            modes.append(climate.FAN_ON)
 
         return modes
 
@@ -561,38 +669,33 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
 
     _modes_map_default = {
         ModeCapabilityMode.AUTO: [
-            climate.const.FAN_AUTO,
-            climate.const.FAN_ON,
+            climate.FAN_AUTO,
+            climate.FAN_ON,
         ],
         ModeCapabilityMode.ECO: [
-            const.XIAOMI_AIRPURIFIER_PRESET_IDLE,
+            XiaomiFanMode.IDLE,
         ],
         ModeCapabilityMode.QUIET: [
-            const.FAN_SPEED_OFF,
-            const.XIAOMI_AIRPURIFIER_PRESET_SILENT,
-            const.XIAOMI_FAN_PRESET_LEVEL_1,
+            climate.FAN_OFF,
+            XiaomiFanMode.SILENT,
+            XiaomiMiotFanMode.LEVEL_1,
         ],
         ModeCapabilityMode.LOW: [
-            const.FAN_SPEED_LOW,
-            const.FAN_SPEED_MIN,
-            const.XIAOMI_FAN_PRESET_LEVEL_2,
+            XiaomiMiotFanMode.LEVEL_2,
         ],
         ModeCapabilityMode.MEDIUM: [
-            const.FAN_SPEED_MEDIUM,
-            const.XIAOMI_HUMIDIFIER_PRESET_MID,
-            const.XIAOMI_FAN_PRESET_LEVEL_3,
+            XiaomiHumidifierMode.MID,
+            XiaomiMiotFanMode.LEVEL_3,
         ],
         ModeCapabilityMode.NORMAL: [
-            const.XIAOMI_AIRPURIFIER_PRESET_FAVORITE,
+            XiaomiFanMode.FAVORITE,
         ],
         ModeCapabilityMode.HIGH: [
-            const.FAN_SPEED_HIGH,
-            const.XIAOMI_FAN_PRESET_LEVEL_4,
+            XiaomiMiotFanMode.LEVEL_4,
         ],
         ModeCapabilityMode.TURBO: [
-            const.FAN_SPEED_MAX,
-            const.XIAOMI_AIRPURIFIER_PRESET_STRONG,
-            const.XIAOMI_FAN_PRESET_LEVEL_5,
+            XiaomiFanMode.STRONG,
+            XiaomiMiotFanMode.LEVEL_5,
         ],
     }
 
@@ -738,18 +841,37 @@ class CleanupModeCapability(StateModeCapability):
     instance = ModeCapabilityInstance.CLEANUP_MODE
 
     _modes_map_default = {
-        ModeCapabilityMode.ECO: [const.CLEANUP_MODE_OFF],
-        ModeCapabilityMode.AUTO: ["auto", "automatic", "102", const.CLEANUP_MODE_BALANCED],
-        ModeCapabilityMode.TURBO: [const.CLEANUP_MODE_TURBO, "high", "performance", "104", "full speed", "max+"],
-        ModeCapabilityMode.MIN: ["min", "mop"],
-        ModeCapabilityMode.LOW: ["gentle"],
-        ModeCapabilityMode.MAX: [const.CLEANUP_MODE_MAX, "strong"],
-        ModeCapabilityMode.FAST: [const.CLEANUP_MODE_MAX_PLUS],
-        ModeCapabilityMode.EXPRESS: ["express", "105"],
-        ModeCapabilityMode.MEDIUM: ["medium", "middle"],
-        ModeCapabilityMode.NORMAL: ["normal", "standard", "basic", "103"],
-        ModeCapabilityMode.QUIET: ["quiet", "low", "min", const.CLEANUP_MODE_SILENT, "eco", "101", "slient"],
-        ModeCapabilityMode.SMART: [const.CLEANUP_MODE_MAX_PLUS],
+        ModeCapabilityMode.ECO: [
+            RoborockCleanupMode.OFF,
+        ],
+        ModeCapabilityMode.AUTO: [
+            RoombaCleanupMode.AUTOMATIC,
+            RoborockCleanupMode.BALANCED,
+        ],
+        ModeCapabilityMode.TURBO: [
+            GenericMode.MAX_PLUS_SIGN,
+            RoborockCleanupMode.TURBO,
+            RoombaCleanupMode.PERFORMANCE,
+            XiaomiMiotCleanupMode.FULL_SPEED,
+        ],
+        ModeCapabilityMode.LOW: [
+            GenericMode.GENTLE,
+        ],
+        ModeCapabilityMode.MAX: [
+            RoborockCleanupMode.MAX,
+            XiaomiMiotCleanupMode.STRONG,
+        ],
+        ModeCapabilityMode.FAST: [
+            RoborockCleanupMode.MAX_PLUS,
+        ],
+        ModeCapabilityMode.NORMAL: [
+            RoombaCleanupMode.STANDARD,
+            XiaomiMiotCleanupMode.BASIC,
+        ],
+        ModeCapabilityMode.QUIET: [
+            RoborockCleanupMode.SILENT,
+            RoombaCleanupMode.ECO,
+        ],
     }
 
     @property
