@@ -66,6 +66,22 @@ class RangeCapabilityParameters(APIModel):
 
         return values
 
+    @root_validator
+    def validate_range(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """Force range boundaries for a capability instance."""
+
+        r: RangeCapabilityRange | None
+        if r := values.get("range"):
+            match values.get("instance"):
+                case RangeCapabilityInstance.HUMIDITY | RangeCapabilityInstance.OPEN:
+                    r.min, r.max = max([0.0, r.min]), min([100.0, r.max])
+                case RangeCapabilityInstance.BRIGHTNESS:
+                    r.min = max(min(r.min, 1.0), 0.0)
+                    r.max = 100.0
+                    r.precision = 1.0
+
+        return values
+
 
 class RangeCapabilityInstanceActionState(APIModel):
     """New value for a range capability."""

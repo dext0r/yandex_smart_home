@@ -1,4 +1,6 @@
-from typing import Any, cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -41,6 +43,9 @@ from custom_components.yandex_smart_home.schema import (
 )
 
 from . import BASIC_ENTRY_DATA, MockConfigEntryData
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
 
 
 class MockCapability(CustomCapability):
@@ -741,3 +746,43 @@ async def test_capability_custom_range_no_service(hass):
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10),
         )
+
+
+@pytest.mark.parametrize(
+    "instance,config_range,expected_range",
+    [
+        [RangeCapabilityInstance.BRIGHTNESS, (1, 100), (1, 100)],
+        [RangeCapabilityInstance.BRIGHTNESS, (0, 100), (0, 100)],
+        [RangeCapabilityInstance.BRIGHTNESS, (2, 99), (1, 100)],
+        [RangeCapabilityInstance.BRIGHTNESS, (-10, 150), (0, 100)],
+        [RangeCapabilityInstance.HUMIDITY, (5, 50), (5, 50)],
+        [RangeCapabilityInstance.HUMIDITY, (-10, 150), (0, 100)],
+        [RangeCapabilityInstance.OPEN, (5, 50), (5, 50)],
+        [RangeCapabilityInstance.OPEN, (-10, 150), (0, 100)],
+    ],
+)
+async def test_capability_custom_range_parameters_range(
+    hass: HomeAssistant,
+    instance: RangeCapabilityInstance,
+    config_range: tuple[int, int],
+    expected_range: tuple[int, int],
+) -> None:
+    cap = cast(
+        CustomRangeCapability,
+        get_custom_capability(
+            hass,
+            BASIC_ENTRY_DATA,
+            {
+                const.CONF_ENTITY_RANGE: {
+                    const.CONF_ENTITY_RANGE_MIN: config_range[0],
+                    const.CONF_ENTITY_RANGE_MAX: config_range[1],
+                    const.CONF_ENTITY_RANGE_PRECISION: 1,
+                },
+            },
+            CapabilityType.RANGE,
+            instance,
+            "foo",
+        ),
+    )
+    assert cap.supported is True
+    assert (cap.parameters.range.min, cap.parameters.range.max) == expected_range
