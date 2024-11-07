@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 import logging
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.components.sensor.const import SensorDeviceClass
 from homeassistant.util.color import RGBColor
 import voluptuous as vol
 
@@ -54,11 +56,22 @@ def property_type(value: str) -> str:
             )
 
     for enum in [FloatPropertyInstance, EventPropertyInstance]:
-        try:
-            enum(value)
-            return value
-        except ValueError:
-            pass
+        with suppress(ValueError):
+            return enum(value).value
+
+    device_class_to_float_instance = {
+        SensorDeviceClass.ATMOSPHERIC_PRESSURE.value: FloatPropertyInstance.PRESSURE,
+        SensorDeviceClass.CO2.value: FloatPropertyInstance.CO2_LEVEL,
+        SensorDeviceClass.CURRENT.value: FloatPropertyInstance.AMPERAGE,
+        SensorDeviceClass.ILLUMINANCE.value: FloatPropertyInstance.ILLUMINATION,
+        SensorDeviceClass.PM1.value: FloatPropertyInstance.PM1_DENSITY,
+        SensorDeviceClass.PM10.value: FloatPropertyInstance.PM10_DENSITY,
+        SensorDeviceClass.PM25.value: FloatPropertyInstance.PM2_5_DENSITY,
+        SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS.value: FloatPropertyInstance.TVOC,
+    }
+    with suppress(KeyError):
+        instance = device_class_to_float_instance[value]
+        return f"{PropertyInstanceType.FLOAT}.{instance}"
 
     raise vol.Invalid(
         f"Property type '{value}' is not supported, "

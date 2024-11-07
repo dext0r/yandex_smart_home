@@ -419,3 +419,38 @@ yandex_smart_home:
         caplog.clear()
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert "state_entity_id/state_attribute and state_template are mutually exclusive" in caplog.messages[-1]
+
+
+async def test_property_type_from_device_class(hass: HomeAssistant) -> None:
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    sensor.test:
+      properties:
+        - type: carbon_dioxide
+          entity: sensor.test
+        - type: current
+          entity: sensor.test
+        - type: pm25
+          entity: sensor.test
+"""
+    }
+    with patch_yaml_files(files):
+        config = await async_integration_yaml_config(hass, DOMAIN)
+        properties = config[DOMAIN]["entity_config"]["sensor.test"]["properties"]
+
+        assert properties == [
+            {
+                "entity": "sensor.test",
+                "type": "float.co2_level",
+            },
+            {
+                "entity": "sensor.test",
+                "type": "float.amperage",
+            },
+            {
+                "entity": "sensor.test",
+                "type": "float.pm2.5_density",
+            },
+        ]
