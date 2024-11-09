@@ -287,7 +287,6 @@ class StateModeCapability(ModeCapability, StateCapability[ModeCapabilityInstance
         return self.state.state
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class ThermostatCapability(StateModeCapability):
     """Capability to control mode of a climate device."""
 
@@ -328,7 +327,6 @@ class ThermostatCapability(StateModeCapability):
         return self.state.attributes.get(climate.ATTR_HVAC_MODES, []) or []
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class SwingCapability(StateModeCapability):
     """Capability to control swing mode of a climate device."""
 
@@ -379,7 +377,6 @@ class ProgramCapability(StateModeCapability, ABC):
     instance = ModeCapabilityInstance.PROGRAM
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class ProgramCapabilityHumidifier(ProgramCapability):
     """Capability to control the mode of a humidifier device."""
 
@@ -455,7 +452,6 @@ class ProgramCapabilityHumidifier(ProgramCapability):
         return self.state.attributes.get(humidifier.ATTR_MODE)
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class ProgramCapabilityFan(ProgramCapability):
     """Capability to control the mode preset of a fan device."""
 
@@ -524,7 +520,6 @@ class ProgramCapabilityFan(ProgramCapability):
         return self.state.attributes.get(fan.ATTR_PRESET_MODE)
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class InputSourceCapability(StateModeCapability):
     """Capability to control the input source of a media player device."""
 
@@ -582,7 +577,6 @@ class FanSpeedCapability(StateModeCapability, ABC):
     instance = ModeCapabilityInstance.FAN_SPEED
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class FanSpeedCapabilityClimate(FanSpeedCapability):
     """Capability to control the fan speed of a climate device."""
 
@@ -663,7 +657,6 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
         return self.state.attributes.get(climate.ATTR_FAN_MODE)
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
     """Capability to control the fan speed of a fan device via preset."""
 
@@ -738,7 +731,6 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
         return self.state.attributes.get(fan.ATTR_PRESET_MODE)
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
     """Capability to control the fan speed in percents of a fan device."""
 
@@ -834,7 +826,6 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
             raise APIError(ResponseCode.INVALID_VALUE, f"Unsupported speed value '{value}' for {self}")
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class CleanupModeCapability(StateModeCapability):
     """Capability to control the program of a vacuum."""
 
@@ -904,3 +895,14 @@ class CleanupModeCapability(StateModeCapability):
     def _ha_value(self) -> Any:
         """Return the current unmapped capability value."""
         return self.state.attributes.get(vacuum.ATTR_FAN_SPEED)
+
+
+STATE_CAPABILITIES_REGISTRY.register(ThermostatCapability)
+STATE_CAPABILITIES_REGISTRY.register(SwingCapability)
+STATE_CAPABILITIES_REGISTRY.register(ProgramCapabilityHumidifier)
+STATE_CAPABILITIES_REGISTRY.register(ProgramCapabilityFan)
+STATE_CAPABILITIES_REGISTRY.register(InputSourceCapability)
+STATE_CAPABILITIES_REGISTRY.register(FanSpeedCapabilityClimate)
+STATE_CAPABILITIES_REGISTRY.register(FanSpeedCapabilityFanViaPreset)
+STATE_CAPABILITIES_REGISTRY.register(FanSpeedCapabilityFanViaPercentage)
+STATE_CAPABILITIES_REGISTRY.register(CleanupModeCapability)

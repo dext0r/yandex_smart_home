@@ -326,7 +326,6 @@ class StateEventProperty(StateProperty, EventProperty[Any], Protocol):
         return self.state.state
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class OpenStateEventProperty(StateEventProperty, OpenEventProperty):
     """Represents the state event property that detect opening of something."""
 
@@ -341,7 +340,6 @@ class OpenStateEventProperty(StateEventProperty, OpenEventProperty):
         )
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class MotionStateEventProperty(StateEventProperty, MotionEventProperty):
     """Represents the state event property that detect motion, presence or occupancy."""
 
@@ -355,7 +353,6 @@ class MotionStateEventProperty(StateEventProperty, MotionEventProperty):
         )
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class GasStateEventProperty(StateEventProperty, GasEventProperty):
     """Represents the state event property that detect gas presence."""
 
@@ -365,7 +362,6 @@ class GasStateEventProperty(StateEventProperty, GasEventProperty):
         return self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.GAS
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class SmokeStateEventProperty(StateEventProperty, SmokeEventProperty):
     """Represents the state event property that detect smoke presence."""
 
@@ -375,7 +371,6 @@ class SmokeStateEventProperty(StateEventProperty, SmokeEventProperty):
         return self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.SMOKE
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class BatteryLevelStateEvent(StateEventProperty, BatteryLevelEventProperty):
     """Represents the state event property that detect low level of a battery."""
 
@@ -385,7 +380,6 @@ class BatteryLevelStateEvent(StateEventProperty, BatteryLevelEventProperty):
         return self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.BATTERY
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class WaterLeakStateEventProperty(StateEventProperty, WaterLeakEventProperty):
     """Represents the state event property that detect water leakage."""
 
@@ -397,7 +391,6 @@ class WaterLeakStateEventProperty(StateEventProperty, WaterLeakEventProperty):
         )
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class ButtonPressStateEventProperty(StateEventProperty, ButtonPressEventProperty):
     """Represents the state property that detect a button interaction."""
 
@@ -424,7 +417,6 @@ class ButtonPressStateEventProperty(StateEventProperty, ButtonPressEventProperty
         return False
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class VibrationStateEventProperty(StateEventProperty, VibrationEventProperty):
     """Represents the state event property that detect vibration."""
 
@@ -439,3 +431,13 @@ class VibrationStateEventProperty(StateEventProperty, VibrationEventProperty):
             return self.state.attributes.get("action") in self._supported_native_values
 
         return False
+
+
+STATE_PROPERTIES_REGISTRY.register(OpenStateEventProperty)
+STATE_PROPERTIES_REGISTRY.register(MotionStateEventProperty)
+STATE_PROPERTIES_REGISTRY.register(GasStateEventProperty)
+STATE_PROPERTIES_REGISTRY.register(SmokeStateEventProperty)
+STATE_PROPERTIES_REGISTRY.register(BatteryLevelStateEvent)
+STATE_PROPERTIES_REGISTRY.register(WaterLeakStateEventProperty)
+STATE_PROPERTIES_REGISTRY.register(ButtonPressStateEventProperty)
+STATE_PROPERTIES_REGISTRY.register(VibrationStateEventProperty)

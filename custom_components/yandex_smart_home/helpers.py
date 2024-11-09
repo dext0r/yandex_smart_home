@@ -130,13 +130,10 @@ class DictRegistry(dict[str, _HasInstanceT]):
         return obj
 
 
-_TypeT = TypeVar("_TypeT", bound=type[Any])
-
-
-class ListRegistry(list[_TypeT]):
+class ListRegistry[_T](list[_T]):
     """List Registry of items."""
 
-    def register(self, obj: _TypeT) -> _TypeT:
+    def register(self, obj: _T) -> _T:
         """Register decorated type."""
         self.append(obj)
         return obj

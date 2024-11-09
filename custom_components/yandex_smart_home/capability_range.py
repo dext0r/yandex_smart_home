@@ -153,7 +153,6 @@ class StateRangeCapability(RangeCapability, StateCapability[RangeCapabilityInsta
         return max(min(value + relative_value, self._range.max), self._range.min)
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class CoverPositionCapability(StateRangeCapability):
     """Capability to control position of a cover."""
 
@@ -195,7 +194,6 @@ class TemperatureCapability(StateRangeCapability, ABC):
         return True
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class TemperatureCapabilityWaterHeater(TemperatureCapability):
     """Capability to control a water heater target temperature."""
 
@@ -230,7 +228,6 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class TemperatureCapabilityClimate(TemperatureCapability):
     """Capability to control a climate device target temperature."""
 
@@ -276,7 +273,6 @@ class HumidityCapability(StateRangeCapability, ABC):
         return True
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class HumidityCapabilityHumidifier(HumidityCapability):
     """Capability to control a humidifier target humidity."""
 
@@ -309,7 +305,6 @@ class HumidityCapabilityHumidifier(HumidityCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class HumidityCapabilityXiaomiFan(HumidityCapability):
     """Capability to control a Xiaomi fan target humidity."""
 
@@ -338,7 +333,6 @@ class HumidityCapabilityXiaomiFan(HumidityCapability):
         return self._convert_to_float(self.state.attributes.get(ATTR_TARGET_HUMIDITY))
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class BrightnessCapability(StateRangeCapability):
     """Capability to control brightness of a device."""
 
@@ -389,7 +383,6 @@ class BrightnessCapability(StateRangeCapability):
         return RangeCapabilityRange(min=1, max=100, precision=1)
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class VolumeCapability(StateRangeCapability):
     """Capability to control volume of a device."""
 
@@ -479,7 +472,6 @@ class VolumeCapability(StateRangeCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class ChannelCapability(StateRangeCapability):
     """Capability to control media playback state."""
 
@@ -595,7 +587,6 @@ class ChannelCapability(StateRangeCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class ValvePositionCapability(StateRangeCapability):
     """Capability to control position of a device."""
 
@@ -624,3 +615,14 @@ class ValvePositionCapability(StateRangeCapability):
     def _get_value(self) -> float | None:
         """Return the current capability value (unguarded)."""
         return self._convert_to_float(self.state.attributes.get(valve.ATTR_CURRENT_POSITION))
+
+
+STATE_CAPABILITIES_REGISTRY.register(CoverPositionCapability)
+STATE_CAPABILITIES_REGISTRY.register(TemperatureCapabilityWaterHeater)
+STATE_CAPABILITIES_REGISTRY.register(TemperatureCapabilityClimate)
+STATE_CAPABILITIES_REGISTRY.register(HumidityCapabilityHumidifier)
+STATE_CAPABILITIES_REGISTRY.register(HumidityCapabilityXiaomiFan)
+STATE_CAPABILITIES_REGISTRY.register(BrightnessCapability)
+STATE_CAPABILITIES_REGISTRY.register(VolumeCapability)
+STATE_CAPABILITIES_REGISTRY.register(ChannelCapability)
+STATE_CAPABILITIES_REGISTRY.register(ValvePositionCapability)

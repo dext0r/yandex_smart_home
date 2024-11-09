@@ -124,7 +124,6 @@ class OnlyOnCapability(ActionOnlyCapabilityMixin, OnOffCapability, ABC):
         return None
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityBasic(OnOffCapability):
     """Capability to turn on or off a device."""
 
@@ -144,7 +143,6 @@ class OnOffCapabilityBasic(OnOffCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityAutomation(OnOffCapability):
     """Capability to enable or disable an automation."""
 
@@ -168,7 +166,6 @@ class OnOffCapabilityAutomation(OnOffCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityGroup(OnOffCapability):
     """Capability to turn on or off a group of devices."""
 
@@ -188,7 +185,6 @@ class OnOffCapabilityGroup(OnOffCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityScript(OnlyOnCapability):
     """Capability to call a script or scene."""
 
@@ -208,7 +204,6 @@ class OnOffCapabilityScript(OnlyOnCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityButton(OnlyOnCapability):
     """Capability to press a button."""
 
@@ -228,7 +223,6 @@ class OnOffCapabilityButton(OnlyOnCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityInputButton(OnlyOnCapability):
     """Capability to press a input_button."""
 
@@ -248,7 +242,6 @@ class OnOffCapabilityInputButton(OnlyOnCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityLock(OnOffCapability):
     """Capability to lock or unlock a lock."""
 
@@ -276,7 +269,6 @@ class OnOffCapabilityLock(OnOffCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityCover(OnOffCapability):
     """Capability to open or close a cover."""
 
@@ -301,7 +293,6 @@ class OnOffCapabilityCover(OnOffCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityRemote(ActionOnlyCapabilityMixin, OnOffCapability):
     """Capability to turn on or off a remote."""
 
@@ -326,7 +317,6 @@ class OnOffCapabilityRemote(ActionOnlyCapabilityMixin, OnOffCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityMediaPlayer(OnOffCapability):
     """Capability to turn on or off a media player device."""
 
@@ -358,7 +348,6 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityVacuum(OnOffCapability):
     """Capability to start or stop cleaning by a vacuum."""
 
@@ -410,7 +399,6 @@ class OnOffCapabilityVacuum(OnOffCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityClimate(OnOffCapability):
     """Capability to turn on or off a climate device."""
 
@@ -444,7 +432,6 @@ class OnOffCapabilityClimate(OnOffCapability):
         await self._hass.services.async_call(climate.DOMAIN, service, service_data, blocking=True, context=context)
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityWaterHeater(OnOffCapability):
     """Capability to turn on or off a water heater."""
 
@@ -511,7 +498,6 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
         return None
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OnOffCapabilityValve(OnOffCapability):
     """Capability to open or close a valve."""
 
@@ -534,3 +520,19 @@ class OnOffCapabilityValve(OnOffCapability):
         await self._hass.services.async_call(
             valve.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
         )
+
+
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityBasic)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityAutomation)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityGroup)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityScript)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityButton)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityInputButton)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityLock)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityCover)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityRemote)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityMediaPlayer)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityVacuum)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityClimate)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityWaterHeater)
+STATE_CAPABILITIES_REGISTRY.register(OnOffCapabilityValve)

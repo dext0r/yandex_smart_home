@@ -475,7 +475,6 @@ class BatteryLevelPercentageProperty(FloatProperty, Protocol):
         return BatteryLevelFloatPropertyParameters()
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class TemperatureSensor(StateProperty, TemperatureProperty):
     """Representaton of the state as a temperature sensor."""
 
@@ -511,7 +510,6 @@ class TemperatureSensor(StateProperty, TemperatureProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfTemperature.CELSIUS))
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class HumiditySensor(StateProperty, HumidityProperty):
     """Representaton of the state as a humidity sensor."""
 
@@ -539,7 +537,6 @@ class HumiditySensor(StateProperty, HumidityProperty):
         return self.state.state
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class PressureSensor(StateProperty, PressureProperty):
     """Representaton of the state as a pressure sensor."""
 
@@ -561,7 +558,6 @@ class PressureSensor(StateProperty, PressureProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfPressure.MMHG))
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class IlluminationSensor(StateProperty, IlluminationProperty):
     """Representaton of the state as a illumination sensor."""
 
@@ -584,7 +580,6 @@ class IlluminationSensor(StateProperty, IlluminationProperty):
         return self.state.attributes.get(const.ATTR_ILLUMINANCE)
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class WaterLevelPercentageSensor(StateProperty, WaterLevelPercentageProperty):
     """Representaton of the state as a water level sensor."""
 
@@ -601,7 +596,6 @@ class WaterLevelPercentageSensor(StateProperty, WaterLevelPercentageProperty):
         return self.state.attributes.get(const.ATTR_WATER_LEVEL)
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class CO2LevelSensor(StateProperty, CO2LevelProperty):
     """Representaton of the state as a CO2 level sensor."""
 
@@ -624,7 +618,6 @@ class CO2LevelSensor(StateProperty, CO2LevelProperty):
         return self.state.attributes.get(air_quality.ATTR_CO2)
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class ElectricityMeterSensor(StateProperty, ElectricityMeterProperty):
     """Representaton of the state as a electricity meter sensor."""
 
@@ -643,7 +636,6 @@ class ElectricityMeterSensor(StateProperty, ElectricityMeterProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfEnergy.KILO_WATT_HOUR))
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class GasMeterSensor(StateProperty, GasMeterProperty):
     """Representaton of the state as a gas meter sensor."""
 
@@ -662,7 +654,6 @@ class GasMeterSensor(StateProperty, GasMeterProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfVolume.CUBIC_METERS))
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class WaterMeterSensor(StateProperty, WaterMeterProperty):
     """Representaton of the state as a water meter sensor."""
 
@@ -681,7 +672,6 @@ class WaterMeterSensor(StateProperty, WaterMeterProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfVolume.CUBIC_METERS))
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class PM1DensitySensor(StateProperty, PM1DensityProperty):
     """Representaton of the state as a PM1 density sensor."""
 
@@ -711,7 +701,6 @@ class PM1DensitySensor(StateProperty, PM1DensityProperty):
         return self.state.attributes.get(air_quality.ATTR_PM_0_1)
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class PM25DensitySensor(StateProperty, PM25DensityProperty):
     """Representaton of the state as a PM2.5 density sensor."""
 
@@ -734,7 +723,6 @@ class PM25DensitySensor(StateProperty, PM25DensityProperty):
         return self.state.attributes.get(air_quality.ATTR_PM_2_5)
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class PM10DensitySensor(StateProperty, PM10DensityProperty):
     """Representaton of the state as a PM10 density sensor."""
 
@@ -757,7 +745,6 @@ class PM10DensitySensor(StateProperty, PM10DensityProperty):
         return self.state.attributes.get(air_quality.ATTR_PM_10)
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class TVOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
     """Representaton of the state as a TVOC concentration sensor."""
 
@@ -791,7 +778,6 @@ class TVOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
         return None
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class VOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
     """Representaton of the state as a VOC concentration sensor."""
 
@@ -808,7 +794,6 @@ class VOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
         return self.state.state
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class VoltageSensor(StateProperty, VoltageProperty):
     """Representaton of the state as a voltage sensor."""
 
@@ -839,7 +824,6 @@ class VoltageSensor(StateProperty, VoltageProperty):
         return None
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class ElectricCurrentSensor(StateProperty, ElectricCurrentProperty):
     """Representaton of the state as a electric current sensor."""
 
@@ -870,7 +854,6 @@ class ElectricCurrentSensor(StateProperty, ElectricCurrentProperty):
         return None
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class ElectricPowerSensor(StateProperty, ElectricPowerProperty):
     """Representaton of the state as a electric power sensor."""
 
@@ -905,7 +888,6 @@ class ElectricPowerSensor(StateProperty, ElectricPowerProperty):
         return None
 
 
-@STATE_PROPERTIES_REGISTRY.register
 class BatteryLevelPercentageSensor(StateProperty, BatteryLevelPercentageProperty):
     """Representaton of the state as battery level sensor."""
 
@@ -932,3 +914,23 @@ class BatteryLevelPercentageSensor(StateProperty, BatteryLevelPercentageProperty
             return 0
 
         return value
+
+
+STATE_PROPERTIES_REGISTRY.register(TemperatureSensor)
+STATE_PROPERTIES_REGISTRY.register(HumiditySensor)
+STATE_PROPERTIES_REGISTRY.register(PressureSensor)
+STATE_PROPERTIES_REGISTRY.register(IlluminationSensor)
+STATE_PROPERTIES_REGISTRY.register(WaterLevelPercentageSensor)
+STATE_PROPERTIES_REGISTRY.register(CO2LevelSensor)
+STATE_PROPERTIES_REGISTRY.register(ElectricityMeterSensor)
+STATE_PROPERTIES_REGISTRY.register(GasMeterSensor)
+STATE_PROPERTIES_REGISTRY.register(WaterMeterSensor)
+STATE_PROPERTIES_REGISTRY.register(PM1DensitySensor)
+STATE_PROPERTIES_REGISTRY.register(PM25DensitySensor)
+STATE_PROPERTIES_REGISTRY.register(PM10DensitySensor)
+STATE_PROPERTIES_REGISTRY.register(TVOCConcentrationSensor)
+STATE_PROPERTIES_REGISTRY.register(VOCConcentrationSensor)
+STATE_PROPERTIES_REGISTRY.register(VoltageSensor)
+STATE_PROPERTIES_REGISTRY.register(ElectricCurrentSensor)
+STATE_PROPERTIES_REGISTRY.register(ElectricPowerSensor)
+STATE_PROPERTIES_REGISTRY.register(BatteryLevelPercentageSensor)

@@ -37,7 +37,6 @@ if TYPE_CHECKING:
     from . import YandexSmartHome
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStreamInstanceActionState]):
     """Capability to stream from cameras."""
 
@@ -102,3 +101,6 @@ class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStream
         stream.endpoint_url(StreamType.HLS)
 
         return stream
+
+
+STATE_CAPABILITIES_REGISTRY.register(VideoStreamCapability)

@@ -37,7 +37,6 @@ class StateToggleCapability(ToggleCapability, StateCapability[ToggleCapabilityIn
     pass
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class MuteCapability(StateToggleCapability):
     """Capability to mute and unmute device."""
 
@@ -75,7 +74,6 @@ class MuteCapability(StateToggleCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class PauseCapabilityMediaPlayer(StateToggleCapability):
     """Capability to pause and resume media player playback."""
 
@@ -112,7 +110,6 @@ class PauseCapabilityMediaPlayer(StateToggleCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class PauseCapabilityCover(ActionOnlyCapabilityMixin, StateToggleCapability):
     """Capability to stop a cover."""
 
@@ -134,7 +131,6 @@ class PauseCapabilityCover(ActionOnlyCapabilityMixin, StateToggleCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class PauseCapabilityVacuum(StateToggleCapability):
     """Capability to stop a vacuum."""
 
@@ -161,7 +157,6 @@ class PauseCapabilityVacuum(StateToggleCapability):
         )
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class OscillationCapability(StateToggleCapability):
     """Capability to control fan oscillation."""
 
@@ -185,3 +180,10 @@ class OscillationCapability(StateToggleCapability):
             blocking=True,
             context=context,
         )
+
+
+STATE_CAPABILITIES_REGISTRY.register(MuteCapability)
+STATE_CAPABILITIES_REGISTRY.register(PauseCapabilityMediaPlayer)
+STATE_CAPABILITIES_REGISTRY.register(PauseCapabilityCover)
+STATE_CAPABILITIES_REGISTRY.register(PauseCapabilityVacuum)
+STATE_CAPABILITIES_REGISTRY.register(OscillationCapability)

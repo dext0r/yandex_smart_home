@@ -37,7 +37,6 @@ if TYPE_CHECKING:
     from .entry_data import ConfigEntryData
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActionState]):
     """Capability to discover another color_setting capabilities.
 
@@ -100,7 +99,6 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
         return [self._color, self._temperature, self._scene]
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class RGBColorCapability(StateCapability[RGBInstanceActionState]):
     """Capability to control color of a light device."""
 
@@ -188,7 +186,6 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
         return ColorConverter()
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState]):
     """Capability to control color temperature of a light device."""
 
@@ -399,7 +396,6 @@ class ColorSceneCapability(Capability[SceneInstanceActionState]):
         ...
 
 
-@STATE_CAPABILITIES_REGISTRY.register
 class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInstanceActionState]):
     """Capability to control effect of a light device."""
 
@@ -456,3 +452,9 @@ class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInsta
             blocking=True,
             context=context,
         )
+
+
+STATE_CAPABILITIES_REGISTRY.register(ColorSettingCapability)
+STATE_CAPABILITIES_REGISTRY.register(RGBColorCapability)
+STATE_CAPABILITIES_REGISTRY.register(ColorTemperatureCapability)
+STATE_CAPABILITIES_REGISTRY.register(ColorSceneStateCapability)
