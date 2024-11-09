@@ -24,6 +24,32 @@
         "panel": "new"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Tox: all",
+      "type": "shell",
+      "command": "${command:python.interpreterPath} -m tox",
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Tox: type",
+      "type": "shell",
+      "command": "${command:python.interpreterPath} -m tox -e type",
+      "group": {
+        "kind": "test"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "problemMatcher": []
     }
   ]
 }
