@@ -1,3 +1,4 @@
+# pyright: reportOptionalMemberAccess=false
 from typing import cast
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
@@ -906,6 +907,8 @@ async def test_capability_mode_unique_modes():
             for ha_mode in ha_modes:
                 ha_mode = ha_mode.lower()
                 if ha_mode in seen and ha_mode != ya_mode:
-                    pytest.fail(f"mode {ya_mode}:{ha_mode} already used for {seen[ha_mode]} of {capability.__name__}")
+                    pytest.fail(
+                        f"mode {ya_mode}:{ha_mode} already used for {seen[ha_mode]} of {capability.__class__.__name__}"
+                    )
 
                 seen[ha_mode] = ya_mode

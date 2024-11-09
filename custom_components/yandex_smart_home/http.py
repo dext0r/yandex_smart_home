@@ -141,6 +141,7 @@ class YandexSmartHomeAPIView(YandexSmartHomeView):
 
     async def _async_handle_request(self, hass: HomeAssistant, request: Request, data: RequestData) -> Response:
         """Handle Yandex Smart Home requests."""
+        assert self.url is not None
         result = await handlers.async_handle_request(
             hass, data, action=request.path.replace(self.url, "", 1), payload=await request.text()
         )

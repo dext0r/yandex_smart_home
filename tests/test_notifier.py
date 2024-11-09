@@ -1,3 +1,4 @@
+# pyright: reportOptionalMemberAccess=false
 import asyncio
 import json
 import logging

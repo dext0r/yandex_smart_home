@@ -78,10 +78,10 @@ class DeviceType(StrEnum):
 class DeviceInfo(APIModel):
     """Extended device info."""
 
-    manufacturer: str | None
-    model: str | None
-    hw_version: str | None
-    sw_version: str | None
+    manufacturer: str | None = None
+    model: str | None = None
+    hw_version: str | None = None
+    sw_version: str | None = None
 
 
 class DeviceDescription(APIModel):
@@ -89,22 +89,22 @@ class DeviceDescription(APIModel):
 
     id: str
     name: str
-    description: str | None
-    room: str | None
+    description: str | None = None
+    room: str | None = None
     type: DeviceType
-    capabilities: list[CapabilityDescription] | None
-    properties: list[PropertyDescription] | None
-    device_info: DeviceInfo | None
+    capabilities: list[CapabilityDescription] | None = None
+    properties: list[PropertyDescription] | None = None
+    device_info: DeviceInfo | None = None
 
 
 class DeviceState(APIModel):
     """Device state for a state query request."""
 
     id: str
-    capabilities: list[CapabilityInstanceState] | None
-    properties: list[PropertyInstanceState] | None
-    error_code: ResponseCode | None
-    error_message: str | None
+    capabilities: list[CapabilityInstanceState] | None = None
+    properties: list[PropertyInstanceState] | None = None
+    error_code: ResponseCode | None = None
+    error_message: str | None = None
 
 
 class DeviceList(ResponsePayload):
@@ -124,7 +124,7 @@ class StatesRequestDevice(APIModel):
     """Device for a state query request."""
 
     id: str
-    custom_data: dict[str, Any] | None
+    custom_data: dict[str, Any] | None = None
 
 
 class StatesRequest(APIModel):
@@ -169,7 +169,7 @@ class ActionResultCapabilityState(APIModel):
     """Result of capability instance state change."""
 
     instance: CapabilityInstance
-    value: CapabilityInstanceActionResultValue | None
+    value: CapabilityInstanceActionResultValue | None = None
     action_result: SuccessActionResult | FailedActionResult
 
 
@@ -184,8 +184,8 @@ class ActionResultDevice(APIModel):
     """Device for a state change response."""
 
     id: str
-    capabilities: list[ActionResultCapability] | None
-    action_result: FailedActionResult | SuccessActionResult | None
+    capabilities: list[ActionResultCapability] | None = None
+    action_result: FailedActionResult | SuccessActionResult | None = None
 
 
 class ActionResult(ResponsePayload):

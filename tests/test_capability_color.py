@@ -1,3 +1,4 @@
+# pyright: reportOptionalMemberAccess=false
 from typing import cast
 
 from homeassistant.components import light
@@ -11,6 +12,7 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_color import (
     ColorSceneCapability,
+    ColorSceneStateCapability,
     ColorSettingCapability,
     ColorTemperatureCapability,
     RGBColorCapability,
@@ -847,7 +849,7 @@ async def test_capability_color_setting_scene(hass):
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
     cap_scene = cast(
-        ColorSceneCapability,
+        ColorSceneStateCapability,
         get_exact_one_capability(
             hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE
         ),

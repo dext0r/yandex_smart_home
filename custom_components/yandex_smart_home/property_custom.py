@@ -68,6 +68,10 @@ if TYPE_CHECKING:
 class CustomProperty(Property, Protocol):
     """Base class for a property that user can set up using yaml configuration."""
 
+    device_id: str
+
+    _hass: HomeAssistant
+    _entry_data: ConfigEntryData
     _config: ConfigType
     _value_template: Template
 

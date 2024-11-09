@@ -1,5 +1,7 @@
 """Implement the Yandex Smart Home video_stream capabilities."""
 
+# pyright: reportAttributeAccessIssue=information
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

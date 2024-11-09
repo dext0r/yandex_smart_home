@@ -255,7 +255,7 @@ class OnOffCapabilityLock(OnOffCapability):
         if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
             return bool(self.state.state == lock.LockState.UNLOCKED)
         else:
-            return bool(self.state.state == lock.STATE_UNLOCKED)  # pragma: no cover
+            return bool(self.state.state == lock.STATE_UNLOCKED)  # pyright: ignore[reportAttributeAccessIssue]
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""

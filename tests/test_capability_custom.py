@@ -1,3 +1,4 @@
+# pyright: reportOptionalMemberAccess=false
 from typing import Any, cast
 
 from homeassistant.const import (

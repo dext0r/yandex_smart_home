@@ -1,3 +1,4 @@
+# pyright: reportOptionalMemberAccess=false
 import json
 from unittest.mock import Mock, patch
 
@@ -13,6 +14,7 @@ from custom_components.yandex_smart_home.capability_toggle import StateToggleCap
 from custom_components.yandex_smart_home.const import DOMAIN, EVENT_DEVICE_ACTION
 from custom_components.yandex_smart_home.helpers import APIError, RequestData, SmartHomePlatform
 from custom_components.yandex_smart_home.schema import (
+    CapabilityInstanceActionResultValue,
     CapabilityType,
     GetStreamInstanceActionResultValue,
     OnOffCapabilityInstance,
@@ -220,7 +222,9 @@ async def test_handler_devices_action(hass, caplog):
         def get_value(self) -> bool | None:
             return None
 
-        async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
+        async def set_instance_state(
+            self, context: Context, state: ToggleCapabilityInstanceActionState
+        ) -> CapabilityInstanceActionResultValue:
             pass
 
     class MockCapabilityA(MockCapability):
@@ -229,7 +233,9 @@ async def test_handler_devices_action(hass, caplog):
     class MockCapabilityReturnState(MockCapability):
         instance = ToggleCapabilityInstance.BACKLIGHT
 
-        async def set_instance_state(self, *_, **__):
+        async def set_instance_state(
+            self, context: Context, state: ToggleCapabilityInstanceActionState
+        ) -> CapabilityInstanceActionResultValue:
             return GetStreamInstanceActionResultValue(stream_url="foo", protocol="hls")
 
     class MockCapabilityFail(MockCapability):

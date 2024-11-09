@@ -1,3 +1,4 @@
+# pyright: reportOptionalMemberAccess=false
 from typing import cast
 
 from homeassistant.components import (
@@ -20,6 +21,7 @@ from homeassistant.components import (
     valve,
     water_heater,
 )
+from homeassistant.components.climate import HVACMode
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_SUPPORTED_FEATURES,
@@ -334,7 +336,7 @@ async def test_capability_onoff_lock(hass):
     if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
         state = State("lock.test", lock.LockState.UNLOCKED)
     else:
-        state = State("lock.test", lock.STATE_UNLOCKED)
+        state = State("lock.test", lock.STATE_UNLOCKED)  # pyright: ignore[reportAttributeAccessIssue]
     cap = cast(
         OnOffCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
@@ -356,8 +358,10 @@ async def test_capability_onoff_lock(hass):
 
     if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
         states = [lock.LockState.UNLOCKING, lock.LockState.LOCKING]
+        locked_state = lock.LockState.LOCKED
     else:
-        states = [lock.STATE_UNLOCKING, lock.STATE_LOCKING]
+        states = [lock.STATE_UNLOCKING, lock.STATE_LOCKING]  # pyright: ignore[reportAttributeAccessIssue]
+        locked_state = lock.STATE_LOCKED  # pyright: ignore[reportAttributeAccessIssue]
 
     for s in states:
         state_other = State("lock.test", s)
@@ -370,7 +374,7 @@ async def test_capability_onoff_lock(hass):
 
         assert cap.get_value() is False
 
-    state.state = lock.STATE_LOCKED
+    state.state = locked_state
     cap = cast(
         OnOffCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
@@ -556,7 +560,7 @@ async def test_capability_onoff_climate(hass):
     ],
 )
 async def test_capability_onoff_climate_turn_on(hass, hvac_modes: list[str], service: str, service_hvac_mode: str):
-    state = State("climate.test", climate.HVAC_MODE_COOL, {climate.const.ATTR_HVAC_MODES: hvac_modes})
+    state = State("climate.test", HVACMode.COOL, {climate.const.ATTR_HVAC_MODES: hvac_modes})
     cap = cast(
         OnOffCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
@@ -592,8 +596,9 @@ async def test_capability_onoff_custom_service(hass):
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state_switch.entity_id}
 
-    turn_on_service = "test.turn_on"
-    turn_off_service = "test.turn_off"
+    service_domain = "test"
+    turn_on_service = "turn_on"
+    turn_off_service = "turn_off"
     turn_on_off_entity_id = "switch.test"
 
     state_switch = State("switch.test", STATE_ON)
@@ -606,15 +611,30 @@ async def test_capability_onoff_custom_service(hass):
     entry_data = MockConfigEntryData(
         entity_config={
             state_media.entity_id: {
-                const.CONF_TURN_ON: {CONF_SERVICE: turn_on_service, CONF_ENTITY_ID: turn_on_off_entity_id},
-                const.CONF_TURN_OFF: {CONF_SERVICE: turn_off_service, CONF_ENTITY_ID: turn_on_off_entity_id},
+                const.CONF_TURN_ON: {
+                    CONF_SERVICE: f"{service_domain}.{turn_on_service}",
+                    CONF_ENTITY_ID: turn_on_off_entity_id,
+                },
+                const.CONF_TURN_OFF: {
+                    CONF_SERVICE: f"{service_domain}.{turn_off_service}",
+                    CONF_ENTITY_ID: turn_on_off_entity_id,
+                },
             },
             state_switch.entity_id: {
-                const.CONF_TURN_ON: {CONF_SERVICE: turn_on_service, CONF_ENTITY_ID: turn_on_off_entity_id},
-                const.CONF_TURN_OFF: {CONF_SERVICE: turn_off_service, CONF_ENTITY_ID: turn_on_off_entity_id},
+                const.CONF_TURN_ON: {
+                    CONF_SERVICE: f"{service_domain}.{turn_on_service}",
+                    CONF_ENTITY_ID: turn_on_off_entity_id,
+                },
+                const.CONF_TURN_OFF: {
+                    CONF_SERVICE: f"{service_domain}.{turn_off_service}",
+                    CONF_ENTITY_ID: turn_on_off_entity_id,
+                },
             },
             state_vacuum.entity_id: {
-                const.CONF_TURN_ON: {CONF_SERVICE: turn_on_service, CONF_ENTITY_ID: turn_on_off_entity_id}
+                const.CONF_TURN_ON: {
+                    CONF_SERVICE: f"{service_domain}.{turn_on_service}",
+                    CONF_ENTITY_ID: turn_on_off_entity_id,
+                }
             },
             state_lock.entity_id: {const.CONF_TURN_ON: False},
             state_water_heater.entity_id: {const.CONF_TURN_OFF: False},
@@ -640,14 +660,14 @@ async def test_capability_onoff_custom_service(hass):
     )
     assert_exact_one_capability(hass, entry_data, state_vacuum, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
-    on_calls = async_mock_service(hass, *turn_on_service.split("."))
+    on_calls = async_mock_service(hass, service_domain, turn_on_service)
     await cap_media.set_instance_state(Context(), ACTION_STATE_ON)
     await cap_switch.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(on_calls) == 2
     assert on_calls[0].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
     assert on_calls[1].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
 
-    off_calls = async_mock_service(hass, *turn_off_service.split("."))
+    off_calls = async_mock_service(hass, service_domain, turn_off_service)
     await cap_media.set_instance_state(Context(), ACTION_STATE_OFF)
     await cap_switch.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(off_calls) == 2

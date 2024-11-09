@@ -47,9 +47,9 @@ class RangeCapabilityParameters(APIModel):
     """Parameters of a range capability."""
 
     instance: RangeCapabilityInstance
-    unit: RangeCapabilityUnit | None
+    unit: RangeCapabilityUnit | None = None
     random_access: bool
-    range: RangeCapabilityRange | None
+    range: RangeCapabilityRange | None = None
 
     @root_validator
     def compute_unit(cls, values: dict[str, Any]) -> dict[str, Any]:

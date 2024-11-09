@@ -175,7 +175,6 @@ class YandexNotifier(ABC):
         self._session = async_create_clientsession(hass)
 
         self._pending = PendingStates()
-        self._report_states_job = HassJob(self._async_report_states)
 
         self._track_templates = track_templates
         self._template_changes_tracker: TrackTemplateResultInfo | None = None
@@ -303,7 +302,7 @@ class YandexNotifier(ABC):
             self._unsub_report_states = async_call_later(
                 self._hass,
                 delay=0 if self._pending.time_sensitive else REPORT_STATE_WINDOW,
-                action=self._report_states_job,
+                action=HassJob(self._async_report_states),
             )
 
         return None
@@ -423,7 +422,7 @@ class YandexNotifier(ABC):
         self._unsub_report_states = async_call_later(
             self._hass,
             delay=0 if self._pending.time_sensitive else REPORT_STATE_WINDOW,
-            action=self._report_states_job,
+            action=HassJob(self._async_report_states),
         )
 
         return None

@@ -4,6 +4,8 @@ from typing import cast
 from unittest.mock import patch
 
 from homeassistant.components import climate, cover, humidifier, light, media_player, valve, water_heater
+from homeassistant.components.climate import HVACMode
+from homeassistant.components.media_player import MediaClass
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
@@ -194,7 +196,7 @@ async def test_capability_range_temperature_climate(hass):
 
     state = State(
         "climate.test",
-        climate.HVAC_MODE_HEAT_COOL,
+        HVACMode.HEAT_COOL,
         {
             ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.TARGET_TEMPERATURE,
             climate.ATTR_MIN_TEMP: 12,
@@ -892,7 +894,7 @@ async def test_capability_range_channel_value(hass, caplog):
         STATE_OFF,
         {
             ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MEDIA_CLASS_ALBUM,
+            media_player.ATTR_MEDIA_CONTENT_TYPE: MediaClass.ALBUM,
             media_player.ATTR_MEDIA_CONTENT_ID: "5",
         },
     )
@@ -1001,8 +1003,8 @@ async def test_capability_range_relative_only_parameters(hass, instance, range_r
         def support_random_access(self) -> bool:
             return False
 
-    cap_random = MockCapabilityRandom(hass, BASIC_ENTRY_DATA, State("switch.foo", STATE_OFF))
-    cap_relative = MockCapabilityRelative(hass, BASIC_ENTRY_DATA, State("switch.foo", STATE_OFF))
+    cap_random = MockCapabilityRandom(hass, BASIC_ENTRY_DATA, State("switch.foo", STATE_OFF))  # type: ignore
+    cap_relative = MockCapabilityRelative(hass, BASIC_ENTRY_DATA, State("switch.foo", STATE_OFF))  # type: ignore
     cap_random.instance = cap_relative.instance = instance
 
     assert cap_random.parameters.range is not None

@@ -1,10 +1,11 @@
+# pyright: reportOptionalMemberAccess=false
 from typing import cast
 from unittest.mock import patch
 
 from homeassistant.components import camera
 from homeassistant.components.camera import Camera, DynamicStreamSettings
 from homeassistant.components.stream import OUTPUT_IDLE_TIMEOUT, Stream, StreamOutput, StreamSettings
-from homeassistant.const import ATTR_SUPPORTED_FEATURES
+from homeassistant.const import ATTR_SUPPORTED_FEATURES, STATE_IDLE
 from homeassistant.core import Context, HomeAssistant, State
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -28,7 +29,7 @@ from .test_capability import assert_no_capabilities, get_exact_one_capability
 try:
     from homeassistant.core_config import async_process_ha_core_config
 except ImportError:
-    from homeassistant.config import async_process_ha_core_config
+    from homeassistant.config import async_process_ha_core_config  # pyright: ignore[reportAttributeAccessIssue]
 
 
 ACTION_STATE = GetStreamInstanceActionState(
@@ -56,8 +57,7 @@ class MockStream(Stream):
     def endpoint_url(self, fmt: str) -> str:
         return "/foo"
 
-    def add_provider(self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT) -> StreamOutput:
-        pass
+    def add_provider(self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT) -> StreamOutput: ...
 
     async def start(self) -> None:
         pass
@@ -89,7 +89,7 @@ class MockCameraUnsupported(MockCamera):
 
 
 async def test_capability_video_stream_supported(hass):
-    state = State("camera.test", camera.STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
+    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
     cap = cast(
         VideoStreamCapability,
         get_exact_one_capability(
@@ -101,14 +101,14 @@ async def test_capability_video_stream_supported(hass):
     assert cap.retrievable is False
     assert cap.reportable is False
 
-    state = State("camera.no_stream", camera.STATE_IDLE)
+    state = State("camera.no_stream", STATE_IDLE)
     assert_no_capabilities(
         hass, BASIC_ENTRY_DATA, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
     )
 
 
 async def test_capability_video_stream_request_stream(hass):
-    state = State("camera.test", camera.STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
+    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
     cap = VideoStreamCapability(hass, BASIC_ENTRY_DATA, state)
 
     with patch(
@@ -130,7 +130,7 @@ async def test_capability_video_stream_request_stream(hass):
 async def test_capability_video_stream_direct(hass_platform_direct, config_entry_direct):
     hass = hass_platform_direct
     entry_data = MockConfigEntryData(entry=config_entry_direct)
-    state = State("camera.test", camera.STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
+    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
 
     cap = cast(
         VideoStreamCapability,
@@ -166,7 +166,7 @@ async def test_capability_video_stream_cloud(hass_platform_direct, connection_ty
         domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={const.CONF_CONNECTION_TYPE: connection_type}
     )
     entry_data = MockConfigEntryData(entry=entry, yaml_config={const.CONF_SETTINGS: {const.CONF_CLOUD_STREAM: True}})
-    state = State("camera.test", camera.STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
+    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
 
     cap = cast(
         VideoStreamCapability,

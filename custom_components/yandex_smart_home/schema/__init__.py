@@ -1,15 +1,16 @@
 """Yandex Smart Home API schemas."""
 
-from .callback import *  # noqa: F403
-from .capability import *  # noqa: F403
-from .capability_color import *  # noqa: F403
-from .capability_mode import *  # noqa: F403
-from .capability_onoff import *  # noqa: F403
-from .capability_range import *  # noqa: F403
-from .capability_toggle import *  # noqa: F403
-from .capability_video import *  # noqa: F403
-from .device import *  # noqa: F403
-from .property import *  # noqa: F403
-from .property_event import *  # noqa: F403
-from .property_float import *  # noqa: F403
-from .response import *  # noqa: F403
+# ruff: noqa
+from .callback import *
+from .capability import *
+from .capability_color import *
+from .capability_mode import *
+from .capability_onoff import *
+from .capability_range import *
+from .capability_toggle import *
+from .capability_video import *
+from .device import *
+from .property import *
+from .property_event import *
+from .property_float import *
+from .response import *

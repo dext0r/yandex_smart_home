@@ -197,6 +197,10 @@ class StateCapability(Capability[CapabilityInstanceActionState], Protocol):
     """Base class for a device capability based on the state."""
 
     state: State
+    device_id: str
+
+    _hass: HomeAssistant
+    _entry_data: ConfigEntryData
 
     def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, state: State):
         """Initialize a capability for the state."""

@@ -71,9 +71,9 @@ class CapabilityParameterColorScene(APIModel):
 class ColorSettingCapabilityParameters(APIModel):
     """Parameters of a color_setting capability."""
 
-    color_model: CapabilityParameterColorModel | None
-    temperature_k: CapabilityParameterTemperatureK | None
-    color_scene: CapabilityParameterColorScene | None
+    color_model: CapabilityParameterColorModel | None = None
+    temperature_k: CapabilityParameterTemperatureK | None = None
+    color_scene: CapabilityParameterColorScene | None = None
 
     @root_validator
     def any_of(cls, values: dict[str, Any]) -> dict[str, Any]:

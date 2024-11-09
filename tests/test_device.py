@@ -1,3 +1,4 @@
+# pyright: reportOptionalMemberAccess=false
 from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import cover, media_player, switch
@@ -518,7 +519,7 @@ async def test_device_query(hass):
 
             return self.state.state == STATE_ON
 
-        async def set_instance_state(self, _: Context, __: ToggleCapabilityInstanceActionState) -> None:
+        async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
             pass
 
     state = State("switch.unavailable", STATE_UNAVAILABLE)

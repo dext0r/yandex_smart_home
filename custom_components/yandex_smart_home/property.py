@@ -5,8 +5,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Protocol, Self, runtime_checkable
 
-from homeassistant.core import HomeAssistant, State
 from homeassistant.const import ATTR_DEVICE_CLASS
+from homeassistant.core import HomeAssistant, State
 
 from .helpers import ListRegistry
 from .schema import (
@@ -118,6 +118,10 @@ class StateProperty(Property, Protocol):
     """Base class for a device property based on the state."""
 
     state: State
+    device_id: str
+
+    _hass: HomeAssistant
+    _entry_data: ConfigEntryData
 
     def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, state: State):
         """Initialize a property for the state."""

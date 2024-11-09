@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import cached_property
-from typing import Any, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components import light
-from homeassistant.const import ATTR_ENTITY_ID
+from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_ON
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
 
@@ -161,7 +161,7 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
         """Change the capability state."""
         await self._hass.services.async_call(
             light.DOMAIN,
-            light.SERVICE_TURN_ON,
+            SERVICE_TURN_ON,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_RGB_COLOR: tuple(self._converter.get_ha_color(state.value)),
@@ -290,7 +290,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
         if service_data:
             service_data[ATTR_ENTITY_ID] = self.state.entity_id
             await self._hass.services.async_call(
-                light.DOMAIN, light.SERVICE_TURN_ON, service_data, blocking=True, context=context
+                light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=True, context=context
             )
         else:
             raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Unsupported value '{state.value}' for {self}")
@@ -443,7 +443,7 @@ class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInsta
         """Change the capability state."""
         await self._hass.services.async_call(
             light.DOMAIN,
-            light.SERVICE_TURN_ON,
+            SERVICE_TURN_ON,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_EFFECT: self.get_ha_scene_by_yandex_scene(state.value),

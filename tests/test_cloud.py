@@ -1,3 +1,4 @@
+# pyright: reportOptionalMemberAccess=false
 from asyncio import TimeoutError
 import json
 from typing import Any
@@ -71,7 +72,13 @@ async def async_setup_entry(
     session: MockSession | None = None,
     aiohttp_client: Any | None = None,
 ):
-    mock_client_session(hass, session or MockSession(aiohttp_client))
+    if session:
+        mock_client_session(hass, session)
+    elif aiohttp_client:
+        mock_client_session(hass, MockSession(aiohttp_client))
+    else:
+        raise NotImplementedError
+
     config_entry.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
@@ -80,6 +87,7 @@ async def async_setup_entry(
 def _get_manager(hass: HomeAssistant, config_entry: MockConfigEntry) -> CloudManager:
     component: YandexSmartHome = hass.data[DOMAIN]
     entry_data = component.get_entry_data(config_entry)
+    assert entry_data._cloud_manager
     return entry_data._cloud_manager
 
 

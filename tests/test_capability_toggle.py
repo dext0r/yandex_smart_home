@@ -147,6 +147,11 @@ async def test_capability_pause_cover(hass):
         assert cap.parameters.dict() == {"instance": "pause"}
         assert cap.get_value() is None
 
+    state = State("cover.test", cover.STATE_CLOSED, {ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.STOP})
+    cap = cast(
+        ToggleCapability,
+        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+    )
     calls = async_mock_service(hass, cover.DOMAIN, cover.SERVICE_STOP_COVER)
     await cap.set_instance_state(Context(), _action_state_on(ToggleCapabilityInstance.PAUSE))
     await cap.set_instance_state(Context(), _action_state_off(ToggleCapabilityInstance.PAUSE))

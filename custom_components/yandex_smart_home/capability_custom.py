@@ -62,6 +62,11 @@ _LOGGER = logging.getLogger(__name__)
 class CustomCapability(Capability[Any], Protocol):
     """Base class for a capability that user can set up using yaml configuration."""
 
+    device_id: str
+    instance: CapabilityInstance
+
+    _hass: HomeAssistant
+    _entry_data: ConfigEntryData
     _config: ConfigType
     _value_template: Template | None
 

@@ -42,11 +42,11 @@ class Error(ResponsePayload):
     """Error payload."""
 
     error_code: ResponseCode
-    error_message: str | None
+    error_message: str | None = None
 
 
 class Response(APIModel):
     """Base API response."""
 
-    request_id: str | None
+    request_id: str | None = None
     payload: ResponsePayload | None = None

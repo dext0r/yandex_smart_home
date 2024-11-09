@@ -3,7 +3,7 @@ import json
 from typing import cast
 from unittest.mock import MagicMock, patch
 
-from aiohttp import ClientConnectionError, ClientSession, WSMessage, WSMsgType
+from aiohttp import ClientConnectionError, ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
 from aiohttp.web import Response
 from homeassistant.components.camera import DynamicStreamSettings
 from homeassistant.components.stream import OUTPUT_IDLE_TIMEOUT, Stream, StreamOutput, StreamSettings
@@ -15,12 +15,13 @@ import yarl
 from custom_components.yandex_smart_home.cloud_stream import CloudStreamManager, WebRequest
 
 
-class MockWSConnection:
+class MockWSConnection(ClientWebSocketResponse):
     def __init__(self, url, **kwargs):
         self.url = url
-        self.close_code: int | None = kwargs.get("ws_close_code")
         self.msg = kwargs.get("msg", []) or []
         self.send_queue = []
+
+        self._close_code: int | None = kwargs.get("ws_close_code")
 
     def __aiter__(self):
         return self
@@ -34,8 +35,7 @@ class MockWSConnection:
         except IndexError:
             raise StopAsyncIteration
 
-    async def close(self):
-        pass
+    async def close(self, *_, **__) -> bool: ...
 
     async def send_bytes(self, b, *_, **__):
         self.send_queue.append(b)
@@ -74,8 +74,7 @@ class MockStream(Stream):
     def endpoint_url(self, fmt: str) -> str:
         return "/foo"
 
-    def add_provider(self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT) -> StreamOutput:
-        pass
+    def add_provider(self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT) -> StreamOutput: ...
 
 
 @pytest.fixture(autouse=True, name="mock_call_later")
@@ -187,6 +186,7 @@ async def test_cloud_stream_handle_requests(hass, aioclient_mock):
     with patch.object(HlsMasterPlaylistView, "get", return_value=Response(body=b"master")):
         await cloud_stream._async_connect()
 
+    assert session.ws
     assert session.ws.send_queue == [b'{"status_code": 200, "headers": {}}\r\nmaster']
 
 

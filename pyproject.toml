@@ -1,3 +1,4 @@
+#:schema https://json.schemastore.org/any.json
 [tool.poetry]
 name = "yandex_smart_home"
 package-mode = false
@@ -68,6 +69,10 @@ exclude_also = [
     "if TYPE_CHECKING:",
 ]
 omit = ["tests/*"]
+
+[tool.pyright]
+reportPrivateImportUsage = "none"
+reportIncompatibleVariableOverride = "none"
 
 [tool.mypy]
 python_version = "3.12"

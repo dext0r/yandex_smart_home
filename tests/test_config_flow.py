@@ -1,3 +1,4 @@
+# pyright: reportTypedDictNotRequiredAccess=false
 from http import HTTPStatus
 
 from homeassistant.auth.models import User
@@ -466,6 +467,7 @@ async def test_config_flow_direct_yandex(
     await async_setup_component(hass, http.DOMAIN, {})
     http_client = await hass_client_no_auth()
 
+    assert YandexSmartHomeUnauthorizedView.url
     response = await http_client.head(YandexSmartHomeUnauthorizedView.url)
     assert response.status == HTTPStatus.NOT_FOUND
 
