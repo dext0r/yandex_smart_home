@@ -1,4 +1,3 @@
-# pyright: reportOptionalMemberAccess=false
 from typing import Any, cast
 
 from homeassistant.const import (
@@ -74,11 +73,11 @@ class MockCapability(CustomCapability):
     def get_value(self) -> Any:
         return self._get_source_value()
 
-    async def set_instance_state(self, *_, **__) -> None:
+    async def set_instance_state(self, *_: Any, **__: Any) -> None:
         pass
 
 
-async def test_capability_custom(hass):
+async def test_capability_custom(hass: HomeAssistant) -> None:
     cap = MockCapability(hass, BASIC_ENTRY_DATA, {}, OnOffCapabilityInstance.ON, "foo", None)
     assert cap.retrievable is False
     assert cap.reportable is False
@@ -96,7 +95,7 @@ async def test_capability_custom(hass):
     assert e.value.message == "Unsupported capability type: devices.capabilities.on_off"
 
 
-async def test_capability_custom_value(hass):
+async def test_capability_custom_value(hass: HomeAssistant) -> None:
     hass.states.async_set("switch.state_value", STATE_ON)
     hass.states.async_set("switch.attr_value", STATE_UNKNOWN, {"value": "46"})
 
@@ -168,7 +167,7 @@ async def test_capability_custom_value(hass):
     )
 
 
-async def test_capability_custom_mode(hass):
+async def test_capability_custom_mode(hass: HomeAssistant) -> None:
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
@@ -273,7 +272,7 @@ async def test_capability_custom_mode(hass):
 
 
 @pytest.mark.parametrize("domain", ["switch", "light"])
-async def test_capability_custom_mode_scene(hass, domain):
+async def test_capability_custom_mode_scene(hass: HomeAssistant, domain: str) -> None:
     state = State(f"{domain}.test", "foo", {})
     hass.states.async_set(state.entity_id, state.state)
     entry_data = MockConfigEntryData(
@@ -359,7 +358,7 @@ async def test_capability_custom_mode_scene(hass, domain):
         assert scene_cap.new_with_value_template(Template(t)).get_value() is None
 
 
-async def test_capability_custom_toggle(hass):
+async def test_capability_custom_toggle(hass: HomeAssistant) -> None:
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
@@ -454,7 +453,7 @@ async def test_capability_custom_toggle(hass):
         assert cap.new_with_value_template(Template(t)).get_value() is False
 
 
-async def test_capability_custom_range_random_access(hass):
+async def test_capability_custom_range_random_access(hass: HomeAssistant) -> None:
     state = State("switch.test", "30", {})
     hass.states.async_set(state.entity_id, state.state)
     cap = cast(
@@ -542,7 +541,7 @@ async def test_capability_custom_range_random_access(hass):
     assert e.value.message == "Entity switch.test not found"
 
 
-async def test_capability_custom_range_random_access_no_state(hass):
+async def test_capability_custom_range_random_access_no_state(hass: HomeAssistant) -> None:
     state = State("switch.test", "30", {})
     hass.states.async_set(state.entity_id, state.state)
 
@@ -603,7 +602,7 @@ async def test_capability_custom_range_random_access_no_state(hass):
         )
 
 
-async def test_capability_custom_range_relative_override_no_state(hass):
+async def test_capability_custom_range_relative_override_no_state(hass: HomeAssistant) -> None:
     cap = cast(
         CustomRangeCapability,
         get_custom_capability(
@@ -682,7 +681,7 @@ async def test_capability_custom_range_relative_override_no_state(hass):
     assert calls[0].data == {"entity_id": ["input_number.test"], "value": "value: 0"}
 
 
-async def test_capability_custom_range_only_relative(hass):
+async def test_capability_custom_range_only_relative(hass: HomeAssistant) -> None:
     cap = cast(
         CustomRangeCapability,
         get_custom_capability(
@@ -735,7 +734,7 @@ async def test_capability_custom_range_only_relative(hass):
     assert calls[2].data == {"entity_id": ["input_number.test"], "value": "value: -50"}
 
 
-async def test_capability_custom_range_no_service(hass):
+async def test_capability_custom_range_no_service(hass: HomeAssistant) -> None:
     cap = cast(
         CustomRangeCapability,
         get_custom_capability(
@@ -797,4 +796,5 @@ async def test_capability_custom_range_parameters_range(
         ),
     )
     assert cap.supported is True
+    assert cap.parameters.range
     assert (cap.parameters.range.min, cap.parameters.range.max) == expected_range

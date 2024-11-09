@@ -110,37 +110,12 @@ warn_untyped_fields = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_calls = false
+disable_error_code = [
+    "func-returns-value",
+]
 
 [[tool.mypy.overrides]]
 module = "tests.test_capability"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_capability_color"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_capability_custom"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_capability_mode"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_capability_onoff"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_capability_range"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_capability_toggle"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_capability_video"
 ignore_errors = true
 
 [[tool.mypy.overrides]]

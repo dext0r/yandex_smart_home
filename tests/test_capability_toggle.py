@@ -21,7 +21,7 @@ from homeassistant.const import (
     STATE_PAUSED,
     STATE_PLAYING,
 )
-from homeassistant.core import Context, State
+from homeassistant.core import Context, HomeAssistant, State
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home.capability_toggle import ToggleCapability
@@ -43,7 +43,7 @@ def _action_state_off(instance: ToggleCapabilityInstance) -> ToggleCapabilityIns
     return ToggleCapabilityInstanceActionState(instance=instance, value=False)
 
 
-async def test_capability_mute(hass):
+async def test_capability_mute(hass: HomeAssistant) -> None:
     state = State("media_player.test", STATE_ON)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE)
 
@@ -95,7 +95,7 @@ async def test_capability_mute(hass):
     assert calls[1].data[media_player.ATTR_MEDIA_VOLUME_MUTED] is False
 
 
-async def test_capability_pause_media_player(hass):
+async def test_capability_pause_media_player(hass: HomeAssistant) -> None:
     state = State("media_player.test", STATE_ON)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
@@ -141,7 +141,7 @@ async def test_capability_pause_media_player(hass):
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_pause_cover(hass):
+async def test_capability_pause_cover(hass: HomeAssistant) -> None:
     state = State("cover.test", STATE_ON)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
@@ -171,7 +171,7 @@ async def test_capability_pause_cover(hass):
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_pause_vacuum(hass):
+async def test_capability_pause_vacuum(hass: HomeAssistant) -> None:
     state = State("vacuum.test", STATE_ON)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
@@ -205,7 +205,7 @@ async def test_capability_pause_vacuum(hass):
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_oscillation(hass):
+async def test_capability_oscillation(hass: HomeAssistant) -> None:
     state = State("fan.test", STATE_ON)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION)
 

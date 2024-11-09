@@ -1,5 +1,4 @@
-# pyright: reportOptionalMemberAccess=false
-from typing import cast
+from typing import Any, cast
 
 from homeassistant.components import light
 from homeassistant.components.light import (
@@ -73,7 +72,7 @@ def _get_color_profile_entry_data(entity_config: ConfigType) -> MockConfigEntryD
     )
 
 
-async def test_capability_color_setting(hass):
+async def test_capability_color_setting(hass: HomeAssistant) -> None:
     state = State(
         "light.test",
         STATE_OFF,
@@ -98,7 +97,7 @@ async def test_capability_color_setting(hass):
     ],
 )
 @pytest.mark.parametrize("features", [SUPPORT_COLOR, 0])
-async def test_capability_color_setting_rgb(hass, color_modes, features):
+async def test_capability_color_setting_rgb(hass: HomeAssistant, color_modes: list[ColorMode], features: int) -> None:
     state = State("light.test", STATE_OFF)
     assert_no_capabilities(
         hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
@@ -145,8 +144,11 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
         attributes[ATTR_RGB_COLOR] = (0, 0, 255)
 
     state = State("light.test", STATE_OFF, attributes)
-    cap_rgb = get_exact_one_capability(
-        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+    cap_rgb = cast(
+        RGBColorCapability,
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+        ),
     )
     assert cap_rgb.get_value() == 255
 
@@ -159,8 +161,11 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
             ATTR_RGB_COLOR: (255, 255, 255),
         },
     )
-    cap_rgb = get_exact_one_capability(
-        hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+    cap_rgb = cast(
+        RGBColorCapability,
+        get_exact_one_capability(
+            hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+        ),
     )
     assert cap_rgb.get_value() is None
 
@@ -180,7 +185,7 @@ async def test_capability_color_setting_rgb(hass, color_modes, features):
         [ColorMode.XY],
     ],
 )
-async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
+async def test_capability_color_setting_rgb_near_colors(hass: HomeAssistant, color_modes: list[ColorMode]) -> None:
     attributes = {ATTR_SUPPORTED_FEATURES: SUPPORT_COLOR, ATTR_SUPPORTED_COLOR_MODES: color_modes}
     moonlight_color = ColorConverter._palette[ColorName.MOONLIGHT]
 
@@ -244,7 +249,9 @@ async def test_capability_color_setting_rgb_near_colors(hass, color_modes):
     ],
 )
 @pytest.mark.parametrize("features", [SUPPORT_COLOR])
-async def test_capability_color_setting_rgb_with_profile(hass, color_modes, features):
+async def test_capability_color_setting_rgb_with_profile(
+    hass: HomeAssistant, color_modes: list[ColorMode], features: int
+) -> None:
     config = _get_color_profile_entry_data(
         {
             "light.test": {CONF_COLOR_PROFILE: "test"},
@@ -305,7 +312,9 @@ async def test_capability_color_setting_rgb_with_profile(hass, color_modes, feat
     ],
 )
 @pytest.mark.parametrize("features", [SUPPORT_COLOR])
-async def test_capability_color_setting_rgb_with_internal_profile(hass, color_modes, features):
+async def test_capability_color_setting_rgb_with_internal_profile(
+    hass: HomeAssistant, color_modes: list[ColorMode], features: int
+) -> None:
     config = _get_color_profile_entry_data({"light.test": {CONF_COLOR_PROFILE: "natural"}})
 
     attributes = {ATTR_SUPPORTED_FEATURES: features, ATTR_SUPPORTED_COLOR_MODES: color_modes}
@@ -346,7 +355,9 @@ async def test_capability_color_setting_rgb_with_internal_profile(hass, color_mo
         ),
     ],
 )
-async def test_capability_color_setting_temperature_k(hass, attributes, temp_range):
+async def test_capability_color_setting_temperature_k(
+    hass: HomeAssistant, attributes: dict[str, Any], temp_range: tuple[int, int]
+) -> None:
     state = State("light.test", STATE_OFF)
     assert_no_capabilities(
         hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
@@ -403,7 +414,7 @@ async def test_capability_color_setting_temperature_k(hass, attributes, temp_ran
     )
 
 
-async def test_capability_color_setting_temprature_k_extend(hass):
+async def test_capability_color_setting_temprature_k_extend(hass: HomeAssistant) -> None:
     # 1:1
     state = State(
         "light.test",
@@ -525,7 +536,9 @@ async def test_capability_color_setting_temprature_k_extend(hass):
         {ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP, ColorMode.XY]},
     ],
 )
-async def test_capability_color_setting_temperature_k_with_profile(hass, attributes):
+async def test_capability_color_setting_temperature_k_with_profile(
+    hass: HomeAssistant, attributes: dict[str, Any]
+) -> None:
     config = _get_color_profile_entry_data(
         {
             "light.test": {CONF_COLOR_PROFILE: "test"},
@@ -626,7 +639,7 @@ async def test_capability_color_setting_temperature_k_with_profile(hass, attribu
 
 
 @pytest.mark.parametrize("color_modes", [[ColorMode.RGB], [ColorMode.HS], [ColorMode.XY]])
-async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
+async def test_capability_color_setting_temperature_k_rgb(hass: HomeAssistant, color_modes: list[ColorMode]) -> None:
     attributes = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
@@ -666,7 +679,10 @@ async def test_capability_color_setting_temperature_k_rgb(hass, color_modes):
 
 
 @pytest.mark.parametrize("color_modes", [[ColorMode.RGB], [ColorMode.HS], [ColorMode.XY]])
-async def test_capability_color_setting_temperature_k_rgb_white(hass, color_modes):
+async def test_capability_color_setting_temperature_k_rgb_white(
+    hass: HomeAssistant, color_modes: list[ColorMode]
+) -> None:
+    attributes = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
     attributes = {ATTR_SUPPORTED_COLOR_MODES: color_modes + [ColorMode.WHITE]}
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
@@ -720,7 +736,7 @@ async def test_capability_color_setting_temperature_k_rgb_white(hass, color_mode
     assert calls[2].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGB_COLOR: (255, 255, 255)}
 
 
-async def test_capability_color_setting_temperature_k_rgbw(hass):
+async def test_capability_color_setting_temperature_k_rgbw(hass: HomeAssistant) -> None:
     attributes = {ATTR_SUPPORTED_COLOR_MODES: [ColorMode.RGBW]}
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, BASIC_ENTRY_DATA, state)
@@ -774,7 +790,7 @@ async def test_capability_color_setting_temperature_k_rgbw(hass):
     assert calls[2].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBW_COLOR: (255, 255, 255, 0)}
 
 
-async def test_capability_color_mode_color_temp(hass):
+async def test_capability_color_mode_color_temp(hass: HomeAssistant) -> None:
     attributes = {
         ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP, ColorMode.RGB],
         ATTR_COLOR_TEMP_KELVIN: 3200,
@@ -816,7 +832,7 @@ async def test_capability_color_mode_color_temp(hass):
     assert cap_rgb.get_value() is None
 
 
-async def test_capability_color_setting_scene(hass):
+async def test_capability_color_setting_scene(hass: HomeAssistant) -> None:
     state = State("light.test", STATE_OFF)
     assert_no_capabilities(
         hass, BASIC_ENTRY_DATA, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.SCENE

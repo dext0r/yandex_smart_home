@@ -1,4 +1,3 @@
-# pyright: reportOptionalMemberAccess=false
 from typing import cast
 
 from homeassistant.components import (
@@ -87,7 +86,7 @@ ACTION_STATE_OFF = OnOffCapabilityInstanceActionState(instance=OnOffCapabilityIn
         (light.DOMAIN, light.DOMAIN),
     ],
 )
-async def test_capability_onoff_simple(hass, state_domain, service_domain):
+async def test_capability_onoff_simple(hass: HomeAssistant, state_domain: str, service_domain: str) -> None:
     state_on = State(f"{state_domain}.test", STATE_ON)
     cap_on = cast(
         OnOffCapability,
@@ -121,6 +120,7 @@ async def test_capability_onoff_simple(hass, state_domain, service_domain):
         get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.retrievable is False
+    assert cap.parameters
     assert cap.parameters.dict() == {"split": True}
 
 
@@ -133,7 +133,7 @@ async def test_capability_onoff_simple(hass, state_domain, service_domain):
         (input_button.DOMAIN, STATE_UNKNOWN, input_button.SERVICE_PRESS),
     ],
 )
-async def test_capability_onoff_only_on(hass, domain, initial_state, service):
+async def test_capability_onoff_only_on(hass: HomeAssistant, domain: str, initial_state: str, service: str) -> None:
     state = State(f"{domain}.test", initial_state)
     cap = cast(
         OnOffCapability,
@@ -156,7 +156,7 @@ async def test_capability_onoff_only_on(hass, domain, initial_state, service):
     assert on_calls[1].data == {ATTR_ENTITY_ID: f"{domain}.test"}
 
 
-async def test_capability_onoff_cover(hass):
+async def test_capability_onoff_cover(hass: HomeAssistant) -> None:
     state_open = State("cover.test", STATE_OPEN, attributes={ATTR_SUPPORTED_FEATURES: CoverEntityFeature.SET_POSITION})
     cap_open = cast(
         OnOffCapability,
@@ -205,6 +205,7 @@ async def test_capability_onoff_cover(hass):
         get_exact_one_capability(hass, entry_data, state_binary, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap_binary.retrievable is False
+    assert cap_binary.parameters
     assert cap_binary.parameters.dict() == {"split": True}
 
 
@@ -251,7 +252,7 @@ async def test_capability_onoff_valve(hass: HomeAssistant) -> None:
     assert cap_no_features.parameters is None
 
 
-async def test_capability_onoff_remote(hass):
+async def test_capability_onoff_remote(hass: HomeAssistant) -> None:
     state = State("remote.test", STATE_ON)
     cap = cast(
         OnOffCapability,
@@ -259,6 +260,7 @@ async def test_capability_onoff_remote(hass):
     )
     assert cap.reportable is False
     assert cap.retrievable is False
+    assert cap.parameters
     assert cap.parameters.as_dict() == {"split": True}
     assert cap.get_value() is None
 
@@ -275,7 +277,7 @@ async def test_capability_onoff_remote(hass):
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_onoff_media_player(hass):
+async def test_capability_onoff_media_player(hass: HomeAssistant) -> None:
     state = State("media_player.simple", STATE_ON)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
@@ -299,6 +301,7 @@ async def test_capability_onoff_media_player(hass):
     )
 
     assert cap_binary.retrievable is False
+    assert cap_binary.parameters
     assert cap_binary.parameters.dict() == {"split": True}
 
     state = State(
@@ -332,7 +335,7 @@ async def test_capability_onoff_media_player(hass):
     assert cap.get_value() is False
 
 
-async def test_capability_onoff_lock(hass):
+async def test_capability_onoff_lock(hass: HomeAssistant) -> None:
     if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
         state = State("lock.test", lock.LockState.UNLOCKED)
     else:
@@ -389,10 +392,11 @@ async def test_capability_onoff_lock(hass):
         get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.retrievable is False
+    assert cap.parameters
     assert cap.parameters.dict() == {"split": True}
 
 
-async def test_capability_onoff_vacuum(hass):
+async def test_capability_onoff_vacuum(hass: HomeAssistant) -> None:
     for s in [STATE_ON, vacuum.STATE_CLEANING]:
         state = State(
             "vacuum.test",
@@ -433,6 +437,7 @@ async def test_capability_onoff_vacuum(hass):
         get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.retrievable is False
+    assert cap.parameters
     assert cap.parameters.dict() == {"split": True}
 
 
@@ -447,7 +452,7 @@ async def test_capability_onoff_vacuum(hass):
         (VacuumEntityFeature.TURN_ON | VacuumEntityFeature.TURN_OFF, True),
     ],
 )
-async def test_capability_onoff_vacuum_supported(hass, features, supported):
+async def test_capability_onoff_vacuum_supported(hass: HomeAssistant, features: int, supported: bool) -> None:
     state = State("vacuum.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: features})
     assert (
         bool(get_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON))
@@ -467,7 +472,7 @@ async def test_capability_onoff_vacuum_supported(hass, features, supported):
         (VacuumEntityFeature.TURN_ON | VacuumEntityFeature.TURN_OFF, SERVICE_TURN_ON),
     ],
 )
-async def test_capability_onoff_vacuum_turn_on(hass, features, service):
+async def test_capability_onoff_vacuum_turn_on(hass: HomeAssistant, features: int, service: str) -> None:
     state = State("vacuum.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: features})
     cap = cast(
         OnOffCapability,
@@ -492,7 +497,7 @@ async def test_capability_onoff_vacuum_turn_on(hass, features, service):
         (VacuumEntityFeature.TURN_ON | VacuumEntityFeature.TURN_OFF, SERVICE_TURN_OFF),
     ],
 )
-async def test_capability_onoff_vacuum_turn_off(hass, features, service):
+async def test_capability_onoff_vacuum_turn_off(hass: HomeAssistant, features: int, service: str) -> None:
     state = State("vacuum.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: features})
     cap = cast(
         OnOffCapability,
@@ -505,7 +510,7 @@ async def test_capability_onoff_vacuum_turn_off(hass, features, service):
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_onoff_climate(hass):
+async def test_capability_onoff_climate(hass: HomeAssistant) -> None:
     for s in climate.HVAC_MODES:
         if s == HVACMode.OFF:
             continue
@@ -538,6 +543,7 @@ async def test_capability_onoff_climate(hass):
         get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.retrievable is False
+    assert cap.parameters
     assert cap.parameters.dict() == {"split": True}
 
 
@@ -559,7 +565,9 @@ async def test_capability_onoff_climate(hass):
         ),
     ],
 )
-async def test_capability_onoff_climate_turn_on(hass, hvac_modes: list[str], service: str, service_hvac_mode: str):
+async def test_capability_onoff_climate_turn_on(
+    hass: HomeAssistant, hvac_modes: list[HVACMode], service: str, service_hvac_mode: str
+) -> None:
     state = State("climate.test", HVACMode.COOL, {climate.ATTR_HVAC_MODES: hvac_modes})
     cap = cast(
         OnOffCapability,
@@ -574,7 +582,7 @@ async def test_capability_onoff_climate_turn_on(hass, hvac_modes: list[str], ser
         assert on_calls[0].data[climate.ATTR_HVAC_MODE] == service_hvac_mode
 
 
-async def test_capability_onoff_custom_service(hass):
+async def test_capability_onoff_custom_service(hass: HomeAssistant) -> None:
     state_media = State("media_player.test", STATE_ON)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state_media, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
@@ -687,7 +695,7 @@ async def test_capability_onoff_custom_service(hass):
     assert len(water_heater_on_calls) == 1
 
 
-async def test_capability_onoff_water_heater(hass):
+async def test_capability_onoff_water_heater(hass: HomeAssistant) -> None:
     state = State("water_heater.test", STATE_ON)
 
     cap = cast(
@@ -722,12 +730,13 @@ async def test_capability_onoff_water_heater(hass):
         get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.retrievable is False
+    assert cap.parameters
     assert cap.parameters.dict() == {"split": True}
 
 
 @pytest.mark.parametrize("op_on", ["on", "On", "ON", "electric", "Boil"])
 @pytest.mark.parametrize("op_off", ["off", "Off", "OFF"])
-async def test_capability_onoff_water_heater_set_op_mode(hass, op_on, op_off):
+async def test_capability_onoff_water_heater_set_op_mode(hass: HomeAssistant, op_on: str, op_off: str) -> None:
     state = State(
         "water_heater.test",
         op_on,
@@ -774,7 +783,7 @@ async def test_capability_onoff_water_heater_set_op_mode(hass, op_on, op_off):
     assert set_mode_calls[0].data[water_heater.ATTR_OPERATION_MODE] == op_off
 
 
-async def test_capability_onoff_water_heater_set_unsupported_op_mode(hass):
+async def test_capability_onoff_water_heater_set_unsupported_op_mode(hass: HomeAssistant) -> None:
     state = State(
         "water_heater.test",
         "foo",
