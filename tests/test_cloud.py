@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from asyncio import TimeoutError
 import json
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 from aiohttp import WSMessage, WSMsgType
@@ -15,12 +13,10 @@ from homeassistant.helpers.aiohttp_client import DATA_CLIENTSESSION, _make_key
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome
 from custom_components.yandex_smart_home.cloud import CloudManager
-
-if TYPE_CHECKING:
-    from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 
 class MockWSConnection:

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast, TYPE_CHECKING
 
 from homeassistant.components import light
 from homeassistant.const import ATTR_ENTITY_ID
+from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
 
 from . import const
@@ -32,8 +33,6 @@ from .schema import (
 )
 
 if TYPE_CHECKING:
-    from homeassistant.core import Context, HomeAssistant, State
-
     from .entry_data import ConfigEntryData
 
 

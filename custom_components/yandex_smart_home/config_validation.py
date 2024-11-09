@@ -1,12 +1,11 @@
 """Helpers for config validation using voluptuous."""
 
-from __future__ import annotations
-
 from contextlib import suppress
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from homeassistant.components.sensor.const import SensorDeviceClass
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.util.color import RGBColor
 import voluptuous as vol
 
@@ -25,9 +24,6 @@ from .schema import (
     ToggleCapabilityInstance,
 )
 from .unit_conversion import UnitOfPressure, UnitOfTemperature
-
-if TYPE_CHECKING:
-    from homeassistant.helpers.typing import ConfigType
 
 _LOGGER = logging.getLogger(__name__)
 

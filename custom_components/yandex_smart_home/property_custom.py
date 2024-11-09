@@ -6,9 +6,10 @@ from typing import TYPE_CHECKING, Any, Protocol, Self, cast
 
 from homeassistant.components import binary_sensor
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
-from homeassistant.core import split_entity_id
+from homeassistant.core import HomeAssistant, split_entity_id
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.template import Template
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
@@ -61,9 +62,6 @@ from .schema import PropertyType, ResponseCode
 from .unit_conversion import UnitOfPressure, UnitOfTemperature
 
 if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.typing import ConfigType
-
     from .entry_data import ConfigEntryData
 
 

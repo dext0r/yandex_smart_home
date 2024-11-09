@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, cast
 
 from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant.auth.const import GROUP_ID_READ_ONLY
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_PLATFORM, CONF_TOKEN
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import AbortFlow, FlowHandler
 from homeassistant.helpers import network, selector
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES, EntityFilter
@@ -22,6 +22,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     TextSelector,
 )
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.setup import async_setup_component
 import voluptuous as vol
 
@@ -45,14 +46,8 @@ from .const import (
 )
 
 if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.typing import ConfigType
+    from homeassistant.config_entries import ConfigFlowContext  # noqa: F401
 
-try:
-    from homeassistant.config_entries import ConfigFlowContext
-except ImportError:  # pragma: no cover
-    ConfigFlowContext = ...  # type: ignore[assignment, misc]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -102,7 +97,7 @@ FILTER_SOURCE_SELECTOR = SelectSelector(
 )
 
 
-class BaseFlowHandler(FlowHandler[ConfigFlowContext, ConfigFlowResult]):
+class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
     """Handle shared steps between config and options flow for Yandex Smart Home."""
 
     def __init__(self) -> None:

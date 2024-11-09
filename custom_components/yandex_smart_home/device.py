@@ -33,8 +33,11 @@ from homeassistant.components import (
     water_heater,
 )
 from homeassistant.const import ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES, CONF_NAME, STATE_UNAVAILABLE
-from homeassistant.core import State, callback
+from homeassistant.core import Context, HomeAssistant, State, callback
 from homeassistant.helpers import area_registry, device_registry, entity_registry
+from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
+from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
+from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 from homeassistant.helpers.template import Template
 
 from . import (  # noqa: F401
@@ -50,10 +53,10 @@ from . import (  # noqa: F401
     property_float,
 )
 from . import const  # noqa: F401
-from .capability import STATE_CAPABILITIES_REGISTRY, DummyCapability, StateCapability
+from .capability import STATE_CAPABILITIES_REGISTRY, Capability, DummyCapability, StateCapability
 from .capability_custom import get_custom_capability
 from .helpers import ActionNotAllowed, APIError
-from .property import STATE_PROPERTIES_REGISTRY, StateProperty
+from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .property_custom import get_custom_property
 from .schema import (
     CapabilityDescription,
@@ -71,14 +74,7 @@ from .schema import (
 )
 
 if TYPE_CHECKING:
-    from homeassistant.core import Context, HomeAssistant
-    from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
-    from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
-    from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
-
-    from .capability import Capability
     from .entry_data import ConfigEntryData
-    from .property import Property
 
 _LOGGER = logging.getLogger(__name__)
 

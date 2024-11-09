@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Awaitable, Callable, Coroutine, TypeVar
 
 from aiohttp.web import HTTPServiceUnavailable, Request, Response, json_response
 from homeassistant.components.http import KEY_HASS, KEY_HASS_REFRESH_TOKEN_ID, HomeAssistantView
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import issue_registry as ir
 
 from . import handlers
@@ -15,8 +15,6 @@ from .const import DOMAIN, ISSUE_ID_MISSING_INTEGRATION
 from .helpers import RequestData, SmartHomePlatform
 
 if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
-
     from . import YandexSmartHome
 
 _LOGGER = logging.getLogger(__name__)

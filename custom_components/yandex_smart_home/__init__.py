@@ -12,6 +12,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA, FILTER_SCHEMA, EntityFilter
 from homeassistant.helpers.reload import async_integration_yaml_config
 from homeassistant.helpers.service import async_register_admin_service
+from homeassistant.helpers.typing import ConfigType
 import voluptuous as vol
 
 from . import config_validation as ycv, const
@@ -29,8 +30,6 @@ from .helpers import SmartHomePlatform
 from .http import async_register_http
 
 if TYPE_CHECKING:
-    from homeassistant.helpers.typing import ConfigType
-
     from .cloud_stream import CloudStreamManager
 
 _LOGGER = logging.getLogger(__name__)

@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 from urllib.parse import urlparse
 
-from homeassistant.core import callback
+from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
 
@@ -15,8 +15,6 @@ from .const import DOMAIN
 from .schema import ResponseCode
 
 if TYPE_CHECKING:
-    from homeassistant.core import Context, HomeAssistant
-
     from .entry_data import ConfigEntryData
 
 STORE_CACHE_ATTRS = "attrs"

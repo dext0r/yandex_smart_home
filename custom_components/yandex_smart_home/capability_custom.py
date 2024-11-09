@@ -8,10 +8,11 @@ import logging
 from typing import TYPE_CHECKING, Any, Iterable, Protocol, Self, cast
 
 from homeassistant.const import STATE_OFF, STATE_UNKNOWN
-from homeassistant.core import callback
+from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.service import async_call_from_config
 from homeassistant.helpers.template import Template, forgiving_boolean
+from homeassistant.helpers.typing import ConfigType
 
 from .capability import Capability
 from .capability_color import ColorSceneCapability
@@ -53,9 +54,6 @@ from .schema import (
 )
 
 if TYPE_CHECKING:
-    from homeassistant.core import Context, HomeAssistant
-    from homeassistant.helpers.typing import ConfigType
-
     from .entry_data import ConfigEntryData
 
 _LOGGER = logging.getLogger(__name__)

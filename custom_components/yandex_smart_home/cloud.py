@@ -8,7 +8,7 @@ import logging
 from typing import TYPE_CHECKING, Any, AsyncIterable, cast
 
 from aiohttp import ClientConnectorError, ClientResponseError, ClientWebSocketResponse, WSMessage, WSMsgType, hdrs
-from homeassistant.core import Context, HassJob
+from homeassistant.core import CALLBACK_TYPE, Context, HassJob, HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import SERVER_SOFTWARE, async_create_clientsession, async_get_clientsession
 from homeassistant.helpers.event import async_call_later
@@ -20,8 +20,6 @@ from .const import CLOUD_BASE_URL, DOMAIN, ISSUE_ID_RECONNECTING_TOO_FAST
 from .helpers import RequestData, SmartHomePlatform
 
 if TYPE_CHECKING:
-    from homeassistant.core import CALLBACK_TYPE, HomeAssistant
-
     from .entry_data import ConfigEntryData
 
 _LOGGER = logging.getLogger(__name__)

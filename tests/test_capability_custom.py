@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -11,7 +9,7 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
-from homeassistant.core import Context, State
+from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers.config_validation import SERVICE_SCHEMA, dynamic_template
 from homeassistant.helpers.template import Template
 import pytest
@@ -43,9 +41,6 @@ from custom_components.yandex_smart_home.schema import (
 )
 
 from . import BASIC_ENTRY_DATA, MockConfigEntryData
-
-if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
 
 
 class MockCapability(CustomCapability):

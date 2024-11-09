@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
 from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import cover, media_player, switch
@@ -19,7 +16,7 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
     UnitOfTemperature,
 )
-from homeassistant.core import Context, State
+from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers import area_registry as ar, device_registry as dr, entity_registry as er
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
@@ -80,9 +77,6 @@ from custom_components.yandex_smart_home.schema import (
 )
 
 from . import BASIC_ENTRY_DATA, MockConfigEntryData, generate_entity_filter
-
-if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
 
 
 async def test_device_duplicate_capabilities(hass):

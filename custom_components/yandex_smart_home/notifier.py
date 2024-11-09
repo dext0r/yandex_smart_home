@@ -13,10 +13,17 @@ from typing import TYPE_CHECKING, Any, Mapping, Protocol, Self, Sequence
 from aiohttp import ClientTimeout, JsonPayload, hdrs
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED
-from homeassistant.core import HassJob
+from homeassistant.core import CALLBACK_TYPE, Event, HassJob, HomeAssistant, State
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.aiohttp_client import SERVER_SOFTWARE, async_create_clientsession
-from homeassistant.helpers.event import TrackTemplate, async_call_later, async_track_template_result
+from homeassistant.helpers.event import (
+    EventStateChangedData,
+    TrackTemplate,
+    TrackTemplateResult,
+    TrackTemplateResultInfo,
+    async_call_later,
+    async_track_template_result,
+)
 from homeassistant.helpers.template import Template
 from pydantic import ValidationError
 
@@ -39,10 +46,6 @@ from .schema import (
 )
 
 if TYPE_CHECKING:
-    from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, State
-    from homeassistant.helpers.event import EventStateChangedData, TrackTemplateResult, TrackTemplateResultInfo
-    from homeassistant.helpers.typing import EventType
-
     from .entry_data import ConfigEntryData
 
 _LOGGER = logging.getLogger(__name__)
@@ -342,7 +345,7 @@ class YandexNotifier(ABC):
 
     async def _async_template_result_changed(
         self,
-        event_type: EventType[EventStateChangedData] | None,
+        event_type: Event[EventStateChangedData] | None,
         updates: list[TrackTemplateResult],
     ) -> None:
         """Handle track template changes."""

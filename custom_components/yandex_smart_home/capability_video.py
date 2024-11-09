@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from homeassistant.components import camera
 from homeassistant.components.camera import StreamType
 from homeassistant.components.stream import Stream
+from homeassistant.core import Context
 from homeassistant.helpers import network
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -32,8 +33,6 @@ except ImportError:  # pragma: no cover
 
 
 if TYPE_CHECKING:
-    from homeassistant.core import Context
-
     from . import YandexSmartHome
 
 

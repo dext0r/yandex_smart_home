@@ -1,17 +1,17 @@
-from __future__ import annotations
-
 from http import HTTPStatus
-from typing import TYPE_CHECKING
 
+from homeassistant.auth.models import User
 from homeassistant.components import http
-from homeassistant.config_entries import SOURCE_IGNORE, SOURCE_USER
+from homeassistant.config_entries import SOURCE_IGNORE, SOURCE_USER, ConfigEntry, ConfigFlowResult
 from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_NAME, CONF_PLATFORM, CONF_TOKEN
+from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
 from custom_components.yandex_smart_home import ConnectionType, SmartHomePlatform, YandexSmartHome, cloud
@@ -39,13 +39,6 @@ try:
     from homeassistant.core_config import async_process_ha_core_config
 except ImportError:
     from homeassistant.config import async_process_ha_core_config  # type: ignore[attr-defined, no-redef]
-
-
-if TYPE_CHECKING:
-    from homeassistant.auth.models import User
-    from homeassistant.config_entries import ConfigEntry, ConfigFlowResult
-    from homeassistant.core import HomeAssistant
-    from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 
 async def _async_mock_config_entry(

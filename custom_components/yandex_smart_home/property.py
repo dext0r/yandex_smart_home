@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Protocol, Self, runtime_checkable
 
+from homeassistant.core import HomeAssistant, State
 from homeassistant.const import ATTR_DEVICE_CLASS
 
 from .helpers import ListRegistry
@@ -18,8 +19,6 @@ from .schema import (
 )
 
 if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant, State
-
     from .entry_data import ConfigEntryData
 
 

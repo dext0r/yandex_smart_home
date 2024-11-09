@@ -7,8 +7,10 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, Protocol, Self, runtime_checkable
 
 from homeassistant.const import ATTR_SUPPORTED_FEATURES
+from homeassistant.core import Context, HomeAssistant, State
+from homeassistant.helpers.typing import ConfigType
 
-from .helpers import ListRegistry
+from .helpers import CacheStore, ListRegistry
 from .schema import (
     CapabilityDescription,
     CapabilityInstance,
@@ -21,11 +23,7 @@ from .schema import (
 )
 
 if TYPE_CHECKING:
-    from homeassistant.core import Context, HomeAssistant, State
-    from homeassistant.helpers.typing import ConfigType
-
     from .entry_data import ConfigEntryData
-    from .helpers import CacheStore
 
 
 @runtime_checkable
