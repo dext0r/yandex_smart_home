@@ -2,8 +2,8 @@ import asyncio
 import json
 import logging
 import time
-from typing import cast
-from unittest.mock import patch
+from typing import Any, Coroutine, Generator, cast
+from unittest.mock import AsyncMock, patch
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.auth.models import User
@@ -17,18 +17,45 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.yandex_smart_home import CONF_USER_ID, DOMAIN, ConnectionType, YandexSmartHome, const
+from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome
 from custom_components.yandex_smart_home.capability_custom import get_custom_capability
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
+from custom_components.yandex_smart_home.const import (
+    CONF_CLOUD_INSTANCE,
+    CONF_CLOUD_INSTANCE_CONNECTION_TOKEN,
+    CONF_CLOUD_INSTANCE_ID,
+    CONF_CONNECTION_TYPE,
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE,
+    CONF_ENTITY_CUSTOM_MODES,
+    CONF_ENTITY_CUSTOM_RANGES,
+    CONF_ENTITY_CUSTOM_TOGGLES,
+    CONF_ENTITY_MODE_MAP,
+    CONF_ENTITY_PROPERTIES,
+    CONF_ENTITY_PROPERTY_ENTITY,
+    CONF_ENTITY_PROPERTY_TYPE,
+    CONF_LINKED_PLATFORMS,
+    CONF_SKILL,
+    CONF_USER_ID,
+    DEVICE_CLASS_BUTTON,
+    ConnectionType,
+)
 from custom_components.yandex_smart_home.helpers import APIError, SmartHomePlatform
 from custom_components.yandex_smart_home.notifier import (
     NotifierConfig,
     PendingStates,
     YandexCloudNotifier,
     YandexDirectNotifier,
+    YandexNotifier,
 )
-from custom_components.yandex_smart_home.property_custom import ButtonPressCustomEventProperty, get_custom_property
+from custom_components.yandex_smart_home.property_custom import (
+    ButtonPressCustomEventProperty,
+    CO2LevelCustomFloatProperty,
+    HumidityCustomFloatProperty,
+    PressureCustomFloatProperty,
+    get_custom_property,
+)
 from custom_components.yandex_smart_home.property_float import HumiditySensor, TemperatureSensor
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -44,21 +71,23 @@ BASIC_CONFIG = NotifierConfig(user_id="bread", token="xyz", skill_id="a-b-c")
 
 
 @pytest.fixture(name="mock_call_later")
-def mock_call_later_fixture():
+def mock_call_later_fixture() -> Generator[AsyncMock, None, None]:
     with patch("custom_components.yandex_smart_home.notifier.async_call_later") as mock_call_later:
         yield mock_call_later
 
 
-async def _async_set_state(hass, entity_id, new_state, attributes=None):
+async def _async_set_state(
+    hass: HomeAssistant, entity_id: str, new_state: str, attributes: dict[str, Any] | None = None
+) -> None:
     hass.states.async_set(entity_id, new_state, attributes)
     await hass.async_block_till_done()
 
 
-async def _assert_empty_list(coro):
+async def _assert_empty_list(coro: Coroutine[Any, Any, Any]) -> None:
     assert await coro == []
 
 
-async def _assert_not_empty_list(coro):
+async def _assert_not_empty_list(coro: Coroutine[Any, Any, Any]) -> None:
     assert await coro != []
 
 
@@ -70,9 +99,9 @@ async def test_notifier_setup_no_linked_platforms(
     config_entry_direct = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
+        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
         options={
-            const.CONF_SKILL: {
+            CONF_SKILL: {
                 CONF_ID: "skill_id",
                 CONF_TOKEN: "token",
                 CONF_USER_ID: hass_admin_user.id,
@@ -83,10 +112,10 @@ async def test_notifier_setup_no_linked_platforms(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD,
-            const.CONF_CLOUD_INSTANCE: {
-                const.CONF_CLOUD_INSTANCE_ID: "test",
-                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+            CONF_CONNECTION_TYPE: ConnectionType.CLOUD,
+            CONF_CLOUD_INSTANCE: {
+                CONF_CLOUD_INSTANCE_ID: "test",
+                CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
         },
     )
@@ -95,10 +124,10 @@ async def test_notifier_setup_no_linked_platforms(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
-            const.CONF_CLOUD_INSTANCE: {
-                const.CONF_CLOUD_INSTANCE_ID: "test",
-                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+            CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
+            CONF_CLOUD_INSTANCE: {
+                CONF_CLOUD_INSTANCE_ID: "test",
+                CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
         },
     )
@@ -121,11 +150,11 @@ async def test_notifier_lifecycle_link_platform(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
-            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+            CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
         options={
-            const.CONF_SKILL: {
+            CONF_SKILL: {
                 CONF_ID: "skill_id",
                 CONF_TOKEN: "token",
                 CONF_USER_ID: hass_admin_user.id,
@@ -136,12 +165,12 @@ async def test_notifier_lifecycle_link_platform(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD,
-            const.CONF_CLOUD_INSTANCE: {
-                const.CONF_CLOUD_INSTANCE_ID: "test",
-                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+            CONF_CONNECTION_TYPE: ConnectionType.CLOUD,
+            CONF_CLOUD_INSTANCE: {
+                CONF_CLOUD_INSTANCE_ID: "test",
+                CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
-            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
     )
 
@@ -149,15 +178,15 @@ async def test_notifier_lifecycle_link_platform(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
-            const.CONF_CLOUD_INSTANCE: {
-                const.CONF_CLOUD_INSTANCE_ID: "test",
-                const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+            CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
+            CONF_CLOUD_INSTANCE: {
+                CONF_CLOUD_INSTANCE_ID: "test",
+                CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
-            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
         options={
-            const.CONF_SKILL: {
+            CONF_SKILL: {
                 CONF_ID: "skill_id",
                 CONF_TOKEN: "token",
             }
@@ -196,8 +225,8 @@ async def test_notifier_missing_skill_data(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
-            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+            CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
     )
     config_entry.add_to_hass(hass)
@@ -207,7 +236,7 @@ async def test_notifier_missing_skill_data(
     hass.config_entries.async_update_entry(
         config_entry,
         options={
-            const.CONF_SKILL: {
+            CONF_SKILL: {
                 CONF_ID: "skill_id",
                 CONF_TOKEN: "token",
                 CONF_USER_ID: hass_admin_user.id,
@@ -220,16 +249,16 @@ async def test_notifier_missing_skill_data(
     await hass.config_entries.async_unload(config_entry.entry_id)
 
 
-async def test_notifier_postponed_setup(hass, hass_admin_user):
+async def test_notifier_postponed_setup(hass: HomeAssistant, hass_admin_user: User) -> None:
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
-            const.CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+            CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
         options={
-            const.CONF_SKILL: {
+            CONF_SKILL: {
                 CONF_ID: "skill_id",
                 CONF_TOKEN: "token",
                 CONF_USER_ID: hass_admin_user.id,
@@ -247,7 +276,9 @@ async def test_notifier_postponed_setup(hass, hass_admin_user):
 
 
 @pytest.mark.parametrize("cls", [YandexDirectNotifier, YandexCloudNotifier])
-async def test_notifier_format_log_message(hass, cls, caplog):
+async def test_notifier_format_log_message(
+    hass: HomeAssistant, cls: type[YandexNotifier], caplog: pytest.LogCaptureFixture
+) -> None:
     n = cls(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x"), {})
     ne = cls(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x", extended_log=True), {})
     assert n._format_log_message("test") == "test"
@@ -259,54 +290,54 @@ async def test_notifier_format_log_message(hass, cls, caplog):
     assert caplog.messages == ["test", f"({BASIC_ENTRY_DATA.entry.entry_id[:6]}) test"]
 
 
-async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):
+async def test_notifier_track_templates(
+    hass_platform: HomeAssistant, mock_call_later: AsyncMock, caplog: pytest.LogCaptureFixture
+) -> None:
     hass = hass_platform
     entry_data = MockConfigEntryData(
         hass=hass,
         entity_config={
             "light.kitchen": {
-                const.CONF_ENTITY_PROPERTIES: [
+                CONF_ENTITY_PROPERTIES: [
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
-                        const.CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.foo",  # it fails
+                        CONF_ENTITY_PROPERTY_TYPE: "temperature",
+                        CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.foo",  # it fails
                     },
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "humidity",
-                        const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.float",
+                        CONF_ENTITY_PROPERTY_TYPE: "humidity",
+                        CONF_ENTITY_PROPERTY_ENTITY: "sensor.float",
                     },
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "pressure",
-                        const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.float",
+                        CONF_ENTITY_PROPERTY_TYPE: "pressure",
+                        CONF_ENTITY_PROPERTY_ENTITY: "sensor.float",
                     },
                 ]
             },
             "sensor.outside_temp": {
-                const.CONF_ENTITY_MODE_MAP: {"dishwashing": {"fowl": ["one"], "two": ["two"]}},
-                const.CONF_ENTITY_PROPERTIES: [
+                CONF_ENTITY_MODE_MAP: {"dishwashing": {"fowl": ["one"], "two": ["two"]}},
+                CONF_ENTITY_PROPERTIES: [
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "button",
-                        const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.button",
+                        CONF_ENTITY_PROPERTY_TYPE: "button",
+                        CONF_ENTITY_PROPERTY_ENTITY: "sensor.button",
                     },
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "co2_level",
-                        const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.float",
+                        CONF_ENTITY_PROPERTY_TYPE: "co2_level",
+                        CONF_ENTITY_PROPERTY_ENTITY: "sensor.float",
                     },
                 ],
-                const.CONF_ENTITY_CUSTOM_MODES: {
-                    "dishwashing": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.dishwashing"},
+                CONF_ENTITY_CUSTOM_MODES: {
+                    "dishwashing": {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.dishwashing"},
                 },
-                const.CONF_ENTITY_CUSTOM_TOGGLES: {
-                    "pause": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "binary_sensor.pause"}
+                CONF_ENTITY_CUSTOM_TOGGLES: {
+                    "pause": {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "binary_sensor.pause"}
                 },
-                const.CONF_ENTITY_CUSTOM_RANGES: {
-                    "volume": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.volume"}
-                },
+                CONF_ENTITY_CUSTOM_RANGES: {"volume": {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.volume"}},
             },
             "switch.not_exposed": {
-                const.CONF_ENTITY_PROPERTIES: [
+                CONF_ENTITY_PROPERTIES: [
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "humidity",
-                        const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.float",
+                        CONF_ENTITY_PROPERTY_TYPE: "humidity",
+                        CONF_ENTITY_PROPERTY_ENTITY: "sensor.float",
                     },
                 ]
             },
@@ -345,10 +376,14 @@ async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):
     await _async_set_state(hass, "sensor.float", "50")
     pending = await notifier._pending.async_get_all()
     assert list(pending.keys()) == ["light.kitchen", "sensor.outside_temp"]
+    assert isinstance(pending["light.kitchen"][0], HumidityCustomFloatProperty)
     assert pending["light.kitchen"][0].get_value() == 50
     assert pending["light.kitchen"][0].instance == "humidity"
+    assert isinstance(pending["light.kitchen"][1], PressureCustomFloatProperty)
     assert pending["light.kitchen"][1].get_value() == 50
     assert pending["light.kitchen"][1].instance == "pressure"
+    print(pending["sensor.outside_temp"][0])
+    assert isinstance(pending["sensor.outside_temp"][0], CO2LevelCustomFloatProperty)
     assert pending["sensor.outside_temp"][0].get_value() == 50
     assert pending["sensor.outside_temp"][0].instance == "co2_level"
     caplog.clear()
@@ -382,7 +417,7 @@ async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):
     assert notifier._unsub_report_states is not None
 
     # toggle
-    await _async_set_state(hass, "binary_sensor.pause", "off")
+    await _async_set_state(hass, "binary_sensor.pause", "off")  # type: ignore[unreachable]
     pending = await notifier._pending.async_get_all()
     assert list(pending.keys()) == ["sensor.outside_temp"]
     assert len(pending["sensor.outside_temp"]) == 1
@@ -406,17 +441,17 @@ async def test_notifier_track_templates(hass_platform, mock_call_later, caplog):
     assert notifier._template_changes_tracker is None
 
 
-async def test_notifier_track_templates_exception(hass_platform, mock_call_later, caplog):
+async def test_notifier_track_templates_exception(
+    hass_platform: HomeAssistant, mock_call_later: AsyncMock, caplog: pytest.LogCaptureFixture
+) -> None:
     hass = hass_platform
     entry_data = MockConfigEntryData(
         hass=hass,
         entity_config={
             "light.kitchen": {
-                const.CONF_ENTITY_CUSTOM_RANGES: {
+                CONF_ENTITY_CUSTOM_RANGES: {
                     "volume": {
-                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template(
-                            "{{ 100 / states('sensor.v')|int(10) }}"
-                        )
+                        CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 100 / states('sensor.v')|int(10) }}")
                     }
                 },
             },
@@ -449,7 +484,9 @@ async def test_notifier_track_templates_exception(hass_platform, mock_call_later
     await notifier.async_unload()
 
 
-async def test_notifier_state_changed(hass_platform, mock_call_later, caplog):
+async def test_notifier_state_changed(
+    hass_platform: HomeAssistant, mock_call_later: AsyncMock, caplog: pytest.LogCaptureFixture
+) -> None:
     hass = hass_platform
     entry_data = MockConfigEntryData(
         hass=hass,
@@ -478,13 +515,14 @@ async def test_notifier_state_changed(hass_platform, mock_call_later, caplog):
     mock_call_later.assert_called_once()
     assert notifier._unsub_report_states is not None
 
-    await _async_set_state(hass, "binary_sensor.front_door", "off", {ATTR_DEVICE_CLASS: "door"})
+    await _async_set_state(hass, "binary_sensor.front_door", "off", {ATTR_DEVICE_CLASS: "door"})  # type: ignore[unreachable]
     pending = await notifier._pending.async_get_all()
     assert list(pending.keys()) == ["binary_sensor.front_door"]
     assert len(pending["binary_sensor.front_door"]) == 1
     assert pending["binary_sensor.front_door"][0].get_value() == "closed"
 
     light_state = hass.states.get("light.kitchen")
+    assert light_state
     await _async_set_state(hass, light_state.entity_id, "off", light_state.attributes)
     pending = await notifier._pending.async_get_all()
     assert list(pending.keys()) == ["light.kitchen"]
@@ -502,7 +540,9 @@ async def test_notifier_state_changed(hass_platform, mock_call_later, caplog):
 
 
 @pytest.mark.parametrize("use_custom", [True, False])
-async def test_notifier_track_templates_over_states(hass_platform, mock_call_later, use_custom):
+async def test_notifier_track_templates_over_states(
+    hass_platform: HomeAssistant, mock_call_later: AsyncMock, use_custom: bool
+) -> None:
     hass = hass_platform
     test_light = cast(State, hass.states.get("light.kitchen"))
     test_sensor = cast(State, hass.states.get("sensor.outside_temp"))
@@ -511,15 +551,13 @@ async def test_notifier_track_templates_over_states(hass_platform, mock_call_lat
     if use_custom:
         entity_config = {
             test_light.entity_id: {
-                const.CONF_ENTITY_CUSTOM_RANGES: {
-                    "brightness": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.foo"}
-                }
+                CONF_ENTITY_CUSTOM_RANGES: {"brightness": {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.foo"}}
             },
             test_sensor.entity_id: {
-                const.CONF_ENTITY_PROPERTIES: [
+                CONF_ENTITY_PROPERTIES: [
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
-                        const.CONF_ENTITY_PROPERTY_ENTITY: "sensor.foo",
+                        CONF_ENTITY_PROPERTY_TYPE: "temperature",
+                        CONF_ENTITY_PROPERTY_ENTITY: "sensor.foo",
                     }
                 ]
             },
@@ -549,7 +587,7 @@ async def test_notifier_track_templates_over_states(hass_platform, mock_call_lat
     await _async_set_state(
         hass,
         test_sensor.entity_id,
-        99,
+        "99",
         test_sensor.attributes,
     )
     if use_custom:
@@ -560,15 +598,17 @@ async def test_notifier_track_templates_over_states(hass_platform, mock_call_lat
     await notifier.async_unload()
 
 
-async def test_notifier_initial_report(hass_platform, mock_call_later, caplog):
+async def test_notifier_initial_report(
+    hass_platform: HomeAssistant, mock_call_later: AsyncMock, caplog: pytest.LogCaptureFixture
+) -> None:
     entry_data = MockConfigEntryData(
         hass=hass_platform,
         entity_config={
             "light.kitchen": {
-                const.CONF_ENTITY_PROPERTIES: [
+                CONF_ENTITY_PROPERTIES: [
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
-                        const.CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.foo",  # cursed property
+                        CONF_ENTITY_PROPERTY_TYPE: "temperature",
+                        CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.foo",  # cursed property
                     }
                 ]
             }
@@ -579,7 +619,7 @@ async def test_notifier_initial_report(hass_platform, mock_call_later, caplog):
 
     hass_platform.states.async_set("switch.test", "on")
     hass_platform.states.async_set(
-        "sensor.button", "on", {ATTR_DEVICE_CLASS: const.DEVICE_CLASS_BUTTON, "last_action": "click"}
+        "sensor.button", "on", {ATTR_DEVICE_CLASS: DEVICE_CLASS_BUTTON, "last_action": "click"}
     )
 
     await notifier._async_initial_report()
@@ -588,13 +628,20 @@ async def test_notifier_initial_report(hass_platform, mock_call_later, caplog):
     devices = await notifier._pending.async_get_all()
     assert list(devices.keys()) == ["sensor.outside_temp", "light.kitchen"]
 
-    sensor_states = [s.get_instance_state().as_dict() for s in devices["sensor.outside_temp"]]
-    assert sensor_states == [
+    def _get_states(entity_id: str) -> list[dict[str, Any]]:
+        states: list[dict[str, Any]] = []
+        for s in devices[entity_id]:
+            instance_state = s.get_instance_state()
+            if instance_state:
+                states.append(instance_state.as_dict())
+
+        return states
+
+    assert _get_states("sensor.outside_temp") == [
         {"state": {"instance": "temperature", "value": 15.6}, "type": "devices.properties.float"},
     ]
 
-    light_states = [s.get_instance_state().as_dict() for s in devices["light.kitchen"] if s.get_instance_state()]
-    assert light_states == [
+    assert _get_states("light.kitchen") == [
         {"state": {"instance": "temperature_k", "value": 4200}, "type": "devices.capabilities.color_setting"},
         {"state": {"instance": "brightness", "value": 70}, "type": "devices.capabilities.range"},
         {"state": {"instance": "on", "value": True}, "type": "devices.capabilities.on_off"},
@@ -604,7 +651,7 @@ async def test_notifier_initial_report(hass_platform, mock_call_later, caplog):
     assert caplog.messages[-1:] == ["Unsupported entity binary_sensor.foo for temperature property of light.kitchen"]
 
 
-async def test_notifier_send_callback_exception(hass, caplog):
+async def test_notifier_send_callback_exception(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     notifier = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG, {})
 
     with patch.object(notifier._session, "post", side_effect=ClientConnectionError()):
@@ -620,7 +667,9 @@ async def test_notifier_send_callback_exception(hass, caplog):
         assert caplog.records[-1].levelno == logging.DEBUG
 
 
-async def test_notifier_send_direct(hass, aioclient_mock, caplog):
+async def test_notifier_send_direct(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, caplog: pytest.LogCaptureFixture
+) -> None:
     notifier = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG, {})
     token = BASIC_CONFIG.token
     skill_id = BASIC_CONFIG.skill_id
@@ -717,7 +766,9 @@ async def test_notifier_send_direct(hass, aioclient_mock, caplog):
     assert "Unexpected exception" in caplog.messages[-1]
 
 
-async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
+async def test_notifier_send_cloud(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, caplog: pytest.LogCaptureFixture
+) -> None:
     await async_setup_component(hass, DOMAIN, {})
     entry_data = MockConfigEntryData(hass, BASIC_ENTRY_DATA.entry)
 
@@ -817,12 +868,18 @@ async def test_notifier_send_cloud(hass, aioclient_mock, caplog):
     assert "Unexpected exception" in caplog.messages[-1]
 
 
-async def test_notifier_report_states(hass, mock_call_later, aioclient_mock, caplog):
+async def test_notifier_report_states(
+    hass: HomeAssistant,
+    mock_call_later: AsyncMock,
+    aioclient_mock: AiohttpClientMocker,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     class MockCapabilityFail(OnOffCapabilityBasic):
         def get_value(self) -> bool | None:
             raise APIError(ResponseCode.INTERNAL_ERROR, "api error cap")
 
     class MockPropertyFail(TemperatureSensor):
+        @property
         def supported(self) -> bool:
             return True
 
@@ -888,7 +945,7 @@ async def test_notifier_report_states(hass, mock_call_later, aioclient_mock, cap
         assert notifier._unsub_report_states is not None
 
 
-async def test_notifier_pending_states(hass):
+async def test_notifier_pending_states(hass: HomeAssistant) -> None:
     ps = PendingStates()
     await ps.async_add([OnOffCapabilityBasic(hass, BASIC_ENTRY_DATA, State("switch.test", "on"))], [])
     assert ps._device_states["switch.test"][0].get_value() is True
@@ -896,13 +953,13 @@ async def test_notifier_pending_states(hass):
     assert ps._device_states["switch.test"][0].get_value() is False
 
 
-async def test_notifier_capability_check_value_change(hass):
+async def test_notifier_capability_check_value_change(hass: HomeAssistant) -> None:
     ps = PendingStates()
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.empty",
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.empty",
         },
         CapabilityType.RANGE,
         RangeCapabilityInstance.OPEN,
@@ -928,9 +985,9 @@ async def test_notifier_capability_check_value_change(hass):
 
 
 @pytest.mark.parametrize("instance", FloatPropertyInstance.__members__.values())
-async def test_notifier_float_property_check_value_change(hass, instance):
+async def test_notifier_float_property_check_value_change(hass: HomeAssistant, instance: FloatPropertyInstance) -> None:
     ps = PendingStates()
-    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, "sensor.foo")
+    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {CONF_ENTITY_PROPERTY_TYPE: instance}, "sensor.foo")
     await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template("5"))], []))
     await _assert_empty_list(
         ps.async_add([prop.new_with_value_template(Template("5"))], [prop.new_with_value_template(Template("5"))])
@@ -951,7 +1008,9 @@ async def test_notifier_float_property_check_value_change(hass, instance):
 
 
 @pytest.mark.parametrize("instance", EventPropertyInstance.__members__.values())
-async def test_notifier_binary_event_property_check_value_change(hass, instance):
+async def test_notifier_binary_event_property_check_value_change(
+    hass: HomeAssistant, instance: EventPropertyInstance
+) -> None:
     if instance in [EventPropertyInstance.BUTTON, EventPropertyInstance.VIBRATION]:
         return
 
@@ -960,7 +1019,7 @@ async def test_notifier_binary_event_property_check_value_change(hass, instance)
         a_value, b_value = Template("normal"), Template("low")
 
     ps = PendingStates()
-    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
+    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
     await _assert_empty_list(ps.async_add([prop.new_with_value_template(a_value)], []))
     await _assert_empty_list(
         ps.async_add([prop.new_with_value_template(a_value)], [prop.new_with_value_template(a_value)])
@@ -983,9 +1042,9 @@ async def test_notifier_binary_event_property_check_value_change(hass, instance)
 @pytest.mark.parametrize(
     "instance,v", [(EventPropertyInstance.BUTTON, "click"), (EventPropertyInstance.VIBRATION, "on")]
 )
-async def test_notifier_reactive_event_property_check_value_change(hass, instance, v):
+async def test_notifier_reactive_event_property_check_value_change(hass: HomeAssistant, instance: str, v: str) -> None:
     ps = PendingStates()
-    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {const.CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
+    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
     await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template(v))], []))
     await _assert_empty_list(
         ps.async_add([prop.new_with_value_template(Template(v))], [prop.new_with_value_template(Template(v))])

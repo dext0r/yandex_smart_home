@@ -183,10 +183,6 @@ module = "tests.test_init"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "tests.test_notifier"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module = "tests.test_schema"
 ignore_errors = true
 
