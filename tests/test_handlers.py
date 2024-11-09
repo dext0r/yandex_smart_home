@@ -8,10 +8,17 @@ from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers.template import Template
 from homeassistant.util.decorator import Registry
 
-from custom_components.yandex_smart_home import YandexSmartHome, const, handlers
+from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome, handlers
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
-from custom_components.yandex_smart_home.const import DOMAIN, EVENT_DEVICE_ACTION
+from custom_components.yandex_smart_home.const import (
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE,
+    CONF_ENTITY_CUSTOM_RANGES,
+    CONF_ENTITY_PROPERTIES,
+    CONF_ENTITY_PROPERTY_TYPE,
+    CONF_ENTITY_PROPERTY_VALUE_TEMPLATE,
+    EVENT_DEVICE_ACTION,
+)
 from custom_components.yandex_smart_home.helpers import APIError, RequestData, SmartHomePlatform
 from custom_components.yandex_smart_home.schema import (
     CapabilityInstanceActionResultValue,
@@ -78,13 +85,13 @@ async def test_handler_devices_query(hass, caplog):
     entry_data = MockConfigEntryData(
         entity_config={
             switch_1.entity_id: {
-                const.CONF_ENTITY_CUSTOM_RANGES: {
-                    "volume": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("not-float", hass)}
+                CONF_ENTITY_CUSTOM_RANGES: {
+                    "volume": {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("not-float", hass)}
                 },
-                const.CONF_ENTITY_PROPERTIES: [
+                CONF_ENTITY_PROPERTIES: [
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
-                        const.CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("not-float", hass),
+                        CONF_ENTITY_PROPERTY_TYPE: "temperature",
+                        CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("not-float", hass),
                     }
                 ],
             }

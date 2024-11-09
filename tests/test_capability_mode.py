@@ -2,12 +2,16 @@
 from typing import cast
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
+from homeassistant.components.climate import ClimateEntityFeature, HVACMode
+from homeassistant.components.fan import FanEntityFeature
+from homeassistant.components.humidifier import HumidifierEntityFeature
+from homeassistant.components.media_player import MediaPlayerEntityFeature
+from homeassistant.components.vacuum import VacuumEntityFeature
 from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_OFF, STATE_ON, STATE_UNKNOWN
 from homeassistant.core import Context, State
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
-from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability import STATE_CAPABILITIES_REGISTRY
 from custom_components.yandex_smart_home.capability_mode import (
     FanSpeedCapabilityFanViaPercentage,
@@ -15,6 +19,7 @@ from custom_components.yandex_smart_home.capability_mode import (
     ModeCapability,
     StateModeCapability,
 )
+from custom_components.yandex_smart_home.const import CONF_ENTITY_MODE_MAP
 from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -132,7 +137,7 @@ async def test_capability_mode_custom_mapping(hass):
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {
+                CONF_ENTITY_MODE_MAP: {
                     "swing": {
                         ModeCapabilityMode.ECO: ["mode_foo"],
                         ModeCapabilityMode.LATTE: ["Mode_Bar"],
@@ -165,7 +170,7 @@ async def test_capability_mode_fallback_index(hass):
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {
+                CONF_ENTITY_MODE_MAP: {
                     "thermostat": {
                         ModeCapabilityMode.BABY_FOOD: ["mode_1"],
                         ModeCapabilityMode.AMERICANO: ["mode_3"],
@@ -191,7 +196,7 @@ async def test_capability_mode_fallback_index(hass):
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {
+                CONF_ENTITY_MODE_MAP: {
                     "swing": {
                         ModeCapabilityMode.BABY_FOOD: ["mode_1"],
                         ModeCapabilityMode.AMERICANO: ["mode_3"],
@@ -226,7 +231,7 @@ async def test_capability_mode_thermostat(hass):
     state = State(
         "climate.test",
         STATE_OFF,
-        {climate.ATTR_HVAC_MODES: [climate.HVACMode.HEAT_COOL, climate.HVACMode.FAN_ONLY, climate.HVACMode.OFF]},
+        {climate.ATTR_HVAC_MODES: [HVACMode.HEAT_COOL, HVACMode.FAN_ONLY, HVACMode.OFF]},
     )
     cap = cast(
         StateModeCapability,
@@ -239,7 +244,7 @@ async def test_capability_mode_thermostat(hass):
     }
     assert cap.get_value() is None
 
-    cap.state.state = climate.HVACMode.FAN_ONLY
+    cap.state.state = HVACMode.FAN_ONLY
     assert cap.get_value() == ModeCapabilityMode.FAN_ONLY
 
     calls = async_mock_service(hass, climate.DOMAIN, climate.SERVICE_SET_HVAC_MODE)
@@ -258,7 +263,7 @@ async def test_capability_mode_swing(hass):
     state = State(
         "climate.test",
         STATE_OFF,
-        {ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.SWING_MODE, climate.ATTR_SWING_MODES: ["lr", "ud"]},
+        {ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.SWING_MODE, climate.ATTR_SWING_MODES: ["lr", "ud"]},
     )
     cap = cast(
         ModeCapability,
@@ -272,7 +277,7 @@ async def test_capability_mode_swing(hass):
         "climate.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.SWING_MODE,
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.SWING_MODE,
             climate.ATTR_SWING_MODES: ["lr", "ud"],
             climate.ATTR_SWING_MODE: "ud",
         },
@@ -300,7 +305,7 @@ async def test_capability_mode_program_humidifier(hass):
         "humidifier.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: humidifier.HumidifierEntityFeature.MODES,
+            ATTR_SUPPORTED_FEATURES: HumidifierEntityFeature.MODES,
             humidifier.ATTR_AVAILABLE_MODES: ["Idle", "Middle"],
         },
     )
@@ -316,7 +321,7 @@ async def test_capability_mode_program_humidifier(hass):
         "humidifier.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: humidifier.HumidifierEntityFeature.MODES,
+            ATTR_SUPPORTED_FEATURES: HumidifierEntityFeature.MODES,
             humidifier.ATTR_AVAILABLE_MODES: ["Idle", "Middle"],
             humidifier.ATTR_MODE: "Idle",
         },
@@ -344,7 +349,7 @@ async def test_capability_mode_program_fan(hass):
         "fan.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.PRESET_MODE | fan.FanEntityFeature.SET_SPEED,
+            ATTR_SUPPORTED_FEATURES: FanEntityFeature.PRESET_MODE | FanEntityFeature.SET_SPEED,
             fan.ATTR_PRESET_MODES: ["Nature", "Normal"],
         },
     )
@@ -354,7 +359,7 @@ async def test_capability_mode_program_fan(hass):
         "fan.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.PRESET_MODE | fan.FanEntityFeature.SET_SPEED,
+            ATTR_SUPPORTED_FEATURES: FanEntityFeature.PRESET_MODE | FanEntityFeature.SET_SPEED,
             fan.ATTR_PERCENTAGE_STEP: 50,
             fan.ATTR_PRESET_MODES: ["Nature", "Normal"],
         },
@@ -371,7 +376,7 @@ async def test_capability_mode_program_fan(hass):
         "fan.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.PRESET_MODE | fan.FanEntityFeature.SET_SPEED,
+            ATTR_SUPPORTED_FEATURES: FanEntityFeature.PRESET_MODE | FanEntityFeature.SET_SPEED,
             fan.ATTR_PERCENTAGE_STEP: 50,
             fan.ATTR_PRESET_MODES: ["Nature", "Normal"],
             fan.ATTR_PRESET_MODE: "Nature",
@@ -407,7 +412,7 @@ async def test_capability_mode_input_source(hass, caplog):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
             media_player.ATTR_INPUT_SOURCE_LIST: [f"s{i}" for i in range(1, 15)],
         },
     )
@@ -423,7 +428,7 @@ async def test_capability_mode_input_source(hass, caplog):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
             media_player.ATTR_INPUT_SOURCE_LIST: ["s1", "s2", "s3"],
         },
     )
@@ -444,7 +449,7 @@ async def test_capability_mode_input_source(hass, caplog):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
             media_player.ATTR_INPUT_SOURCE_LIST: ["s1", "s2", "s3"],
             media_player.ATTR_INPUT_SOURCE: "test",
         },
@@ -462,7 +467,7 @@ async def test_capability_mode_input_source(hass, caplog):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
             media_player.ATTR_INPUT_SOURCE_LIST: ["s1", "s2", "s3"],
             media_player.ATTR_INPUT_SOURCE: "s2",
         },
@@ -490,7 +495,7 @@ async def test_capability_mode_input_source_cache(hass, off_state):
         "media_player.test",
         off_state,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
             media_player.ATTR_INPUT_SOURCE_LIST: ["s1", "s2", "s3"],
         },
     )
@@ -506,7 +511,7 @@ async def test_capability_mode_input_source_cache(hass, off_state):
         "media_player.test",
         off_state,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
             media_player.ATTR_INPUT_SOURCE_LIST: [],
         },
     )
@@ -522,7 +527,7 @@ async def test_capability_mode_input_source_cache(hass, off_state):
         "media_player.test",
         off_state,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
             media_player.ATTR_INPUT_SOURCE_LIST: ["Live TV"],
         },
     )
@@ -538,7 +543,7 @@ async def test_capability_mode_input_source_cache(hass, off_state):
         "media_player.test",
         off_state,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
         },
     )
     cap = cast(
@@ -553,7 +558,7 @@ async def test_capability_mode_input_source_cache(hass, off_state):
         "media_player.test",
         STATE_ON,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
         },
     )
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
@@ -562,14 +567,14 @@ async def test_capability_mode_input_source_cache(hass, off_state):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.SELECT_SOURCE,
         },
     )
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE)
 
 
 @pytest.mark.parametrize(
-    "features", [fan.FanEntityFeature.SET_SPEED | fan.FanEntityFeature.PRESET_MODE, fan.FanEntityFeature.SET_SPEED]
+    "features", [FanEntityFeature.SET_SPEED | FanEntityFeature.PRESET_MODE, FanEntityFeature.SET_SPEED]
 )
 async def test_capability_mode_fan_speed_fan_via_percentage(hass, features):
     state = State("fan.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, fan.ATTR_PERCENTAGE_STEP: 100})
@@ -644,7 +649,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage(hass, features):
 
 
 @pytest.mark.parametrize(
-    "features", [fan.FanEntityFeature.SET_SPEED | fan.FanEntityFeature.PRESET_MODE, fan.FanEntityFeature.SET_SPEED]
+    "features", [FanEntityFeature.SET_SPEED | FanEntityFeature.PRESET_MODE, FanEntityFeature.SET_SPEED]
 )
 async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, features):
     state = State(
@@ -655,7 +660,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {
+                CONF_ENTITY_MODE_MAP: {
                     "fan_speed": {
                         ModeCapabilityMode.FOWL: ["50%"],
                         ModeCapabilityMode.HORIZONTAL: ["100%"],
@@ -714,7 +719,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {
+                CONF_ENTITY_MODE_MAP: {
                     "fan_speed": {
                         ModeCapabilityMode.FOWL: ["not-int"],
                     }
@@ -733,7 +738,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass, feature
 
 
 @pytest.mark.parametrize(
-    "features", [fan.FanEntityFeature.SET_SPEED | fan.FanEntityFeature.PRESET_MODE, fan.FanEntityFeature.PRESET_MODE]
+    "features", [FanEntityFeature.SET_SPEED | FanEntityFeature.PRESET_MODE, FanEntityFeature.PRESET_MODE]
 )
 async def test_capability_mode_fan_speed_fan_via_preset(hass, features):
     state = State("fan.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features})
@@ -788,7 +793,7 @@ async def test_capability_mode_fan_speed_climate(hass, caplog):
         "climate.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.FAN_MODE,
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.FAN_MODE,
             climate.ATTR_FAN_MODES: ["3", "2"],
         },
     )
@@ -810,7 +815,7 @@ async def test_capability_mode_fan_speed_climate(hass, caplog):
         "climate.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.FAN_MODE,
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.FAN_MODE,
             climate.ATTR_FAN_MODES: ["3", "2"],
             climate.ATTR_FAN_MODE: "3",
         },
@@ -825,7 +830,7 @@ async def test_capability_mode_fan_speed_climate(hass, caplog):
         "climate.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.FAN_MODE,
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.FAN_MODE,
             climate.ATTR_FAN_MODES: ["3", "2"],
             climate.ATTR_FAN_MODE: "on",
         },
@@ -856,7 +861,7 @@ async def test_capability_mode_cleanup_mode(hass):
         "vacuum.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.FAN_SPEED,
+            ATTR_SUPPORTED_FEATURES: VacuumEntityFeature.FAN_SPEED,
             vacuum.ATTR_FAN_SPEED_LIST: ["gentle", "performance"],
         },
     )
@@ -874,7 +879,7 @@ async def test_capability_mode_cleanup_mode(hass):
         "vacuum.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.FAN_SPEED,
+            ATTR_SUPPORTED_FEATURES: VacuumEntityFeature.FAN_SPEED,
             vacuum.ATTR_FAN_SPEED_LIST: ["gentle", "performance"],
             vacuum.ATTR_FAN_SPEED: "performance",
         },

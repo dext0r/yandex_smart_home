@@ -1,4 +1,4 @@
-from homeassistant.components import binary_sensor, input_text, sensor
+from homeassistant.components import input_text, sensor
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import ATTR_DEVICE_CLASS, CONF_DEVICE_CLASS, STATE_OFF, STATE_ON
 from homeassistant.core import HomeAssistant, State
@@ -22,7 +22,7 @@ from .test_property import assert_no_properties, get_exact_one_property
     ],
 )
 async def test_state_property_event_open(hass: HomeAssistant, device_class: str, supported: bool) -> None:
-    state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
+    state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.OPEN)
     else:
@@ -46,7 +46,7 @@ async def test_state_property_event_open(hass: HomeAssistant, device_class: str,
     ],
 )
 async def test_state_property_event_motion(hass: HomeAssistant, device_class: str, supported: bool) -> None:
-    state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
+    state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.MOTION)
     else:
@@ -68,7 +68,7 @@ async def test_state_property_event_motion(hass: HomeAssistant, device_class: st
     ],
 )
 async def test_state_property_event_gas(hass: HomeAssistant, device_class: str, supported: bool) -> None:
-    state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
+    state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.GAS)
     else:
@@ -95,7 +95,7 @@ async def test_state_property_event_gas(hass: HomeAssistant, device_class: str, 
     ],
 )
 async def test_state_property_event_smoke(hass: HomeAssistant, device_class: str, supported: bool) -> None:
-    state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
+    state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.SMOKE)
     else:
@@ -122,7 +122,7 @@ async def test_state_property_event_smoke(hass: HomeAssistant, device_class: str
     ],
 )
 async def test_state_property_event_battery(hass: HomeAssistant, device_class: str, supported: bool) -> None:
-    state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
+    state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(
             hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BATTERY_LEVEL
@@ -149,7 +149,7 @@ async def test_state_property_event_battery(hass: HomeAssistant, device_class: s
     ],
 )
 async def test_state_property_event_water_leak(hass: HomeAssistant, device_class: str, supported: bool) -> None:
-    state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
+    state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(
             hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.WATER_LEAK

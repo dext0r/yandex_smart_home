@@ -24,6 +24,10 @@ from homeassistant.components import (
     valve,
     water_heater,
 )
+from homeassistant.components.climate import HVACMode
+from homeassistant.components.media_player import MediaPlayerEntityFeature
+from homeassistant.components.vacuum import VacuumEntityFeature
+from homeassistant.components.water_heater import WaterHeaterEntityFeature
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     MAJOR_VERSION,
@@ -43,9 +47,15 @@ from homeassistant.const import (
 from homeassistant.core import DOMAIN as HA_DOMAIN, Context
 from homeassistant.helpers.service import async_call_from_config
 
-from . import const
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
-from .const import CONF_FEATURES, CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON, MediaPlayerFeature
+from .const import (
+    CONF_FEATURES,
+    CONF_STATE_UNKNOWN,
+    CONF_TURN_OFF,
+    CONF_TURN_ON,
+    SKYKETTLE_MODE_BOIL,
+    MediaPlayerFeature,
+)
 from .helpers import ActionNotAllowed, APIError
 from .schema import (
     CapabilityType,
@@ -279,7 +289,7 @@ class OnOffCapabilityCover(OnOffCapability):
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
-        return self.state.state == cover.STATE_OPEN
+        return self.state.state == STATE_OPEN
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -331,8 +341,8 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
                 return True
 
             return bool(
-                self._state_features & media_player.MediaPlayerEntityFeature.TURN_ON
-                or self._state_features & media_player.MediaPlayerEntityFeature.TURN_OFF
+                self._state_features & MediaPlayerEntityFeature.TURN_ON
+                or self._state_features & MediaPlayerEntityFeature.TURN_OFF
             )
 
         return False
@@ -360,16 +370,13 @@ class OnOffCapabilityVacuum(OnOffCapability):
         if CONF_TURN_ON in self._entity_config:
             return True
 
-        if (
-            self._state_features & vacuum.VacuumEntityFeature.TURN_ON
-            and self._state_features & vacuum.VacuumEntityFeature.TURN_OFF
-        ):
+        if self._state_features & VacuumEntityFeature.TURN_ON and self._state_features & VacuumEntityFeature.TURN_OFF:
             return True
 
-        if self._state_features & vacuum.VacuumEntityFeature.START:
+        if self._state_features & VacuumEntityFeature.START:
             if (
-                self._state_features & vacuum.VacuumEntityFeature.RETURN_HOME
-                or self._state_features & vacuum.VacuumEntityFeature.STOP
+                self._state_features & VacuumEntityFeature.RETURN_HOME
+                or self._state_features & VacuumEntityFeature.STOP
             ):
                 return True
 
@@ -384,14 +391,14 @@ class OnOffCapabilityVacuum(OnOffCapability):
         if state.value:
             service = SERVICE_TURN_ON
 
-            if self._state_features & vacuum.VacuumEntityFeature.START:
+            if self._state_features & VacuumEntityFeature.START:
                 service = vacuum.SERVICE_START
         else:
             service = SERVICE_TURN_OFF
 
-            if self._state_features & vacuum.VacuumEntityFeature.RETURN_HOME:
+            if self._state_features & VacuumEntityFeature.RETURN_HOME:
                 service = vacuum.SERVICE_RETURN_TO_BASE
-            elif self._state_features & vacuum.VacuumEntityFeature.STOP:
+            elif self._state_features & VacuumEntityFeature.STOP:
                 service = vacuum.SERVICE_STOP
 
         await self._hass.services.async_call(
@@ -409,7 +416,7 @@ class OnOffCapabilityClimate(OnOffCapability):
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
-        return self.state.state != climate.HVACMode.OFF
+        return self.state.state != HVACMode.OFF
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state (if wasn't overriden by the user)."""
@@ -419,7 +426,7 @@ class OnOffCapabilityClimate(OnOffCapability):
             service = SERVICE_TURN_ON
 
             hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES, [])
-            for mode in (climate.HVACMode.HEAT_COOL, climate.HVACMode.AUTO):
+            for mode in (HVACMode.HEAT_COOL, HVACMode.AUTO):
                 if mode not in hvac_modes:
                     continue
 
@@ -436,7 +443,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
     """Capability to turn on or off a water heater."""
 
     _water_heater_operations = {
-        STATE_ON: [STATE_ON, "On", "ON", water_heater.STATE_ELECTRIC, const.SKYKETTLE_MODE_BOIL],
+        STATE_ON: [STATE_ON, "On", "ON", water_heater.STATE_ELECTRIC, SKYKETTLE_MODE_BOIL],
         STATE_OFF: [STATE_OFF, "Off", "OFF"],
     }
 
@@ -447,11 +454,11 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
-        return self.state.state.lower() != water_heater.STATE_OFF
+        return self.state.state.lower() != STATE_OFF
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state (if wasn't overriden by the user)."""
-        if self._state_features & water_heater.WaterHeaterEntityFeature.ON_OFF:
+        if self._state_features & WaterHeaterEntityFeature.ON_OFF:
             await self._set_state_on_off(context, state)
         else:
             await self._set_state_operation_mode(context, state)

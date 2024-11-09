@@ -7,10 +7,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry
 
-from custom_components.yandex_smart_home.device import async_get_device_description, async_get_devices
-
 from . import DOMAIN, YandexSmartHome
 from .const import CONF_CLOUD_INSTANCE, CONF_SKILL
+from .device import async_get_device_description, async_get_devices
 
 
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, config_entry: ConfigEntry) -> dict[str, Any]:

@@ -13,7 +13,7 @@ from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_NAME, CONF_PLATFORM
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import AbortFlow, FlowHandler
 from homeassistant.helpers import network, selector
-from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES, EntityFilter
+from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES, FILTER_SCHEMA, EntityFilter
 from homeassistant.helpers.selector import (
     BooleanSelector,
     SelectOptionDict,
@@ -26,7 +26,9 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.setup import async_setup_component
 import voluptuous as vol
 
-from . import DOMAIN, FILTER_SCHEMA, SmartHomePlatform, cloud
+from custom_components.yandex_smart_home.helpers import SmartHomePlatform
+
+from . import DOMAIN, cloud
 from .const import (
     CLOUD_BASE_URL,
     CONF_CLOUD_INSTANCE,

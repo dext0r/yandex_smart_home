@@ -15,7 +15,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
-from custom_components.yandex_smart_home import ConnectionType, SmartHomePlatform, YandexSmartHome, cloud
+from custom_components.yandex_smart_home import YandexSmartHome, cloud
 from custom_components.yandex_smart_home.config_flow import DOMAIN, ConfigFlowHandler, async_config_entry_title
 from custom_components.yandex_smart_home.const import (
     CLOUD_BASE_URL,
@@ -30,8 +30,10 @@ from custom_components.yandex_smart_home.const import (
     CONF_LINKED_PLATFORMS,
     CONF_SKILL,
     CONF_USER_ID,
+    ConnectionType,
     EntityFilterSource,
 )
+from custom_components.yandex_smart_home.helpers import SmartHomePlatform
 from custom_components.yandex_smart_home.http import YandexSmartHomeUnauthorizedView
 
 from . import test_cloud

@@ -7,14 +7,33 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.components import light
+from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,
+    ATTR_COLOR_MODE,
+    ATTR_COLOR_TEMP_KELVIN,
+    ATTR_EFFECT,
+    ATTR_EFFECT_LIST,
+    ATTR_HS_COLOR,
+    ATTR_KELVIN,
+    ATTR_RGB_COLOR,
+    ATTR_RGBW_COLOR,
+    ATTR_SUPPORTED_COLOR_MODES,
+    ATTR_WHITE,
+    ATTR_XY_COLOR,
+    COLOR_MODE_COLOR_TEMP,
+    SUPPORT_COLOR,
+    SUPPORT_COLOR_TEMP,
+    ColorMode,
+    LightEntityFeature,
+    color_temp_supported,
+)
 from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_ON
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
 
-from . import const
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
 from .color import ColorConverter, ColorTemperatureConverter
-from .const import CONF_COLOR_PROFILE, CONF_ENTITY_MODE_MAP
+from .const import CONF_COLOR_PROFILE, CONF_ENTITY_CUSTOM_MODES, CONF_ENTITY_MODE_MAP
 from .helpers import APIError
 from .schema import (
     CapabilityInstance,
@@ -82,7 +101,7 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
     def _get_scene_capability(self) -> ColorSceneCapability:
         """Return scene capability."""
         scene_instance = ColorSettingCapabilityInstance.SCENE
-        if custom_scene_config := self._entity_config.get(const.CONF_ENTITY_CUSTOM_MODES, {}).get(scene_instance):
+        if custom_scene_config := self._entity_config.get(CONF_ENTITY_CUSTOM_MODES, {}).get(scene_instance):
             from .capability_custom import get_custom_capability
 
             custom_capability = get_custom_capability(
@@ -110,16 +129,16 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
         if self.state.domain != light.DOMAIN:
             return False
 
-        if self._state_features & light.SUPPORT_COLOR:  # legacy
+        if self._state_features & SUPPORT_COLOR:  # legacy
             return True
 
-        for color_mode in self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, []):
+        for color_mode in self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []):
             if color_mode in [
-                light.ColorMode.RGB,
-                light.ColorMode.RGBW,
-                light.ColorMode.RGBWW,
-                light.ColorMode.HS,
-                light.ColorMode.XY,
+                ColorMode.RGB,
+                ColorMode.RGBW,
+                ColorMode.RGBWW,
+                ColorMode.HS,
+                ColorMode.XY,
             ]:
                 return True
 
@@ -136,16 +155,16 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
 
     def get_value(self) -> int | None:
         """Return the current capability value."""
-        if self.state.attributes.get(light.ATTR_COLOR_MODE) == light.COLOR_MODE_COLOR_TEMP:
+        if self.state.attributes.get(ATTR_COLOR_MODE) == COLOR_MODE_COLOR_TEMP:
             return None
 
-        rgb_color = self.state.attributes.get(light.ATTR_RGB_COLOR)
+        rgb_color = self.state.attributes.get(ATTR_RGB_COLOR)
         if rgb_color is None:
-            hs_color = self.state.attributes.get(light.ATTR_HS_COLOR)
+            hs_color = self.state.attributes.get(ATTR_HS_COLOR)
             if hs_color is not None:
                 rgb_color = color_hs_to_RGB(*hs_color)
 
-            xy_color = self.state.attributes.get(light.ATTR_XY_COLOR)
+            xy_color = self.state.attributes.get(ATTR_XY_COLOR)
             if xy_color is not None:
                 rgb_color = color_xy_to_RGB(*xy_color)
 
@@ -164,7 +183,7 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
             SERVICE_TURN_ON,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_RGB_COLOR: tuple(self._converter.get_ha_color(state.value)),
+                ATTR_RGB_COLOR: tuple(self._converter.get_ha_color(state.value)),
             },
             blocking=True,
             context=context,
@@ -193,15 +212,15 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
 
     _default_white_temperature = ColorTemperatureConverter.default_white_temperature
     _cold_white_temperature = 6500
-    _color_modes_temp_to_white = {light.ColorMode.RGBW, light.ColorMode.RGB, light.ColorMode.HS, light.ColorMode.XY}
+    _color_modes_temp_to_white = {ColorMode.RGBW, ColorMode.RGB, ColorMode.HS, ColorMode.XY}
 
     @property
     def supported(self) -> bool:
         """Test if capability is supported."""
         if self.state.domain == light.DOMAIN:
-            supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
+            supported_color_modes = self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, [])
 
-            if self._state_features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
+            if self._state_features & SUPPORT_COLOR_TEMP or color_temp_supported(supported_color_modes):
                 return True
 
             if self._color_modes_temp_to_white & set(supported_color_modes):
@@ -212,9 +231,9 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
     @property
     def parameters(self) -> ColorSettingCapabilityParameters:
         """Return parameters for a devices list request."""
-        supported_color_modes = set(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, []))
+        supported_color_modes = set(self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []))
 
-        if self._state_features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
+        if self._state_features & SUPPORT_COLOR_TEMP or color_temp_supported(supported_color_modes):
             min_temp, max_temp = self._converter.supported_range
             return ColorSettingCapabilityParameters(
                 temperature_k=CapabilityParameterTemperatureK(min=min_temp, max=max_temp)
@@ -222,7 +241,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
 
         min_temp = self._default_white_temperature
         max_temp = self._default_white_temperature
-        if light.ColorMode.RGBW in supported_color_modes or light.ColorMode.WHITE in supported_color_modes:
+        if ColorMode.RGBW in supported_color_modes or ColorMode.WHITE in supported_color_modes:
             max_temp = self._cold_white_temperature
 
         return ColorSettingCapabilityParameters(
@@ -235,18 +254,18 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
 
     def get_value(self) -> int | None:
         """Return the current capability value."""
-        color_temperature = self.state.attributes.get(light.ATTR_COLOR_TEMP_KELVIN)
+        color_temperature = self.state.attributes.get(ATTR_COLOR_TEMP_KELVIN)
         if color_temperature is not None:
             return self._converter.get_yandex_color_temperature(color_temperature)
 
-        supported_color_modes = self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, [])
-        color_mode = self.state.attributes.get(light.ATTR_COLOR_MODE)
+        supported_color_modes = self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, [])
+        color_mode = self.state.attributes.get(ATTR_COLOR_MODE)
 
-        if color_mode == light.ColorMode.WHITE:
+        if color_mode == ColorMode.WHITE:
             return self._default_white_temperature
 
-        if color_mode == light.ColorMode.RGBW:
-            rgbw_color = self.state.attributes.get(light.ATTR_RGBW_COLOR)
+        if color_mode == ColorMode.RGBW:
+            rgbw_color = self.state.attributes.get(ATTR_RGBW_COLOR)
             if rgbw_color is not None:
                 if rgbw_color[:3] == (0, 0, 0) and rgbw_color[3] > 0:
                     return self._default_white_temperature
@@ -255,10 +274,10 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
 
             return None
 
-        if color_mode in [light.ColorMode.RGB, light.ColorMode.HS, light.ColorMode.XY]:
-            rgb_color = self.state.attributes.get(light.ATTR_RGB_COLOR)
+        if color_mode in [ColorMode.RGB, ColorMode.HS, ColorMode.XY]:
+            rgb_color = self.state.attributes.get(ATTR_RGB_COLOR)
             if rgb_color is not None and rgb_color == (255, 255, 255):
-                if light.ColorMode.WHITE in supported_color_modes:
+                if ColorMode.WHITE in supported_color_modes:
                     return self._cold_white_temperature
 
                 return self._default_white_temperature
@@ -269,23 +288,23 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
 
     async def set_instance_state(self, context: Context, state: TemperatureKInstanceActionState) -> None:
         """Change the capability state."""
-        supported_color_modes = set(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES, []))
+        supported_color_modes = set(self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []))
         service_data: dict[str, Any] = {}
 
-        if self._state_features & light.SUPPORT_COLOR_TEMP or light.color_temp_supported(supported_color_modes):
-            service_data[light.ATTR_KELVIN] = self._converter.get_ha_color_temperature(state.value)
+        if self._state_features & SUPPORT_COLOR_TEMP or color_temp_supported(supported_color_modes):
+            service_data[ATTR_KELVIN] = self._converter.get_ha_color_temperature(state.value)
 
-        elif light.ColorMode.WHITE in supported_color_modes and state.value == self._default_white_temperature:
-            service_data[light.ATTR_WHITE] = self.state.attributes.get(light.ATTR_BRIGHTNESS, 255)
+        elif ColorMode.WHITE in supported_color_modes and state.value == self._default_white_temperature:
+            service_data[ATTR_WHITE] = self.state.attributes.get(ATTR_BRIGHTNESS, 255)
 
-        elif light.ColorMode.RGBW in supported_color_modes:
+        elif ColorMode.RGBW in supported_color_modes:
             if state.value == self._default_white_temperature:
-                service_data[light.ATTR_RGBW_COLOR] = (0, 0, 0, self.state.attributes.get(light.ATTR_BRIGHTNESS, 255))
+                service_data[ATTR_RGBW_COLOR] = (0, 0, 0, self.state.attributes.get(ATTR_BRIGHTNESS, 255))
             else:
-                service_data[light.ATTR_RGBW_COLOR] = (255, 255, 255, 0)
+                service_data[ATTR_RGBW_COLOR] = (255, 255, 255, 0)
 
-        elif {light.ColorMode.RGB, light.ColorMode.HS, light.ColorMode.XY} & supported_color_modes:
-            service_data[light.ATTR_RGB_COLOR] = (255, 255, 255)
+        elif {ColorMode.RGB, ColorMode.HS, ColorMode.XY} & supported_color_modes:
+            service_data[ATTR_RGB_COLOR] = (255, 255, 255)
 
         if service_data:
             service_data[ATTR_ENTITY_ID] = self.state.entity_id
@@ -422,7 +441,7 @@ class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInsta
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == light.DOMAIN and self._state_features & light.LightEntityFeature.EFFECT:
+        if self.state.domain == light.DOMAIN and self._state_features & LightEntityFeature.EFFECT:
             return super().supported
 
         return False
@@ -430,11 +449,11 @@ class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInsta
     @property
     def supported_ha_scenes(self) -> list[str]:
         """Returns a list of supported Yandex scenes."""
-        return list(map(str, self.state.attributes.get(light.ATTR_EFFECT_LIST, []) or []))
+        return list(map(str, self.state.attributes.get(ATTR_EFFECT_LIST, []) or []))
 
     def get_value(self) -> ColorScene | None:
         """Return the current capability value."""
-        if (effect := self.state.attributes.get(light.ATTR_EFFECT)) is not None:
+        if (effect := self.state.attributes.get(ATTR_EFFECT)) is not None:
             return self.get_yandex_scene_by_ha_scene(str(effect))
 
         return None
@@ -446,7 +465,7 @@ class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInsta
             SERVICE_TURN_ON,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_EFFECT: self.get_ha_scene_by_yandex_scene(state.value),
+                ATTR_EFFECT: self.get_ha_scene_by_yandex_scene(state.value),
             },
             blocking=True,
             context=context,

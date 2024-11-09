@@ -10,8 +10,8 @@ from homeassistant.components.http import KEY_HASS, KEY_HASS_REFRESH_TOKEN_ID, H
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import issue_registry as ir
 
-from . import handlers
-from .const import DOMAIN, ISSUE_ID_MISSING_INTEGRATION
+from . import DOMAIN, handlers
+from .const import ISSUE_ID_MISSING_INTEGRATION
 from .helpers import RequestData, SmartHomePlatform
 
 if TYPE_CHECKING:

@@ -3,7 +3,19 @@
 from typing import Protocol
 
 from homeassistant.components import cover, fan, media_player, vacuum
-from homeassistant.const import ATTR_ENTITY_ID
+from homeassistant.components.cover import CoverEntityFeature
+from homeassistant.components.fan import FanEntityFeature
+from homeassistant.components.media_player.const import MediaPlayerEntityFeature
+from homeassistant.components.vacuum import VacuumEntityFeature
+from homeassistant.const import (
+    ATTR_ENTITY_ID,
+    SERVICE_MEDIA_PAUSE,
+    SERVICE_MEDIA_PLAY,
+    SERVICE_STOP_COVER,
+    SERVICE_VOLUME_MUTE,
+    STATE_PAUSED,
+    STATE_PLAYING,
+)
 from homeassistant.core import Context
 
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, Capability, StateCapability
@@ -46,7 +58,7 @@ class MuteCapability(StateToggleCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
-            if self._state_features & media_player.MediaPlayerEntityFeature.VOLUME_MUTE:
+            if self._state_features & MediaPlayerEntityFeature.VOLUME_MUTE:
                 return True
 
             if MediaPlayerFeature.VOLUME_MUTE in self._entity_config.get(CONF_FEATURES, []):
@@ -67,7 +79,7 @@ class MuteCapability(StateToggleCapability):
         """Change the capability state."""
         await self._hass.services.async_call(
             media_player.DOMAIN,
-            media_player.SERVICE_VOLUME_MUTE,
+            SERVICE_VOLUME_MUTE,
             {ATTR_ENTITY_ID: self.state.entity_id, media_player.ATTR_MEDIA_VOLUME_MUTED: state.value},
             blocking=True,
             context=context,
@@ -87,8 +99,8 @@ class PauseCapabilityMediaPlayer(StateToggleCapability):
                 return True
 
             if (
-                self._state_features & media_player.MediaPlayerEntityFeature.PAUSE
-                and self._state_features & media_player.MediaPlayerEntityFeature.PLAY
+                self._state_features & MediaPlayerEntityFeature.PAUSE
+                and self._state_features & MediaPlayerEntityFeature.PLAY
             ):
                 return True
 
@@ -96,14 +108,14 @@ class PauseCapabilityMediaPlayer(StateToggleCapability):
 
     def get_value(self) -> bool:
         """Return the current capability value."""
-        return bool(self.state.state != media_player.STATE_PLAYING)
+        return bool(self.state.state != STATE_PLAYING)
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         if state.value:
-            service = media_player.SERVICE_MEDIA_PAUSE
+            service = SERVICE_MEDIA_PAUSE
         else:
-            service = media_player.SERVICE_MEDIA_PLAY
+            service = SERVICE_MEDIA_PLAY
 
         await self._hass.services.async_call(
             media_player.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
@@ -118,13 +130,13 @@ class PauseCapabilityCover(ActionOnlyCapabilityMixin, StateToggleCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        return self.state.domain == cover.DOMAIN and bool(self._state_features & cover.CoverEntityFeature.STOP)
+        return self.state.domain == cover.DOMAIN and bool(self._state_features & CoverEntityFeature.STOP)
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
             cover.DOMAIN,
-            cover.SERVICE_STOP_COVER,
+            SERVICE_STOP_COVER,
             {ATTR_ENTITY_ID: self.state.entity_id},
             blocking=True,
             context=context,
@@ -139,11 +151,11 @@ class PauseCapabilityVacuum(StateToggleCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        return self.state.domain == vacuum.DOMAIN and bool(self._state_features & vacuum.VacuumEntityFeature.PAUSE)
+        return self.state.domain == vacuum.DOMAIN and bool(self._state_features & VacuumEntityFeature.PAUSE)
 
     def get_value(self) -> bool:
         """Return the current capability value."""
-        return self.state.state == vacuum.STATE_PAUSED
+        return self.state.state == STATE_PAUSED
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -165,7 +177,7 @@ class OscillationCapability(StateToggleCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        return self.state.domain == fan.DOMAIN and bool(self._state_features & fan.FanEntityFeature.OSCILLATE)
+        return self.state.domain == fan.DOMAIN and bool(self._state_features & FanEntityFeature.OSCILLATE)
 
     def get_value(self) -> bool:
         """Return the current capability value."""

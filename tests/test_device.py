@@ -1,10 +1,13 @@
 # pyright: reportOptionalMemberAccess=false
 from unittest.mock import PropertyMock, patch
 
-from homeassistant.components import cover, media_player, switch
+from homeassistant.components import media_player
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.cover import CoverDeviceClass
 from homeassistant.components.demo.light import DemoLight
+from homeassistant.components.media_player import MediaPlayerDeviceClass, MediaPlayerEntityFeature
 from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.switch import SwitchDeviceClass
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
@@ -25,7 +28,6 @@ from homeassistant.helpers import area_registry as ar, device_registry as dr, en
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
-from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_color import (
     ColorSettingCapability,
     ColorTemperatureCapability,
@@ -45,9 +47,20 @@ from custom_components.yandex_smart_home.capability_onoff import (
 from custom_components.yandex_smart_home.capability_range import BrightnessCapability, VolumeCapability
 from custom_components.yandex_smart_home.capability_toggle import MuteCapability, StateToggleCapability
 from custom_components.yandex_smart_home.const import (
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
+    CONF_ENTITY_CUSTOM_MODE_SET_MODE,
+    CONF_ENTITY_CUSTOM_MODES,
+    CONF_ENTITY_CUSTOM_RANGE_SET_VALUE,
+    CONF_ENTITY_CUSTOM_RANGES,
+    CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF,
+    CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON,
+    CONF_ENTITY_CUSTOM_TOGGLES,
+    CONF_ENTITY_MODE_MAP,
+    CONF_ENTITY_PROPERTIES,
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_TYPE,
+    CONF_ENTRY_ALIASES,
     DOMAIN,
 )
 from custom_components.yandex_smart_home.device import Device
@@ -122,24 +135,24 @@ async def test_device_capabilities(hass):
     entry_data = MockConfigEntryData(
         entity_config={
             light.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {"dishwashing": {"eco": [""]}},
-                const.CONF_ENTITY_CUSTOM_RANGES: {
+                CONF_ENTITY_MODE_MAP: {"dishwashing": {"eco": [""]}},
+                CONF_ENTITY_CUSTOM_RANGES: {
                     "humidity": {
-                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
-                        const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {},
+                        CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
+                        CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: {},
                     }
                 },
-                const.CONF_ENTITY_CUSTOM_TOGGLES: {
+                CONF_ENTITY_CUSTOM_TOGGLES: {
                     "pause": {
-                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
-                        const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: {},
-                        const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: {},
+                        CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
+                        CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: {},
+                        CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: {},
                     }
                 },
-                const.CONF_ENTITY_CUSTOM_MODES: {
+                CONF_ENTITY_CUSTOM_MODES: {
                     "dishwashing": {
-                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
-                        const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: {},
+                        CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state_sensor.entity_id,
+                        CONF_ENTITY_CUSTOM_MODE_SET_MODE: {},
                     }
                 },
             }
@@ -163,10 +176,10 @@ async def test_device_disabled_capabilities(hass: HomeAssistant) -> None:
         "media_player.foo",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_MUTE
-            | media_player.MediaPlayerEntityFeature.TURN_ON
-            | media_player.MediaPlayerEntityFeature.VOLUME_SET
-            | media_player.MediaPlayerEntityFeature.SELECT_SOURCE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.VOLUME_MUTE
+            | MediaPlayerEntityFeature.TURN_ON
+            | MediaPlayerEntityFeature.VOLUME_SET
+            | MediaPlayerEntityFeature.SELECT_SOURCE,
             media_player.ATTR_INPUT_SOURCE_LIST: ["foo", "bar"],
         },
     )
@@ -183,9 +196,9 @@ async def test_device_disabled_capabilities(hass: HomeAssistant) -> None:
         entity_filter=generate_entity_filter(include_entity_globs=["*"]),
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_CUSTOM_RANGES: {"volume": False},
-                const.CONF_ENTITY_CUSTOM_TOGGLES: {"mute": False},
-                const.CONF_ENTITY_CUSTOM_MODES: {"input_source": False},
+                CONF_ENTITY_CUSTOM_RANGES: {"volume": False},
+                CONF_ENTITY_CUSTOM_TOGGLES: {"mute": False},
+                CONF_ENTITY_CUSTOM_MODES: {"input_source": False},
             }
         },
     )
@@ -240,12 +253,12 @@ async def test_device_properties(hass, caplog):
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_PROPERTIES: [
-                    {const.CONF_ENTITY_PROPERTY_TYPE: "voltage"},
-                    {const.CONF_ENTITY_PROPERTY_TYPE: "button"},
+                CONF_ENTITY_PROPERTIES: [
+                    {CONF_ENTITY_PROPERTY_TYPE: "voltage"},
+                    {CONF_ENTITY_PROPERTY_TYPE: "button"},
                     {
-                        const.CONF_ENTITY_PROPERTY_TYPE: "temperature",
-                        const.CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.foo",
+                        CONF_ENTITY_PROPERTY_TYPE: "temperature",
+                        CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.foo",
                     },
                 ]
             }
@@ -368,7 +381,7 @@ async def test_device_name_room_ignore_aliases(
     config_entry.add_to_hass(hass)
 
     entry_data = MockConfigEntryData(
-        entry=MockConfigEntry(domain=DOMAIN, data={}, options={const.CONF_ENTRY_ALIASES: False}),
+        entry=MockConfigEntry(domain=DOMAIN, data={}, options={CONF_ENTRY_ALIASES: False}),
     )
 
     state = State("switch.test_1", STATE_ON)
@@ -462,8 +475,8 @@ async def test_device_type(hass):
     "device_class,device_type",
     [
         (None, DeviceType.OPENABLE),
-        (cover.CoverDeviceClass.SHADE, DeviceType.OPENABLE),
-        (cover.CoverDeviceClass.CURTAIN, DeviceType.OPENABLE_CURTAIN),
+        (CoverDeviceClass.SHADE, DeviceType.OPENABLE),
+        (CoverDeviceClass.CURTAIN, DeviceType.OPENABLE_CURTAIN),
     ],
 )
 async def test_device_type_cover(hass, device_class, device_type):
@@ -480,9 +493,9 @@ async def test_device_type_cover(hass, device_class, device_type):
     "device_class,device_type",
     [
         (None, DeviceType.MEDIA_DEVICE),
-        (media_player.MediaPlayerDeviceClass.TV, DeviceType.MEDIA_DEVICE_TV),
-        (media_player.MediaPlayerDeviceClass.RECEIVER, DeviceType.MEDIA_DEVICE_RECIEVER),
-        (media_player.MediaPlayerDeviceClass.SPEAKER, DeviceType.MEDIA_DEVICE),
+        (MediaPlayerDeviceClass.TV, DeviceType.MEDIA_DEVICE_TV),
+        (MediaPlayerDeviceClass.RECEIVER, DeviceType.MEDIA_DEVICE_RECIEVER),
+        (MediaPlayerDeviceClass.SPEAKER, DeviceType.MEDIA_DEVICE),
     ],
 )
 async def test_device_type_media_player(hass, device_class, device_type):
@@ -500,7 +513,7 @@ async def test_device_type_switch(hass):
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == DeviceType.SWITCH
 
-    state = State("switch.test", STATE_ON, attributes={ATTR_DEVICE_CLASS: switch.SwitchDeviceClass.OUTLET})
+    state = State("switch.test", STATE_ON, attributes={ATTR_DEVICE_CLASS: SwitchDeviceClass.OUTLET})
     device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
     assert device.type == DeviceType.SOCKET
 

@@ -6,8 +6,19 @@ from homeassistant.helpers import issue_registry as ir
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import DOMAIN, ConnectionType, YandexSmartHome, const
+from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
+from custom_components.yandex_smart_home.const import (
+    CONF_CONNECTION_TYPE,
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
+    CONF_ENTITY_CUSTOM_TOGGLES,
+    CONF_LINKED_PLATFORMS,
+    CONF_NOTIFIER,
+    CONF_PRESSURE_UNIT,
+    CONF_SETTINGS,
+    CONF_USER_ID,
+    ConnectionType,
+)
 from custom_components.yandex_smart_home.entry_data import ConfigEntryData
 from custom_components.yandex_smart_home.helpers import APIError, SmartHomePlatform
 from custom_components.yandex_smart_home.schema import ResponseCode
@@ -26,7 +37,7 @@ def test_entry_data_platform(hass):
         entry=MockConfigEntry(
             domain=DOMAIN,
             version=ConfigFlowHandler.VERSION,
-            data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.YANDEX},
+            data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.YANDEX},
         ),
     )
     assert entry_data.platform == "yandex"
@@ -36,7 +47,7 @@ def test_entry_data_platform(hass):
         entry=MockConfigEntry(
             domain=DOMAIN,
             version=ConfigFlowHandler.VERSION,
-            data={const.CONF_CONNECTION_TYPE: ConnectionType.CLOUD},
+            data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD},
         ),
     )
     assert entry_data.platform is None
@@ -47,8 +58,8 @@ def test_entry_data_trackable_states(hass, caplog):
         hass=hass,
         entity_config={
             "sensor.outside_temp": {
-                const.CONF_ENTITY_CUSTOM_TOGGLES: {
-                    "pause": {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "binary_sensor.pause"}
+                CONF_ENTITY_CUSTOM_TOGGLES: {
+                    "pause": {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "binary_sensor.pause"}
                 },
             }
         },
@@ -66,9 +77,7 @@ def test_entry_data_trackable_states(hass, caplog):
 async def test_entry_data_get_context_user_id(hass, hass_read_only_user):
     entry_data = MockConfigEntryData(
         hass=hass,
-        entry=MockConfigEntry(
-            domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={const.CONF_USER_ID: "foo"}
-        ),
+        entry=MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={CONF_USER_ID: "foo"}),
     )
     assert await entry_data.async_get_context_user_id() is None
 
@@ -78,7 +87,7 @@ async def test_entry_data_get_context_user_id(hass, hass_read_only_user):
             domain=DOMAIN,
             version=ConfigFlowHandler.VERSION,
             data={},
-            options={const.CONF_USER_ID: hass_read_only_user.id},
+            options={CONF_USER_ID: hass_read_only_user.id},
         ),
     )
     assert await entry_data.async_get_context_user_id() is hass_read_only_user.id
@@ -87,9 +96,7 @@ async def test_entry_data_get_context_user_id(hass, hass_read_only_user):
 async def test_entry_data_unsupported_linked_platform(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     entry_data = MockConfigEntryData(
         hass=hass,
-        entry=MockConfigEntry(
-            domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={const.CONF_LINKED_PLATFORMS: ["foo"]}
-        ),
+        entry=MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={CONF_LINKED_PLATFORMS: ["foo"]}),
     )
     assert entry_data.linked_platforms == set()
     assert caplog.messages == ["Unsupported platform: foo"]
@@ -107,12 +114,12 @@ async def test_deprecated_pressure_unit(
     await hass.config_entries.async_unload(config_entry_direct.entry_id)
 
     component: YandexSmartHome = hass.data[DOMAIN]
-    component._yaml_config = {const.CONF_SETTINGS: {const.CONF_PRESSURE_UNIT: "foo"}}
+    component._yaml_config = {CONF_SETTINGS: {CONF_PRESSURE_UNIT: "foo"}}
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
     assert issue_registry.async_get_issue(DOMAIN, "deprecated_pressure_unit") is not None
     await hass.config_entries.async_unload(config_entry_direct.entry_id)
 
-    component._yaml_config = {const.CONF_SETTINGS: {}}
+    component._yaml_config = {CONF_SETTINGS: {}}
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
     assert issue_registry.async_get_issue(DOMAIN, "deprecated_pressure_unit") is None
     await hass.config_entries.async_unload(config_entry_direct.entry_id)
@@ -131,7 +138,7 @@ async def test_deprecated_notifier(
     await hass.config_entries.async_unload(config_entry_direct.entry_id)
 
     component: YandexSmartHome = hass.data[DOMAIN]
-    component._yaml_config = {const.CONF_NOTIFIER: ["foo"]}
+    component._yaml_config = {CONF_NOTIFIER: ["foo"]}
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
     assert issue_registry.async_get_issue(DOMAIN, "deprecated_yaml_notifier") is not None
     assert issue_registry.async_get_issue(DOMAIN, "deprecated_yaml_several_notifiers") is None
@@ -144,7 +151,7 @@ async def test_deprecated_notifier(
     await hass.config_entries.async_unload(config_entry_direct.entry_id)
 
     component: YandexSmartHome = hass.data[DOMAIN]
-    component._yaml_config = {const.CONF_NOTIFIER: ["foo", "bar"]}
+    component._yaml_config = {CONF_NOTIFIER: ["foo", "bar"]}
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
     assert issue_registry.async_get_issue(DOMAIN, "deprecated_yaml_notifier") is None
     assert issue_registry.async_get_issue(DOMAIN, "deprecated_yaml_several_notifiers") is not None

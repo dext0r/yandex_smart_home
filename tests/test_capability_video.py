@@ -2,18 +2,22 @@
 from typing import cast
 from unittest.mock import patch
 
-from homeassistant.components import camera
-from homeassistant.components.camera import Camera, DynamicStreamSettings
+from homeassistant.components.camera import Camera, CameraEntityFeature, DynamicStreamSettings
 from homeassistant.components.stream import OUTPUT_IDLE_TIMEOUT, Stream, StreamOutput, StreamSettings
 from homeassistant.const import ATTR_SUPPORTED_FEATURES, STATE_IDLE
 from homeassistant.core import Context, HomeAssistant, State
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.yandex_smart_home import ConnectionType, YandexSmartHome, const
+from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome
 from custom_components.yandex_smart_home.capability_video import VideoStreamCapability
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
-from custom_components.yandex_smart_home.const import DOMAIN
+from custom_components.yandex_smart_home.const import (
+    CONF_CLOUD_STREAM,
+    CONF_CONNECTION_TYPE,
+    CONF_SETTINGS,
+    ConnectionType,
+)
 from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -89,7 +93,7 @@ class MockCameraUnsupported(MockCamera):
 
 
 async def test_capability_video_stream_supported(hass):
-    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
+    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
     cap = cast(
         VideoStreamCapability,
         get_exact_one_capability(
@@ -108,7 +112,7 @@ async def test_capability_video_stream_supported(hass):
 
 
 async def test_capability_video_stream_request_stream(hass):
-    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
+    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
     cap = VideoStreamCapability(hass, BASIC_ENTRY_DATA, state)
 
     with patch(
@@ -130,7 +134,7 @@ async def test_capability_video_stream_request_stream(hass):
 async def test_capability_video_stream_direct(hass_platform_direct, config_entry_direct):
     hass = hass_platform_direct
     entry_data = MockConfigEntryData(entry=config_entry_direct)
-    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
+    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
 
     cap = cast(
         VideoStreamCapability,
@@ -163,10 +167,10 @@ async def test_capability_video_stream_cloud(hass_platform_direct, connection_ty
     hass = hass_platform_direct
     component: YandexSmartHome = hass.data[DOMAIN]
     entry = MockConfigEntry(
-        domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={const.CONF_CONNECTION_TYPE: connection_type}
+        domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={CONF_CONNECTION_TYPE: connection_type}
     )
-    entry_data = MockConfigEntryData(entry=entry, yaml_config={const.CONF_SETTINGS: {const.CONF_CLOUD_STREAM: True}})
-    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: camera.CameraEntityFeature.STREAM})
+    entry_data = MockConfigEntryData(entry=entry, yaml_config={CONF_SETTINGS: {CONF_CLOUD_STREAM: True}})
+    state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
 
     cap = cast(
         VideoStreamCapability,

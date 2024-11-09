@@ -16,13 +16,29 @@ from homeassistant.helpers.template import Template
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
-from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_color import ColorSettingCapability
 from custom_components.yandex_smart_home.capability_custom import (
     CustomCapability,
     CustomColorSceneCapability,
     CustomRangeCapability,
     get_custom_capability,
+)
+from custom_components.yandex_smart_home.const import (
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE,
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
+    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE,
+    CONF_ENTITY_CUSTOM_MODE_SET_MODE,
+    CONF_ENTITY_CUSTOM_MODES,
+    CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
+    CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE,
+    CONF_ENTITY_CUSTOM_RANGE_SET_VALUE,
+    CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF,
+    CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON,
+    CONF_ENTITY_MODE_MAP,
+    CONF_ENTITY_RANGE,
+    CONF_ENTITY_RANGE_MAX,
+    CONF_ENTITY_RANGE_MIN,
+    CONF_ENTITY_RANGE_PRECISION,
 )
 from custom_components.yandex_smart_home.device import Device
 from custom_components.yandex_smart_home.helpers import ActionNotAllowed, APIError
@@ -87,7 +103,7 @@ async def test_capability_custom_value(hass):
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
-        {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "switch.state_value"},
+        {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "switch.state_value"},
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
         "foo",
@@ -101,8 +117,8 @@ async def test_capability_custom_value(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "switch.attr_value",
-            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE: "value",
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "switch.attr_value",
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE: "value",
         },
         CapabilityType.RANGE,
         RangeCapabilityInstance.HUMIDITY,
@@ -123,7 +139,7 @@ async def test_capability_custom_value(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1 + 2 }}"),
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1 + 2 }}"),
         },
         CapabilityType.RANGE,
         RangeCapabilityInstance.HUMIDITY,
@@ -136,7 +152,7 @@ async def test_capability_custom_value(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1/0 }}"),
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1/0 }}"),
         },
         CapabilityType.RANGE,
         RangeCapabilityInstance.HUMIDITY,
@@ -156,7 +172,7 @@ async def test_capability_custom_mode(hass):
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
-        {const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: None},
+        {CONF_ENTITY_CUSTOM_MODE_SET_MODE: None},
         CapabilityType.MODE,
         ModeCapabilityInstance.CLEANUP_MODE,
         "foo",
@@ -168,7 +184,7 @@ async def test_capability_custom_mode(hass):
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {
+                CONF_ENTITY_MODE_MAP: {
                     "cleanup_mode": {
                         ModeCapabilityMode.ONE: ["mode_1"],
                         ModeCapabilityMode.TWO: ["mode_2"],
@@ -182,7 +198,7 @@ async def test_capability_custom_mode(hass):
         hass,
         entry_data,
         {
-            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
         },
         CapabilityType.MODE,
         ModeCapabilityInstance.CLEANUP_MODE,
@@ -205,7 +221,7 @@ async def test_capability_custom_mode(hass):
         hass,
         entry_data,
         {
-            const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: SERVICE_SCHEMA(
+            CONF_ENTITY_CUSTOM_MODE_SET_MODE: SERVICE_SCHEMA(
                 {
                     CONF_SERVICE: "test.set_mode",
                     ATTR_ENTITY_ID: "switch.test",
@@ -226,8 +242,8 @@ async def test_capability_custom_mode(hass):
         hass,
         entry_data,
         {
-            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
-            const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: SERVICE_SCHEMA(
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
+            CONF_ENTITY_CUSTOM_MODE_SET_MODE: SERVICE_SCHEMA(
                 {
                     CONF_SERVICE: "test.set_mode",
                     ATTR_ENTITY_ID: "switch.test",
@@ -263,15 +279,15 @@ async def test_capability_custom_mode_scene(hass, domain):
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {
+                CONF_ENTITY_MODE_MAP: {
                     "scene": {
                         "alarm": ["foo"],
                         "fantasy": ["bar"],
                     }
                 },
-                const.CONF_ENTITY_CUSTOM_MODES: {
+                CONF_ENTITY_CUSTOM_MODES: {
                     "scene": {
-                        const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
+                        CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
                     }
                 },
             }
@@ -301,15 +317,15 @@ async def test_capability_custom_mode_scene(hass, domain):
     entry_data = MockConfigEntryData(
         entity_config={
             state.entity_id: {
-                const.CONF_ENTITY_MODE_MAP: {
+                CONF_ENTITY_MODE_MAP: {
                     "scene": {
                         "alarm": ["foo"],
                         "fantasy": ["bar"],
                     }
                 },
-                const.CONF_ENTITY_CUSTOM_MODES: {
+                CONF_ENTITY_CUSTOM_MODES: {
                     "scene": {
-                        const.CONF_ENTITY_CUSTOM_MODE_SET_MODE: SERVICE_SCHEMA(
+                        CONF_ENTITY_CUSTOM_MODE_SET_MODE: SERVICE_SCHEMA(
                             {
                                 CONF_SERVICE: "test.set_mode",
                                 CONF_SERVICE_DATA: {"service_mode": dynamic_template("mode: {{ mode }}")},
@@ -347,7 +363,7 @@ async def test_capability_custom_toggle(hass):
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
-        {const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: None, const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: None},
+        {CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: None, CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: None},
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
         "foo",
@@ -362,7 +378,7 @@ async def test_capability_custom_toggle(hass):
     cap = get_custom_capability(
         hass,
         BASIC_ENTRY_DATA,
-        {const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id},
+        {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id},
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
         "foo",
@@ -386,14 +402,14 @@ async def test_capability_custom_toggle(hass):
         hass,
         BASIC_ENTRY_DATA,
         {
-            const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
-            const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: SERVICE_SCHEMA(
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
+            CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: SERVICE_SCHEMA(
                 {
                     CONF_SERVICE: "test.turn_on",
                     ATTR_ENTITY_ID: "switch.test1",
                 }
             ),
-            const.CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: SERVICE_SCHEMA(
+            CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: SERVICE_SCHEMA(
                 {
                     CONF_SERVICE: "test.turn_off",
                     ATTR_ENTITY_ID: "switch.test2",
@@ -447,13 +463,13 @@ async def test_capability_custom_range_random_access(hass):
             hass,
             BASIC_ENTRY_DATA,
             {
-                const.CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
-                const.CONF_ENTITY_RANGE: {
-                    const.CONF_ENTITY_RANGE_MIN: 10,
-                    const.CONF_ENTITY_RANGE_MAX: 50,
-                    const.CONF_ENTITY_RANGE_PRECISION: 3,
+                CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
+                CONF_ENTITY_RANGE: {
+                    CONF_ENTITY_RANGE_MIN: 10,
+                    CONF_ENTITY_RANGE_MAX: 50,
+                    CONF_ENTITY_RANGE_PRECISION: 3,
                 },
-                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: SERVICE_SCHEMA(
+                CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: SERVICE_SCHEMA(
                     {
                         CONF_SERVICE: "test.set_value",
                         ATTR_ENTITY_ID: "input_number.test",
@@ -536,12 +552,12 @@ async def test_capability_custom_range_random_access_no_state(hass):
             hass,
             BASIC_ENTRY_DATA,
             {
-                const.CONF_ENTITY_RANGE: {
-                    const.CONF_ENTITY_RANGE_MIN: 10,
-                    const.CONF_ENTITY_RANGE_MAX: 50,
-                    const.CONF_ENTITY_RANGE_PRECISION: 3,
+                CONF_ENTITY_RANGE: {
+                    CONF_ENTITY_RANGE_MIN: 10,
+                    CONF_ENTITY_RANGE_MAX: 50,
+                    CONF_ENTITY_RANGE_PRECISION: 3,
                 },
-                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: SERVICE_SCHEMA(
+                CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: SERVICE_SCHEMA(
                     {
                         CONF_SERVICE: "test.set_value",
                         ATTR_ENTITY_ID: "input_number.test",
@@ -594,26 +610,26 @@ async def test_capability_custom_range_relative_override_no_state(hass):
             hass,
             BASIC_ENTRY_DATA,
             {
-                const.CONF_ENTITY_RANGE: {
-                    const.CONF_ENTITY_RANGE_MIN: 10,
-                    const.CONF_ENTITY_RANGE_MAX: 99,
-                    const.CONF_ENTITY_RANGE_PRECISION: 3,
+                CONF_ENTITY_RANGE: {
+                    CONF_ENTITY_RANGE_MIN: 10,
+                    CONF_ENTITY_RANGE_MAX: 99,
+                    CONF_ENTITY_RANGE_PRECISION: 3,
                 },
-                const.CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: SERVICE_SCHEMA(
+                CONF_ENTITY_CUSTOM_RANGE_SET_VALUE: SERVICE_SCHEMA(
                     {
                         CONF_SERVICE: "test.set_value",
                         ATTR_ENTITY_ID: "input_number.test",
                         CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
                     }
                 ),
-                const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: SERVICE_SCHEMA(
+                CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: SERVICE_SCHEMA(
                     {
                         CONF_SERVICE: "test.increase_value",
                         ATTR_ENTITY_ID: "input_number.test",
                         CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
                     }
                 ),
-                const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE: SERVICE_SCHEMA(
+                CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE: SERVICE_SCHEMA(
                     {
                         CONF_SERVICE: "test.decrease_value",
                         ATTR_ENTITY_ID: "input_number.test",
@@ -673,14 +689,14 @@ async def test_capability_custom_range_only_relative(hass):
             hass,
             BASIC_ENTRY_DATA,
             {
-                const.CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: SERVICE_SCHEMA(
+                CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: SERVICE_SCHEMA(
                     {
                         CONF_SERVICE: "test.increase_value",
                         ATTR_ENTITY_ID: "input_number.test",
                         CONF_SERVICE_DATA: {"value": dynamic_template("value: {{ value|int }}")},
                     }
                 ),
-                const.CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE: SERVICE_SCHEMA(
+                CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE: SERVICE_SCHEMA(
                     {
                         CONF_SERVICE: "test.decrease_value",
                         ATTR_ENTITY_ID: "input_number.test",
@@ -769,10 +785,10 @@ async def test_capability_custom_range_parameters_range(
             hass,
             BASIC_ENTRY_DATA,
             {
-                const.CONF_ENTITY_RANGE: {
-                    const.CONF_ENTITY_RANGE_MIN: config_range[0],
-                    const.CONF_ENTITY_RANGE_MAX: config_range[1],
-                    const.CONF_ENTITY_RANGE_PRECISION: 1,
+                CONF_ENTITY_RANGE: {
+                    CONF_ENTITY_RANGE_MIN: config_range[0],
+                    CONF_ENTITY_RANGE_MAX: config_range[1],
+                    CONF_ENTITY_RANGE_PRECISION: 1,
                 },
             },
             CapabilityType.RANGE,

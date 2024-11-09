@@ -5,9 +5,12 @@ from contextlib import suppress
 from typing import Protocol, Self
 
 from homeassistant.components import air_quality, climate, fan, humidifier, light, sensor, switch, water_heater
+from homeassistant.components.air_quality import ATTR_CO2, ATTR_PM_0_1, ATTR_PM_2_5, ATTR_PM_10
+from homeassistant.components.climate import ATTR_CURRENT_HUMIDITY, ATTR_CURRENT_TEMPERATURE, ATTR_HUMIDITY
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
+    ATTR_TEMPERATURE,
     ATTR_UNIT_OF_MEASUREMENT,
     ATTR_VOLTAGE,
     CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
@@ -31,8 +34,21 @@ from homeassistant.util.unit_conversion import (
     VolumeConverter,
 )
 
-from . import const
-from .const import STATE_EMPTY, STATE_NONE, STATE_NONE_UI, XGW3DeviceClass
+from .const import (
+    ATTR_CURRENT,
+    ATTR_CURRENT_CONSUMPTION,
+    ATTR_ILLUMINANCE,
+    ATTR_LOAD_POWER,
+    ATTR_POWER,
+    ATTR_TVOC,
+    ATTR_WATER_LEVEL,
+    STATE_CHARGING,
+    STATE_EMPTY,
+    STATE_LOW,
+    STATE_NONE,
+    STATE_NONE_UI,
+    XGW3DeviceClass,
+)
 from .helpers import APIError
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .schema import (
@@ -492,9 +508,9 @@ class TemperatureSensor(StateFloatProperty, TemperatureProperty):
                 if self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT) in UnitOfTemperature.__members__.values():
                     return True
             case air_quality.DOMAIN:
-                return self.state.attributes.get(climate.ATTR_TEMPERATURE) is not None
+                return self.state.attributes.get(ATTR_TEMPERATURE) is not None
             case climate.DOMAIN | fan.DOMAIN | humidifier.DOMAIN | water_heater.DOMAIN:
-                return self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE) is not None
+                return self.state.attributes.get(ATTR_CURRENT_TEMPERATURE) is not None
 
         return False
 
@@ -502,9 +518,9 @@ class TemperatureSensor(StateFloatProperty, TemperatureProperty):
         """Return the current property value without conversion."""
         match self.state.domain:
             case air_quality.DOMAIN:
-                return self.state.attributes.get(climate.ATTR_TEMPERATURE)
+                return self.state.attributes.get(ATTR_TEMPERATURE)
             case climate.DOMAIN | fan.DOMAIN | humidifier.DOMAIN | water_heater.DOMAIN:
-                return self.state.attributes.get(climate.ATTR_CURRENT_TEMPERATURE)
+                return self.state.attributes.get(ATTR_CURRENT_TEMPERATURE)
 
         return self.state.state
 
@@ -524,9 +540,9 @@ class HumiditySensor(StateFloatProperty, HumidityProperty):
             case sensor.DOMAIN:
                 return self._state_device_class in (SensorDeviceClass.HUMIDITY, SensorDeviceClass.MOISTURE)
             case air_quality.DOMAIN:
-                return self.state.attributes.get(climate.ATTR_HUMIDITY) is not None
+                return self.state.attributes.get(ATTR_HUMIDITY) is not None
             case climate.DOMAIN | fan.DOMAIN | humidifier.DOMAIN:
-                return self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY) is not None
+                return self.state.attributes.get(ATTR_CURRENT_HUMIDITY) is not None
 
         return False
 
@@ -534,9 +550,9 @@ class HumiditySensor(StateFloatProperty, HumidityProperty):
         """Return the current property value without conversion."""
         match self.state.domain:
             case air_quality.DOMAIN:
-                return self.state.attributes.get(climate.ATTR_HUMIDITY)
+                return self.state.attributes.get(ATTR_HUMIDITY)
             case climate.DOMAIN | fan.DOMAIN | humidifier.DOMAIN:
-                return self.state.attributes.get(climate.ATTR_CURRENT_HUMIDITY)
+                return self.state.attributes.get(ATTR_CURRENT_HUMIDITY)
 
         return self.state.state
 
@@ -572,7 +588,7 @@ class IlluminationSensor(StateFloatProperty, IlluminationProperty):
             return True
 
         if self.state.domain in (sensor.DOMAIN, light.DOMAIN, fan.DOMAIN):
-            return const.ATTR_ILLUMINANCE in self.state.attributes
+            return ATTR_ILLUMINANCE in self.state.attributes
 
         return False
 
@@ -581,7 +597,7 @@ class IlluminationSensor(StateFloatProperty, IlluminationProperty):
         if self.state.domain == sensor.DOMAIN and self._state_device_class == SensorDeviceClass.ILLUMINANCE:
             return self.state.state
 
-        return self.state.attributes.get(const.ATTR_ILLUMINANCE)
+        return self.state.attributes.get(ATTR_ILLUMINANCE)
 
 
 class WaterLevelPercentageSensor(StateFloatProperty, WaterLevelPercentageProperty):
@@ -591,13 +607,13 @@ class WaterLevelPercentageSensor(StateFloatProperty, WaterLevelPercentagePropert
     def supported(self) -> bool:
         """Test if the property is supported."""
         if self.state.domain in (fan.DOMAIN, humidifier.DOMAIN):
-            return const.ATTR_WATER_LEVEL in self.state.attributes
+            return ATTR_WATER_LEVEL in self.state.attributes
 
         return False
 
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
-        return self.state.attributes.get(const.ATTR_WATER_LEVEL)
+        return self.state.attributes.get(ATTR_WATER_LEVEL)
 
 
 class CO2LevelSensor(StateFloatProperty, CO2LevelProperty):
@@ -610,7 +626,7 @@ class CO2LevelSensor(StateFloatProperty, CO2LevelProperty):
             case sensor.DOMAIN:
                 return self._state_device_class == SensorDeviceClass.CO2
             case air_quality.DOMAIN | fan.DOMAIN:
-                return air_quality.ATTR_CO2 in self.state.attributes
+                return ATTR_CO2 in self.state.attributes
 
         return False
 
@@ -619,7 +635,7 @@ class CO2LevelSensor(StateFloatProperty, CO2LevelProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.state.state
 
-        return self.state.attributes.get(air_quality.ATTR_CO2)
+        return self.state.attributes.get(ATTR_CO2)
 
 
 class ElectricityMeterSensor(StateFloatProperty, ElectricityMeterProperty):
@@ -688,7 +704,7 @@ class PM1DensitySensor(StateFloatProperty, PM1DensityProperty):
             case sensor.DOMAIN:
                 return self._state_device_class == SensorDeviceClass.PM1
             case air_quality.DOMAIN:
-                return air_quality.ATTR_PM_0_1 in self.state.attributes
+                return ATTR_PM_0_1 in self.state.attributes
 
         return False
 
@@ -702,7 +718,7 @@ class PM1DensitySensor(StateFloatProperty, PM1DensityProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.state.state
 
-        return self.state.attributes.get(air_quality.ATTR_PM_0_1)
+        return self.state.attributes.get(ATTR_PM_0_1)
 
 
 class PM25DensitySensor(StateFloatProperty, PM25DensityProperty):
@@ -715,7 +731,7 @@ class PM25DensitySensor(StateFloatProperty, PM25DensityProperty):
             case sensor.DOMAIN:
                 return self._state_device_class == SensorDeviceClass.PM25
             case air_quality.DOMAIN:
-                return air_quality.ATTR_PM_2_5 in self.state.attributes
+                return ATTR_PM_2_5 in self.state.attributes
 
         return False
 
@@ -724,7 +740,7 @@ class PM25DensitySensor(StateFloatProperty, PM25DensityProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.state.state
 
-        return self.state.attributes.get(air_quality.ATTR_PM_2_5)
+        return self.state.attributes.get(ATTR_PM_2_5)
 
 
 class PM10DensitySensor(StateFloatProperty, PM10DensityProperty):
@@ -737,7 +753,7 @@ class PM10DensitySensor(StateFloatProperty, PM10DensityProperty):
             case sensor.DOMAIN:
                 return self._state_device_class == SensorDeviceClass.PM10
             case air_quality.DOMAIN:
-                return air_quality.ATTR_PM_10 in self.state.attributes
+                return ATTR_PM_10 in self.state.attributes
 
         return False
 
@@ -746,7 +762,7 @@ class PM10DensitySensor(StateFloatProperty, PM10DensityProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.state.state
 
-        return self.state.attributes.get(air_quality.ATTR_PM_10)
+        return self.state.attributes.get(ATTR_PM_10)
 
 
 class TVOCConcentrationSensor(StateFloatProperty, TVOCConcentrationProperty):
@@ -762,7 +778,7 @@ class TVOCConcentrationSensor(StateFloatProperty, TVOCConcentrationProperty):
                     XGW3DeviceClass.TVOC,
                 )
             case air_quality.DOMAIN:
-                return const.ATTR_TVOC in self.state.attributes
+                return ATTR_TVOC in self.state.attributes
 
         return False
 
@@ -771,7 +787,7 @@ class TVOCConcentrationSensor(StateFloatProperty, TVOCConcentrationProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.state.state
 
-        return self.state.attributes.get(const.ATTR_TVOC)
+        return self.state.attributes.get(ATTR_TVOC)
 
     @property
     def _native_unit_of_measurement(self) -> str | None:
@@ -838,7 +854,7 @@ class ElectricCurrentSensor(StateFloatProperty, ElectricCurrentProperty):
             case sensor.DOMAIN:
                 return self._state_device_class == SensorDeviceClass.CURRENT
             case switch.DOMAIN | light.DOMAIN:
-                return const.ATTR_CURRENT in self.state.attributes
+                return ATTR_CURRENT in self.state.attributes
 
         return False
 
@@ -847,7 +863,7 @@ class ElectricCurrentSensor(StateFloatProperty, ElectricCurrentProperty):
         if self.state.domain == sensor.DOMAIN:
             return self.state.state
 
-        return self.state.attributes.get(const.ATTR_CURRENT)
+        return self.state.attributes.get(ATTR_CURRENT)
 
     @property
     def _native_unit_of_measurement(self) -> str | None:
@@ -868,7 +884,7 @@ class ElectricPowerSensor(StateFloatProperty, ElectricPowerProperty):
             return self._state_device_class == SensorDeviceClass.POWER
 
         if self.state.domain == switch.DOMAIN:
-            for attribute in (const.ATTR_POWER, const.ATTR_LOAD_POWER, const.ATTR_CURRENT_CONSUMPTION):
+            for attribute in (ATTR_POWER, ATTR_LOAD_POWER, ATTR_CURRENT_CONSUMPTION):
                 if attribute in self.state.attributes:
                     return True
 
@@ -877,7 +893,7 @@ class ElectricPowerSensor(StateFloatProperty, ElectricPowerProperty):
     def _get_native_value(self) -> float | str | None:
         """Return the current property value without conversion."""
         if self.state.domain == switch.DOMAIN:
-            for attribute in (const.ATTR_POWER, const.ATTR_LOAD_POWER, const.ATTR_CURRENT_CONSUMPTION):
+            for attribute in (ATTR_POWER, ATTR_LOAD_POWER, ATTR_CURRENT_CONSUMPTION):
                 if attribute in self.state.attributes:
                     return self.state.attributes.get(attribute)
 
@@ -914,7 +930,7 @@ class BatteryLevelPercentageSensor(StateFloatProperty, BatteryLevelPercentagePro
         elif ATTR_BATTERY_LEVEL in self.state.attributes:
             value = self.state.attributes.get(ATTR_BATTERY_LEVEL)
 
-        if value in [const.STATE_LOW, const.STATE_CHARGING]:
+        if value in [STATE_LOW, STATE_CHARGING]:
             return 0
 
         return value

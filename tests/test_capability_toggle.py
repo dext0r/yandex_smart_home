@@ -1,7 +1,26 @@
 from typing import cast
 
 from homeassistant.components import cover, fan, media_player, vacuum
-from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, STATE_ON
+from homeassistant.components.cover import CoverEntityFeature
+from homeassistant.components.fan import FanEntityFeature
+from homeassistant.components.media_player.const import MediaPlayerEntityFeature
+from homeassistant.components.vacuum import VacuumEntityFeature
+from homeassistant.const import (
+    ATTR_ENTITY_ID,
+    ATTR_SUPPORTED_FEATURES,
+    SERVICE_MEDIA_PAUSE,
+    SERVICE_MEDIA_PLAY,
+    SERVICE_STOP_COVER,
+    SERVICE_VOLUME_MUTE,
+    STATE_CLOSED,
+    STATE_CLOSING,
+    STATE_IDLE,
+    STATE_OFF,
+    STATE_ON,
+    STATE_OPEN,
+    STATE_PAUSED,
+    STATE_PLAYING,
+)
 from homeassistant.core import Context, State
 from pytest_homeassistant_custom_component.common import async_mock_service
 
@@ -32,9 +51,7 @@ async def test_capability_mute(hass):
     entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["volume_mute"]}})
     assert_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE)
 
-    state = State(
-        "media_player.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_MUTE}
-    )
+    state = State("media_player.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.VOLUME_MUTE})
     cap = cast(
         ToggleCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE),
@@ -44,7 +61,7 @@ async def test_capability_mute(hass):
     assert cap.parameters.dict() == {"instance": "mute"}
     assert cap.get_value() is False
 
-    calls = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_MUTE)
+    calls = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_MUTE)
     await cap.set_instance_state(Context(), _action_state_on(ToggleCapabilityInstance.MUTE))
     await cap.set_instance_state(Context(), _action_state_off(ToggleCapabilityInstance.MUTE))
     assert len(calls) == 2
@@ -57,7 +74,7 @@ async def test_capability_mute(hass):
         "media_player.test",
         STATE_ON,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_MUTE,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.VOLUME_MUTE,
             media_player.ATTR_MEDIA_VOLUME_MUTED: True,
         },
     )
@@ -68,7 +85,7 @@ async def test_capability_mute(hass):
     assert cap.retrievable is True
     assert cap.get_value() is True
 
-    calls = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_MUTE)
+    calls = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_MUTE)
     await cap.set_instance_state(Context(), _action_state_on(ToggleCapabilityInstance.MUTE))
     await cap.set_instance_state(Context(), _action_state_off(ToggleCapabilityInstance.MUTE))
     assert len(calls) == 2
@@ -86,14 +103,11 @@ async def test_capability_pause_media_player(hass):
     entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["play_pause"]}})
     assert_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
-    for s in [media_player.STATE_IDLE, media_player.STATE_OFF]:
+    for s in [STATE_IDLE, STATE_OFF]:
         state = State(
             "media_player.test",
             s,
-            {
-                ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PAUSE
-                | media_player.MediaPlayerEntityFeature.PLAY
-            },
+            {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PAUSE | MediaPlayerEntityFeature.PLAY},
         )
         cap = cast(
             ToggleCapability,
@@ -107,11 +121,8 @@ async def test_capability_pause_media_player(hass):
 
     state = State(
         "media_player.test",
-        media_player.STATE_PLAYING,
-        {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PAUSE
-            | media_player.MediaPlayerEntityFeature.PLAY
-        },
+        STATE_PLAYING,
+        {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PAUSE | MediaPlayerEntityFeature.PLAY},
     )
     cap = cast(
         ToggleCapability,
@@ -119,12 +130,12 @@ async def test_capability_pause_media_player(hass):
     )
     assert cap.get_value() is False
 
-    on_calls = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_PAUSE)
+    on_calls = async_mock_service(hass, media_player.DOMAIN, SERVICE_MEDIA_PAUSE)
     await cap.set_instance_state(Context(), _action_state_on(ToggleCapabilityInstance.PAUSE))
     assert len(on_calls) == 1
     assert on_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
-    off_calls = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_PLAY)
+    off_calls = async_mock_service(hass, media_player.DOMAIN, SERVICE_MEDIA_PLAY)
     await cap.set_instance_state(Context(), _action_state_off(ToggleCapabilityInstance.PAUSE))
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
@@ -134,8 +145,8 @@ async def test_capability_pause_cover(hass):
     state = State("cover.test", STATE_ON)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
-    for s in [cover.STATE_OPEN, cover.STATE_CLOSED, cover.STATE_CLOSING, cover.STATE_CLOSING]:
-        state = State("cover.test", s, {ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.STOP})
+    for s in [STATE_OPEN, STATE_CLOSED, STATE_CLOSING]:
+        state = State("cover.test", s, {ATTR_SUPPORTED_FEATURES: CoverEntityFeature.STOP})
         cap = cast(
             ToggleCapability,
             get_exact_one_capability(
@@ -147,12 +158,12 @@ async def test_capability_pause_cover(hass):
         assert cap.parameters.dict() == {"instance": "pause"}
         assert cap.get_value() is None
 
-    state = State("cover.test", cover.STATE_CLOSED, {ATTR_SUPPORTED_FEATURES: cover.CoverEntityFeature.STOP})
+    state = State("cover.test", STATE_CLOSED, {ATTR_SUPPORTED_FEATURES: CoverEntityFeature.STOP})
     cap = cast(
         ToggleCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
     )
-    calls = async_mock_service(hass, cover.DOMAIN, cover.SERVICE_STOP_COVER)
+    calls = async_mock_service(hass, cover.DOMAIN, SERVICE_STOP_COVER)
     await cap.set_instance_state(Context(), _action_state_on(ToggleCapabilityInstance.PAUSE))
     await cap.set_instance_state(Context(), _action_state_off(ToggleCapabilityInstance.PAUSE))
     assert len(calls) == 2
@@ -165,7 +176,7 @@ async def test_capability_pause_vacuum(hass):
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
     for s in vacuum.STATES:
-        state = State("vacuum.test", s, {ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.PAUSE})
+        state = State("vacuum.test", s, {ATTR_SUPPORTED_FEATURES: VacuumEntityFeature.PAUSE})
         cap = cast(
             ToggleCapability,
             get_exact_one_capability(
@@ -176,7 +187,7 @@ async def test_capability_pause_vacuum(hass):
         assert cap.parameters.dict() == {"instance": "pause"}
         assert cap.get_value() is False
 
-    state = State("vacuum.test", vacuum.STATE_PAUSED, {ATTR_SUPPORTED_FEATURES: vacuum.VacuumEntityFeature.PAUSE})
+    state = State("vacuum.test", STATE_PAUSED, {ATTR_SUPPORTED_FEATURES: VacuumEntityFeature.PAUSE})
     cap = cast(
         ToggleCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
@@ -198,7 +209,7 @@ async def test_capability_oscillation(hass):
     state = State("fan.test", STATE_ON)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION)
 
-    state = State("fan.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.OSCILLATE})
+    state = State("fan.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: FanEntityFeature.OSCILLATE})
     cap = cast(
         ToggleCapability,
         get_exact_one_capability(
@@ -210,7 +221,7 @@ async def test_capability_oscillation(hass):
     assert cap.get_value() is False
 
     state = State(
-        "fan.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.OSCILLATE, fan.ATTR_OSCILLATING: True}
+        "fan.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: FanEntityFeature.OSCILLATE, fan.ATTR_OSCILLATING: True}
     )
     cap = cast(
         ToggleCapability,
@@ -221,7 +232,7 @@ async def test_capability_oscillation(hass):
     assert cap.get_value() is True
 
     state = State(
-        "fan.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: fan.FanEntityFeature.OSCILLATE, fan.ATTR_OSCILLATING: False}
+        "fan.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: FanEntityFeature.OSCILLATE, fan.ATTR_OSCILLATING: False}
     )
     cap = cast(
         ToggleCapability,

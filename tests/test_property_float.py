@@ -12,7 +12,10 @@ from homeassistant.components import (
     switch,
     water_heater,
 )
+from homeassistant.components.air_quality import ATTR_CO2, ATTR_PM_0_1, ATTR_PM_2_5, ATTR_PM_10
+from homeassistant.components.climate import ATTR_CURRENT_HUMIDITY, ATTR_HUMIDITY
 from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.water_heater import ATTR_CURRENT_TEMPERATURE
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     ATTR_DEVICE_CLASS,
@@ -42,13 +45,13 @@ from .test_property import assert_no_properties, get_exact_one_property
     [
         (sensor.DOMAIN, SensorDeviceClass.HUMIDITY, None, True),
         (sensor.DOMAIN, SensorDeviceClass.MOISTURE, None, True),
-        (air_quality.DOMAIN, None, climate.ATTR_HUMIDITY, True),
+        (air_quality.DOMAIN, None, ATTR_HUMIDITY, True),
         (air_quality.DOMAIN, None, None, False),
-        (climate.DOMAIN, None, climate.ATTR_CURRENT_HUMIDITY, True),
+        (climate.DOMAIN, None, ATTR_CURRENT_HUMIDITY, True),
         (climate.DOMAIN, None, None, False),
-        (fan.DOMAIN, None, climate.ATTR_CURRENT_HUMIDITY, True),
+        (fan.DOMAIN, None, ATTR_CURRENT_HUMIDITY, True),
         (fan.DOMAIN, None, None, False),
-        (humidifier.DOMAIN, None, climate.ATTR_CURRENT_HUMIDITY, True),
+        (humidifier.DOMAIN, None, ATTR_CURRENT_HUMIDITY, True),
         (humidifier.DOMAIN, None, None, False),
     ],
 )
@@ -101,13 +104,13 @@ async def test_property_float_humidity(
         (sensor.DOMAIN, None, None, UnitOfTemperature.FAHRENHEIT, True),
         (air_quality.DOMAIN, None, ATTR_TEMPERATURE, None, True),
         (air_quality.DOMAIN, None, None, None, False),
-        (climate.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
+        (climate.DOMAIN, None, ATTR_CURRENT_TEMPERATURE, None, True),
         (climate.DOMAIN, None, None, None, False),
-        (fan.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
+        (fan.DOMAIN, None, ATTR_CURRENT_TEMPERATURE, None, True),
         (fan.DOMAIN, None, None, None, False),
-        (humidifier.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
+        (humidifier.DOMAIN, None, ATTR_CURRENT_TEMPERATURE, None, True),
         (humidifier.DOMAIN, None, None, None, False),
-        (water_heater.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
+        (water_heater.DOMAIN, None, ATTR_CURRENT_TEMPERATURE, None, True),
         (water_heater.DOMAIN, None, None, None, False),
     ],
 )
@@ -350,9 +353,9 @@ async def test_property_float_water_level(hass: HomeAssistant, domain: str, attr
     [
         (sensor.DOMAIN, SensorDeviceClass.CO2, None, True),
         (sensor.DOMAIN, None, None, False),
-        (air_quality.DOMAIN, None, air_quality.ATTR_CO2, True),
+        (air_quality.DOMAIN, None, ATTR_CO2, True),
         (air_quality.DOMAIN, None, None, False),
-        (fan.DOMAIN, None, air_quality.ATTR_CO2, True),
+        (fan.DOMAIN, None, ATTR_CO2, True),
         (fan.DOMAIN, None, None, False),
     ],
 )
@@ -442,9 +445,9 @@ def test_property_float_meter(
         (sensor.DOMAIN, SensorDeviceClass.PM1, None, "pm1_density"),
         (sensor.DOMAIN, SensorDeviceClass.PM25, None, "pm2.5_density"),
         (sensor.DOMAIN, SensorDeviceClass.PM10, None, "pm10_density"),
-        (air_quality.DOMAIN, None, air_quality.ATTR_PM_0_1, "pm1_density"),
-        (air_quality.DOMAIN, None, air_quality.ATTR_PM_2_5, "pm2.5_density"),
-        (air_quality.DOMAIN, None, air_quality.ATTR_PM_10, "pm10_density"),
+        (air_quality.DOMAIN, None, ATTR_PM_0_1, "pm1_density"),
+        (air_quality.DOMAIN, None, ATTR_PM_2_5, "pm2.5_density"),
+        (air_quality.DOMAIN, None, ATTR_PM_10, "pm10_density"),
     ],
 )
 async def test_property_float_pm_density(

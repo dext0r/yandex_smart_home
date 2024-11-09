@@ -7,15 +7,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from homeassistant.components import camera
-from homeassistant.components.camera import StreamType
+from homeassistant.components.camera import CameraEntityFeature, StreamType
 from homeassistant.components.stream import Stream
 from homeassistant.core import Context
 from homeassistant.helpers import network
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from . import DOMAIN
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
 from .cloud_stream import CloudStreamManager
-from .const import DOMAIN
 from .helpers import APIError
 from .schema import (
     CapabilityType,
@@ -47,7 +47,7 @@ class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStream
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        return self.state.domain == camera.DOMAIN and bool(self._state_features & camera.CameraEntityFeature.STREAM)
+        return self.state.domain == camera.DOMAIN and bool(self._state_features & CameraEntityFeature.STREAM)
 
     @property
     def parameters(self) -> VideoStreamCapabilityParameters:

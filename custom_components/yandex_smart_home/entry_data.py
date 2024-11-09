@@ -22,12 +22,26 @@ from homeassistant.helpers.template import Template
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_custom_components
 
-from . import capability_custom, const, property_custom
+from . import capability_custom, property_custom
 from .capability_custom import CustomCapability, get_custom_capability
 from .cloud import CloudManager
 from .color import ColorProfiles
 from .const import (
+    CONF_CLOUD_INSTANCE,
+    CONF_CLOUD_INSTANCE_CONNECTION_TOKEN,
+    CONF_CLOUD_INSTANCE_ID,
+    CONF_CLOUD_STREAM,
+    CONF_COLOR_PROFILE,
+    CONF_CONNECTION_TYPE,
+    CONF_ENTITY_CUSTOM_MODES,
+    CONF_ENTITY_CUSTOM_RANGES,
+    CONF_ENTITY_CUSTOM_TOGGLES,
+    CONF_ENTITY_PROPERTIES,
+    CONF_ENTRY_ALIASES,
     CONF_LINKED_PLATFORMS,
+    CONF_NOTIFIER,
+    CONF_PRESSURE_UNIT,
+    CONF_SETTINGS,
     CONF_SKILL,
     CONF_USER_ID,
     DOMAIN,
@@ -93,7 +107,7 @@ class ConfigEntryData:
         else:
             self._hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, self._async_setup_notifiers)
 
-        if self._yaml_config.get(const.CONF_SETTINGS, {}).get(const.CONF_PRESSURE_UNIT):
+        if self._yaml_config.get(CONF_SETTINGS, {}).get(CONF_PRESSURE_UNIT):
             ir.async_create_issue(
                 self._hass,
                 DOMAIN,
@@ -106,7 +120,7 @@ class ConfigEntryData:
         else:
             ir.async_delete_issue(self._hass, DOMAIN, "deprecated_pressure_unit")
 
-        if count := len(self._yaml_config.get(const.CONF_NOTIFIER, [])):
+        if count := len(self._yaml_config.get(CONF_NOTIFIER, [])):
             issue_id = ISSUE_ID_DEPRECATED_YAML_NOTIFIER if count == 1 else ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS
             ir.async_create_issue(
                 self._hass,
@@ -140,7 +154,7 @@ class ConfigEntryData:
 
     async def async_get_context_user_id(self) -> str | None:
         """Return user id for service calls (cloud connection only)."""
-        if user_id := self.entry.options.get(const.CONF_USER_ID):
+        if user_id := self.entry.options.get(CONF_USER_ID):
             if user := await self._hass.auth.async_get_user(user_id):
                 return user.id
 
@@ -160,24 +174,24 @@ class ConfigEntryData:
         if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             return True
 
-        settings = self._yaml_config.get(const.CONF_SETTINGS, {})
-        return bool(settings.get(const.CONF_CLOUD_STREAM))
+        settings = self._yaml_config.get(CONF_SETTINGS, {})
+        return bool(settings.get(CONF_CLOUD_STREAM))
 
     @property
     def use_entry_aliases(self) -> bool:
         """Test if device or area entry aliases should be used for device or room name."""
-        return bool(self.entry.options.get(const.CONF_ENTRY_ALIASES, True))
+        return bool(self.entry.options.get(CONF_ENTRY_ALIASES, True))
 
     @property
     def connection_type(self) -> ConnectionType:
         """Return connection type."""
-        return ConnectionType(str(self.entry.data.get(const.CONF_CONNECTION_TYPE)))
+        return ConnectionType(str(self.entry.data.get(CONF_CONNECTION_TYPE)))
 
     @property
     def cloud_instance_id(self) -> str:
         """Return cloud instance id."""
         if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
-            return str(self.entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_ID])
+            return str(self.entry.data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID])
 
         raise ValueError("Config entry uses direct connection")
 
@@ -185,7 +199,7 @@ class ConfigEntryData:
     def cloud_connection_token(self) -> str:
         """Return cloud connection token."""
         if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
-            return str(self.entry.data[const.CONF_CLOUD_INSTANCE][const.CONF_CLOUD_INSTANCE_CONNECTION_TOKEN])
+            return str(self.entry.data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_CONNECTION_TOKEN])
 
         raise ValueError("Config entry uses direct connection")
 
@@ -210,7 +224,7 @@ class ConfigEntryData:
     @property
     def color_profiles(self) -> ColorProfiles:
         """Return color profiles."""
-        return ColorProfiles.from_dict(self._yaml_config.get(const.CONF_COLOR_PROFILE, {}))
+        return ColorProfiles.from_dict(self._yaml_config.get(CONF_COLOR_PROFILE, {}))
 
     def get_entity_config(self, entity_id: str) -> ConfigType:
         """Return configuration for the entity."""
@@ -323,9 +337,9 @@ class ConfigEntryData:
                 continue
 
             for capability_type, config_key in (
-                (CapabilityType.MODE, const.CONF_ENTITY_CUSTOM_MODES),
-                (CapabilityType.TOGGLE, const.CONF_ENTITY_CUSTOM_TOGGLES),
-                (CapabilityType.RANGE, const.CONF_ENTITY_CUSTOM_RANGES),
+                (CapabilityType.MODE, CONF_ENTITY_CUSTOM_MODES),
+                (CapabilityType.TOGGLE, CONF_ENTITY_CUSTOM_TOGGLES),
+                (CapabilityType.RANGE, CONF_ENTITY_CUSTOM_RANGES),
             ):
                 if config_key in entity_config:
                     for instance in entity_config[config_key]:
@@ -352,7 +366,7 @@ class ConfigEntryData:
                             templates.setdefault(template, [])
                             templates[template].append(capability)
 
-            for property_config in entity_config.get(const.CONF_ENTITY_PROPERTIES, []):
+            for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
                 try:
                     template = property_custom.get_value_template(self._hass, device_id, property_config)
                     templates.setdefault(template, [])

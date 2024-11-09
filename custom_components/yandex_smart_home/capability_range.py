@@ -6,10 +6,24 @@ import logging
 from typing import Any, Protocol
 
 from homeassistant.components import climate, cover, fan, humidifier, light, media_player, valve, water_heater
+from homeassistant.components.climate import ClimateEntityFeature
+from homeassistant.components.cover import CoverEntityFeature
+from homeassistant.components.media_player import MediaPlayerDeviceClass, MediaPlayerEntityFeature, MediaType
+from homeassistant.components.valve import ValveEntityFeature
+from homeassistant.components.water_heater import WaterHeaterEntityFeature
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
     ATTR_MODEL,
+    ATTR_TEMPERATURE,
+    SERVICE_MEDIA_NEXT_TRACK,
+    SERVICE_MEDIA_PREVIOUS_TRACK,
+    SERVICE_SET_COVER_POSITION,
+    SERVICE_SET_VALVE_POSITION,
+    SERVICE_TURN_ON,
+    SERVICE_VOLUME_DOWN,
+    SERVICE_VOLUME_SET,
+    SERVICE_VOLUME_UP,
     STATE_OFF,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
@@ -161,7 +175,7 @@ class CoverPositionCapability(StateRangeCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        return self.state.domain == cover.DOMAIN and bool(self._state_features & cover.CoverEntityFeature.SET_POSITION)
+        return self.state.domain == cover.DOMAIN and bool(self._state_features & CoverEntityFeature.SET_POSITION)
 
     @property
     def support_random_access(self) -> bool:
@@ -172,7 +186,7 @@ class CoverPositionCapability(StateRangeCapability):
         """Change the capability state."""
         await self._hass.services.async_call(
             cover.DOMAIN,
-            cover.SERVICE_SET_COVER_POSITION,
+            SERVICE_SET_COVER_POSITION,
             {ATTR_ENTITY_ID: self.state.entity_id, cover.ATTR_POSITION: self._get_service_call_value(state)},
             blocking=True,
             context=context,
@@ -201,7 +215,7 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == water_heater.DOMAIN and bool(
-            self._state_features & water_heater.WaterHeaterEntityFeature.TARGET_TEMPERATURE
+            self._state_features & WaterHeaterEntityFeature.TARGET_TEMPERATURE
         )
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
@@ -209,14 +223,14 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
         await self._hass.services.async_call(
             water_heater.DOMAIN,
             water_heater.SERVICE_SET_TEMPERATURE,
-            {ATTR_ENTITY_ID: self.state.entity_id, water_heater.ATTR_TEMPERATURE: self._get_service_call_value(state)},
+            {ATTR_ENTITY_ID: self.state.entity_id, ATTR_TEMPERATURE: self._get_service_call_value(state)},
             blocking=True,
             context=context,
         )
 
     def _get_value(self) -> float | None:
         """Return the current capability value (unguarded)."""
-        return self._convert_to_float(self.state.attributes.get(water_heater.ATTR_TEMPERATURE))
+        return self._convert_to_float(self.state.attributes.get(ATTR_TEMPERATURE))
 
     @cached_property
     def _range(self) -> RangeCapabilityRange:
@@ -235,7 +249,7 @@ class TemperatureCapabilityClimate(TemperatureCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == climate.DOMAIN and bool(
-            self._state_features & climate.ClimateEntityFeature.TARGET_TEMPERATURE
+            self._state_features & ClimateEntityFeature.TARGET_TEMPERATURE
         )
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
@@ -243,14 +257,14 @@ class TemperatureCapabilityClimate(TemperatureCapability):
         await self._hass.services.async_call(
             climate.DOMAIN,
             climate.SERVICE_SET_TEMPERATURE,
-            {ATTR_ENTITY_ID: self.state.entity_id, climate.ATTR_TEMPERATURE: self._get_service_call_value(state)},
+            {ATTR_ENTITY_ID: self.state.entity_id, ATTR_TEMPERATURE: self._get_service_call_value(state)},
             blocking=True,
             context=context,
         )
 
     def _get_value(self) -> float | None:
         """Return the current capability value (unguarded)."""
-        return self._convert_to_float(self.state.attributes.get(climate.ATTR_TEMPERATURE))
+        return self._convert_to_float(self.state.attributes.get(ATTR_TEMPERATURE))
 
     @cached_property
     def _range(self) -> RangeCapabilityRange:
@@ -364,7 +378,7 @@ class BrightnessCapability(StateRangeCapability):
 
         await self._hass.services.async_call(
             light.DOMAIN,
-            light.SERVICE_TURN_ON,
+            SERVICE_TURN_ON,
             {ATTR_ENTITY_ID: self.state.entity_id, attribute: state.value},
             blocking=True,
             context=context,
@@ -392,10 +406,10 @@ class VolumeCapability(StateRangeCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
-            if self._state_features & media_player.MediaPlayerEntityFeature.VOLUME_STEP:
+            if self._state_features & MediaPlayerEntityFeature.VOLUME_STEP:
                 return True
 
-            if self._state_features & media_player.MediaPlayerEntityFeature.VOLUME_SET:
+            if self._state_features & MediaPlayerEntityFeature.VOLUME_SET:
                 return True
 
             if MediaPlayerFeature.VOLUME_SET in self._entity_config.get(CONF_FEATURES, []):
@@ -410,8 +424,8 @@ class VolumeCapability(StateRangeCapability):
             return True
 
         return not (
-            self._state_features & media_player.MediaPlayerEntityFeature.VOLUME_STEP
-            and not self._state_features & media_player.MediaPlayerEntityFeature.VOLUME_SET
+            self._state_features & MediaPlayerEntityFeature.VOLUME_STEP
+            and not self._state_features & MediaPlayerEntityFeature.VOLUME_SET
         )
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
@@ -419,7 +433,7 @@ class VolumeCapability(StateRangeCapability):
         if self.support_random_access:
             await self._hass.services.async_call(
                 media_player.DOMAIN,
-                media_player.SERVICE_VOLUME_SET,
+                SERVICE_VOLUME_SET,
                 {
                     ATTR_ENTITY_ID: self.state.entity_id,
                     media_player.ATTR_MEDIA_VOLUME_LEVEL: self._get_service_call_value(state) / 100,
@@ -434,9 +448,9 @@ class VolumeCapability(StateRangeCapability):
             raise APIError(ResponseCode.INVALID_VALUE, f"Absolute volume is not supported for {self}")
 
         if state.value > 0:
-            service = media_player.SERVICE_VOLUME_UP
+            service = SERVICE_VOLUME_UP
         else:
-            service = media_player.SERVICE_VOLUME_DOWN
+            service = SERVICE_VOLUME_DOWN
 
         volume_step = int(self._entity_config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_PRECISION, 1))
         if abs(state.value) != 1:
@@ -482,8 +496,8 @@ class ChannelCapability(StateRangeCapability):
         """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
             if (
-                self._state_features & media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK
-                and self._state_features & media_player.MediaPlayerEntityFeature.NEXT_TRACK
+                self._state_features & MediaPlayerEntityFeature.PREVIOUS_TRACK
+                and self._state_features & MediaPlayerEntityFeature.NEXT_TRACK
             ):
                 return True
 
@@ -491,7 +505,7 @@ class ChannelCapability(StateRangeCapability):
                 return True
 
             if (
-                self._state_features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA
+                self._state_features & MediaPlayerEntityFeature.PLAY_MEDIA
                 or MediaPlayerFeature.PLAY_MEDIA in self._entity_config.get(CONF_FEATURES, [])
             ):
                 if self._entity_config.get(CONF_SUPPORT_SET_CHANNEL) is False:
@@ -509,9 +523,9 @@ class ChannelCapability(StateRangeCapability):
         if self._entity_config.get(CONF_SUPPORT_SET_CHANNEL) is False:
             return False
 
-        if device_class == media_player.MediaPlayerDeviceClass.TV:
+        if device_class == MediaPlayerDeviceClass.TV:
             if (
-                self._state_features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA
+                self._state_features & MediaPlayerEntityFeature.PLAY_MEDIA
                 or MediaPlayerFeature.PLAY_MEDIA in self._entity_config.get(CONF_FEATURES, [])
             ):
                 return True
@@ -524,13 +538,13 @@ class ChannelCapability(StateRangeCapability):
 
         if state.relative:
             if (
-                self._state_features & media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK
-                and self._state_features & media_player.MediaPlayerEntityFeature.NEXT_TRACK
+                self._state_features & MediaPlayerEntityFeature.PREVIOUS_TRACK
+                and self._state_features & MediaPlayerEntityFeature.NEXT_TRACK
             ):
                 if state.value > 0:
-                    service = media_player.SERVICE_MEDIA_NEXT_TRACK
+                    service = SERVICE_MEDIA_NEXT_TRACK
                 else:
-                    service = media_player.SERVICE_MEDIA_PREVIOUS_TRACK
+                    service = SERVICE_MEDIA_PREVIOUS_TRACK
 
                 await self._hass.services.async_call(
                     media_player.DOMAIN,
@@ -553,7 +567,7 @@ class ChannelCapability(StateRangeCapability):
                 {
                     ATTR_ENTITY_ID: self.state.entity_id,
                     media_player.ATTR_MEDIA_CONTENT_ID: int(value),
-                    media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
+                    media_player.ATTR_MEDIA_CONTENT_TYPE: MediaType.CHANNEL,
                 },
                 blocking=False,  # some tv's do it too slow
                 context=context,
@@ -572,7 +586,7 @@ class ChannelCapability(StateRangeCapability):
         """Return the current capability value (unguarded)."""
         media_content_type = self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_TYPE)
 
-        if media_content_type == media_player.MediaType.CHANNEL:
+        if media_content_type == MediaType.CHANNEL:
             return self._convert_to_float(self.state.attributes.get(media_player.ATTR_MEDIA_CONTENT_ID), strict=False)
 
         return None
@@ -595,7 +609,7 @@ class ValvePositionCapability(StateRangeCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        return self.state.domain == valve.DOMAIN and bool(self._state_features & valve.ValveEntityFeature.SET_POSITION)
+        return self.state.domain == valve.DOMAIN and bool(self._state_features & ValveEntityFeature.SET_POSITION)
 
     @property
     def support_random_access(self) -> bool:
@@ -606,7 +620,7 @@ class ValvePositionCapability(StateRangeCapability):
         """Change the capability state."""
         await self._hass.services.async_call(
             valve.DOMAIN,
-            valve.SERVICE_SET_VALVE_POSITION,
+            SERVICE_SET_VALVE_POSITION,
             {ATTR_ENTITY_ID: self.state.entity_id, valve.ATTR_POSITION: self._get_service_call_value(state)},
             blocking=True,
             context=context,

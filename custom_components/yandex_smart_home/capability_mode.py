@@ -8,7 +8,11 @@ import math
 from typing import Any, Iterable, Protocol
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
-from homeassistant.components.climate.const import HVACMode
+from homeassistant.components.climate import ClimateEntityFeature, HVACMode
+from homeassistant.components.fan import FanEntityFeature
+from homeassistant.components.humidifier import HumidifierEntityFeature
+from homeassistant.components.media_player import MediaPlayerEntityFeature
+from homeassistant.components.vacuum import VacuumEntityFeature
 from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Context
 from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item
@@ -295,7 +299,7 @@ class ThermostatCapability(StateModeCapability):
     _modes_map_default = {
         ModeCapabilityMode.HEAT: [HVACMode.HEAT],
         ModeCapabilityMode.COOL: [HVACMode.COOL],
-        ModeCapabilityMode.AUTO: [HVACMode.HEAT_COOL, climate.HVACMode.AUTO],
+        ModeCapabilityMode.AUTO: [HVACMode.HEAT_COOL, HVACMode.AUTO],
         ModeCapabilityMode.DRY: [HVACMode.DRY],
         ModeCapabilityMode.FAN_ONLY: [HVACMode.FAN_ONLY],
     }
@@ -342,7 +346,7 @@ class SwingCapability(StateModeCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == climate.DOMAIN and self._state_features & climate.ClimateEntityFeature.SWING_MODE:
+        if self.state.domain == climate.DOMAIN and self._state_features & ClimateEntityFeature.SWING_MODE:
             return super().supported
 
         return False
@@ -385,7 +389,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
             XiaomiFanMode.FAN,
         ],
         ModeCapabilityMode.AUTO: [
-            humidifier.MODE_AUTO,
+            humidifier.const.MODE_AUTO,
             XiaomiMiotHumidifierMode.CONST_HUMIDITY,
         ],
         ModeCapabilityMode.ECO: [
@@ -397,7 +401,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
             XiaomiFanMode.SILENT,
         ],
         ModeCapabilityMode.MIN: [
-            humidifier.MODE_AWAY,
+            humidifier.const.MODE_AWAY,
         ],
         ModeCapabilityMode.MEDIUM: [
             humidifier.const.MODE_COMFORT,
@@ -405,7 +409,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
             XiaomiHumidifierMode.MID,
         ],
         ModeCapabilityMode.NORMAL: [
-            humidifier.MODE_NORMAL,
+            humidifier.const.MODE_NORMAL,
             XiaomiFanMode.FAVORITE,
         ],
         ModeCapabilityMode.MAX: [
@@ -423,7 +427,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == humidifier.DOMAIN and self._state_features & humidifier.HumidifierEntityFeature.MODES:
+        if self.state.domain == humidifier.DOMAIN and self._state_features & HumidifierEntityFeature.MODES:
             return super().supported
 
         return False
@@ -487,9 +491,9 @@ class ProgramCapabilityFan(ProgramCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == fan.DOMAIN:
-            if self._state_features & fan.FanEntityFeature.PRESET_MODE:
+            if self._state_features & FanEntityFeature.PRESET_MODE:
                 if (
-                    self._state_features & fan.FanEntityFeature.SET_SPEED
+                    self._state_features & FanEntityFeature.SET_SPEED
                     and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
                 ):
                     return super().supported
@@ -532,7 +536,7 @@ class InputSourceCapability(StateModeCapability):
             if MediaPlayerFeature.SELECT_SOURCE in self._entity_config.get(CONF_FEATURES, []):
                 return super().supported
 
-            if self._state_features & media_player.MediaPlayerEntityFeature.SELECT_SOURCE:
+            if self._state_features & MediaPlayerEntityFeature.SELECT_SOURCE:
                 return super().supported
 
         return False
@@ -622,7 +626,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == climate.DOMAIN and self._state_features & climate.ClimateEntityFeature.FAN_MODE:
+        if self.state.domain == climate.DOMAIN and self._state_features & ClimateEntityFeature.FAN_MODE:
             return super().supported
 
         return False
@@ -696,9 +700,9 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == fan.DOMAIN:
-            if self._state_features & fan.FanEntityFeature.PRESET_MODE:
+            if self._state_features & FanEntityFeature.PRESET_MODE:
                 if (
-                    self._state_features & fan.FanEntityFeature.SET_SPEED
+                    self._state_features & FanEntityFeature.SET_SPEED
                     and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
                 ):
                     return False
@@ -868,7 +872,7 @@ class CleanupModeCapability(StateModeCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == vacuum.DOMAIN and self._state_features & vacuum.VacuumEntityFeature.FAN_SPEED:
+        if self.state.domain == vacuum.DOMAIN and self._state_features & VacuumEntityFeature.FAN_SPEED:
             return super().supported
 
         return False

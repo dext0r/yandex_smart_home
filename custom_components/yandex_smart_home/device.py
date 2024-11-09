@@ -32,6 +32,11 @@ from homeassistant.components import (
     valve,
     water_heater,
 )
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.cover import CoverDeviceClass
+from homeassistant.components.media_player import MediaPlayerDeviceClass
+from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.components.switch import SwitchDeviceClass
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     CLOUD_NEVER_EXPOSED_ENTITIES,
@@ -48,6 +53,15 @@ from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 from homeassistant.helpers.template import Template
 
+from custom_components.yandex_smart_home.const import (
+    CONF_ENTITY_CUSTOM_MODES,
+    CONF_ENTITY_CUSTOM_RANGES,
+    CONF_ENTITY_CUSTOM_TOGGLES,
+    CONF_ENTITY_PROPERTIES,
+    CONF_ERROR_CODE_TEMPLATE,
+    DEVICE_CLASS_BUTTON,
+)
+
 from . import (  # noqa: F401
     capability_color,
     capability_custom,
@@ -60,7 +74,6 @@ from . import (  # noqa: F401
     property_event,
     property_float,
 )
-from . import const  # noqa: F401
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, DummyCapability, StateCapability
 from .capability_custom import get_custom_capability
 from .helpers import ActionNotAllowed, APIError
@@ -114,36 +127,36 @@ _DOMAIN_TO_DEVICE_TYPES: dict[str, DeviceType] = {
 }
 
 _DEVICE_CLASS_TO_DEVICE_TYPES: dict[tuple[str, str], DeviceType] = {
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.DOOR): DeviceType.SENSOR_OPEN,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.GARAGE_DOOR): DeviceType.SENSOR_OPEN,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.GAS): DeviceType.SENSOR_GAS,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.MOISTURE): DeviceType.SENSOR_WATER_LEAK,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.MOTION): DeviceType.SENSOR_MOTION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.MOVING): DeviceType.SENSOR_MOTION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.OCCUPANCY): DeviceType.SENSOR_MOTION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.OPENING): DeviceType.SENSOR_OPEN,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.PRESENCE): DeviceType.SENSOR_MOTION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.SMOKE): DeviceType.SENSOR_SMOKE,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.VIBRATION): DeviceType.SENSOR_VIBRATION,
-    (binary_sensor.DOMAIN, binary_sensor.BinarySensorDeviceClass.WINDOW): DeviceType.SENSOR_OPEN,
-    (cover.DOMAIN, cover.CoverDeviceClass.CURTAIN): DeviceType.OPENABLE_CURTAIN,
-    (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.RECEIVER): DeviceType.MEDIA_DEVICE_RECIEVER,
-    (media_player.DOMAIN, media_player.MediaPlayerDeviceClass.TV): DeviceType.MEDIA_DEVICE_TV,
-    (sensor.DOMAIN, const.DEVICE_CLASS_BUTTON): DeviceType.SENSOR_BUTTON,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.CO): DeviceType.SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.CO2): DeviceType.SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.ENERGY): DeviceType.SMART_METER_ELECTRICITY,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.GAS): DeviceType.SMART_METER_GAS,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.HUMIDITY): DeviceType.SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.ILLUMINANCE): DeviceType.SENSOR_ILLUMINATION,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.PM1): DeviceType.SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.PM10): DeviceType.SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.PM25): DeviceType.SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.PRESSURE): DeviceType.SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.TEMPERATURE): DeviceType.SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS): DeviceType.SENSOR_CLIMATE,
-    (sensor.DOMAIN, sensor.SensorDeviceClass.WATER): DeviceType.SMART_METER_COLD_WATER,
-    (switch.DOMAIN, switch.SwitchDeviceClass.OUTLET): DeviceType.SOCKET,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.DOOR): DeviceType.SENSOR_OPEN,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.GARAGE_DOOR): DeviceType.SENSOR_OPEN,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.GAS): DeviceType.SENSOR_GAS,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.MOISTURE): DeviceType.SENSOR_WATER_LEAK,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.MOTION): DeviceType.SENSOR_MOTION,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.MOVING): DeviceType.SENSOR_MOTION,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.OCCUPANCY): DeviceType.SENSOR_MOTION,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.OPENING): DeviceType.SENSOR_OPEN,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.PRESENCE): DeviceType.SENSOR_MOTION,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.SMOKE): DeviceType.SENSOR_SMOKE,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.VIBRATION): DeviceType.SENSOR_VIBRATION,
+    (binary_sensor.DOMAIN, BinarySensorDeviceClass.WINDOW): DeviceType.SENSOR_OPEN,
+    (cover.DOMAIN, CoverDeviceClass.CURTAIN): DeviceType.OPENABLE_CURTAIN,
+    (media_player.DOMAIN, MediaPlayerDeviceClass.RECEIVER): DeviceType.MEDIA_DEVICE_RECIEVER,
+    (media_player.DOMAIN, MediaPlayerDeviceClass.TV): DeviceType.MEDIA_DEVICE_TV,
+    (sensor.DOMAIN, DEVICE_CLASS_BUTTON): DeviceType.SENSOR_BUTTON,
+    (sensor.DOMAIN, SensorDeviceClass.CO): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, SensorDeviceClass.CO2): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, SensorDeviceClass.ENERGY): DeviceType.SMART_METER_ELECTRICITY,
+    (sensor.DOMAIN, SensorDeviceClass.GAS): DeviceType.SMART_METER_GAS,
+    (sensor.DOMAIN, SensorDeviceClass.HUMIDITY): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, SensorDeviceClass.ILLUMINANCE): DeviceType.SENSOR_ILLUMINATION,
+    (sensor.DOMAIN, SensorDeviceClass.PM1): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, SensorDeviceClass.PM10): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, SensorDeviceClass.PM25): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, SensorDeviceClass.PRESSURE): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, SensorDeviceClass.TEMPERATURE): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS): DeviceType.SENSOR_CLIMATE,
+    (sensor.DOMAIN, SensorDeviceClass.WATER): DeviceType.SMART_METER_COLD_WATER,
+    (switch.DOMAIN, SwitchDeviceClass.OUTLET): DeviceType.SOCKET,
 }
 
 
@@ -170,9 +183,9 @@ class Device:
         disabled_capabilities: list[Capability[Any]] = []
 
         for capability_type, config_key in (
-            (CapabilityType.MODE, const.CONF_ENTITY_CUSTOM_MODES),
-            (CapabilityType.TOGGLE, const.CONF_ENTITY_CUSTOM_TOGGLES),
-            (CapabilityType.RANGE, const.CONF_ENTITY_CUSTOM_RANGES),
+            (CapabilityType.MODE, CONF_ENTITY_CUSTOM_MODES),
+            (CapabilityType.TOGGLE, CONF_ENTITY_CUSTOM_TOGGLES),
+            (CapabilityType.RANGE, CONF_ENTITY_CUSTOM_RANGES),
         ):
             if config_key in self._config:
                 for instance in self._config[config_key]:
@@ -216,7 +229,7 @@ class Device:
         """Return all properties for the device."""
         properties: list[Property] = []
 
-        for property_config in self._config.get(const.CONF_ENTITY_PROPERTIES, []):
+        for property_config in self._config.get(CONF_ENTITY_PROPERTIES, []):
             try:
                 custom_property = get_custom_property(self._hass, self._entry_data, property_config, self.id)
             except APIError as e:
@@ -459,7 +472,7 @@ class Device:
     @property
     def _error_code_template(self) -> Template | None:
         """Prepare template for error code."""
-        template: Template | None = self._config.get(const.CONF_ERROR_CODE_TEMPLATE)
+        template: Template | None = self._config.get(CONF_ERROR_CODE_TEMPLATE)
         if template is not None:
             template.hass = self._hass
 

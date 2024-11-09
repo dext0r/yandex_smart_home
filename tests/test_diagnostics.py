@@ -11,15 +11,20 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUs
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 from syrupy import SnapshotAssertion
 
-from custom_components.yandex_smart_home import (
+from custom_components.yandex_smart_home import DOMAIN
+from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
+from custom_components.yandex_smart_home.const import (
+    CONF_CLOUD_INSTANCE,
+    CONF_CLOUD_INSTANCE_PASSWORD,
+    CONF_CONNECTION_TYPE,
+    CONF_FILTER,
+    CONF_FILTER_SOURCE,
+    CONF_SKILL,
     CONF_USER_ID,
-    DOMAIN,
     ConnectionType,
     EntityFilterSource,
-    SmartHomePlatform,
-    const,
 )
-from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
+from custom_components.yandex_smart_home.helpers import SmartHomePlatform
 
 
 async def test_diagnostics(
@@ -46,14 +51,14 @@ async def test_diagnostics(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
-            const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
-            const.CONF_CLOUD_INSTANCE: {const.CONF_CLOUD_INSTANCE_PASSWORD: "foo"},
+            CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            CONF_CLOUD_INSTANCE: {CONF_CLOUD_INSTANCE_PASSWORD: "foo"},
             CONF_PLATFORM: SmartHomePlatform.YANDEX,
         },
         options={
-            const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
-            const.CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]},
-            const.CONF_SKILL: {CONF_ID: "skill_id", CONF_TOKEN: "oauth_token", CONF_USER_ID: "user_id"},
+            CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
+            CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]},
+            CONF_SKILL: {CONF_ID: "skill_id", CONF_TOKEN: "oauth_token", CONF_USER_ID: "user_id"},
         },
     )
     config_entry.add_to_hass(hass)

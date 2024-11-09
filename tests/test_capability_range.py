@@ -4,13 +4,30 @@ from typing import cast
 from unittest.mock import patch
 
 from homeassistant.components import climate, cover, humidifier, light, media_player, valve, water_heater
-from homeassistant.components.climate import HVACMode
-from homeassistant.components.media_player import MediaClass
+from homeassistant.components.climate import ClimateEntityFeature, HVACMode
+from homeassistant.components.cover import CoverEntityFeature
+from homeassistant.components.media_player import (
+    MediaClass,
+    MediaPlayerDeviceClass,
+    MediaPlayerEntityFeature,
+    MediaType,
+)
+from homeassistant.components.valve import ValveEntityFeature
+from homeassistant.components.water_heater import WaterHeaterEntityFeature
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
     ATTR_MODEL,
     ATTR_SUPPORTED_FEATURES,
+    ATTR_TEMPERATURE,
+    SERVICE_MEDIA_NEXT_TRACK,
+    SERVICE_MEDIA_PREVIOUS_TRACK,
+    SERVICE_SET_COVER_POSITION,
+    SERVICE_SET_VALVE_POSITION,
+    SERVICE_TURN_ON,
+    SERVICE_VOLUME_DOWN,
+    SERVICE_VOLUME_SET,
+    SERVICE_VOLUME_UP,
     STATE_OFF,
     STATE_ON,
     STATE_UNAVAILABLE,
@@ -20,8 +37,17 @@ from homeassistant.core import Context, HomeAssistant, State
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
-from custom_components.yandex_smart_home import const
 from custom_components.yandex_smart_home.capability_range import RangeCapability, StateRangeCapability
+from custom_components.yandex_smart_home.const import (
+    ATTR_TARGET_HUMIDITY,
+    CONF_ENTITY_RANGE,
+    CONF_ENTITY_RANGE_MAX,
+    CONF_ENTITY_RANGE_MIN,
+    CONF_ENTITY_RANGE_PRECISION,
+    CONF_SUPPORT_SET_CHANNEL,
+    DOMAIN_XIAOMI_AIRPURIFIER,
+    SERVICE_FAN_SET_TARGET_HUMIDITY,
+)
 from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -108,8 +134,8 @@ async def test_capability_range(hass, caplog):
 @pytest.mark.parametrize(
     "domain,set_position_feature,set_position_service",
     [
-        (cover.DOMAIN, cover.CoverEntityFeature.SET_POSITION, cover.SERVICE_SET_COVER_POSITION),
-        (valve.DOMAIN, valve.ValveEntityFeature.SET_POSITION, valve.SERVICE_SET_VALVE_POSITION),
+        (cover.DOMAIN, CoverEntityFeature.SET_POSITION, SERVICE_SET_COVER_POSITION),
+        (valve.DOMAIN, ValveEntityFeature.SET_POSITION, SERVICE_SET_VALVE_POSITION),
     ],
 )
 async def test_capability_range_open(
@@ -165,14 +191,14 @@ async def test_capability_range_open(
 
 
 async def test_capability_range_temperature_climate(hass):
-    state = State("climate.test", climate.STATE_OFF)
+    state = State("climate.test", STATE_OFF)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
 
     state = State(
         "climate.test",
-        climate.STATE_OFF,
+        STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.TARGET_TEMPERATURE,
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.TARGET_TEMPERATURE,
             climate.ATTR_MIN_TEMP: 10,
             climate.ATTR_MAX_TEMP: 25,
             climate.ATTR_TARGET_TEMP_STEP: 1,
@@ -198,10 +224,10 @@ async def test_capability_range_temperature_climate(hass):
         "climate.test",
         HVACMode.HEAT_COOL,
         {
-            ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.TARGET_TEMPERATURE,
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.TARGET_TEMPERATURE,
+            ATTR_TEMPERATURE: 23.5,
             climate.ATTR_MIN_TEMP: 12,
             climate.ATTR_MAX_TEMP: 27,
-            climate.ATTR_TEMPERATURE: 23.5,
         },
     )
     cap = cast(
@@ -233,22 +259,22 @@ async def test_capability_range_temperature_climate(hass):
     for i in range(0, len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
-    assert calls[0].data[climate.ATTR_TEMPERATURE] == 11
-    assert calls[1].data[climate.ATTR_TEMPERATURE] == 15
-    assert calls[2].data[climate.ATTR_TEMPERATURE] == 28
-    assert calls[3].data[climate.ATTR_TEMPERATURE] == 27
-    assert calls[4].data[climate.ATTR_TEMPERATURE] == 20.5
+    assert calls[0].data[ATTR_TEMPERATURE] == 11
+    assert calls[1].data[ATTR_TEMPERATURE] == 15
+    assert calls[2].data[ATTR_TEMPERATURE] == 28
+    assert calls[3].data[ATTR_TEMPERATURE] == 27
+    assert calls[4].data[ATTR_TEMPERATURE] == 20.5
 
 
 async def test_capability_range_temperature_water_heater(hass):
-    state = State("water_heater.test", water_heater.STATE_OFF)
+    state = State("water_heater.test", STATE_OFF)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
 
     state = State(
         "water_heater.test",
-        water_heater.STATE_OFF,
+        STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.TARGET_TEMPERATURE,
+            ATTR_SUPPORTED_FEATURES: WaterHeaterEntityFeature.TARGET_TEMPERATURE,
             water_heater.ATTR_MIN_TEMP: 30,
             water_heater.ATTR_MAX_TEMP: 90,
         },
@@ -273,10 +299,10 @@ async def test_capability_range_temperature_water_heater(hass):
         "water_heater.test",
         water_heater.STATE_ELECTRIC,
         {
-            ATTR_SUPPORTED_FEATURES: water_heater.WaterHeaterEntityFeature.TARGET_TEMPERATURE,
+            ATTR_SUPPORTED_FEATURES: WaterHeaterEntityFeature.TARGET_TEMPERATURE,
+            ATTR_TEMPERATURE: 50,
             water_heater.ATTR_MIN_TEMP: 30,
             water_heater.ATTR_MAX_TEMP: 90,
-            water_heater.ATTR_TEMPERATURE: 50,
         },
     )
     cap = cast(
@@ -302,11 +328,11 @@ async def test_capability_range_temperature_water_heater(hass):
     for i in range(0, len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
-    assert calls[0].data[water_heater.ATTR_TEMPERATURE] == 20
-    assert calls[1].data[water_heater.ATTR_TEMPERATURE] == 100
-    assert calls[2].data[water_heater.ATTR_TEMPERATURE] == 50
-    assert calls[3].data[water_heater.ATTR_TEMPERATURE] == 65
-    assert calls[4].data[water_heater.ATTR_TEMPERATURE] == 30
+    assert calls[0].data[ATTR_TEMPERATURE] == 20
+    assert calls[1].data[ATTR_TEMPERATURE] == 100
+    assert calls[2].data[ATTR_TEMPERATURE] == 50
+    assert calls[3].data[ATTR_TEMPERATURE] == 65
+    assert calls[4].data[ATTR_TEMPERATURE] == 30
 
 
 async def test_capability_range_humidity_humidifier(hass):
@@ -364,10 +390,10 @@ async def test_capability_range_humidity_humidifier(hass):
 
 
 async def test_capability_range_humidity_fan(hass):
-    state = State("fan.test", water_heater.STATE_OFF)
+    state = State("fan.test", STATE_OFF)
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY)
 
-    state = State("fan.test", STATE_OFF, {const.ATTR_TARGET_HUMIDITY: 50, ATTR_MODEL: "zhimi.test.a"})
+    state = State("fan.test", STATE_OFF, {ATTR_TARGET_HUMIDITY: 50, ATTR_MODEL: "zhimi.test.a"})
     cap = cast(
         RangeCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
@@ -382,7 +408,7 @@ async def test_capability_range_humidity_fan(hass):
     }
     assert cap.get_value() == 50
 
-    calls = async_mock_service(hass, const.DOMAIN_XIAOMI_AIRPURIFIER, const.SERVICE_FAN_SET_TARGET_HUMIDITY)
+    calls = async_mock_service(hass, DOMAIN_XIAOMI_AIRPURIFIER, SERVICE_FAN_SET_TARGET_HUMIDITY)
     for value, relative in ((20, False), (100, False), (50, False), (15, True), (-5, True)):
         await cap.set_instance_state(
             Context(),
@@ -467,7 +493,7 @@ async def test_capability_range_brightness(hass, color_mode):
     )
     assert cap.get_value() == 50
 
-    calls = async_mock_service(hass, light.DOMAIN, light.SERVICE_TURN_ON)
+    calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
     for value, relative in ((0, False), (30, False), (126, False), (30, True), (-60, True)):
         await cap.set_instance_state(
             Context(),
@@ -500,8 +526,8 @@ async def test_capability_range_volume(hass):
 @pytest.mark.parametrize(
     "features",
     [
-        media_player.MediaPlayerEntityFeature.VOLUME_SET,
-        media_player.MediaPlayerEntityFeature.VOLUME_SET | media_player.MediaPlayerEntityFeature.VOLUME_STEP,
+        MediaPlayerEntityFeature.VOLUME_SET,
+        MediaPlayerEntityFeature.VOLUME_SET | MediaPlayerEntityFeature.VOLUME_STEP,
     ],
 )
 async def test_capability_range_volume_support_random(hass, features):
@@ -537,7 +563,7 @@ async def test_capability_range_volume_support_random(hass, features):
     )
     assert cap.get_value() == 56
 
-    calls = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_SET)
+    calls = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_SET)
     for value, relative in ((0, False), (34, False), (126, False), (30, True), (-10, True), (-60, True)):
         await cap.set_instance_state(
             Context(),
@@ -559,7 +585,7 @@ async def test_capability_range_volume_custom_range(hass: HomeAssistant) -> None
     state = State(
         "media_player.test",
         STATE_OFF,
-        {ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_SET},
+        {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.VOLUME_SET},
     )
     cap = cast(
         RangeCapability,
@@ -578,14 +604,14 @@ async def test_capability_range_volume_custom_range(hass: HomeAssistant) -> None
             for range_prec in [0.3, 1, None]:
                 entity_range_config = {}
                 if range_min:
-                    entity_range_config[const.CONF_ENTITY_RANGE_MIN] = range_min
+                    entity_range_config[CONF_ENTITY_RANGE_MIN] = range_min
                 if range_max:
-                    entity_range_config[const.CONF_ENTITY_RANGE_MAX] = range_max
+                    entity_range_config[CONF_ENTITY_RANGE_MAX] = range_max
                 if range_prec:
-                    entity_range_config[const.CONF_ENTITY_RANGE_PRECISION] = range_prec
+                    entity_range_config[CONF_ENTITY_RANGE_PRECISION] = range_prec
 
                 entry_data = MockConfigEntryData(
-                    entity_config={state.entity_id: {const.CONF_ENTITY_RANGE: entity_range_config}}
+                    entity_config={state.entity_id: {CONF_ENTITY_RANGE: entity_range_config}}
                 )
                 cap = cast(
                     RangeCapability,
@@ -611,9 +637,7 @@ async def test_capability_range_volume_custom_range(hass: HomeAssistant) -> None
 
 @pytest.mark.parametrize("precision", [2, 10, None])
 async def test_capability_range_volume_only_relative(hass, precision):
-    state = State(
-        "media_player.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.VOLUME_STEP}
-    )
+    state = State("media_player.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.VOLUME_STEP})
     cap = cast(
         RangeCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
@@ -622,7 +646,7 @@ async def test_capability_range_volume_only_relative(hass, precision):
 
     entity_config = {}
     if precision:
-        entity_config = {const.CONF_ENTITY_RANGE: {const.CONF_ENTITY_RANGE_PRECISION: precision}}
+        entity_config = {CONF_ENTITY_RANGE: {CONF_ENTITY_RANGE_PRECISION: precision}}
 
     entry_data = MockConfigEntryData(entity_config={state.entity_id: entity_config})
     cap = cast(
@@ -630,7 +654,7 @@ async def test_capability_range_volume_only_relative(hass, precision):
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
 
-    calls_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_UP)
+    calls_up = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_UP)
     with pytest.raises(APIError) as e:
         await cap.set_instance_state(
             Context(),
@@ -646,7 +670,7 @@ async def test_capability_range_volume_only_relative(hass, precision):
     for i in range(0, len(calls_up)):
         assert calls_up[i].data[ATTR_ENTITY_ID] == state.entity_id
 
-    calls_down = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_DOWN)
+    calls_down = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_DOWN)
     await cap.set_instance_state(
         Context(),
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=-2, relative=True),
@@ -655,7 +679,7 @@ async def test_capability_range_volume_only_relative(hass, precision):
     for i in range(0, len(calls_down)):
         assert calls_down[i].data[ATTR_ENTITY_ID] == state.entity_id
 
-    calls_one_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_UP)
+    calls_one_up = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_UP)
     await cap.set_instance_state(
         Context(),
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=1, relative=True),
@@ -664,7 +688,7 @@ async def test_capability_range_volume_only_relative(hass, precision):
     for i in range(0, precision or 1):
         assert calls_one_up[i].data[ATTR_ENTITY_ID] == state.entity_id
 
-    calls_one_down = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_VOLUME_DOWN)
+    calls_one_down = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_DOWN)
     await cap.set_instance_state(
         Context(),
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=-1, relative=True),
@@ -692,21 +716,21 @@ async def test_capability_range_channel_set_via_config(hass):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA,
+            ATTR_DEVICE_CLASS: MediaPlayerDeviceClass.TV,
         },
     )
-    entry_data = MockConfigEntryData(entity_config={state.entity_id: {const.CONF_SUPPORT_SET_CHANNEL: False}})
+    entry_data = MockConfigEntryData(entity_config={state.entity_id: {CONF_SUPPORT_SET_CHANNEL: False}})
     assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
 
     state = State(
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA
-            | media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK
-            | media_player.MediaPlayerEntityFeature.NEXT_TRACK,
-            ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA
+            | MediaPlayerEntityFeature.PREVIOUS_TRACK
+            | MediaPlayerEntityFeature.NEXT_TRACK,
+            ATTR_DEVICE_CLASS: MediaPlayerDeviceClass.TV,
         },
     )
 
@@ -723,7 +747,7 @@ async def test_capability_range_channel_set_random(hass):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA,
         },
     )
     cap = cast(
@@ -737,8 +761,8 @@ async def test_capability_range_channel_set_random(hass):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.RECEIVER,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA,
+            ATTR_DEVICE_CLASS: MediaPlayerDeviceClass.RECEIVER,
         },
     )
     cap = cast(
@@ -752,8 +776,8 @@ async def test_capability_range_channel_set_random(hass):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA,
+            ATTR_DEVICE_CLASS: MediaPlayerDeviceClass.TV,
         },
     )
     cap = cast(
@@ -779,7 +803,7 @@ async def test_capability_range_channel_set_random(hass):
     assert calls_set[0].data == {
         ATTR_ENTITY_ID: state.entity_id,
         media_player.ATTR_MEDIA_CONTENT_ID: 15,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: MediaType.CHANNEL,
     }
 
     with pytest.raises(APIError) as e:
@@ -802,8 +826,8 @@ async def test_capability_range_channel_set_not_supported(hass):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA,
+            ATTR_DEVICE_CLASS: MediaPlayerDeviceClass.TV,
         },
     )
     cap = cast(
@@ -831,10 +855,10 @@ async def test_capability_range_channel_set_random_with_value(hass):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            ATTR_DEVICE_CLASS: media_player.MediaPlayerDeviceClass.TV,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA,
+            ATTR_DEVICE_CLASS: MediaPlayerDeviceClass.TV,
             media_player.ATTR_MEDIA_CONTENT_ID: 15,
-            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
+            media_player.ATTR_MEDIA_CONTENT_TYPE: MediaType.CHANNEL,
         },
     )
     cap = cast(
@@ -864,12 +888,12 @@ async def test_capability_range_channel_set_random_with_value(hass):
     assert calls_set[0].data == {
         ATTR_ENTITY_ID: state.entity_id,
         media_player.ATTR_MEDIA_CONTENT_ID: 20,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MediaType.CHANNEL,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: MediaType.CHANNEL,
     }
     assert calls_set[1].data == {
         ATTR_ENTITY_ID: state.entity_id,
         media_player.ATTR_MEDIA_CONTENT_ID: 12,
-        media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.const.MediaType.CHANNEL,
+        media_player.ATTR_MEDIA_CONTENT_TYPE: MediaType.CHANNEL,
     }
 
 
@@ -878,8 +902,8 @@ async def test_capability_range_channel_value(hass, caplog):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA,
+            media_player.ATTR_MEDIA_CONTENT_TYPE: MediaType.CHANNEL,
             media_player.ATTR_MEDIA_CONTENT_ID: "5",
         },
     )
@@ -893,7 +917,7 @@ async def test_capability_range_channel_value(hass, caplog):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA,
             media_player.ATTR_MEDIA_CONTENT_TYPE: MediaClass.ALBUM,
             media_player.ATTR_MEDIA_CONTENT_ID: "5",
         },
@@ -908,8 +932,8 @@ async def test_capability_range_channel_value(hass, caplog):
         "media_player.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
-            media_player.ATTR_MEDIA_CONTENT_TYPE: media_player.MediaType.CHANNEL,
+            ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PLAY_MEDIA,
+            media_player.ATTR_MEDIA_CONTENT_TYPE: MediaType.CHANNEL,
             media_player.ATTR_MEDIA_CONTENT_ID: "foo",
         },
     )
@@ -924,19 +948,15 @@ async def test_capability_range_channel_value(hass, caplog):
 @pytest.mark.parametrize(
     "features",
     [
-        media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK | media_player.MediaPlayerEntityFeature.NEXT_TRACK,
-        media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK
-        | media_player.MediaPlayerEntityFeature.NEXT_TRACK
-        | media_player.MediaPlayerEntityFeature.PLAY_MEDIA,
+        MediaPlayerEntityFeature.PREVIOUS_TRACK | MediaPlayerEntityFeature.NEXT_TRACK,
+        MediaPlayerEntityFeature.PREVIOUS_TRACK
+        | MediaPlayerEntityFeature.NEXT_TRACK
+        | MediaPlayerEntityFeature.PLAY_MEDIA,
     ],
 )
-@pytest.mark.parametrize(
-    "device_class", [media_player.MediaPlayerDeviceClass.TV, media_player.MediaPlayerDeviceClass.RECEIVER]
-)
+@pytest.mark.parametrize("device_class", [MediaPlayerDeviceClass.TV, MediaPlayerDeviceClass.RECEIVER])
 async def test_capability_range_channel_set_relative(hass, features, device_class):
-    state = State(
-        "media_player.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: media_player.MediaPlayerEntityFeature.PREVIOUS_TRACK}
-    )
+    state = State("media_player.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PREVIOUS_TRACK})
     assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
 
     state = State("media_player.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, ATTR_DEVICE_CLASS: device_class})
@@ -944,16 +964,16 @@ async def test_capability_range_channel_set_relative(hass, features, device_clas
         RangeCapability,
         get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
-    if device_class == media_player.MediaPlayerDeviceClass.TV:
-        assert cap.retrievable is bool(features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA)
-        assert cap.support_random_access is bool(features & media_player.MediaPlayerEntityFeature.PLAY_MEDIA)
+    if device_class == MediaPlayerDeviceClass.TV:
+        assert cap.retrievable is bool(features & MediaPlayerEntityFeature.PLAY_MEDIA)
+        assert cap.support_random_access is bool(features & MediaPlayerEntityFeature.PLAY_MEDIA)
     else:
         assert cap.retrievable is False
         assert cap.support_random_access is False
         assert cap.parameters.as_dict() == {"instance": "channel", "random_access": False}
         assert cap.get_value() is None
 
-    calls_up = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_NEXT_TRACK)
+    calls_up = async_mock_service(hass, media_player.DOMAIN, SERVICE_MEDIA_NEXT_TRACK)
     await cap.set_instance_state(
         Context(),
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.CHANNEL, value=1, relative=True),
@@ -961,7 +981,7 @@ async def test_capability_range_channel_set_relative(hass, features, device_clas
     assert len(calls_up) == 1
     assert calls_up[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
-    calls_down = async_mock_service(hass, media_player.DOMAIN, media_player.SERVICE_MEDIA_PREVIOUS_TRACK)
+    calls_down = async_mock_service(hass, media_player.DOMAIN, SERVICE_MEDIA_PREVIOUS_TRACK)
     await cap.set_instance_state(
         Context(),
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.CHANNEL, value=-1, relative=True),

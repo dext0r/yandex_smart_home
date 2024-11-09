@@ -13,7 +13,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 
-from custom_components.yandex_smart_home import DOMAIN, SmartHomePlatform
+from custom_components.yandex_smart_home import DOMAIN
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.const import (
     CONF_CONNECTION_TYPE,
@@ -24,6 +24,7 @@ from custom_components.yandex_smart_home.const import (
     ConnectionType,
     EntityFilterSource,
 )
+from custom_components.yandex_smart_home.helpers import SmartHomePlatform
 
 from . import REQ_ID
 
