@@ -10,6 +10,9 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     ATTR_SUPPORTED_FEATURES,
     ATTR_UNIT_OF_MEASUREMENT,
+    CONF_NAME,
+    CONF_ROOM,
+    CONF_TYPE,
     PERCENTAGE,
     SERVICE_TURN_OFF,
     STATE_OFF,
@@ -45,9 +48,6 @@ from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_TYPE,
-    CONF_NAME,
-    CONF_ROOM,
-    CONF_TYPE,
     DOMAIN,
 )
 from custom_components.yandex_smart_home.device import Device

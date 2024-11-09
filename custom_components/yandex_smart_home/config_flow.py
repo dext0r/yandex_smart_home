@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, cast
 from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant.auth.const import GROUP_ID_READ_ONLY
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
-from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_PLATFORM, CONF_TOKEN
+from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_NAME, CONF_PLATFORM, CONF_TOKEN
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import AbortFlow, FlowHandler
 from homeassistant.helpers import network, selector
@@ -38,7 +38,6 @@ from .const import (
     CONF_FILTER,
     CONF_FILTER_SOURCE,
     CONF_LINKED_PLATFORMS,
-    CONF_NAME,
     CONF_SKILL,
     CONF_USER_ID,
     ConnectionType,

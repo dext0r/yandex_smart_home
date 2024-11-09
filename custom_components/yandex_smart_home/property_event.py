@@ -8,9 +8,17 @@ from typing import Any, Protocol, Self
 
 from homeassistant.components import binary_sensor, sensor
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
-from homeassistant.const import STATE_CLOSED, STATE_OFF, STATE_ON, STATE_OPEN, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import (
+    CONF_DEVICE_CLASS,
+    STATE_CLOSED,
+    STATE_OFF,
+    STATE_ON,
+    STATE_OPEN,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 
-from .const import CONF_DEVICE_CLASS, DEVICE_CLASS_BUTTON, STATE_EMPTY, STATE_NONE, STATE_NONE_UI, XGW3DeviceClass
+from .const import DEVICE_CLASS_BUTTON, STATE_EMPTY, STATE_NONE, STATE_NONE_UI, XGW3DeviceClass
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .schema import (
     BatteryLevelEventPropertyParameters,

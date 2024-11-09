@@ -32,7 +32,15 @@ from homeassistant.components import (
     valve,
     water_heater,
 )
-from homeassistant.const import ATTR_DEVICE_CLASS, CLOUD_NEVER_EXPOSED_ENTITIES, CONF_NAME, STATE_UNAVAILABLE
+from homeassistant.const import (
+    ATTR_DEVICE_CLASS,
+    CLOUD_NEVER_EXPOSED_ENTITIES,
+    CONF_DEVICE_CLASS,
+    CONF_NAME,
+    CONF_ROOM,
+    CONF_TYPE,
+    STATE_UNAVAILABLE,
+)
 from homeassistant.core import Context, HomeAssistant, State, callback
 from homeassistant.helpers import area_registry, device_registry, entity_registry
 from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
@@ -252,11 +260,11 @@ class Device:
     @property
     def type(self) -> DeviceType | None:
         """Return device type."""
-        if user_type := self._config.get(const.CONF_TYPE):
+        if user_type := self._config.get(CONF_TYPE):
             return DeviceType(user_type)
 
         domain = self._state.domain
-        device_class: str = self._config.get(const.CONF_DEVICE_CLASS, self._state.attributes.get(ATTR_DEVICE_CLASS, ""))
+        device_class: str = self._config.get(CONF_DEVICE_CLASS, self._state.attributes.get(ATTR_DEVICE_CLASS, ""))
 
         return _DEVICE_CLASS_TO_DEVICE_TYPES.get((domain, device_class), _DOMAIN_TO_DEVICE_TYPES.get(domain))
 
@@ -408,7 +416,7 @@ class Device:
         self, entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None, area_reg: AreaRegistry
     ) -> str | None:
         """Return room of the device."""
-        if room := self._config.get(const.CONF_ROOM):
+        if room := self._config.get(CONF_ROOM):
             return str(room)
 
         area = self._get_area(entity_entry, device_entry, area_reg)
