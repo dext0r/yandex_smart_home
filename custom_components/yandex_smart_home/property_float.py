@@ -475,7 +475,11 @@ class BatteryLevelPercentageProperty(FloatProperty, Protocol):
         return BatteryLevelFloatPropertyParameters()
 
 
-class TemperatureSensor(StateProperty, TemperatureProperty):
+class StateFloatProperty(StateProperty, FloatProperty):
+    """Base class for a float property based on the state."""
+
+
+class TemperatureSensor(StateFloatProperty, TemperatureProperty):
     """Representaton of the state as a temperature sensor."""
 
     @property
@@ -510,7 +514,7 @@ class TemperatureSensor(StateProperty, TemperatureProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfTemperature.CELSIUS))
 
 
-class HumiditySensor(StateProperty, HumidityProperty):
+class HumiditySensor(StateFloatProperty, HumidityProperty):
     """Representaton of the state as a humidity sensor."""
 
     @property
@@ -537,7 +541,7 @@ class HumiditySensor(StateProperty, HumidityProperty):
         return self.state.state
 
 
-class PressureSensor(StateProperty, PressureProperty):
+class PressureSensor(StateFloatProperty, PressureProperty):
     """Representaton of the state as a pressure sensor."""
 
     @property
@@ -558,7 +562,7 @@ class PressureSensor(StateProperty, PressureProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfPressure.MMHG))
 
 
-class IlluminationSensor(StateProperty, IlluminationProperty):
+class IlluminationSensor(StateFloatProperty, IlluminationProperty):
     """Representaton of the state as a illumination sensor."""
 
     @property
@@ -580,7 +584,7 @@ class IlluminationSensor(StateProperty, IlluminationProperty):
         return self.state.attributes.get(const.ATTR_ILLUMINANCE)
 
 
-class WaterLevelPercentageSensor(StateProperty, WaterLevelPercentageProperty):
+class WaterLevelPercentageSensor(StateFloatProperty, WaterLevelPercentageProperty):
     """Representaton of the state as a water level sensor."""
 
     @property
@@ -596,7 +600,7 @@ class WaterLevelPercentageSensor(StateProperty, WaterLevelPercentageProperty):
         return self.state.attributes.get(const.ATTR_WATER_LEVEL)
 
 
-class CO2LevelSensor(StateProperty, CO2LevelProperty):
+class CO2LevelSensor(StateFloatProperty, CO2LevelProperty):
     """Representaton of the state as a CO2 level sensor."""
 
     @property
@@ -618,7 +622,7 @@ class CO2LevelSensor(StateProperty, CO2LevelProperty):
         return self.state.attributes.get(air_quality.ATTR_CO2)
 
 
-class ElectricityMeterSensor(StateProperty, ElectricityMeterProperty):
+class ElectricityMeterSensor(StateFloatProperty, ElectricityMeterProperty):
     """Representaton of the state as a electricity meter sensor."""
 
     @property
@@ -636,7 +640,7 @@ class ElectricityMeterSensor(StateProperty, ElectricityMeterProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfEnergy.KILO_WATT_HOUR))
 
 
-class GasMeterSensor(StateProperty, GasMeterProperty):
+class GasMeterSensor(StateFloatProperty, GasMeterProperty):
     """Representaton of the state as a gas meter sensor."""
 
     @property
@@ -654,7 +658,7 @@ class GasMeterSensor(StateProperty, GasMeterProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfVolume.CUBIC_METERS))
 
 
-class WaterMeterSensor(StateProperty, WaterMeterProperty):
+class WaterMeterSensor(StateFloatProperty, WaterMeterProperty):
     """Representaton of the state as a water meter sensor."""
 
     @property
@@ -672,7 +676,7 @@ class WaterMeterSensor(StateProperty, WaterMeterProperty):
         return str(self.state.attributes.get(ATTR_UNIT_OF_MEASUREMENT, UnitOfVolume.CUBIC_METERS))
 
 
-class PM1DensitySensor(StateProperty, PM1DensityProperty):
+class PM1DensitySensor(StateFloatProperty, PM1DensityProperty):
     """Representaton of the state as a PM1 density sensor."""
 
     instance = FloatPropertyInstance.PM1_DENSITY
@@ -701,7 +705,7 @@ class PM1DensitySensor(StateProperty, PM1DensityProperty):
         return self.state.attributes.get(air_quality.ATTR_PM_0_1)
 
 
-class PM25DensitySensor(StateProperty, PM25DensityProperty):
+class PM25DensitySensor(StateFloatProperty, PM25DensityProperty):
     """Representaton of the state as a PM2.5 density sensor."""
 
     @property
@@ -723,7 +727,7 @@ class PM25DensitySensor(StateProperty, PM25DensityProperty):
         return self.state.attributes.get(air_quality.ATTR_PM_2_5)
 
 
-class PM10DensitySensor(StateProperty, PM10DensityProperty):
+class PM10DensitySensor(StateFloatProperty, PM10DensityProperty):
     """Representaton of the state as a PM10 density sensor."""
 
     @property
@@ -745,7 +749,7 @@ class PM10DensitySensor(StateProperty, PM10DensityProperty):
         return self.state.attributes.get(air_quality.ATTR_PM_10)
 
 
-class TVOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
+class TVOCConcentrationSensor(StateFloatProperty, TVOCConcentrationProperty):
     """Representaton of the state as a TVOC concentration sensor."""
 
     @property
@@ -778,7 +782,7 @@ class TVOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
         return None
 
 
-class VOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
+class VOCConcentrationSensor(StateFloatProperty, TVOCConcentrationProperty):
     """Representaton of the state as a VOC concentration sensor."""
 
     @property
@@ -794,7 +798,7 @@ class VOCConcentrationSensor(StateProperty, TVOCConcentrationProperty):
         return self.state.state
 
 
-class VoltageSensor(StateProperty, VoltageProperty):
+class VoltageSensor(StateFloatProperty, VoltageProperty):
     """Representaton of the state as a voltage sensor."""
 
     @property
@@ -824,7 +828,7 @@ class VoltageSensor(StateProperty, VoltageProperty):
         return None
 
 
-class ElectricCurrentSensor(StateProperty, ElectricCurrentProperty):
+class ElectricCurrentSensor(StateFloatProperty, ElectricCurrentProperty):
     """Representaton of the state as a electric current sensor."""
 
     @property
@@ -854,7 +858,7 @@ class ElectricCurrentSensor(StateProperty, ElectricCurrentProperty):
         return None
 
 
-class ElectricPowerSensor(StateProperty, ElectricPowerProperty):
+class ElectricPowerSensor(StateFloatProperty, ElectricPowerProperty):
     """Representaton of the state as a electric power sensor."""
 
     @property
@@ -888,7 +892,7 @@ class ElectricPowerSensor(StateProperty, ElectricPowerProperty):
         return None
 
 
-class BatteryLevelPercentageSensor(StateProperty, BatteryLevelPercentageProperty):
+class BatteryLevelPercentageSensor(StateFloatProperty, BatteryLevelPercentageProperty):
     """Representaton of the state as battery level sensor."""
 
     @property
