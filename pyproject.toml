@@ -187,22 +187,6 @@ module = "tests.test_notifier"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "tests.test_property"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_property_custom"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_property_event"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_property_float"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module = "tests.test_schema"
 ignore_errors = true
 

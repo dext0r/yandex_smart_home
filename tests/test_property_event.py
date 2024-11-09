@@ -1,10 +1,10 @@
 from homeassistant.components import binary_sensor, input_text, sensor
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
-from homeassistant.const import ATTR_DEVICE_CLASS, STATE_OFF, STATE_ON
-from homeassistant.core import State
+from homeassistant.const import ATTR_DEVICE_CLASS, CONF_DEVICE_CLASS, STATE_OFF, STATE_ON
+from homeassistant.core import HomeAssistant, State
 import pytest
 
-from custom_components.yandex_smart_home import const
+from custom_components.yandex_smart_home.const import DEVICE_CLASS_BUTTON
 from custom_components.yandex_smart_home.schema import EventPropertyInstance, PropertyType
 
 from . import BASIC_ENTRY_DATA, MockConfigEntryData
@@ -21,7 +21,7 @@ from .test_property import assert_no_properties, get_exact_one_property
         (BinarySensorDeviceClass.BATTERY, False),
     ],
 )
-async def test_state_property_event_open(hass, device_class, supported):
+async def test_state_property_event_open(hass: HomeAssistant, device_class: str, supported: bool) -> None:
     state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.OPEN)
@@ -45,7 +45,7 @@ async def test_state_property_event_open(hass, device_class, supported):
         (BinarySensorDeviceClass.BATTERY, False),
     ],
 )
-async def test_state_property_event_motion(hass, device_class, supported):
+async def test_state_property_event_motion(hass: HomeAssistant, device_class: str, supported: bool) -> None:
     state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.MOTION)
@@ -67,7 +67,7 @@ async def test_state_property_event_motion(hass, device_class, supported):
         (BinarySensorDeviceClass.BATTERY, False),
     ],
 )
-async def test_state_property_event_gas(hass, device_class, supported):
+async def test_state_property_event_gas(hass: HomeAssistant, device_class: str, supported: bool) -> None:
     state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.GAS)
@@ -94,7 +94,7 @@ async def test_state_property_event_gas(hass, device_class, supported):
         (BinarySensorDeviceClass.BATTERY, False),
     ],
 )
-async def test_state_property_event_smoke(hass, device_class, supported):
+async def test_state_property_event_smoke(hass: HomeAssistant, device_class: str, supported: bool) -> None:
     state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.SMOKE)
@@ -121,7 +121,7 @@ async def test_state_property_event_smoke(hass, device_class, supported):
         (BinarySensorDeviceClass.SMOKE, False),
     ],
 )
-async def test_state_property_event_battery(hass, device_class, supported):
+async def test_state_property_event_battery(hass: HomeAssistant, device_class: str, supported: bool) -> None:
     state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(
@@ -148,7 +148,7 @@ async def test_state_property_event_battery(hass, device_class, supported):
         (BinarySensorDeviceClass.SMOKE, False),
     ],
 )
-async def test_state_property_event_water_leak(hass, device_class, supported):
+async def test_state_property_event_water_leak(hass: HomeAssistant, device_class: str, supported: bool) -> None:
     state = State("binary_sensor.test", binary_sensor.STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(
@@ -174,13 +174,18 @@ async def test_state_property_event_water_leak(hass, device_class, supported):
         ("button", False, True),
     ],
 )
-async def test_state_property_event_button(hass, domain, device_class, mock_entry_data, supported, caplog):
+async def test_state_property_event_button(
+    hass: HomeAssistant,
+    domain: str,
+    device_class: str | None,
+    mock_entry_data: bool,
+    supported: bool,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     entity_id = f"{domain}.test"
     entry_data = BASIC_ENTRY_DATA
     if mock_entry_data:
-        entry_data = MockConfigEntryData(
-            entity_config={entity_id: {const.CONF_DEVICE_CLASS: const.DEVICE_CLASS_BUTTON}}
-        )
+        entry_data = MockConfigEntryData(entity_config={entity_id: {CONF_DEVICE_CLASS: DEVICE_CLASS_BUTTON}})
 
     state = State(entity_id, "click", {ATTR_DEVICE_CLASS: device_class})
     assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
@@ -209,7 +214,7 @@ async def test_state_property_event_button(hass, domain, device_class, mock_entr
     assert caplog.messages == [f"Unknown event invalid for instance button of {entity_id}"]
 
 
-async def test_state_property_event_button_gw3(hass):
+async def test_state_property_event_button_gw3(hass: HomeAssistant) -> None:
     state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action"})
     assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
 
@@ -230,7 +235,7 @@ async def test_state_property_event_button_gw3(hass):
     assert prop.get_value() == "double_click"
 
 
-async def test_state_property_event_vibration(hass):
+async def test_state_property_event_vibration(hass: HomeAssistant) -> None:
     state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: BinarySensorDeviceClass.VIBRATION})
 
     prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
@@ -246,7 +251,7 @@ async def test_state_property_event_vibration(hass):
     assert prop.get_value() is None
 
 
-async def test_state_property_event_vibration_gw3(hass):
+async def test_state_property_event_vibration_gw3(hass: HomeAssistant) -> None:
     state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action"})
     assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
 

@@ -1,3 +1,5 @@
+from typing import Any
+
 from homeassistant.components import (
     air_quality,
     binary_sensor,
@@ -14,6 +16,7 @@ from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import (
     ATTR_BATTERY_LEVEL,
     ATTR_DEVICE_CLASS,
+    ATTR_TEMPERATURE,
     ATTR_UNIT_OF_MEASUREMENT,
     PERCENTAGE,
     STATE_ON,
@@ -22,7 +25,7 @@ from homeassistant.const import (
     UnitOfTemperature,
     UnitOfVolume,
 )
-from homeassistant.core import State
+from homeassistant.core import HomeAssistant, State
 import pytest
 
 from custom_components.yandex_smart_home.helpers import APIError
@@ -49,12 +52,14 @@ from .test_property import assert_no_properties, get_exact_one_property
         (humidifier.DOMAIN, None, None, False),
     ],
 )
-async def test_property_float_humidity(hass, domain, device_class, attribute, supported):
-    attributes = {}
+async def test_property_float_humidity(
+    hass: HomeAssistant, domain: str, device_class: str | None, attribute: str | None, supported: bool
+) -> None:
+    attributes: dict[str, Any] = {}
     value = STATE_ON
 
     if attribute is None:
-        value = 69
+        value = "69"
     else:
         attributes[attribute] = 69
 
@@ -73,7 +78,7 @@ async def test_property_float_humidity(hass, domain, device_class, attribute, su
     assert prop.get_value() == 69
 
     if attribute is None:
-        value = -5
+        value = "-5"
     else:
         attributes[attribute] = -5
     prop.state = State(f"{domain}.test", value, attributes)
@@ -94,7 +99,7 @@ async def test_property_float_humidity(hass, domain, device_class, attribute, su
         (sensor.DOMAIN, None, None, UnitOfTemperature.CELSIUS, True),
         (sensor.DOMAIN, None, None, UnitOfTemperature.KELVIN, True),
         (sensor.DOMAIN, None, None, UnitOfTemperature.FAHRENHEIT, True),
-        (air_quality.DOMAIN, None, climate.ATTR_TEMPERATURE, None, True),
+        (air_quality.DOMAIN, None, ATTR_TEMPERATURE, None, True),
         (air_quality.DOMAIN, None, None, None, False),
         (climate.DOMAIN, None, climate.ATTR_CURRENT_TEMPERATURE, None, True),
         (climate.DOMAIN, None, None, None, False),
@@ -106,12 +111,19 @@ async def test_property_float_humidity(hass, domain, device_class, attribute, su
         (water_heater.DOMAIN, None, None, None, False),
     ],
 )
-async def test_property_float_temperature(hass, domain, device_class, attribute, unit_of_measurement, supported):
-    attributes = {}
+async def test_property_float_temperature(
+    hass: HomeAssistant,
+    domain: str,
+    device_class: str | None,
+    attribute: str | None,
+    unit_of_measurement: str | None,
+    supported: bool,
+) -> None:
+    attributes: dict[str, Any] = {}
     value = STATE_ON
 
     if attribute is None:
-        value = 34
+        value = "34"
     else:
         attributes[attribute] = 34
 
@@ -137,7 +149,7 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
     assert prop.get_value() == 34
 
     if attribute is None:
-        value = -50
+        value = "-50"
     else:
         attributes[attribute] = -50
     prop.state = State(f"{domain}.test", value, attributes)
@@ -151,7 +163,7 @@ async def test_property_float_temperature(hass, domain, device_class, attribute,
     assert prop.get_value() is None
 
 
-async def test_property_float_temperature_convertion(hass):
+async def test_property_float_temperature_convertion(hass: HomeAssistant) -> None:
     state = State(
         "sensor.test",
         "34.756",
@@ -227,7 +239,9 @@ async def test_property_float_temperature_convertion(hass):
         (UnitOfPressure.PSI, "unit.pressure.mmhg", 38294.9),
     ],
 )
-def test_property_float_pressure(hass, device_class, unit_of_measurement, property_unit, assert_value):
+def test_property_float_pressure(
+    hass: HomeAssistant, device_class: str, unit_of_measurement: str | None, property_unit: str, assert_value: Any
+) -> None:
     value = 740.5
     attributes = {ATTR_DEVICE_CLASS: device_class}
     if unit_of_measurement:
@@ -259,12 +273,14 @@ def test_property_float_pressure(hass, device_class, unit_of_measurement, proper
         (fan.DOMAIN, None, None, False),
     ],
 )
-async def test_property_float_illumination(hass, domain, device_class, attribute, supported):
-    attributes = {}
+async def test_property_float_illumination(
+    hass: HomeAssistant, domain: str, device_class: str | None, attribute: str | None, supported: bool
+) -> None:
+    attributes: dict[str, Any] = {}
     value = STATE_ON
 
     if attribute is None:
-        value = 48
+        value = "48"
     else:
         attributes[attribute] = 48
 
@@ -285,7 +301,7 @@ async def test_property_float_illumination(hass, domain, device_class, attribute
     assert prop.get_value() == 48
 
     if attribute is None:
-        value = -5
+        value = "-5"
     else:
         attributes[attribute] = -5
     prop.state = State(f"{domain}.test", value, attributes)
@@ -306,7 +322,7 @@ async def test_property_float_illumination(hass, domain, device_class, attribute
         (humidifier.DOMAIN, "water_level", True),
     ],
 )
-async def test_property_float_water_level(hass, domain, attribute, supported):
+async def test_property_float_water_level(hass: HomeAssistant, domain: str, attribute: str, supported: bool) -> None:
     state = State(f"{domain}.test", STATE_ON, {attribute: "90"})
     assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, FloatPropertyInstance.WATER_LEVEL)
     if supported:
@@ -340,12 +356,14 @@ async def test_property_float_water_level(hass, domain, attribute, supported):
         (fan.DOMAIN, None, None, False),
     ],
 )
-async def test_property_float_co2_level(hass, domain, device_class, attribute, supported):
-    attributes = {}
+async def test_property_float_co2_level(
+    hass: HomeAssistant, domain: str, device_class: str | None, attribute: str | None, supported: bool
+) -> None:
+    attributes: dict[str, Any] = {}
     value = STATE_ON
 
     if attribute is None:
-        value = 643
+        value = "643"
     else:
         attributes[attribute] = 643
 
@@ -366,7 +384,7 @@ async def test_property_float_co2_level(hass, domain, device_class, attribute, s
     assert prop.get_value() == 643
 
     if attribute is None:
-        value = -5
+        value = "-5"
     else:
         attributes[attribute] = -5
     prop.state = State(f"{domain}.test", value, attributes)
@@ -395,7 +413,9 @@ async def test_property_float_co2_level(hass, domain, device_class, attribute, s
         (SensorDeviceClass.WATER, UnitOfVolume.LITERS, "water_meter", "unit.cubic_meter", 3.42),
     ],
 )
-def test_property_float_meter(hass, device_class, instance, unit, unit_of_measurement, assert_value):
+def test_property_float_meter(
+    hass: HomeAssistant, device_class: str, instance: str, unit: str, unit_of_measurement: str | None, assert_value: Any
+) -> None:
     value = 3420.5
     attributes = {ATTR_DEVICE_CLASS: device_class}
     if unit_of_measurement:
@@ -415,7 +435,7 @@ def test_property_float_meter(hass, device_class, instance, unit, unit_of_measur
     assert prop.get_value() == 0
 
 
-@pytest.mark.parametrize("v,assert_v", [("300", 300), ("-5", 0), (None, None)])
+@pytest.mark.parametrize("v,assert_v", [("300", 300), ("-5", 0), ("None", None)])
 @pytest.mark.parametrize(
     "domain,device_class,attribute,instance",
     [
@@ -427,18 +447,26 @@ def test_property_float_meter(hass, device_class, instance, unit, unit_of_measur
         (air_quality.DOMAIN, None, air_quality.ATTR_PM_10, "pm10_density"),
     ],
 )
-async def test_property_float_pm_density(hass, domain, v, assert_v, device_class, attribute, instance):
-    state = STATE_ON
-    attributes = {}
+async def test_property_float_pm_density(
+    hass: HomeAssistant,
+    domain: str,
+    v: str,
+    assert_v: Any,
+    device_class: str | None,
+    attribute: str | None,
+    instance: str,
+) -> None:
+    state_v = STATE_ON
+    attributes: dict[str, Any] = {}
     if device_class:
         attributes[ATTR_DEVICE_CLASS] = device_class
 
     if attribute:
         attributes[attribute] = v
     else:
-        state = v
+        state_v = v
 
-    state = State(f"{domain}.test", state, attributes)
+    state = State(f"{domain}.test", state_v, attributes)
     prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance(instance))
 
     assert prop.retrievable is True
@@ -464,25 +492,31 @@ async def test_property_float_pm_density(hass, domain, v, assert_v, device_class
         ("μg/ft³", "30", 1059.44),
         (None, "30", 30),
         (None, "-5", 0),
-        (None, None, None),
+        (None, "None", None),
     ],
 )
 async def test_property_float_tvoc_concentration(
-    hass, domain, device_class, attribute, unit_of_measurement, v, assert_v
-):
-    state = STATE_ON
-    attributes = {}
+    hass: HomeAssistant,
+    domain: str,
+    device_class: str | None,
+    attribute: str | None,
+    unit_of_measurement: str | None,
+    v: str,
+    assert_v: Any,
+) -> None:
+    state_v = STATE_ON
+    attributes: dict[str, Any] = {}
     if device_class:
         attributes[ATTR_DEVICE_CLASS] = device_class
 
     if attribute:
         attributes[attribute] = v
     else:
-        state = v
+        state_v = v
     if unit_of_measurement:
         attributes[ATTR_UNIT_OF_MEASUREMENT] = unit_of_measurement
 
-    state = State(f"{domain}.test", state, attributes)
+    state = State(f"{domain}.test", state_v, attributes)
     prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
 
     assert prop.retrievable is True
@@ -493,7 +527,7 @@ async def test_property_float_tvoc_concentration(
         assert prop.get_value() == assert_v
 
 
-async def test_property_float_tvoc_concentration_voc(hass):
+async def test_property_float_tvoc_concentration_voc(hass: HomeAssistant) -> None:
     attributes = {ATTR_DEVICE_CLASS: SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS, ATTR_UNIT_OF_MEASUREMENT: "foo"}
     state = State("sensor.test", "30", attributes)
     prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
@@ -524,16 +558,25 @@ async def test_property_float_tvoc_concentration_voc(hass):
     ],
 )
 async def test_property_electricity_sensor(
-    hass, domain, device_class, instance, unit, unit_of_measurement, supported, v
-):
+    hass: HomeAssistant,
+    domain: str,
+    device_class: str | None,
+    instance: str,
+    unit: str,
+    unit_of_measurement: str | None,
+    supported: bool,
+    v: Any,
+) -> None:
     attributes = {ATTR_DEVICE_CLASS: device_class}
     if unit_of_measurement:
         attributes[ATTR_UNIT_OF_MEASUREMENT] = unit_of_measurement
     state = State(f"{domain}.test", "220.566", attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, instance)
+        prop = get_exact_one_property(
+            hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance(instance)
+        )
     else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, instance)
+        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance(instance))
         return
 
     assert prop.retrievable is True
@@ -568,24 +611,32 @@ async def test_property_electricity_sensor(
 )
 @pytest.mark.parametrize("unit_of_measurement", [None, "foo"])
 async def test_property_electricity_attributes(
-    hass, domain, value_attribute, instance, unit, supported, unit_of_measurement
-):
-    attributes = {}
+    hass: HomeAssistant,
+    domain: str,
+    value_attribute: str | None,
+    instance: str,
+    unit: str,
+    supported: bool,
+    unit_of_measurement: str | None,
+) -> None:
+    attributes: dict[str, Any] = {}
     value = STATE_ON
 
     if value_attribute:
         attributes[value_attribute] = 220
     else:
-        value = 220
+        value = "220"
 
     if unit_of_measurement:
         attributes[ATTR_UNIT_OF_MEASUREMENT] = unit_of_measurement
 
     state = State(f"{domain}.test", value, attributes)
     if supported:
-        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, instance)
+        prop = get_exact_one_property(
+            hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance(instance)
+        )
     else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, instance)
+        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance(instance))
         return
 
     assert prop.retrievable is True
@@ -595,7 +646,7 @@ async def test_property_electricity_attributes(
     if value_attribute:
         attributes[value_attribute] = -5
     else:
-        value = -5
+        value = "-5"
     prop.state = State(f"{domain}.test", value, attributes)
     assert prop.get_value() == 0
 
@@ -609,7 +660,7 @@ async def test_property_electricity_attributes(
 
 
 @pytest.mark.parametrize("domain", [switch.DOMAIN, sensor.DOMAIN, light.DOMAIN, cover.DOMAIN])
-async def test_property_float_battery_class(hass, domain):
+async def test_property_float_battery_class(hass: HomeAssistant, domain: str) -> None:
     state = State(f"{domain}.test", "50", {ATTR_DEVICE_CLASS: SensorDeviceClass.BATTERY})
     assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, FloatPropertyInstance.BATTERY_LEVEL)
     assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.FLOAT, FloatPropertyInstance.BATTERY_LEVEL)
@@ -644,7 +695,7 @@ async def test_property_float_battery_class(hass, domain):
 
 
 @pytest.mark.parametrize("domain", [switch.DOMAIN, sensor.DOMAIN, light.DOMAIN, cover.DOMAIN])
-async def test_property_float_battery_attr(hass, domain):
+async def test_property_float_battery_attr(hass: HomeAssistant, domain: str) -> None:
     state = State(f"{domain}.test", STATE_ON, {ATTR_BATTERY_LEVEL: 50})
     assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, FloatPropertyInstance.BATTERY_LEVEL)
     prop = get_exact_one_property(
