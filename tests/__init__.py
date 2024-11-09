@@ -1,11 +1,12 @@
 """Tests for yandex_smart_home integration."""
 
-from typing import Any
+from typing import Any, Callable
 from unittest.mock import MagicMock
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.helpers import entityfilter
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -27,7 +28,7 @@ class MockConfigEntryData(ConfigEntryData):
         if not entry:
             entry = MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={})
 
-        super().__init__(hass, entry, yaml_config, entity_config, entity_filter)
+        super().__init__(hass, entry, yaml_config, entity_config, entity_filter)  # type: ignore[arg-type]
 
         self.cache = MockCacheStore()
 
@@ -36,23 +37,34 @@ class MockConfigEntryData(ConfigEntryData):
         return True
 
 
-class MockStore:
-    def __init__(self, data=None):
-        self._data = data
-        self.async_delay_save = MagicMock()
+class MockStore(Store[Any]):
+    def __init__(self, data: dict[str, Any]):
+        self._data: dict[str, Any] = data
+        self.saved_mock: MagicMock = MagicMock()
 
-    async def async_load(self):
+    async def async_load(self) -> dict[str, Any]:
         return self._data
+
+    def async_delay_save(
+        self,
+        data_func: Callable[[], dict[str, Any]],
+        delay: float = 0,
+    ) -> None:
+        self.saved_mock()
+        return None
 
 
 class MockCacheStore(CacheStore):
-    # noinspection PyMissingConstructor
-    def __init__(self):
+    _store: MockStore
+
+    def __init__(self) -> None:
         self._data = {STORE_CACHE_ATTRS: {}}
-        self._store = MockStore()
+        self._store = MockStore({})
 
 
-def generate_entity_filter(include_entity_globs=None, exclude_entities=None) -> entityfilter.EntityFilter:
+def generate_entity_filter(
+    include_entity_globs: list[str] | None = None, exclude_entities: list[str] | None = None
+) -> entityfilter.EntityFilter:
     return entityfilter.EntityFilter(
         {
             entityfilter.CONF_INCLUDE_DOMAINS: [],

@@ -7,7 +7,7 @@ from pytest_homeassistant_custom_component.common import patch_yaml_files
 from custom_components.yandex_smart_home import DOMAIN
 
 
-async def test_invalid_property_type(hass, caplog):
+async def test_invalid_property_type(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -28,7 +28,7 @@ yandex_smart_home:
     )
 
 
-async def test_invalid_event_property_type(hass, caplog):
+async def test_invalid_event_property_type(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -48,7 +48,7 @@ yandex_smart_home:
     ) in caplog.messages[-1]
 
 
-async def test_invalid_float_property_type(hass, caplog):
+async def test_invalid_float_property_type(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -68,7 +68,9 @@ yandex_smart_home:
     ) in caplog.messages[-1]
 
 
-async def test_invalid_property_target_unit_of_measurement(hass, caplog):
+async def test_invalid_property_target_unit_of_measurement(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -130,7 +132,7 @@ yandex_smart_home:
         ) in caplog.messages[-1]
 
 
-async def test_invalid_property(hass, caplog):
+async def test_invalid_property(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -180,7 +182,7 @@ yandex_smart_home:
     assert "entity/attribute and value_template are mutually exclusive" in caplog.messages[-1]
 
 
-async def test_invalid_mode(hass, caplog):
+async def test_invalid_mode(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -200,7 +202,7 @@ yandex_smart_home:
     )
 
 
-async def test_invalid_mode_instance(hass, caplog):
+async def test_invalid_mode_instance(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -218,7 +220,7 @@ yandex_smart_home:
     ) in caplog.messages[-2]
 
 
-async def test_invalid_toggle_instance(hass, caplog):
+async def test_invalid_toggle_instance(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -236,7 +238,7 @@ yandex_smart_home:
     ) in caplog.messages[-2]
 
 
-async def test_invalid_range_instance(hass, caplog):
+async def test_invalid_range_instance(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -254,7 +256,7 @@ yandex_smart_home:
     ) in caplog.messages[-2]
 
 
-async def test_invalid_entity_feature(hass, caplog):
+async def test_invalid_entity_feature(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -269,7 +271,7 @@ yandex_smart_home:
     assert "Feature invalid is not supported" in caplog.messages[-1]
 
 
-async def test_invalid_device_type(hass, caplog):
+async def test_invalid_device_type(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -283,7 +285,7 @@ yandex_smart_home:
     assert "Device type 'unsupported' is not supported" in caplog.messages[-1]
 
 
-async def test_invalid_color_name(hass, caplog):
+async def test_invalid_color_name(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -300,7 +302,7 @@ yandex_smart_home:
     )
 
 
-async def test_deprecated_device_type_fan(hass: HomeAssistant, caplog: pytest.LogCaptureFixture):
+async def test_deprecated_device_type_fan(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -313,6 +315,7 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         config = await async_integration_yaml_config(hass, DOMAIN)
+        assert config
         assert config[DOMAIN]["entity_config"]["switch.foo"]["type"] == "devices.types.ventilation.fan"
         assert config[DOMAIN]["entity_config"]["switch.bar"]["type"] == "devices.types.ventilation.fan"
 
@@ -326,7 +329,7 @@ yandex_smart_home:
     )
 
 
-async def test_color_value(hass):
+async def test_color_value(hass: HomeAssistant) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -337,6 +340,7 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         config = await async_integration_yaml_config(hass, DOMAIN)
+        assert config
         assert config[DOMAIN]["color_profile"]["test"]["red"] == 16776960
 
     files = {
@@ -349,6 +353,7 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         config = await async_integration_yaml_config(hass, DOMAIN)
+        assert config
         assert config[DOMAIN]["color_profile"]["test"]["red"] == 123456
 
     files = {
@@ -371,7 +376,9 @@ yandex_smart_home:
         ("custom_modes", "swing"),
     ],
 )
-async def test_invalid_custom_capability(hass, key, instance, caplog):
+async def test_invalid_custom_capability(
+    hass: HomeAssistant, key: str, instance: str, caplog: pytest.LogCaptureFixture
+) -> None:
     files = {
         YAML_CONFIG_FILE: f"""
 yandex_smart_home:
@@ -438,6 +445,7 @@ yandex_smart_home:
     }
     with patch_yaml_files(files):
         config = await async_integration_yaml_config(hass, DOMAIN)
+        assert config
         properties = config[DOMAIN]["entity_config"]["sensor.test"]["properties"]
 
         assert properties == [

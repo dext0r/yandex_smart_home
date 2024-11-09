@@ -1,9 +1,10 @@
 from unittest.mock import patch
 
+from homeassistant.auth.models import User
 from homeassistant.config import YAML_CONFIG_FILE
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, SERVICE_RELOAD
-from homeassistant.core import Context
+from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import Unauthorized
 from homeassistant.helpers.reload import async_integration_yaml_config
 from homeassistant.helpers.template import Template
@@ -11,16 +12,26 @@ from homeassistant.setup import async_setup_component
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, load_fixture, patch_yaml_files
 
-from custom_components.yandex_smart_home import DOMAIN, ConnectionType, EntityFilterSource, YandexSmartHome, const
+from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
+from custom_components.yandex_smart_home.const import (
+    CONF_CONNECTION_TYPE,
+    CONF_FILTER,
+    CONF_FILTER_SOURCE,
+    CONF_NOTIFIER,
+    CONF_NOTIFIER_OAUTH_TOKEN,
+    CONF_NOTIFIER_SKILL_ID,
+    CONF_NOTIFIER_USER_ID,
+    EntityFilterSource,
+)
 
 
-async def test_bad_config(hass):
+async def test_bad_config(hass: HomeAssistant) -> None:
     with patch_yaml_files({YAML_CONFIG_FILE: "yandex_smart_home:\n  bad: true"}):
         assert await async_integration_yaml_config(hass, DOMAIN) is None
 
 
-async def test_valid_config(hass):
+async def test_valid_config(hass: HomeAssistant) -> None:
     with patch_yaml_files({YAML_CONFIG_FILE: load_fixture("valid-config.yaml")}):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
@@ -29,10 +40,11 @@ async def test_valid_config(hass):
     else:
         service_key = "service"
 
-    hass_for_template = hass
-    if MAJOR_VERSION == 2024 and MINOR_VERSION == 8:
+    hass_for_template: HomeAssistant | None = hass
+    if MAJOR_VERSION == 2024 and int(MINOR_VERSION) == 8:
         hass_for_template = None
 
+    assert config
     assert DOMAIN in config
 
     assert config[DOMAIN]["notifier"] == [
@@ -212,7 +224,7 @@ async def test_valid_config(hass):
     }
 
 
-async def test_empty_dict_config(hass):
+async def test_empty_dict_config(hass: HomeAssistant) -> None:
     files = {
         YAML_CONFIG_FILE: """
 yandex_smart_home:
@@ -223,12 +235,13 @@ yandex_smart_home:
     with patch_yaml_files(files):
         config = await async_integration_yaml_config(hass, DOMAIN)
 
+    assert config
     assert DOMAIN in config
     assert isinstance(config[DOMAIN]["settings"], dict)
     assert config[DOMAIN]["entity_config"] == {}
 
 
-async def test_reload_no_config_entry(hass, hass_admin_user):
+async def test_reload_no_config_entry(hass: HomeAssistant, hass_admin_user: User) -> None:
     await async_setup_component(hass, DOMAIN, {DOMAIN: {}})
 
     component: YandexSmartHome = hass.data[DOMAIN]
@@ -251,7 +264,13 @@ yandex_smart_home:
     assert component._yaml_config["entity_config"]["sensor.test"]["name"] == "Test"
 
 
-async def test_reload_with_config_entry(hass, hass_admin_user, hass_read_only_user, config_entry_direct, caplog):
+async def test_reload_with_config_entry(
+    hass: HomeAssistant,
+    hass_admin_user: User,
+    hass_read_only_user: User,
+    config_entry_direct: MockConfigEntry,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     config_entry_direct.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
     await hass.async_block_till_done()
@@ -298,14 +317,14 @@ yandex_smart_home:
     assert "Invalid config" in caplog.messages[-1]
 
 
-async def test_setup_entry_filters(hass, hass_admin_user):
+async def test_setup_entry_filters(hass: HomeAssistant, hass_admin_user: User) -> None:
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={const.CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
+        data={CONF_CONNECTION_TYPE: "direct"},
         options={
-            const.CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
-            const.CONF_FILTER: {
+            CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
+            CONF_FILTER: {
                 "include_domains": [
                     "media_player",
                     "climate",
@@ -361,7 +380,7 @@ yandex_smart_home:
         assert entry_data.should_expose("climate.front_gate") is False
 
         options = config_entry.options.copy()
-        options[const.CONF_FILTER_SOURCE] = EntityFilterSource.YAML
+        options[CONF_FILTER_SOURCE] = EntityFilterSource.YAML
         hass.config_entries.async_update_entry(config_entry, options=options)
         await hass.async_block_till_done()
 
@@ -382,7 +401,7 @@ yandex_smart_home:
         assert entry_data.should_expose("climate.test") is False
 
 
-async def test_unload_entry(hass, config_entry_direct):
+async def test_unload_entry(hass: HomeAssistant, config_entry_direct: MockConfigEntry) -> None:
     config_entry_direct.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
 
@@ -397,10 +416,10 @@ async def test_unload_entry(hass, config_entry_direct):
         assert entry_data.cloud_instance_id
 
     await hass.config_entries.async_unload(config_entry_direct.entry_id)
-    assert entry_data.entry.state == ConfigEntryState.NOT_LOADED
+    assert entry_data.entry.state == ConfigEntryState.NOT_LOADED  # type: ignore[comparison-overlap]
 
 
-async def test_remove_entry(hass, config_entry_direct):
+async def test_remove_entry(hass: HomeAssistant, config_entry_direct: MockConfigEntry) -> None:
     config_entry_direct.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
 
@@ -410,12 +429,12 @@ async def test_remove_entry(hass, config_entry_direct):
     assert len(component._entry_datas) == 0
 
 
-async def test_remove_entry_unloaded(hass, config_entry_direct):
+async def test_remove_entry_unloaded(hass: HomeAssistant, config_entry_direct: MockConfigEntry) -> None:
     config_entry_direct.add_to_hass(hass)
     await hass.config_entries.async_remove(config_entry_direct.entry_id)
 
 
-async def test_remove_entry_unknown(hass):
+async def test_remove_entry_unknown(hass: HomeAssistant) -> None:
     await async_setup_component(hass, DOMAIN, {DOMAIN: {}})
 
     entry = MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION)
@@ -424,7 +443,7 @@ async def test_remove_entry_unknown(hass):
     await hass.config_entries.async_remove(entry.entry_id)
 
 
-async def test_migrate_entity_v1(hass):
+async def test_migrate_entity_v1(hass: HomeAssistant) -> None:
     entity = MockConfigEntry(
         domain=DOMAIN,
         version=1,
@@ -485,7 +504,7 @@ async def test_migrate_entity_v1(hass):
     assert entity.options == {"filter_source": "config_entry"}
 
 
-async def test_migrate_entity_v3_with_config(hass):
+async def test_migrate_entity_v3_with_config(hass: HomeAssistant) -> None:
     await async_setup_component(hass, DOMAIN, {DOMAIN: {"filter": {}}})
 
     entity = MockConfigEntry(
@@ -522,17 +541,19 @@ async def test_migrate_entity_v3_with_config(hass):
         ("direct", True),
     ],
 )
-async def test_migrate_entity_v5_single_notifier(hass, connection_type, expect_migration):
+async def test_migrate_entity_v5_single_notifier(
+    hass: HomeAssistant, connection_type: str, expect_migration: bool
+) -> None:
     await async_setup_component(
         hass,
         DOMAIN,
         {
             DOMAIN: {
-                const.CONF_NOTIFIER: [
+                CONF_NOTIFIER: [
                     {
-                        const.CONF_NOTIFIER_SKILL_ID: "foo",
-                        const.CONF_NOTIFIER_OAUTH_TOKEN: "bar",
-                        const.CONF_NOTIFIER_USER_ID: "baz",
+                        CONF_NOTIFIER_SKILL_ID: "foo",
+                        CONF_NOTIFIER_OAUTH_TOKEN: "bar",
+                        CONF_NOTIFIER_USER_ID: "baz",
                     }
                 ]
             }
@@ -564,17 +585,17 @@ async def test_migrate_entity_v5_single_notifier(hass, connection_type, expect_m
 
 
 @pytest.mark.parametrize("connection_type", ["cloud", "direct"])
-async def test_migrate_entity_v5_several_notifiers(hass, connection_type):
+async def test_migrate_entity_v5_several_notifiers(hass: HomeAssistant, connection_type: str) -> None:
     await async_setup_component(
         hass,
         DOMAIN,
         {
             DOMAIN: {
-                const.CONF_NOTIFIER: [
+                CONF_NOTIFIER: [
                     {
-                        const.CONF_NOTIFIER_SKILL_ID: "foo",
-                        const.CONF_NOTIFIER_OAUTH_TOKEN: "bar",
-                        const.CONF_NOTIFIER_USER_ID: "baz",
+                        CONF_NOTIFIER_SKILL_ID: "foo",
+                        CONF_NOTIFIER_OAUTH_TOKEN: "bar",
+                        CONF_NOTIFIER_USER_ID: "baz",
                     }
                 ]
             }
@@ -604,17 +625,17 @@ async def test_migrate_entity_v5_several_notifiers(hass, connection_type):
     await hass.config_entries.async_unload(entry2.entry_id)
 
 
-async def test_migrate_entity_v5_notifier_downgrade(hass):
+async def test_migrate_entity_v5_notifier_downgrade(hass: HomeAssistant) -> None:
     await async_setup_component(
         hass,
         DOMAIN,
         {
             DOMAIN: {
-                const.CONF_NOTIFIER: [
+                CONF_NOTIFIER: [
                     {
-                        const.CONF_NOTIFIER_SKILL_ID: "foo",
-                        const.CONF_NOTIFIER_OAUTH_TOKEN: "bar",
-                        const.CONF_NOTIFIER_USER_ID: "baz",
+                        CONF_NOTIFIER_SKILL_ID: "foo",
+                        CONF_NOTIFIER_OAUTH_TOKEN: "bar",
+                        CONF_NOTIFIER_USER_ID: "baz",
                     }
                 ]
             }
@@ -652,7 +673,9 @@ async def test_migrate_entity_v5_notifier_downgrade(hass):
         ("Foo", "direct", "Foo"),
     ],
 )
-async def test_migrate_entity_v5_title(hass, source_title, connection_type, expected_title):
+async def test_migrate_entity_v5_title(
+    hass: HomeAssistant, source_title: str, connection_type: str, expected_title: str
+) -> None:
     entry = MockConfigEntry(
         domain=DOMAIN,
         version=2,

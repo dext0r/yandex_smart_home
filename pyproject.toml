@@ -107,14 +107,6 @@ module = "tests.*"
 disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
-module = "tests"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.conftest"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module = "tests.test_capability"
 ignore_errors = true
 
@@ -155,15 +147,7 @@ module = "tests.test_cloud_stream"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "tests.test_config_validation"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module = "tests.test_device"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_diagnostics"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
@@ -172,18 +156,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "tests.test_handlers"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_helpers"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_init"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_schema"
 ignore_errors = true
 
 [tool.tox]
