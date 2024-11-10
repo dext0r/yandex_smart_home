@@ -381,6 +381,64 @@ class ProgramCapability(StateModeCapability, ABC):
     instance = ModeCapabilityInstance.PROGRAM
 
 
+class ProgramCapabilityClimate(ProgramCapability):
+    """Capability to control the mode preset of a climate device."""
+
+    _modes_map_default = {
+        ModeCapabilityMode.AUTO: [
+            climate.const.PRESET_NONE,
+        ],
+        ModeCapabilityMode.ECO: [
+            climate.const.PRESET_ECO,
+        ],
+        ModeCapabilityMode.MIN: [
+            climate.const.PRESET_AWAY,
+        ],
+        ModeCapabilityMode.TURBO: [
+            climate.const.PRESET_BOOST,
+        ],
+        ModeCapabilityMode.MEDIUM: [
+            climate.const.PRESET_COMFORT,
+        ],
+        ModeCapabilityMode.MAX: [
+            climate.const.PRESET_HOME,
+        ],
+        ModeCapabilityMode.QUIET: [
+            climate.const.PRESET_SLEEP,
+        ],
+    }
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        if self.state.domain == climate.DOMAIN and self._state_features & ClimateEntityFeature.PRESET_MODE:
+            return super().supported
+        return False
+
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
+            climate.DOMAIN,
+            climate.SERVICE_SET_PRESET_MODE,
+            {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                climate.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state.value),
+            },
+            blocking=True,
+            context=context,
+        )
+
+    @property
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        return self.state.attributes.get(climate.ATTR_PRESET_MODES, []) or []
+
+    @property
+    def _ha_value(self) -> Any:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(climate.ATTR_PRESET_MODE)
+
+
 class ProgramCapabilityHumidifier(ProgramCapability):
     """Capability to control the mode of a humidifier device."""
 
@@ -903,6 +961,7 @@ class CleanupModeCapability(StateModeCapability):
 
 STATE_CAPABILITIES_REGISTRY.register(ThermostatCapability)
 STATE_CAPABILITIES_REGISTRY.register(SwingCapability)
+STATE_CAPABILITIES_REGISTRY.register(ProgramCapabilityClimate)
 STATE_CAPABILITIES_REGISTRY.register(ProgramCapabilityHumidifier)
 STATE_CAPABILITIES_REGISTRY.register(ProgramCapabilityFan)
 STATE_CAPABILITIES_REGISTRY.register(InputSourceCapability)

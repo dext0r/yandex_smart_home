@@ -116,6 +116,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert capabilities == [
         ("devices.capabilities.mode", "thermostat"),
         ("devices.capabilities.mode", "swing"),
+        ("devices.capabilities.mode", "program"),
         ("devices.capabilities.mode", "fan_speed"),
         ("devices.capabilities.on_off", "on"),
     ]

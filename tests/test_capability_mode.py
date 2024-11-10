@@ -301,6 +301,50 @@ async def test_capability_mode_swing(hass: HomeAssistant, entry_data: MockConfig
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_MODE: "lr"}
 
 
+async def test_capability_mode_program_climate(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state = State("climate.test", STATE_OFF)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM)
+    state = State(
+        "climate.test",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.PRESET_MODE,
+            climate.ATTR_PRESET_MODES: ["none", "eco", "boost"],
+        },
+    )
+    cap = cast(
+        ModeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
+    )
+    assert cap.retrievable is True
+    assert cap.parameters.dict() == {
+        "instance": "program",
+        "modes": [{"value": "auto"}, {"value": "eco"}, {"value": "turbo"}],
+    }
+    assert cap.get_value() is None
+    state = State(
+        "climate.test",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: climate.ClimateEntityFeature.PRESET_MODE,
+            climate.ATTR_PRESET_MODES: ["none", "eco", "boost"],
+            climate.ATTR_PRESET_MODE: "eco",
+        },
+    )
+    cap = cast(
+        ModeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
+    )
+    assert cap.get_value() == ModeCapabilityMode.ECO
+    calls = async_mock_service(hass, climate.DOMAIN, climate.SERVICE_SET_PRESET_MODE)
+    await cap.set_instance_state(
+        Context(),
+        ModeCapabilityInstanceActionState(instance=ModeCapabilityInstance.PROGRAM, value=ModeCapabilityMode.TURBO),
+    )
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_PRESET_MODE: "boost"}
+
+
 async def test_capability_mode_program_humidifier(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("humidifier.test", STATE_OFF)
     assert_no_capabilities(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM)
