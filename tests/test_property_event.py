@@ -7,7 +7,7 @@ import pytest
 from custom_components.yandex_smart_home.const import DEVICE_CLASS_BUTTON
 from custom_components.yandex_smart_home.schema import EventPropertyInstance, PropertyType
 
-from . import BASIC_ENTRY_DATA, MockConfigEntryData
+from . import MockConfigEntryData
 from .test_property import assert_no_properties, get_exact_one_property
 
 
@@ -21,12 +21,14 @@ from .test_property import assert_no_properties, get_exact_one_property
         (BinarySensorDeviceClass.BATTERY, False),
     ],
 )
-async def test_state_property_event_open(hass: HomeAssistant, device_class: str, supported: bool) -> None:
+async def test_state_property_event_open(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, device_class: str, supported: bool
+) -> None:
     state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
-        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.OPEN)
+        prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.OPEN)
     else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.OPEN)
+        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.OPEN)
         return
 
     assert prop.retrievable is True
@@ -45,12 +47,14 @@ async def test_state_property_event_open(hass: HomeAssistant, device_class: str,
         (BinarySensorDeviceClass.BATTERY, False),
     ],
 )
-async def test_state_property_event_motion(hass: HomeAssistant, device_class: str, supported: bool) -> None:
+async def test_state_property_event_motion(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, device_class: str, supported: bool
+) -> None:
     state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
-        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.MOTION)
+        prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.MOTION)
     else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.OPEN)
+        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.OPEN)
         return
 
     assert prop.retrievable is True
@@ -67,12 +71,14 @@ async def test_state_property_event_motion(hass: HomeAssistant, device_class: st
         (BinarySensorDeviceClass.BATTERY, False),
     ],
 )
-async def test_state_property_event_gas(hass: HomeAssistant, device_class: str, supported: bool) -> None:
+async def test_state_property_event_gas(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, device_class: str, supported: bool
+) -> None:
     state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
-        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.GAS)
+        prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.GAS)
     else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.GAS)
+        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.GAS)
         return
 
     assert prop.retrievable is True
@@ -94,12 +100,14 @@ async def test_state_property_event_gas(hass: HomeAssistant, device_class: str, 
         (BinarySensorDeviceClass.BATTERY, False),
     ],
 )
-async def test_state_property_event_smoke(hass: HomeAssistant, device_class: str, supported: bool) -> None:
+async def test_state_property_event_smoke(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, device_class: str, supported: bool
+) -> None:
     state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
-        prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.SMOKE)
+        prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.SMOKE)
     else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.SMOKE)
+        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.SMOKE)
         return
 
     assert prop.retrievable is True
@@ -121,14 +129,14 @@ async def test_state_property_event_smoke(hass: HomeAssistant, device_class: str
         (BinarySensorDeviceClass.SMOKE, False),
     ],
 )
-async def test_state_property_event_battery(hass: HomeAssistant, device_class: str, supported: bool) -> None:
+async def test_state_property_event_battery(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, device_class: str, supported: bool
+) -> None:
     state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
-        prop = get_exact_one_property(
-            hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BATTERY_LEVEL
-        )
+        prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BATTERY_LEVEL)
     else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BATTERY_LEVEL)
+        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BATTERY_LEVEL)
         return
 
     assert prop.retrievable is True
@@ -148,14 +156,14 @@ async def test_state_property_event_battery(hass: HomeAssistant, device_class: s
         (BinarySensorDeviceClass.SMOKE, False),
     ],
 )
-async def test_state_property_event_water_leak(hass: HomeAssistant, device_class: str, supported: bool) -> None:
+async def test_state_property_event_water_leak(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, device_class: str, supported: bool
+) -> None:
     state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
-        prop = get_exact_one_property(
-            hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.WATER_LEAK
-        )
+        prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.WATER_LEAK)
     else:
-        assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.WATER_LEAK)
+        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.WATER_LEAK)
         return
 
     assert prop.retrievable
@@ -178,14 +186,14 @@ async def test_state_property_event_button(
     hass: HomeAssistant,
     domain: str,
     device_class: str | None,
+    entry_data: MockConfigEntryData,
     mock_entry_data: bool,
     supported: bool,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     entity_id = f"{domain}.test"
-    entry_data = BASIC_ENTRY_DATA
     if mock_entry_data:
-        entry_data = MockConfigEntryData(entity_config={entity_id: {CONF_DEVICE_CLASS: DEVICE_CLASS_BUTTON}})
+        entry_data = MockConfigEntryData(hass, entity_config={entity_id: {CONF_DEVICE_CLASS: DEVICE_CLASS_BUTTON}})
 
     state = State(entity_id, "click", {ATTR_DEVICE_CLASS: device_class})
     assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
@@ -214,15 +222,15 @@ async def test_state_property_event_button(
     assert caplog.messages == [f"Unknown event invalid for instance button of {entity_id}"]
 
 
-async def test_state_property_event_button_gw3(hass: HomeAssistant) -> None:
+async def test_state_property_event_button_gw3(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action"})
-    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
+    assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
 
     state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action", "action": "foo"})
-    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
+    assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
 
     state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action", "action": "click"})
-    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
+    prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
 
     assert not prop.retrievable
     assert prop.parameters == {
@@ -235,10 +243,10 @@ async def test_state_property_event_button_gw3(hass: HomeAssistant) -> None:
     assert prop.get_value() == "double_click"
 
 
-async def test_state_property_event_vibration(hass: HomeAssistant) -> None:
+async def test_state_property_event_vibration(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: BinarySensorDeviceClass.VIBRATION})
 
-    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
+    prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
 
     assert not prop.retrievable
     assert prop.parameters == {
@@ -251,15 +259,15 @@ async def test_state_property_event_vibration(hass: HomeAssistant) -> None:
     assert prop.get_value() is None
 
 
-async def test_state_property_event_vibration_gw3(hass: HomeAssistant) -> None:
+async def test_state_property_event_vibration_gw3(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action"})
-    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
+    assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
 
     state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action", "action": "foo"})
-    assert_no_properties(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
+    assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
 
     state = State("sensor.button", "", {ATTR_DEVICE_CLASS: "action", "action": "vibrate"})
-    prop = get_exact_one_property(hass, BASIC_ENTRY_DATA, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
+    prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
 
     assert not prop.retrievable
     assert prop.parameters == {

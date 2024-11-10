@@ -1,3 +1,4 @@
+import logging
 from typing import Any, cast
 
 from homeassistant.const import (
@@ -56,7 +57,7 @@ from custom_components.yandex_smart_home.schema import (
     ToggleCapabilityInstanceActionState,
 )
 
-from . import BASIC_ENTRY_DATA, MockConfigEntryData
+from . import MockConfigEntryData
 
 
 class MockCapability(CustomCapability):
@@ -77,8 +78,8 @@ class MockCapability(CustomCapability):
         pass
 
 
-async def test_capability_custom(hass: HomeAssistant) -> None:
-    cap = MockCapability(hass, BASIC_ENTRY_DATA, {}, OnOffCapabilityInstance.ON, "foo", None)
+async def test_capability_custom(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    cap = MockCapability(hass, entry_data, {}, OnOffCapabilityInstance.ON, "foo", None)
     assert cap.retrievable is False
     assert cap.reportable is False
     assert cap.get_value() is None
@@ -86,7 +87,7 @@ async def test_capability_custom(hass: HomeAssistant) -> None:
     with pytest.raises(APIError) as e:
         get_custom_capability(
             hass,
-            BASIC_ENTRY_DATA,
+            entry_data,
             {},
             CapabilityType.ON_OFF,
             ToggleCapabilityInstance.IONIZATION,
@@ -95,13 +96,13 @@ async def test_capability_custom(hass: HomeAssistant) -> None:
     assert e.value.message == "Unsupported capability type: devices.capabilities.on_off"
 
 
-async def test_capability_custom_value(hass: HomeAssistant) -> None:
+async def test_capability_custom_value(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     hass.states.async_set("switch.state_value", STATE_ON)
     hass.states.async_set("switch.attr_value", STATE_UNKNOWN, {"value": "46"})
 
     cap = get_custom_capability(
         hass,
-        BASIC_ENTRY_DATA,
+        entry_data,
         {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "switch.state_value"},
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
@@ -114,7 +115,7 @@ async def test_capability_custom_value(hass: HomeAssistant) -> None:
 
     cap = get_custom_capability(
         hass,
-        BASIC_ENTRY_DATA,
+        entry_data,
         {
             CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "switch.attr_value",
             CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE: "value",
@@ -128,15 +129,13 @@ async def test_capability_custom_value(hass: HomeAssistant) -> None:
     hass.states.async_set("switch.attr_value", STATE_UNKNOWN, {"value": "75"})
     assert cap.get_value() == 75
 
-    cap = get_custom_capability(
-        hass, BASIC_ENTRY_DATA, {}, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY, "foo"
-    )
+    cap = get_custom_capability(hass, entry_data, {}, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY, "foo")
     assert cap.retrievable is False
     assert cap.get_value() is None
 
     cap = get_custom_capability(
         hass,
-        BASIC_ENTRY_DATA,
+        entry_data,
         {
             CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1 + 2 }}"),
         },
@@ -149,7 +148,7 @@ async def test_capability_custom_value(hass: HomeAssistant) -> None:
 
     cap = get_custom_capability(
         hass,
-        BASIC_ENTRY_DATA,
+        entry_data,
         {
             CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1/0 }}"),
         },
@@ -167,10 +166,10 @@ async def test_capability_custom_value(hass: HomeAssistant) -> None:
     )
 
 
-async def test_capability_custom_mode(hass: HomeAssistant) -> None:
+async def test_capability_custom_mode(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     cap = get_custom_capability(
         hass,
-        BASIC_ENTRY_DATA,
+        entry_data,
         {CONF_ENTITY_CUSTOM_MODE_SET_MODE: None},
         CapabilityType.MODE,
         ModeCapabilityInstance.CLEANUP_MODE,
@@ -181,6 +180,7 @@ async def test_capability_custom_mode(hass: HomeAssistant) -> None:
     state = State("switch.test", "mode_1", {})
     hass.states.async_set(state.entity_id, state.state)
     entry_data = MockConfigEntryData(
+        hass,
         entity_config={
             state.entity_id: {
                 CONF_ENTITY_MODE_MAP: {
@@ -190,7 +190,7 @@ async def test_capability_custom_mode(hass: HomeAssistant) -> None:
                     }
                 }
             }
-        }
+        },
     )
 
     cap = get_custom_capability(
@@ -276,6 +276,7 @@ async def test_capability_custom_mode_scene(hass: HomeAssistant, domain: str) ->
     state = State(f"{domain}.test", "foo", {})
     hass.states.async_set(state.entity_id, state.state)
     entry_data = MockConfigEntryData(
+        hass,
         entity_config={
             state.entity_id: {
                 CONF_ENTITY_MODE_MAP: {
@@ -290,7 +291,7 @@ async def test_capability_custom_mode_scene(hass: HomeAssistant, domain: str) ->
                     }
                 },
             }
-        }
+        },
     )
 
     device = Device(hass, entry_data, state.entity_id, state)
@@ -314,6 +315,7 @@ async def test_capability_custom_mode_scene(hass: HomeAssistant, domain: str) ->
         await scene_cap.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene.FANTASY))
 
     entry_data = MockConfigEntryData(
+        hass,
         entity_config={
             state.entity_id: {
                 CONF_ENTITY_MODE_MAP: {
@@ -334,7 +336,7 @@ async def test_capability_custom_mode_scene(hass: HomeAssistant, domain: str) ->
                     }
                 },
             }
-        }
+        },
     )
 
     device = Device(hass, entry_data, state.entity_id, state)
@@ -358,10 +360,13 @@ async def test_capability_custom_mode_scene(hass: HomeAssistant, domain: str) ->
         assert scene_cap.new_with_value_template(Template(t)).get_value() is None
 
 
-async def test_capability_custom_toggle(hass: HomeAssistant) -> None:
+_LOGGER = logging.getLogger(__name__)
+
+
+async def test_capability_custom_toggle(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     cap = get_custom_capability(
         hass,
-        BASIC_ENTRY_DATA,
+        entry_data,
         {CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: None, CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF: None},
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
@@ -376,7 +381,7 @@ async def test_capability_custom_toggle(hass: HomeAssistant) -> None:
     hass.states.async_set(state.entity_id, state.state)
     cap = get_custom_capability(
         hass,
-        BASIC_ENTRY_DATA,
+        entry_data,
         {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id},
         CapabilityType.TOGGLE,
         ToggleCapabilityInstance.IONIZATION,
@@ -399,7 +404,7 @@ async def test_capability_custom_toggle(hass: HomeAssistant) -> None:
 
     cap = get_custom_capability(
         hass,
-        BASIC_ENTRY_DATA,
+        entry_data,
         {
             CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
             CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON: SERVICE_SCHEMA(
@@ -453,14 +458,14 @@ async def test_capability_custom_toggle(hass: HomeAssistant) -> None:
         assert cap.new_with_value_template(Template(t)).get_value() is False
 
 
-async def test_capability_custom_range_random_access(hass: HomeAssistant) -> None:
+async def test_capability_custom_range_random_access(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("switch.test", "30", {})
     hass.states.async_set(state.entity_id, state.state)
     cap = cast(
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_ENTRY_DATA,
+            entry_data,
             {
                 CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: state.entity_id,
                 CONF_ENTITY_RANGE: {
@@ -541,7 +546,9 @@ async def test_capability_custom_range_random_access(hass: HomeAssistant) -> Non
     assert e.value.message == "Entity switch.test not found"
 
 
-async def test_capability_custom_range_random_access_no_state(hass: HomeAssistant) -> None:
+async def test_capability_custom_range_random_access_no_state(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
     state = State("switch.test", "30", {})
     hass.states.async_set(state.entity_id, state.state)
 
@@ -549,7 +556,7 @@ async def test_capability_custom_range_random_access_no_state(hass: HomeAssistan
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_ENTRY_DATA,
+            entry_data,
             {
                 CONF_ENTITY_RANGE: {
                     CONF_ENTITY_RANGE_MIN: 10,
@@ -602,12 +609,14 @@ async def test_capability_custom_range_random_access_no_state(hass: HomeAssistan
         )
 
 
-async def test_capability_custom_range_relative_override_no_state(hass: HomeAssistant) -> None:
+async def test_capability_custom_range_relative_override_no_state(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
     cap = cast(
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_ENTRY_DATA,
+            entry_data,
             {
                 CONF_ENTITY_RANGE: {
                     CONF_ENTITY_RANGE_MIN: 10,
@@ -681,12 +690,12 @@ async def test_capability_custom_range_relative_override_no_state(hass: HomeAssi
     assert calls[0].data == {"entity_id": ["input_number.test"], "value": "value: 0"}
 
 
-async def test_capability_custom_range_only_relative(hass: HomeAssistant) -> None:
+async def test_capability_custom_range_only_relative(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     cap = cast(
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_ENTRY_DATA,
+            entry_data,
             {
                 CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE: SERVICE_SCHEMA(
                     {
@@ -734,12 +743,12 @@ async def test_capability_custom_range_only_relative(hass: HomeAssistant) -> Non
     assert calls[2].data == {"entity_id": ["input_number.test"], "value": "value: -50"}
 
 
-async def test_capability_custom_range_no_service(hass: HomeAssistant) -> None:
+async def test_capability_custom_range_no_service(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     cap = cast(
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_ENTRY_DATA,
+            entry_data,
             {},
             CapabilityType.RANGE,
             RangeCapabilityInstance.OPEN,
@@ -774,6 +783,7 @@ async def test_capability_custom_range_no_service(hass: HomeAssistant) -> None:
 )
 async def test_capability_custom_range_parameters_range(
     hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
     instance: RangeCapabilityInstance,
     config_range: tuple[int, int],
     expected_range: tuple[int, int],
@@ -782,7 +792,7 @@ async def test_capability_custom_range_parameters_range(
         CustomRangeCapability,
         get_custom_capability(
             hass,
-            BASIC_ENTRY_DATA,
+            entry_data,
             {
                 CONF_ENTITY_RANGE: {
                     CONF_ENTITY_RANGE_MIN: config_range[0],

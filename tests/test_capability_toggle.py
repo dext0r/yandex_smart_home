@@ -31,7 +31,7 @@ from custom_components.yandex_smart_home.schema import (
     ToggleCapabilityInstanceActionState,
 )
 
-from . import BASIC_ENTRY_DATA, MockConfigEntryData
+from . import MockConfigEntryData
 from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
 
 
@@ -43,18 +43,18 @@ def _action_state_off(instance: ToggleCapabilityInstance) -> ToggleCapabilityIns
     return ToggleCapabilityInstanceActionState(instance=instance, value=False)
 
 
-async def test_capability_mute(hass: HomeAssistant) -> None:
+async def test_capability_mute(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("media_player.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE)
 
     state = State("media_player.test", STATE_ON)
-    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["volume_mute"]}})
+    entry_data = MockConfigEntryData(hass, entity_config={state.entity_id: {"features": ["volume_mute"]}})
     assert_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE)
 
     state = State("media_player.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.VOLUME_MUTE})
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE),
     )
 
     assert cap.retrievable is False
@@ -80,7 +80,7 @@ async def test_capability_mute(hass: HomeAssistant) -> None:
     )
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.MUTE),
     )
     assert cap.retrievable is True
     assert cap.get_value() is True
@@ -95,12 +95,12 @@ async def test_capability_mute(hass: HomeAssistant) -> None:
     assert calls[1].data[media_player.ATTR_MEDIA_VOLUME_MUTED] is False
 
 
-async def test_capability_pause_media_player(hass: HomeAssistant) -> None:
+async def test_capability_pause_media_player(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("media_player.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
     state = State("media_player.test", STATE_ON)
-    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["play_pause"]}})
+    entry_data = MockConfigEntryData(hass, entity_config={state.entity_id: {"features": ["play_pause"]}})
     assert_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
     for s in [STATE_IDLE, STATE_OFF]:
@@ -111,9 +111,7 @@ async def test_capability_pause_media_player(hass: HomeAssistant) -> None:
         )
         cap = cast(
             ToggleCapability,
-            get_exact_one_capability(
-                hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE
-            ),
+            get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
         )
         assert cap.retrievable is True
         assert cap.parameters.dict() == {"instance": "pause"}
@@ -126,7 +124,7 @@ async def test_capability_pause_media_player(hass: HomeAssistant) -> None:
     )
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
     )
     assert cap.get_value() is False
 
@@ -141,17 +139,15 @@ async def test_capability_pause_media_player(hass: HomeAssistant) -> None:
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_pause_cover(hass: HomeAssistant) -> None:
+async def test_capability_pause_cover(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("cover.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
     for s in [STATE_OPEN, STATE_CLOSED, STATE_CLOSING]:
         state = State("cover.test", s, {ATTR_SUPPORTED_FEATURES: CoverEntityFeature.STOP})
         cap = cast(
             ToggleCapability,
-            get_exact_one_capability(
-                hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE
-            ),
+            get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
         )
         assert cap.retrievable is False
         assert cap.reportable is False
@@ -161,7 +157,7 @@ async def test_capability_pause_cover(hass: HomeAssistant) -> None:
     state = State("cover.test", STATE_CLOSED, {ATTR_SUPPORTED_FEATURES: CoverEntityFeature.STOP})
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
     )
     calls = async_mock_service(hass, cover.DOMAIN, SERVICE_STOP_COVER)
     await cap.set_instance_state(Context(), _action_state_on(ToggleCapabilityInstance.PAUSE))
@@ -171,17 +167,15 @@ async def test_capability_pause_cover(hass: HomeAssistant) -> None:
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_pause_vacuum(hass: HomeAssistant) -> None:
+async def test_capability_pause_vacuum(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("vacuum.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
 
     for s in vacuum.STATES:
         state = State("vacuum.test", s, {ATTR_SUPPORTED_FEATURES: VacuumEntityFeature.PAUSE})
         cap = cast(
             ToggleCapability,
-            get_exact_one_capability(
-                hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE
-            ),
+            get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
         )
         assert cap.retrievable is True
         assert cap.parameters.dict() == {"instance": "pause"}
@@ -190,7 +184,7 @@ async def test_capability_pause_vacuum(hass: HomeAssistant) -> None:
     state = State("vacuum.test", STATE_PAUSED, {ATTR_SUPPORTED_FEATURES: VacuumEntityFeature.PAUSE})
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
     )
     assert cap.get_value() is True
 
@@ -205,16 +199,14 @@ async def test_capability_pause_vacuum(hass: HomeAssistant) -> None:
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_oscillation(hass: HomeAssistant) -> None:
+async def test_capability_oscillation(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("fan.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION)
 
     state = State("fan.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: FanEntityFeature.OSCILLATE})
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION),
     )
     assert cap.retrievable is True
     assert cap.parameters.dict() == {"instance": "oscillation"}
@@ -225,9 +217,7 @@ async def test_capability_oscillation(hass: HomeAssistant) -> None:
     )
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION),
     )
     assert cap.get_value() is True
 
@@ -236,9 +226,7 @@ async def test_capability_oscillation(hass: HomeAssistant) -> None:
     )
     cap = cast(
         ToggleCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION),
     )
     assert cap.get_value() is False
 

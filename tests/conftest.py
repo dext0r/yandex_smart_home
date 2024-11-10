@@ -35,6 +35,7 @@ from custom_components.yandex_smart_home.const import (
     EntityFilterSource,
 )
 from custom_components.yandex_smart_home.helpers import SmartHomePlatform
+from tests import MockConfigEntryData, generate_entity_filter
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 
@@ -110,6 +111,15 @@ def config_entry_cloud() -> MockConfigEntry:
             CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
             CONF_FILTER: {entityfilter.CONF_INCLUDE_ENTITY_GLOBS: ["*"]},
         },
+    )
+
+
+@pytest.fixture()
+def entry_data(hass: HomeAssistant) -> MockConfigEntryData:
+    return MockConfigEntryData(
+        hass=hass,
+        entry=MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={}),
+        entity_filter=generate_entity_filter(include_entity_globs=["*"]),
     )
 
 

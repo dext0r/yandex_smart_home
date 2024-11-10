@@ -4,7 +4,7 @@ from typing import Any, Callable
 from unittest.mock import MagicMock
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Context, HomeAssistant
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entityfilter
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
@@ -13,13 +13,13 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.yandex_smart_home import DOMAIN
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.entry_data import ConfigEntryData
-from custom_components.yandex_smart_home.helpers import STORE_CACHE_ATTRS, CacheStore, RequestData, SmartHomePlatform
+from custom_components.yandex_smart_home.helpers import STORE_CACHE_ATTRS, CacheStore
 
 
 class MockConfigEntryData(ConfigEntryData):
     def __init__(
         self,
-        hass: HomeAssistant | None = None,
+        hass: HomeAssistant,
         entry: ConfigEntry | None = None,
         yaml_config: ConfigType | None = None,
         entity_config: dict[str, Any] | None = None,
@@ -28,7 +28,7 @@ class MockConfigEntryData(ConfigEntryData):
         if not entry:
             entry = MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={})
 
-        super().__init__(hass, entry, yaml_config, entity_config, entity_filter)  # type: ignore[arg-type]
+        super().__init__(hass, entry, yaml_config, entity_config, entity_filter)
 
         self.cache = MockCacheStore()
 
@@ -78,16 +78,3 @@ def generate_entity_filter(
 
 
 REQ_ID: str = "5ca6622d-97b5-465c-a494-fd9954f7599a"
-
-BASIC_ENTRY_DATA: MockConfigEntryData = MockConfigEntryData(
-    entry=MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={}),
-    entity_filter=generate_entity_filter(include_entity_globs=["*"]),
-)
-
-BASIC_REQUEST_DATA: RequestData = RequestData(
-    entry_data=BASIC_ENTRY_DATA,
-    context=Context(),
-    platform=SmartHomePlatform.YANDEX,
-    request_user_id="test",
-    request_id=REQ_ID,
-)

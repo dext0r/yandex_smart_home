@@ -63,7 +63,7 @@ from custom_components.yandex_smart_home.schema import (
     ResponseCode,
 )
 
-from . import BASIC_ENTRY_DATA, MockConfigEntryData
+from . import MockConfigEntryData
 from .test_capability import (
     assert_exact_one_capability,
     assert_no_capabilities,
@@ -86,11 +86,13 @@ ACTION_STATE_OFF = OnOffCapabilityInstanceActionState(instance=OnOffCapabilityIn
         (light.DOMAIN, light.DOMAIN),
     ],
 )
-async def test_capability_onoff_simple(hass: HomeAssistant, state_domain: str, service_domain: str) -> None:
+async def test_capability_onoff_simple(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, state_domain: str, service_domain: str
+) -> None:
     state_on = State(f"{state_domain}.test", STATE_ON)
     cap_on = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state_on, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state_on, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     assert cap_on.retrievable is True
@@ -108,12 +110,10 @@ async def test_capability_onoff_simple(hass: HomeAssistant, state_domain: str, s
     assert off_calls[0].data == {ATTR_ENTITY_ID: f"{state_domain}.test"}
 
     state_off = State(f"{state_domain}.test", STATE_OFF)
-    cap_off = get_exact_one_capability(
-        hass, BASIC_ENTRY_DATA, state_off, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
-    )
+    cap_off = get_exact_one_capability(hass, entry_data, state_off, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
     assert cap_off.get_value() is False
 
-    entry_data = MockConfigEntryData(entity_config={f"{state_domain}.test": {CONF_STATE_UNKNOWN: True}})
+    entry_data = MockConfigEntryData(hass, entity_config={f"{state_domain}.test": {CONF_STATE_UNKNOWN: True}})
     state = State(f"{state_domain}.test", STATE_ON)
     cap = cast(
         OnOffCapability,
@@ -133,11 +133,13 @@ async def test_capability_onoff_simple(hass: HomeAssistant, state_domain: str, s
         (input_button.DOMAIN, STATE_UNKNOWN, input_button.SERVICE_PRESS),
     ],
 )
-async def test_capability_onoff_only_on(hass: HomeAssistant, domain: str, initial_state: str, service: str) -> None:
+async def test_capability_onoff_only_on(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, domain: str, initial_state: str, service: str
+) -> None:
     state = State(f"{domain}.test", initial_state)
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     assert cap.retrievable is False
@@ -156,11 +158,11 @@ async def test_capability_onoff_only_on(hass: HomeAssistant, domain: str, initia
     assert on_calls[1].data == {ATTR_ENTITY_ID: f"{domain}.test"}
 
 
-async def test_capability_onoff_cover(hass: HomeAssistant) -> None:
+async def test_capability_onoff_cover(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state_open = State("cover.test", STATE_OPEN, attributes={ATTR_SUPPORTED_FEATURES: CoverEntityFeature.SET_POSITION})
     cap_open = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state_open, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state_open, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     assert cap_open.retrievable is True
@@ -181,9 +183,7 @@ async def test_capability_onoff_cover(hass: HomeAssistant) -> None:
         state_other = State("cover.test", state, attributes={ATTR_SUPPORTED_FEATURES: CoverEntityFeature.SET_POSITION})
         cap = cast(
             OnOffCapability,
-            get_exact_one_capability(
-                hass, BASIC_ENTRY_DATA, state_other, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
-            ),
+            get_exact_one_capability(hass, entry_data, state_other, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
         )
         assert cap.get_value() is False
 
@@ -191,14 +191,14 @@ async def test_capability_onoff_cover(hass: HomeAssistant) -> None:
     cap_no_features = cast(
         OnOffCapability,
         get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state_no_features, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
+            hass, entry_data, state_no_features, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
         ),
     )
     assert cap_no_features.retrievable is True
     assert cap_no_features.get_value() is True
     assert cap_no_features.parameters is None
 
-    entry_data = MockConfigEntryData(entity_config={"cover.test": {CONF_STATE_UNKNOWN: True}})
+    entry_data = MockConfigEntryData(hass, entity_config={"cover.test": {CONF_STATE_UNKNOWN: True}})
     state_binary = State("cover.test", STATE_OPEN)
     cap_binary = cast(
         OnOffCapability,
@@ -209,11 +209,11 @@ async def test_capability_onoff_cover(hass: HomeAssistant) -> None:
     assert cap_binary.parameters.dict() == {"split": True}
 
 
-async def test_capability_onoff_valve(hass: HomeAssistant) -> None:
+async def test_capability_onoff_valve(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state_open = State("valve.test", STATE_OPEN, attributes={ATTR_SUPPORTED_FEATURES: ValveEntityFeature.SET_POSITION})
     cap_open = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state_open, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state_open, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     assert cap_open.retrievable is True
@@ -234,9 +234,7 @@ async def test_capability_onoff_valve(hass: HomeAssistant) -> None:
         state_other = State("valve.test", state, attributes={ATTR_SUPPORTED_FEATURES: ValveEntityFeature.SET_POSITION})
         cap = cast(
             OnOffCapability,
-            get_exact_one_capability(
-                hass, BASIC_ENTRY_DATA, state_other, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
-            ),
+            get_exact_one_capability(hass, entry_data, state_other, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
         )
         assert cap.get_value() is False
 
@@ -244,7 +242,7 @@ async def test_capability_onoff_valve(hass: HomeAssistant) -> None:
     cap_no_features = cast(
         OnOffCapability,
         get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state_no_features, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
+            hass, entry_data, state_no_features, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
         ),
     )
     assert cap_no_features.retrievable is True
@@ -252,11 +250,11 @@ async def test_capability_onoff_valve(hass: HomeAssistant) -> None:
     assert cap_no_features.parameters is None
 
 
-async def test_capability_onoff_remote(hass: HomeAssistant) -> None:
+async def test_capability_onoff_remote(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("remote.test", STATE_ON)
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.reportable is False
     assert cap.retrievable is False
@@ -277,23 +275,24 @@ async def test_capability_onoff_remote(hass: HomeAssistant) -> None:
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_onoff_media_player(hass: HomeAssistant) -> None:
+async def test_capability_onoff_media_player(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    default_entry_data = entry_data
     state = State("media_player.simple", STATE_ON)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
+    assert_no_capabilities(hass, default_entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
     state = State("media_player.test", STATE_ON)
-    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["turn_on_off"]}})
+    entry_data = MockConfigEntryData(hass, entity_config={state.entity_id: {"features": ["turn_on_off"]}})
     assert_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
     state = State("media_player.only_on", STATE_ON, {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.TURN_OFF})
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, default_entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.retrievable is True
     assert cap.parameters is None
 
-    entry_data = MockConfigEntryData(entity_config={"media_player.test": {CONF_STATE_UNKNOWN: True}})
+    entry_data = MockConfigEntryData(hass, entity_config={"media_player.test": {CONF_STATE_UNKNOWN: True}})
     state_binary = State("media_player.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.TURN_OFF})
     cap_binary = cast(
         OnOffCapability,
@@ -311,7 +310,7 @@ async def test_capability_onoff_media_player(hass: HomeAssistant) -> None:
     )
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, default_entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.retrievable is True
     assert cap.get_value() is True
@@ -330,19 +329,19 @@ async def test_capability_onoff_media_player(hass: HomeAssistant) -> None:
     state.state = STATE_OFF
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, default_entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.get_value() is False
 
 
-async def test_capability_onoff_lock(hass: HomeAssistant) -> None:
+async def test_capability_onoff_lock(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
         state = State("lock.test", lock.LockState.UNLOCKED)
     else:
         state = State("lock.test", lock.STATE_UNLOCKED)  # pyright: ignore[reportAttributeAccessIssue]
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     assert cap.retrievable is True
@@ -370,9 +369,7 @@ async def test_capability_onoff_lock(hass: HomeAssistant) -> None:
         state_other = State("lock.test", s)
         cap = cast(
             OnOffCapability,
-            get_exact_one_capability(
-                hass, BASIC_ENTRY_DATA, state_other, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
-            ),
+            get_exact_one_capability(hass, entry_data, state_other, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
         )
 
         assert cap.get_value() is False
@@ -380,12 +377,12 @@ async def test_capability_onoff_lock(hass: HomeAssistant) -> None:
     state.state = locked_state
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     assert cap.get_value() is False
 
-    entry_data = MockConfigEntryData(entity_config={"lock.test": {CONF_STATE_UNKNOWN: True}})
+    entry_data = MockConfigEntryData(hass, entity_config={"lock.test": {CONF_STATE_UNKNOWN: True}})
     state = State("lock.test", STATE_ON)
     cap = cast(
         OnOffCapability,
@@ -396,7 +393,7 @@ async def test_capability_onoff_lock(hass: HomeAssistant) -> None:
     assert cap.parameters.dict() == {"split": True}
 
 
-async def test_capability_onoff_vacuum(hass: HomeAssistant) -> None:
+async def test_capability_onoff_vacuum(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     for s in [STATE_ON, vacuum.STATE_CLEANING]:
         state = State(
             "vacuum.test",
@@ -405,7 +402,7 @@ async def test_capability_onoff_vacuum(hass: HomeAssistant) -> None:
         )
         cap = cast(
             OnOffCapability,
-            get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+            get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
         )
         assert cap.get_value() is True
         assert cap.retrievable is True
@@ -421,12 +418,12 @@ async def test_capability_onoff_vacuum(hass: HomeAssistant) -> None:
         )
         cap = cast(
             OnOffCapability,
-            get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+            get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
         )
 
         assert cap.get_value() is False
 
-    entry_data = MockConfigEntryData(entity_config={"vacuum.test": {CONF_STATE_UNKNOWN: True}})
+    entry_data = MockConfigEntryData(hass, entity_config={"vacuum.test": {CONF_STATE_UNKNOWN: True}})
     state = State(
         "vacuum.test",
         STATE_ON,
@@ -452,11 +449,12 @@ async def test_capability_onoff_vacuum(hass: HomeAssistant) -> None:
         (VacuumEntityFeature.TURN_ON | VacuumEntityFeature.TURN_OFF, True),
     ],
 )
-async def test_capability_onoff_vacuum_supported(hass: HomeAssistant, features: int, supported: bool) -> None:
+async def test_capability_onoff_vacuum_supported(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, features: int, supported: bool
+) -> None:
     state = State("vacuum.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: features})
     assert (
-        bool(get_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON))
-        == supported
+        bool(get_capabilities(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)) == supported
     )
 
 
@@ -472,11 +470,13 @@ async def test_capability_onoff_vacuum_supported(hass: HomeAssistant, features: 
         (VacuumEntityFeature.TURN_ON | VacuumEntityFeature.TURN_OFF, SERVICE_TURN_ON),
     ],
 )
-async def test_capability_onoff_vacuum_turn_on(hass: HomeAssistant, features: int, service: str) -> None:
+async def test_capability_onoff_vacuum_turn_on(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, features: int, service: str
+) -> None:
     state = State("vacuum.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: features})
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     on_calls = async_mock_service(hass, vacuum.DOMAIN, service)
@@ -497,11 +497,13 @@ async def test_capability_onoff_vacuum_turn_on(hass: HomeAssistant, features: in
         (VacuumEntityFeature.TURN_ON | VacuumEntityFeature.TURN_OFF, SERVICE_TURN_OFF),
     ],
 )
-async def test_capability_onoff_vacuum_turn_off(hass: HomeAssistant, features: int, service: str) -> None:
+async def test_capability_onoff_vacuum_turn_off(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, features: int, service: str
+) -> None:
     state = State("vacuum.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: features})
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     off_calls = async_mock_service(hass, vacuum.DOMAIN, service)
@@ -510,7 +512,7 @@ async def test_capability_onoff_vacuum_turn_off(hass: HomeAssistant, features: i
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
-async def test_capability_onoff_climate(hass: HomeAssistant) -> None:
+async def test_capability_onoff_climate(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     for s in climate.HVAC_MODES:
         if s == HVACMode.OFF:
             continue
@@ -518,7 +520,7 @@ async def test_capability_onoff_climate(hass: HomeAssistant) -> None:
         state = State("climate.test", s)
         cap = cast(
             OnOffCapability,
-            get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+            get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
         )
         assert cap.get_value() is True
         assert cap.retrievable is True
@@ -527,7 +529,7 @@ async def test_capability_onoff_climate(hass: HomeAssistant) -> None:
     state = State("climate.test", STATE_OFF)
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.get_value() is False
 
@@ -536,7 +538,7 @@ async def test_capability_onoff_climate(hass: HomeAssistant) -> None:
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
-    entry_data = MockConfigEntryData(entity_config={"climate.test": {CONF_STATE_UNKNOWN: True}})
+    entry_data = MockConfigEntryData(hass, entity_config={"climate.test": {CONF_STATE_UNKNOWN: True}})
     state = State("climate.test", STATE_ON)
     cap = cast(
         OnOffCapability,
@@ -566,12 +568,16 @@ async def test_capability_onoff_climate(hass: HomeAssistant) -> None:
     ],
 )
 async def test_capability_onoff_climate_turn_on(
-    hass: HomeAssistant, hvac_modes: list[HVACMode], service: str, service_hvac_mode: str
+    hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
+    hvac_modes: list[HVACMode],
+    service: str,
+    service_hvac_mode: str,
 ) -> None:
     state = State("climate.test", HVACMode.COOL, {climate.ATTR_HVAC_MODES: hvac_modes})
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     on_calls = async_mock_service(hass, climate.DOMAIN, service)
@@ -582,16 +588,14 @@ async def test_capability_onoff_climate_turn_on(
         assert on_calls[0].data[climate.ATTR_HVAC_MODE] == service_hvac_mode
 
 
-async def test_capability_onoff_custom_service(hass: HomeAssistant) -> None:
+async def test_capability_onoff_custom_service(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state_media = State("media_player.test", STATE_ON)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state_media, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
+    assert_no_capabilities(hass, entry_data, state_media, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
 
     state_switch = State("switch.test", STATE_ON)
     cap_switch = cast(
         OnOffCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON
-        ),
+        get_exact_one_capability(hass, entry_data, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
 
     on_calls = async_mock_service(hass, switch.DOMAIN, switch.SERVICE_TURN_ON)
@@ -617,6 +621,7 @@ async def test_capability_onoff_custom_service(hass: HomeAssistant) -> None:
         "water_heater.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: WaterHeaterEntityFeature.ON_OFF}
     )
     entry_data = MockConfigEntryData(
+        hass,
         entity_config={
             state_media.entity_id: {
                 CONF_TURN_ON: {
@@ -646,7 +651,7 @@ async def test_capability_onoff_custom_service(hass: HomeAssistant) -> None:
             },
             state_lock.entity_id: {CONF_TURN_ON: False},
             state_water_heater.entity_id: {CONF_TURN_OFF: False},
-        }
+        },
     )
     cap_media = cast(
         OnOffCapability,
@@ -695,12 +700,12 @@ async def test_capability_onoff_custom_service(hass: HomeAssistant) -> None:
     assert len(water_heater_on_calls) == 1
 
 
-async def test_capability_onoff_water_heater(hass: HomeAssistant) -> None:
+async def test_capability_onoff_water_heater(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("water_heater.test", STATE_ON)
 
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.retrievable is True
     assert cap.parameters is None
@@ -709,7 +714,7 @@ async def test_capability_onoff_water_heater(hass: HomeAssistant) -> None:
     state = State("water_heater.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: WaterHeaterEntityFeature.ON_OFF})
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.get_value() is False
 
@@ -723,7 +728,7 @@ async def test_capability_onoff_water_heater(hass: HomeAssistant) -> None:
     assert len(off_calls) == 1
     assert off_calls[0].data[ATTR_ENTITY_ID] == state.entity_id
 
-    entry_data = MockConfigEntryData(entity_config={"water_heater.test": {CONF_STATE_UNKNOWN: True}})
+    entry_data = MockConfigEntryData(hass, entity_config={"water_heater.test": {CONF_STATE_UNKNOWN: True}})
     state = State("water_heater.test", STATE_ON)
     cap = cast(
         OnOffCapability,
@@ -736,7 +741,9 @@ async def test_capability_onoff_water_heater(hass: HomeAssistant) -> None:
 
 @pytest.mark.parametrize("op_on", ["on", "On", "ON", "electric", "Boil"])
 @pytest.mark.parametrize("op_off", ["off", "Off", "OFF"])
-async def test_capability_onoff_water_heater_set_op_mode(hass: HomeAssistant, op_on: str, op_off: str) -> None:
+async def test_capability_onoff_water_heater_set_op_mode(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, op_on: str, op_off: str
+) -> None:
     state = State(
         "water_heater.test",
         op_on,
@@ -749,7 +756,7 @@ async def test_capability_onoff_water_heater_set_op_mode(hass: HomeAssistant, op
 
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.retrievable is True
     assert cap.parameters is None
@@ -766,7 +773,7 @@ async def test_capability_onoff_water_heater_set_op_mode(hass: HomeAssistant, op
     )
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.get_value() is False
 
@@ -783,7 +790,9 @@ async def test_capability_onoff_water_heater_set_op_mode(hass: HomeAssistant, op
     assert set_mode_calls[0].data[water_heater.ATTR_OPERATION_MODE] == op_off
 
 
-async def test_capability_onoff_water_heater_set_unsupported_op_mode(hass: HomeAssistant) -> None:
+async def test_capability_onoff_water_heater_set_unsupported_op_mode(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
     state = State(
         "water_heater.test",
         "foo",
@@ -796,7 +805,7 @@ async def test_capability_onoff_water_heater_set_unsupported_op_mode(hass: HomeA
 
     cap = cast(
         OnOffCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
     assert cap.get_value() is True
 

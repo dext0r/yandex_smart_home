@@ -66,7 +66,7 @@ from custom_components.yandex_smart_home.schema import (
     ResponseCode,
 )
 
-from . import BASIC_ENTRY_DATA, REQ_ID, MockConfigEntryData, generate_entity_filter, test_cloud
+from . import REQ_ID, MockConfigEntryData, generate_entity_filter, test_cloud
 
 BASIC_CONFIG = NotifierConfig(user_id="bread", token="xyz", skill_id="a-b-c")
 
@@ -278,17 +278,17 @@ async def test_notifier_postponed_setup(hass: HomeAssistant, hass_admin_user: Us
 
 @pytest.mark.parametrize("cls", [YandexDirectNotifier, YandexCloudNotifier])
 async def test_notifier_format_log_message(
-    hass: HomeAssistant, cls: type[YandexNotifier], caplog: pytest.LogCaptureFixture
+    hass: HomeAssistant, entry_data: MockConfigEntryData, cls: type[YandexNotifier], caplog: pytest.LogCaptureFixture
 ) -> None:
-    n = cls(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x"), {})
-    ne = cls(hass, BASIC_ENTRY_DATA, NotifierConfig(user_id="foo", skill_id="bar", token="x", extended_log=True), {})
+    n = cls(hass, entry_data, NotifierConfig(user_id="foo", skill_id="bar", token="x"), {})
+    ne = cls(hass, entry_data, NotifierConfig(user_id="foo", skill_id="bar", token="x", extended_log=True), {})
     assert n._format_log_message("test") == "test"
     assert ne._format_log_message("test") == "Mock Title: test"
 
     caplog.clear()
     n._debug_log("test")
     ne._debug_log("test")
-    assert caplog.messages == ["test", f"({BASIC_ENTRY_DATA.entry.entry_id[:6]}) test"]
+    assert caplog.messages == ["test", f"({entry_data.entry.entry_id[:6]}) test"]
 
 
 async def test_notifier_track_templates(
@@ -652,8 +652,10 @@ async def test_notifier_initial_report(
     assert caplog.messages[-1:] == ["Unsupported entity binary_sensor.foo for temperature property of light.kitchen"]
 
 
-async def test_notifier_send_callback_exception(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
-    notifier = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG, {})
+async def test_notifier_send_callback_exception(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, caplog: pytest.LogCaptureFixture
+) -> None:
+    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG, {})
 
     with patch.object(notifier._session, "post", side_effect=ClientConnectionError()):
         caplog.clear()
@@ -669,9 +671,12 @@ async def test_notifier_send_callback_exception(hass: HomeAssistant, caplog: pyt
 
 
 async def test_notifier_send_direct(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, caplog: pytest.LogCaptureFixture
+    hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
+    aioclient_mock: AiohttpClientMocker,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
-    notifier = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG, {})
+    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG, {})
     token = BASIC_CONFIG.token
     skill_id = BASIC_CONFIG.skill_id
     user_id = BASIC_CONFIG.user_id
@@ -698,7 +703,7 @@ async def test_notifier_send_direct(
         json={"request_id": REQ_ID, "status": "ok"},
     )
     await notifier._pending.async_add(
-        [ButtonPressCustomEventProperty(hass, BASIC_ENTRY_DATA, {}, "btn", Template("click", hass))],
+        [ButtonPressCustomEventProperty(hass, entry_data, {}, "btn", Template("click", hass))],
         [],
     )
 
@@ -768,10 +773,12 @@ async def test_notifier_send_direct(
 
 
 async def test_notifier_send_cloud(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, caplog: pytest.LogCaptureFixture
+    hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
+    aioclient_mock: AiohttpClientMocker,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     await async_setup_component(hass, DOMAIN, {})
-    entry_data = MockConfigEntryData(hass, BASIC_ENTRY_DATA.entry)
 
     notifier = YandexCloudNotifier(hass, entry_data, BASIC_CONFIG, {})
     token = BASIC_CONFIG.token
@@ -800,7 +807,7 @@ async def test_notifier_send_cloud(
         json={"request_id": REQ_ID, "status": "ok"},
     )
     await notifier._pending.async_add(
-        [ButtonPressCustomEventProperty(hass, BASIC_ENTRY_DATA, {}, "btn", Template("click", hass))],
+        [ButtonPressCustomEventProperty(hass, entry_data, {}, "btn", Template("click", hass))],
         [],
     )
 
@@ -871,6 +878,7 @@ async def test_notifier_send_cloud(
 
 async def test_notifier_report_states(
     hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
     mock_call_later: AsyncMock,
     aioclient_mock: AiohttpClientMocker,
     caplog: pytest.LogCaptureFixture,
@@ -887,7 +895,7 @@ async def test_notifier_report_states(
         def get_value(self) -> bool | None:
             raise APIError(ResponseCode.INTERNAL_ERROR, "api error prop")
 
-    notifier = YandexDirectNotifier(hass, BASIC_ENTRY_DATA, BASIC_CONFIG, {})
+    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG, {})
     skill_id = BASIC_CONFIG.skill_id
     user_id = BASIC_CONFIG.user_id
     now = time.time()
@@ -902,11 +910,11 @@ async def test_notifier_report_states(
     assert aioclient_mock.call_count == 0
     assert notifier._unsub_report_states is None
 
-    await notifier._pending.async_add([OnOffCapabilityBasic(hass, BASIC_ENTRY_DATA, State("switch.on", "on"))], [])
-    await notifier._pending.async_add([MockCapabilityFail(hass, BASIC_ENTRY_DATA, State("switch.fail", "on"))], [])
-    await notifier._pending.async_add([TemperatureSensor(hass, BASIC_ENTRY_DATA, State("sensor.temperature", "5"))], [])
-    await notifier._pending.async_add([HumiditySensor(hass, BASIC_ENTRY_DATA, State("sensor.temperature", "5"))], [])
-    await notifier._pending.async_add([MockPropertyFail(hass, BASIC_ENTRY_DATA, State("sensor.fail", "5"))], [])
+    await notifier._pending.async_add([OnOffCapabilityBasic(hass, entry_data, State("switch.on", "on"))], [])
+    await notifier._pending.async_add([MockCapabilityFail(hass, entry_data, State("switch.fail", "on"))], [])
+    await notifier._pending.async_add([TemperatureSensor(hass, entry_data, State("sensor.temperature", "5"))], [])
+    await notifier._pending.async_add([HumiditySensor(hass, entry_data, State("sensor.temperature", "5"))], [])
+    await notifier._pending.async_add([MockPropertyFail(hass, entry_data, State("sensor.fail", "5"))], [])
 
     assert notifier._pending.empty is False
     with patch("time.time", return_value=now):
@@ -939,26 +947,26 @@ async def test_notifier_report_states(
     }
 
     with patch.object(notifier._pending, "async_get_all", return_value=notifier._pending._device_states):
-        await notifier._pending.async_add([OnOffCapabilityBasic(hass, BASIC_ENTRY_DATA, State("switch.on", "on"))], [])
+        await notifier._pending.async_add([OnOffCapabilityBasic(hass, entry_data, State("switch.on", "on"))], [])
         await notifier._async_report_states()
         await hass.async_block_till_done()
         assert notifier._pending.empty is False
         assert notifier._unsub_report_states is not None
 
 
-async def test_notifier_pending_states(hass: HomeAssistant) -> None:
+async def test_notifier_pending_states(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     ps = PendingStates()
-    await ps.async_add([OnOffCapabilityBasic(hass, BASIC_ENTRY_DATA, State("switch.test", "on"))], [])
+    await ps.async_add([OnOffCapabilityBasic(hass, entry_data, State("switch.test", "on"))], [])
     assert ps._device_states["switch.test"][0].get_value() is True
-    await ps.async_add([OnOffCapabilityBasic(hass, BASIC_ENTRY_DATA, State("switch.test", "off"))], [])
+    await ps.async_add([OnOffCapabilityBasic(hass, entry_data, State("switch.test", "off"))], [])
     assert ps._device_states["switch.test"][0].get_value() is False
 
 
-async def test_notifier_capability_check_value_change(hass: HomeAssistant) -> None:
+async def test_notifier_capability_check_value_change(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     ps = PendingStates()
     cap = get_custom_capability(
         hass,
-        BASIC_ENTRY_DATA,
+        entry_data,
         {
             CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "sensor.empty",
         },
@@ -986,9 +994,11 @@ async def test_notifier_capability_check_value_change(hass: HomeAssistant) -> No
 
 
 @pytest.mark.parametrize("instance", FloatPropertyInstance.__members__.values())
-async def test_notifier_float_property_check_value_change(hass: HomeAssistant, instance: FloatPropertyInstance) -> None:
+async def test_notifier_float_property_check_value_change(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, instance: FloatPropertyInstance
+) -> None:
     ps = PendingStates()
-    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {CONF_ENTITY_PROPERTY_TYPE: instance}, "sensor.foo")
+    prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "sensor.foo")
     await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template("5"))], []))
     await _assert_empty_list(
         ps.async_add([prop.new_with_value_template(Template("5"))], [prop.new_with_value_template(Template("5"))])
@@ -1010,7 +1020,7 @@ async def test_notifier_float_property_check_value_change(hass: HomeAssistant, i
 
 @pytest.mark.parametrize("instance", EventPropertyInstance.__members__.values())
 async def test_notifier_binary_event_property_check_value_change(
-    hass: HomeAssistant, instance: EventPropertyInstance
+    hass: HomeAssistant, entry_data: MockConfigEntryData, instance: EventPropertyInstance
 ) -> None:
     if instance in [EventPropertyInstance.BUTTON, EventPropertyInstance.VIBRATION]:
         return
@@ -1020,7 +1030,7 @@ async def test_notifier_binary_event_property_check_value_change(
         a_value, b_value = Template("normal"), Template("low")
 
     ps = PendingStates()
-    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
+    prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
     await _assert_empty_list(ps.async_add([prop.new_with_value_template(a_value)], []))
     await _assert_empty_list(
         ps.async_add([prop.new_with_value_template(a_value)], [prop.new_with_value_template(a_value)])
@@ -1043,9 +1053,11 @@ async def test_notifier_binary_event_property_check_value_change(
 @pytest.mark.parametrize(
     "instance,v", [(EventPropertyInstance.BUTTON, "click"), (EventPropertyInstance.VIBRATION, "on")]
 )
-async def test_notifier_reactive_event_property_check_value_change(hass: HomeAssistant, instance: str, v: str) -> None:
+async def test_notifier_reactive_event_property_check_value_change(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, instance: str, v: str
+) -> None:
     ps = PendingStates()
-    prop = get_custom_property(hass, BASIC_ENTRY_DATA, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
+    prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
     await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template(v))], []))
     await _assert_empty_list(
         ps.async_add([prop.new_with_value_template(Template(v))], [prop.new_with_value_template(Template(v))])

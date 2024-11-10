@@ -27,7 +27,7 @@ from custom_components.yandex_smart_home.schema import (
     VideoStreamCapabilityInstance,
 )
 
-from . import BASIC_ENTRY_DATA, MockConfigEntryData
+from . import MockConfigEntryData
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 try:
@@ -98,12 +98,12 @@ class MockCameraUnsupported(MockCamera):
         return None
 
 
-async def test_capability_video_stream_supported(hass: HomeAssistant) -> None:
+async def test_capability_video_stream_supported(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
     cap = cast(
         VideoStreamCapability,
         get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
+            hass, entry_data, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
         ),
     )
     assert cap.parameters.dict() == {"protocols": ["hls"]}
@@ -113,13 +113,13 @@ async def test_capability_video_stream_supported(hass: HomeAssistant) -> None:
 
     state = State("camera.no_stream", STATE_IDLE)
     assert_no_capabilities(
-        hass, BASIC_ENTRY_DATA, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
+        hass, entry_data, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
     )
 
 
-async def test_capability_video_stream_request_stream(hass: HomeAssistant) -> None:
+async def test_capability_video_stream_request_stream(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
-    cap = VideoStreamCapability(hass, BASIC_ENTRY_DATA, state)
+    cap = VideoStreamCapability(hass, entry_data, state)
 
     with patch(
         "custom_components.yandex_smart_home.capability_video.get_camera_from_entity_id",
@@ -141,7 +141,7 @@ async def test_capability_video_stream_direct(
     hass_platform_direct: HomeAssistant, config_entry_direct: MockConfigEntry
 ) -> None:
     hass = hass_platform_direct
-    entry_data = MockConfigEntryData(entry=config_entry_direct)
+    entry_data = MockConfigEntryData(hass, entry=config_entry_direct)
     state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
 
     cap = cast(
@@ -179,7 +179,7 @@ async def test_capability_video_stream_cloud(
     entry = MockConfigEntry(
         domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={CONF_CONNECTION_TYPE: connection_type}
     )
-    entry_data = MockConfigEntryData(entry=entry, yaml_config={CONF_SETTINGS: {CONF_CLOUD_STREAM: True}})
+    entry_data = MockConfigEntryData(hass, entry=entry, yaml_config={CONF_SETTINGS: {CONF_CLOUD_STREAM: True}})
     state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
 
     cap = cast(

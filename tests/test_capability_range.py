@@ -59,11 +59,13 @@ from custom_components.yandex_smart_home.schema import (
     ResponseCode,
 )
 
-from . import BASIC_ENTRY_DATA, MockConfigEntryData
+from . import MockConfigEntryData
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 
-async def test_capability_range(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+async def test_capability_range(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, caplog: pytest.LogCaptureFixture
+) -> None:
     class MockCapability(StateRangeCapability):
         instance = RangeCapabilityInstance.VOLUME
 
@@ -86,11 +88,11 @@ async def test_capability_range(hass: HomeAssistant, caplog: pytest.LogCaptureFi
         def support_random_access(self) -> bool:
             return True
 
-    cap = MockCapability(hass, BASIC_ENTRY_DATA, State("switch.test", STATE_ON))
+    cap = MockCapability(hass, entry_data, State("switch.test", STATE_ON))
     assert cap.retrievable is False
     assert cap.parameters == RangeCapabilityParameters(instance=RangeCapabilityInstance.VOLUME, random_access=False)
 
-    cap = MockCapabilityRandomAccess(hass, BASIC_ENTRY_DATA, State("switch.test", STATE_ON))
+    cap = MockCapabilityRandomAccess(hass, entry_data, State("switch.test", STATE_ON))
     assert cap.retrievable
     assert cap.support_random_access
     assert cap._range == RangeCapabilityRange(min=0.0, max=100.0, precision=1.0)
@@ -140,15 +142,19 @@ async def test_capability_range(hass: HomeAssistant, caplog: pytest.LogCaptureFi
     ],
 )
 async def test_capability_range_open(
-    hass: HomeAssistant, domain: str, set_position_feature: IntFlag, set_position_service: str
+    hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
+    domain: str,
+    set_position_feature: IntFlag,
+    set_position_service: str,
 ) -> None:
     state = State(f"{domain}.test", "open")
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN)
 
     state = State("cover.test", "open", {ATTR_SUPPORTED_FEATURES: set_position_feature})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -170,7 +176,7 @@ async def test_capability_range_open(
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
     )
     assert cap.get_value() == 30
 
@@ -191,9 +197,9 @@ async def test_capability_range_open(
     assert calls[3].data[cover.ATTR_POSITION] == 0
 
 
-async def test_capability_range_temperature_climate(hass: HomeAssistant) -> None:
+async def test_capability_range_temperature_climate(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("climate.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
 
     state = State(
         "climate.test",
@@ -207,9 +213,7 @@ async def test_capability_range_temperature_climate(hass: HomeAssistant) -> None
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -233,9 +237,7 @@ async def test_capability_range_temperature_climate(hass: HomeAssistant) -> None
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -267,9 +269,9 @@ async def test_capability_range_temperature_climate(hass: HomeAssistant) -> None
     assert calls[4].data[ATTR_TEMPERATURE] == 20.5
 
 
-async def test_capability_range_temperature_water_heater(hass: HomeAssistant) -> None:
+async def test_capability_range_temperature_water_heater(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("water_heater.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
 
     state = State(
         "water_heater.test",
@@ -282,9 +284,7 @@ async def test_capability_range_temperature_water_heater(hass: HomeAssistant) ->
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -308,9 +308,7 @@ async def test_capability_range_temperature_water_heater(hass: HomeAssistant) ->
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -336,7 +334,7 @@ async def test_capability_range_temperature_water_heater(hass: HomeAssistant) ->
     assert calls[4].data[ATTR_TEMPERATURE] == 30
 
 
-async def test_capability_range_humidity_humidifier(hass: HomeAssistant) -> None:
+async def test_capability_range_humidity_humidifier(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State(
         "humidifier.test",
         STATE_OFF,
@@ -347,7 +345,7 @@ async def test_capability_range_humidity_humidifier(hass: HomeAssistant) -> None
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -366,7 +364,7 @@ async def test_capability_range_humidity_humidifier(hass: HomeAssistant) -> None
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
     )
     assert cap.get_value() == 30
 
@@ -390,14 +388,14 @@ async def test_capability_range_humidity_humidifier(hass: HomeAssistant) -> None
     assert calls[4].data[humidifier.ATTR_HUMIDITY] == 25
 
 
-async def test_capability_range_humidity_fan(hass: HomeAssistant) -> None:
+async def test_capability_range_humidity_fan(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("fan.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY)
 
     state = State("fan.test", STATE_OFF, {ATTR_TARGET_HUMIDITY: 50, ATTR_MODEL: "zhimi.test.a"})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.HUMIDITY),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -429,16 +427,14 @@ async def test_capability_range_humidity_fan(hass: HomeAssistant) -> None:
     assert calls[4].data[humidifier.ATTR_HUMIDITY] == 45
 
 
-async def test_capability_range_brightness_legacy(hass: HomeAssistant) -> None:
+async def test_capability_range_brightness_legacy(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("light.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS)
 
     state = State("light.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: light.SUPPORT_BRIGHTNESS})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -455,15 +451,15 @@ async def test_capability_range_brightness_legacy(hass: HomeAssistant) -> None:
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
     )
     assert cap.get_value() == 50
 
 
 @pytest.mark.parametrize("color_mode", sorted(light.COLOR_MODES_BRIGHTNESS))
-async def test_capability_range_brightness(hass: HomeAssistant, color_mode: ColorMode) -> None:
+async def test_capability_range_brightness(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, color_mode: ColorMode
+) -> None:
     state = State(
         "light.test",
         STATE_ON,
@@ -471,9 +467,7 @@ async def test_capability_range_brightness(hass: HomeAssistant, color_mode: Colo
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -488,9 +482,7 @@ async def test_capability_range_brightness(hass: HomeAssistant, color_mode: Colo
     state = State("light.test", STATE_ON, {light.ATTR_SUPPORTED_COLOR_MODES: [color_mode], light.ATTR_BRIGHTNESS: 128})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(
-            hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS
-        ),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
     )
     assert cap.get_value() == 50
 
@@ -516,7 +508,7 @@ async def test_capability_range_brightness(hass: HomeAssistant, color_mode: Colo
 
 async def test_capability_range_volume(hass: HomeAssistant) -> None:
     state = State("media_player.test", STATE_ON)
-    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["volume_set"]}})
+    entry_data = MockConfigEntryData(hass, entity_config={state.entity_id: {"features": ["volume_set"]}})
     cap = cast(
         RangeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
@@ -531,9 +523,11 @@ async def test_capability_range_volume(hass: HomeAssistant) -> None:
         MediaPlayerEntityFeature.VOLUME_SET | MediaPlayerEntityFeature.VOLUME_STEP,
     ],
 )
-async def test_capability_range_volume_support_random(hass: HomeAssistant, features: MediaPlayerEntityFeature) -> None:
+async def test_capability_range_volume_support_random(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, features: MediaPlayerEntityFeature
+) -> None:
     state = State("media_player.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME)
 
     state = State(
         "media_player.test",
@@ -544,7 +538,7 @@ async def test_capability_range_volume_support_random(hass: HomeAssistant, featu
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -560,7 +554,7 @@ async def test_capability_range_volume_support_random(hass: HomeAssistant, featu
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.get_value() == 56
 
@@ -582,7 +576,7 @@ async def test_capability_range_volume_support_random(hass: HomeAssistant, featu
     assert calls[4].data[media_player.ATTR_MEDIA_VOLUME_LEVEL] == 0.46
 
 
-async def test_capability_range_volume_custom_range(hass: HomeAssistant) -> None:
+async def test_capability_range_volume_custom_range(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State(
         "media_player.test",
         STATE_OFF,
@@ -590,7 +584,7 @@ async def test_capability_range_volume_custom_range(hass: HomeAssistant) -> None
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -612,7 +606,7 @@ async def test_capability_range_volume_custom_range(hass: HomeAssistant) -> None
                     entity_range_config[CONF_ENTITY_RANGE_PRECISION] = range_prec
 
                 entry_data = MockConfigEntryData(
-                    entity_config={state.entity_id: {CONF_ENTITY_RANGE: entity_range_config}}
+                    hass, entity_config={state.entity_id: {CONF_ENTITY_RANGE: entity_range_config}}
                 )
                 cap = cast(
                     RangeCapability,
@@ -637,11 +631,13 @@ async def test_capability_range_volume_custom_range(hass: HomeAssistant) -> None
 
 
 @pytest.mark.parametrize("precision", [2, 10, None])
-async def test_capability_range_volume_only_relative(hass: HomeAssistant, precision: int | None) -> None:
+async def test_capability_range_volume_only_relative(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, precision: int | None
+) -> None:
     state = State("media_player.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.VOLUME_STEP})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.support_random_access is False
 
@@ -649,7 +645,7 @@ async def test_capability_range_volume_only_relative(hass: HomeAssistant, precis
     if precision:
         entity_config = {CONF_ENTITY_RANGE: {CONF_ENTITY_RANGE_PRECISION: precision}}
 
-    entry_data = MockConfigEntryData(entity_config={state.entity_id: entity_config})
+    entry_data = MockConfigEntryData(hass, entity_config={state.entity_id: entity_config})
     cap = cast(
         RangeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
@@ -699,12 +695,12 @@ async def test_capability_range_volume_only_relative(hass: HomeAssistant, precis
         assert calls_one_down[i].data[ATTR_ENTITY_ID] == state.entity_id
 
 
-async def test_capability_range_channel_via_features(hass: HomeAssistant) -> None:
+async def test_capability_range_channel_via_features(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("media_player.test", STATE_OFF)
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
 
     state = State("media_player.test", STATE_ON)
-    entry_data = MockConfigEntryData(entity_config={state.entity_id: {"features": ["next_previous_track"]}})
+    entry_data = MockConfigEntryData(hass, entity_config={state.entity_id: {"features": ["next_previous_track"]}})
     cap = cast(
         RangeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
@@ -721,7 +717,7 @@ async def test_capability_range_channel_set_via_config(hass: HomeAssistant) -> N
             ATTR_DEVICE_CLASS: MediaPlayerDeviceClass.TV,
         },
     )
-    entry_data = MockConfigEntryData(entity_config={state.entity_id: {CONF_SUPPORT_SET_CHANNEL: False}})
+    entry_data = MockConfigEntryData(hass, entity_config={state.entity_id: {CONF_SUPPORT_SET_CHANNEL: False}})
     assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
 
     state = State(
@@ -743,7 +739,7 @@ async def test_capability_range_channel_set_via_config(hass: HomeAssistant) -> N
     assert cap.support_random_access is False
 
 
-async def test_capability_range_channel_set_random(hass: HomeAssistant) -> None:
+async def test_capability_range_channel_set_random(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State(
         "media_player.test",
         STATE_OFF,
@@ -753,7 +749,7 @@ async def test_capability_range_channel_set_random(hass: HomeAssistant) -> None:
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is False
     assert cap.support_random_access is False
@@ -768,7 +764,7 @@ async def test_capability_range_channel_set_random(hass: HomeAssistant) -> None:
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is False
     assert cap.support_random_access is False
@@ -783,7 +779,7 @@ async def test_capability_range_channel_set_random(hass: HomeAssistant) -> None:
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -822,7 +818,7 @@ async def test_capability_range_channel_set_random(hass: HomeAssistant) -> None:
         assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
 
 
-async def test_capability_range_channel_set_not_supported(hass: HomeAssistant) -> None:
+async def test_capability_range_channel_set_not_supported(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State(
         "media_player.test",
         STATE_OFF,
@@ -833,7 +829,7 @@ async def test_capability_range_channel_set_not_supported(hass: HomeAssistant) -
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -851,7 +847,9 @@ async def test_capability_range_channel_set_not_supported(hass: HomeAssistant) -
         )
 
 
-async def test_capability_range_channel_set_random_with_value(hass: HomeAssistant) -> None:
+async def test_capability_range_channel_set_random_with_value(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
     state = State(
         "media_player.test",
         STATE_OFF,
@@ -864,7 +862,7 @@ async def test_capability_range_channel_set_random_with_value(hass: HomeAssistan
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
@@ -898,7 +896,9 @@ async def test_capability_range_channel_set_random_with_value(hass: HomeAssistan
     }
 
 
-async def test_capability_range_channel_value(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+async def test_capability_range_channel_value(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, caplog: pytest.LogCaptureFixture
+) -> None:
     state = State(
         "media_player.test",
         STATE_OFF,
@@ -910,7 +910,7 @@ async def test_capability_range_channel_value(hass: HomeAssistant, caplog: pytes
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.get_value() == 5
 
@@ -925,7 +925,7 @@ async def test_capability_range_channel_value(hass: HomeAssistant, caplog: pytes
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.get_value() is None
 
@@ -940,7 +940,7 @@ async def test_capability_range_channel_value(hass: HomeAssistant, caplog: pytes
     )
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     assert cap.get_value() is None
     assert len(caplog.records) == 0
@@ -957,15 +957,18 @@ async def test_capability_range_channel_value(hass: HomeAssistant, caplog: pytes
 )
 @pytest.mark.parametrize("device_class", [MediaPlayerDeviceClass.TV, MediaPlayerDeviceClass.RECEIVER])
 async def test_capability_range_channel_set_relative(
-    hass: HomeAssistant, features: MediaPlayerEntityFeature, device_class: MediaPlayerDeviceClass
+    hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
+    features: MediaPlayerEntityFeature,
+    device_class: MediaPlayerDeviceClass,
 ) -> None:
     state = State("media_player.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: MediaPlayerEntityFeature.PREVIOUS_TRACK})
-    assert_no_capabilities(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL)
 
     state = State("media_player.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, ATTR_DEVICE_CLASS: device_class})
     cap = cast(
         RangeCapability,
-        get_exact_one_capability(hass, BASIC_ENTRY_DATA, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.CHANNEL),
     )
     if device_class == MediaPlayerDeviceClass.TV:
         assert cap.retrievable is bool(features & MediaPlayerEntityFeature.PLAY_MEDIA)
@@ -1005,7 +1008,7 @@ async def test_capability_range_channel_set_relative(
     ],
 )
 async def test_capability_range_relative_only_parameters(
-    hass: HomeAssistant, instance: RangeCapabilityInstance, range_required: bool
+    hass: HomeAssistant, entry_data: MockConfigEntryData, instance: RangeCapabilityInstance, range_required: bool
 ) -> None:
     class MockCapability(StateRangeCapability, ABC):
         instance = RangeCapabilityInstance.BRIGHTNESS
@@ -1030,8 +1033,8 @@ async def test_capability_range_relative_only_parameters(
         def support_random_access(self) -> bool:
             return False
 
-    cap_random = MockCapabilityRandom(hass, BASIC_ENTRY_DATA, State("switch.foo", STATE_OFF))
-    cap_relative = MockCapabilityRelative(hass, BASIC_ENTRY_DATA, State("switch.foo", STATE_OFF))
+    cap_random = MockCapabilityRandom(hass, entry_data, State("switch.foo", STATE_OFF))
+    cap_relative = MockCapabilityRelative(hass, entry_data, State("switch.foo", STATE_OFF))
     cap_random.instance = cap_relative.instance = instance
 
     assert cap_random.parameters.range is not None

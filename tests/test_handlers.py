@@ -32,10 +32,21 @@ from custom_components.yandex_smart_home.schema import (
     ToggleCapabilityInstanceActionState,
 )
 
-from . import BASIC_REQUEST_DATA, REQ_ID, MockConfigEntryData, generate_entity_filter
+from . import REQ_ID, MockConfigEntryData, generate_entity_filter
 
 
-async def test_handle_request(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+@pytest.fixture()
+def request_data(entry_data: MockConfigEntryData) -> RequestData:
+    return RequestData(
+        entry_data=entry_data,
+        context=Context(),
+        platform=SmartHomePlatform.YANDEX,
+        request_user_id="test",
+        request_id=REQ_ID,
+    )
+
+
+async def test_handle_request(hass: HomeAssistant, request_data: RequestData, caplog: pytest.LogCaptureFixture) -> None:
     r = Registry[str, Any]()
 
     @r.register("error")
@@ -51,19 +62,19 @@ async def test_handle_request(hass: HomeAssistant, caplog: pytest.LogCaptureFixt
         return None
 
     with patch("custom_components.yandex_smart_home.handlers.HANDLERS", r):
-        assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "missing", "")).as_dict() == {
+        assert (await handlers.async_handle_request(hass, request_data, "missing", "")).as_dict() == {
             "request_id": REQ_ID,
         }
         assert caplog.messages == ["Unexpected action 'missing'"]
         caplog.clear()
 
-        assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "error", "")).as_dict() == {
+        assert (await handlers.async_handle_request(hass, request_data, "error", "")).as_dict() == {
             "request_id": REQ_ID,
         }
         assert caplog.messages == ["foo (INVALID_ACTION)"]
         caplog.clear()
 
-        assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "exception", "")).as_dict() == {
+        assert (await handlers.async_handle_request(hass, request_data, "exception", "")).as_dict() == {
             "request_id": REQ_ID,
         }
         assert caplog.records[-1].message == "Unexpected exception"
@@ -71,7 +82,7 @@ async def test_handle_request(hass: HomeAssistant, caplog: pytest.LogCaptureFixt
         assert "boooo" in caplog.records[-1].exc_text
         caplog.clear()
 
-        assert (await handlers.async_handle_request(hass, BASIC_REQUEST_DATA, "none", "")).as_dict() == {
+        assert (await handlers.async_handle_request(hass, request_data, "none", "")).as_dict() == {
             "request_id": REQ_ID,
         }
 
@@ -85,6 +96,7 @@ async def test_handler_devices_query(hass: HomeAssistant, caplog: pytest.LogCapt
     hass.states.async_set(sensor.entity_id, sensor.state, sensor.attributes)
 
     entry_data = MockConfigEntryData(
+        hass,
         entity_config={
             switch_1.entity_id: {
                 CONF_ENTITY_CUSTOM_RANGES: {
@@ -226,7 +238,9 @@ async def test_handler_user_unlink(hass_platform_direct: HomeAssistant, hass_adm
         await hass.async_block_till_done()
 
 
-async def test_handler_devices_action(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+async def test_handler_devices_action(
+    hass: HomeAssistant, request_data: RequestData, caplog: pytest.LogCaptureFixture
+) -> None:
     class MockCapability(StateToggleCapability):
         @property
         def supported(self) -> bool:
@@ -333,7 +347,7 @@ async def test_handler_devices_action(hass: HomeAssistant, caplog: pytest.LogCap
                 }
             }
         )
-        resp = await handlers.async_devices_action(hass, BASIC_REQUEST_DATA, payload)
+        resp = await handlers.async_devices_action(hass, request_data, payload)
         assert resp
         assert resp.as_dict() == {
             "devices": [
@@ -468,6 +482,7 @@ async def test_handler_devices_action_error_template(hass: HomeAssistant, caplog
             pass
 
     entry_data = MockConfigEntryData(
+        hass,
         entity_config={
             "switch.test": {
                 "error_code_template": Template(
@@ -485,7 +500,7 @@ async def test_handler_devices_action_error_template(hass: HomeAssistant, caplog
                 """
                 )
             }
-        }
+        },
     )
     data = RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "test", REQ_ID)
 
@@ -595,7 +610,7 @@ async def test_handler_devices_action_error_template(hass: HomeAssistant, caplog
 
 
 async def test_handler_devices_action_not_allowed(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
-    entry_data = MockConfigEntryData(entity_config={"switch.test": {"turn_on": False}})
+    entry_data = MockConfigEntryData(hass, entity_config={"switch.test": {"turn_on": False}})
     data = RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "test", REQ_ID)
 
     switch = State("switch.test", STATE_OFF)

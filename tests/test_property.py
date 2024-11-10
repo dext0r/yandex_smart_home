@@ -18,8 +18,7 @@ from custom_components.yandex_smart_home.schema import (
     PropertyInstance,
     PropertyType,
 )
-
-from . import BASIC_ENTRY_DATA
+from tests import MockConfigEntryData
 
 
 @typing.overload
@@ -121,7 +120,7 @@ def assert_no_properties(
     assert len(get_properties(hass, entry_data, state, property_type, instance)) == 0
 
 
-async def test_property_demo_platform(hass: HomeAssistant) -> None:
+async def test_property_demo_platform(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     with patch(
         "homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM",
         [Platform.CLIMATE, Platform.SENSOR, Platform.BINARY_SENSOR],
@@ -131,11 +130,11 @@ async def test_property_demo_platform(hass: HomeAssistant) -> None:
         await hass.async_block_till_done()
 
     # for x in hass.states.async_all():
-    #     d = Device(hass, BASIC_ENTRY_DATA, x.entity_id, x)
+    #     d = Device(hass, entry_data, x.entity_id, x)
     #     l = list((c.type.value, c.instance.value) for c in d.get_properties())
     #     print(f"state = hass.states.get('{x.entity_id}')")
     #     print(f"assert state is not None")
-    #     print(f"device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)")
+    #     print(f"device = Device(hass, entry_data, state.entity_id, state)")
     #     if d.type is None:
     #         print(f"assert device.type is None")
     #     else:
@@ -146,112 +145,112 @@ async def test_property_demo_platform(hass: HomeAssistant) -> None:
 
     state = hass.states.get("zone.home")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type is None
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == []
 
     state = hass.states.get("climate.heatpump")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.thermostat"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "temperature")]
 
     state = hass.states.get("climate.hvac")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.thermostat"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "temperature"), ("devices.properties.float", "humidity")]
 
     state = hass.states.get("climate.ecobee")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.thermostat"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "temperature")]
 
     state = hass.states.get("sensor.outside_temperature")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor.climate"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "temperature"), ("devices.properties.float", "battery_level")]
 
     state = hass.states.get("sensor.outside_humidity")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor.climate"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "humidity")]
 
     state = hass.states.get("sensor.carbon_monoxide")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor.climate"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == []
 
     state = hass.states.get("sensor.carbon_dioxide")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor.climate"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "co2_level"), ("devices.properties.float", "battery_level")]
 
     state = hass.states.get("sensor.power_consumption")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "power")]
 
     state = hass.states.get("sensor.total_energy_kwh")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.smart_meter.electricity"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "electricity_meter")]
 
     state = hass.states.get("sensor.total_energy_mwh")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.smart_meter.electricity"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "electricity_meter")]
 
     state = hass.states.get("sensor.total_gas_m3")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.smart_meter.gas"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "gas_meter")]
 
     state = hass.states.get("sensor.total_gas_ft3")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.smart_meter.gas"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.float", "gas_meter")]
 
     state = hass.states.get("sensor.thermostat")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == []
 
     state = hass.states.get("binary_sensor.basement_floor_wet")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor.water_leak"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.event", "water_leak")]
 
     state = hass.states.get("binary_sensor.movement_backyard")
     assert state is not None
-    device = Device(hass, BASIC_ENTRY_DATA, state.entity_id, state)
+    device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor.motion"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.event", "motion")]
