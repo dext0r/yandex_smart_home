@@ -497,7 +497,8 @@ async def test_handler_devices_action_error_template(hass: HomeAssistant, caplog
                     {% elif capability.state.instance == 'backlight' and capability.state.value %}
                         {{ entity_id }}: WAT?
                     {% endif %}
-                """
+                """,
+                    hass,
                 )
             }
         },

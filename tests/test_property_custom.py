@@ -253,7 +253,7 @@ async def test_property_custom_get_value_float(hass: HomeAssistant, entry_data: 
         entry_data,
         {
             CONF_ENTITY_PROPERTY_TYPE: "temperature",
-            CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("{{ 1 + 2 }}"),
+            CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("{{ 1 + 2 }}", hass),
         },
         state.entity_id,
     )
@@ -264,7 +264,7 @@ async def test_property_custom_get_value_float(hass: HomeAssistant, entry_data: 
         entry_data,
         {
             CONF_ENTITY_PROPERTY_TYPE: "temperature",
-            CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("{{ 1 / 0 }}"),
+            CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("{{ 1 / 0 }}", hass),
         },
         state.entity_id,
     )

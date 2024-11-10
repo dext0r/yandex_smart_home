@@ -137,7 +137,7 @@ async def test_capability_custom_value(hass: HomeAssistant, entry_data: MockConf
         hass,
         entry_data,
         {
-            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1 + 2 }}"),
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1 + 2 }}", hass),
         },
         CapabilityType.RANGE,
         RangeCapabilityInstance.HUMIDITY,
@@ -150,7 +150,7 @@ async def test_capability_custom_value(hass: HomeAssistant, entry_data: MockConf
         hass,
         entry_data,
         {
-            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1/0 }}"),
+            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1/0 }}", hass),
         },
         CapabilityType.RANGE,
         RangeCapabilityInstance.HUMIDITY,
@@ -268,7 +268,7 @@ async def test_capability_custom_mode(hass: HomeAssistant, entry_data: MockConfi
     assert calls[0].data == {"service_mode": "mode: mode_1", ATTR_ENTITY_ID: ["switch.test"]}
 
     for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
-        assert cap.new_with_value_template(Template(t)).get_value() is None
+        assert cap.new_with_value_template(Template(t, hass)).get_value() is None
 
 
 @pytest.mark.parametrize("domain", ["switch", "light"])
@@ -357,7 +357,7 @@ async def test_capability_custom_mode_scene(hass: HomeAssistant, domain: str) ->
     assert calls[0].data == {"service_mode": "mode: bar", ATTR_ENTITY_ID: [state.entity_id]}
 
     for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
-        assert scene_cap.new_with_value_template(Template(t)).get_value() is None
+        assert scene_cap.new_with_value_template(Template(t, hass)).get_value() is None
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -449,13 +449,13 @@ async def test_capability_custom_toggle(hass: HomeAssistant, entry_data: MockCon
     assert calls_off[0].data == {ATTR_ENTITY_ID: ["switch.test2"]}
 
     for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
-        assert cap.new_with_value_template(Template(t)).get_value() is None
+        assert cap.new_with_value_template(Template(t, hass)).get_value() is None
 
     for t in ("True", "on", "1"):
-        assert cap.new_with_value_template(Template(t)).get_value() is True
+        assert cap.new_with_value_template(Template(t, hass)).get_value() is True
 
     for t in ("False", "off", "0"):
-        assert cap.new_with_value_template(Template(t)).get_value() is False
+        assert cap.new_with_value_template(Template(t, hass)).get_value() is False
 
 
 async def test_capability_custom_range_random_access(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -516,7 +516,7 @@ async def test_capability_custom_range_random_access(hass: HomeAssistant, entry_
     assert calls[4].data["value"] == "value: 10"
 
     for t in ("False", "None", STATE_UNKNOWN, STATE_UNAVAILABLE):
-        assert cap.new_with_value_template(Template(t)).get_value() is None
+        assert cap.new_with_value_template(Template(t, hass)).get_value() is None
 
     hass.states.async_set(state.entity_id, STATE_UNKNOWN)
     with pytest.raises(APIError) as e:

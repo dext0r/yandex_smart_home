@@ -452,7 +452,9 @@ async def test_notifier_track_templates_exception(
             "light.kitchen": {
                 CONF_ENTITY_CUSTOM_RANGES: {
                     "volume": {
-                        CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 100 / states('sensor.v')|int(10) }}")
+                        CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template(
+                            "{{ 100 / states('sensor.v')|int(10) }}", hass
+                        )
                     }
                 },
             },
@@ -974,21 +976,27 @@ async def test_notifier_capability_check_value_change(hass: HomeAssistant, entry
         RangeCapabilityInstance.OPEN,
         "foo",
     )
-    await _assert_not_empty_list(ps.async_add([cap.new_with_value_template(Template("5"))], []))
+    await _assert_not_empty_list(ps.async_add([cap.new_with_value_template(Template("5", hass))], []))
     await _assert_empty_list(
-        ps.async_add([cap.new_with_value_template(Template("5"))], [cap.new_with_value_template(Template("5"))])
-    )
-    await _assert_not_empty_list(
-        ps.async_add([cap.new_with_value_template(Template("5"))], [cap.new_with_value_template(Template("6"))])
+        ps.async_add(
+            [cap.new_with_value_template(Template("5", hass))], [cap.new_with_value_template(Template("5", hass))]
+        )
     )
     await _assert_not_empty_list(
         ps.async_add(
-            [cap.new_with_value_template(Template("5"))], [cap.new_with_value_template(Template(STATE_UNAVAILABLE))]
+            [cap.new_with_value_template(Template("5", hass))], [cap.new_with_value_template(Template("6", hass))]
+        )
+    )
+    await _assert_not_empty_list(
+        ps.async_add(
+            [cap.new_with_value_template(Template("5", hass))],
+            [cap.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
         )
     )
     await _assert_empty_list(
         ps.async_add(
-            [cap.new_with_value_template(Template(STATE_UNAVAILABLE))], [cap.new_with_value_template(Template("5"))]
+            [cap.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
+            [cap.new_with_value_template(Template("5", hass))],
         )
     )
 
@@ -999,21 +1007,27 @@ async def test_notifier_float_property_check_value_change(
 ) -> None:
     ps = PendingStates()
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "sensor.foo")
-    await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template("5"))], []))
+    await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template("5", hass))], []))
     await _assert_empty_list(
-        ps.async_add([prop.new_with_value_template(Template("5"))], [prop.new_with_value_template(Template("5"))])
-    )
-    await _assert_not_empty_list(
-        ps.async_add([prop.new_with_value_template(Template("5"))], [prop.new_with_value_template(Template("6"))])
+        ps.async_add(
+            [prop.new_with_value_template(Template("5", hass))], [prop.new_with_value_template(Template("5", hass))]
+        )
     )
     await _assert_not_empty_list(
         ps.async_add(
-            [prop.new_with_value_template(Template("5"))], [prop.new_with_value_template(Template(STATE_UNAVAILABLE))]
+            [prop.new_with_value_template(Template("5", hass))], [prop.new_with_value_template(Template("6", hass))]
+        )
+    )
+    await _assert_not_empty_list(
+        ps.async_add(
+            [prop.new_with_value_template(Template("5", hass))],
+            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
         )
     )
     await _assert_empty_list(
         ps.async_add(
-            [prop.new_with_value_template(Template(STATE_UNAVAILABLE))], [prop.new_with_value_template(Template("5"))]
+            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
+            [prop.new_with_value_template(Template("5", hass))],
         )
     )
 
@@ -1025,9 +1039,9 @@ async def test_notifier_binary_event_property_check_value_change(
     if instance in [EventPropertyInstance.BUTTON, EventPropertyInstance.VIBRATION]:
         return
 
-    a_value, b_value = Template("on"), Template("off")
+    a_value, b_value = Template("on", hass), Template("off", hass)
     if instance == EventPropertyInstance.FOOD_LEVEL:
-        a_value, b_value = Template("normal"), Template("low")
+        a_value, b_value = Template("normal", hass), Template("low", hass)
 
     ps = PendingStates()
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
@@ -1040,12 +1054,12 @@ async def test_notifier_binary_event_property_check_value_change(
     )
     await _assert_empty_list(
         ps.async_add(
-            [prop.new_with_value_template(a_value)], [prop.new_with_value_template(Template(STATE_UNAVAILABLE))]
+            [prop.new_with_value_template(a_value)], [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))]
         )
     )
     await _assert_empty_list(
         ps.async_add(
-            [prop.new_with_value_template(Template(STATE_UNAVAILABLE))], [prop.new_with_value_template(a_value)]
+            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))], [prop.new_with_value_template(a_value)]
         )
     )
 
@@ -1058,20 +1072,26 @@ async def test_notifier_reactive_event_property_check_value_change(
 ) -> None:
     ps = PendingStates()
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
-    await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template(v))], []))
+    await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template(v, hass))], []))
     await _assert_empty_list(
-        ps.async_add([prop.new_with_value_template(Template(v))], [prop.new_with_value_template(Template(v))])
-    )
-    await _assert_not_empty_list(
-        ps.async_add([prop.new_with_value_template(Template(v))], [prop.new_with_value_template(Template("off"))])
+        ps.async_add(
+            [prop.new_with_value_template(Template(v, hass))], [prop.new_with_value_template(Template(v, hass))]
+        )
     )
     await _assert_not_empty_list(
         ps.async_add(
-            [prop.new_with_value_template(Template(v))], [prop.new_with_value_template(Template(STATE_UNAVAILABLE))]
+            [prop.new_with_value_template(Template(v, hass))], [prop.new_with_value_template(Template("off", hass))]
+        )
+    )
+    await _assert_not_empty_list(
+        ps.async_add(
+            [prop.new_with_value_template(Template(v, hass))],
+            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
         )
     )
     await _assert_empty_list(
         ps.async_add(
-            [prop.new_with_value_template(Template(STATE_UNAVAILABLE))], [prop.new_with_value_template(Template(v))]
+            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
+            [prop.new_with_value_template(Template(v, hass))],
         )
     )
