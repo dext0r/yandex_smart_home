@@ -1,5 +1,5 @@
-# pyright: reportOptionalMemberAccess=false
 import json
+from typing import Any
 from unittest.mock import Mock, patch
 
 from homeassistant.auth.models import User
@@ -7,6 +7,7 @@ from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers.template import Template
 from homeassistant.util.decorator import Registry
+import pytest
 
 from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome, handlers
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
@@ -34,19 +35,19 @@ from custom_components.yandex_smart_home.schema import (
 from . import BASIC_REQUEST_DATA, REQ_ID, MockConfigEntryData, generate_entity_filter
 
 
-async def test_handle_request(hass, caplog):
-    r = Registry()
+async def test_handle_request(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+    r = Registry[str, Any]()
 
     @r.register("error")
-    async def error(*_, **__):
+    async def error(*_: Any, **__: Any) -> None:
         raise APIError(ResponseCode.INVALID_ACTION, "foo")
 
     @r.register("exception")
-    async def exception(*_, **__):
+    async def exception(*_: Any, **__: Any) -> None:
         raise ValueError("boooo")
 
     @r.register("none")
-    async def none(*_, **__):
+    async def none(*_: Any, **__: Any) -> None:
         return None
 
     with patch("custom_components.yandex_smart_home.handlers.HANDLERS", r):
@@ -66,6 +67,7 @@ async def test_handle_request(hass, caplog):
             "request_id": REQ_ID,
         }
         assert caplog.records[-1].message == "Unexpected exception"
+        assert caplog.records[-1].exc_text
         assert "boooo" in caplog.records[-1].exc_text
         caplog.clear()
 
@@ -74,7 +76,7 @@ async def test_handle_request(hass, caplog):
         }
 
 
-async def test_handler_devices_query(hass, caplog):
+async def test_handler_devices_query(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     switch_1 = State("switch.test_1", STATE_OFF)
     switch_not_expose = State("switch.not_expose", STATE_ON)
     sensor = State("sensor.test", "33")
@@ -104,7 +106,9 @@ async def test_handler_devices_query(hass, caplog):
     )
 
     caplog.clear()
-    assert (await handlers.async_devices_query(hass, data, payload)).as_dict() == {
+    resp = await handlers.async_devices_query(hass, data, payload)
+    assert resp
+    assert resp.as_dict() == {
         "devices": [
             {
                 "id": "switch.test_1",
@@ -123,7 +127,9 @@ async def test_handler_devices_query(hass, caplog):
     ]
 
     with patch.object(entry_data, "link_platform"):
-        assert (await handlers.async_device_list(hass, data, "")).as_dict() == {
+        resp = await handlers.async_device_list(hass, data, "")
+        assert resp
+        assert resp.as_dict() == {
             "user_id": "user",
             "devices": [
                 {
@@ -220,7 +226,7 @@ async def test_handler_user_unlink(hass_platform_direct: HomeAssistant, hass_adm
         await hass.async_block_till_done()
 
 
-async def test_handler_devices_action(hass, caplog):
+async def test_handler_devices_action(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     class MockCapability(StateToggleCapability):
         @property
         def supported(self) -> bool:
@@ -248,7 +254,7 @@ async def test_handler_devices_action(hass, caplog):
     class MockCapabilityFail(MockCapability):
         instance = ToggleCapabilityInstance.IONIZATION
 
-        async def set_instance_state(self, *_, **__):
+        async def set_instance_state(self, *_: Any, **__: Any) -> None:
             raise Exception("fail set_state")
 
     class MockCapabilityUnsupported(MockCapability):
@@ -327,7 +333,9 @@ async def test_handler_devices_action(hass, caplog):
                 }
             }
         )
-        assert (await handlers.async_devices_action(hass, BASIC_REQUEST_DATA, payload)).as_dict() == {
+        resp = await handlers.async_devices_action(hass, BASIC_REQUEST_DATA, payload)
+        assert resp
+        assert resp.as_dict() == {
             "devices": [
                 {
                     "id": "switch.test_1",
@@ -418,7 +426,7 @@ async def test_handler_devices_action(hass, caplog):
         ]
 
 
-async def test_handler_devices_action_error_template(hass, caplog):
+async def test_handler_devices_action_error_template(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     class MockCapabilityA(OnOffCapability):
         @property
         def supported(self) -> bool:
@@ -514,7 +522,9 @@ async def test_handler_devices_action_error_template(hass, caplog):
             }
         )
 
-        assert (await handlers.async_devices_action(hass, data, payload)).as_dict() == {
+        resp = await handlers.async_devices_action(hass, data, payload)
+        assert resp
+        assert resp.as_dict() == {
             "devices": [
                 {
                     "id": "switch.test",
@@ -564,7 +574,9 @@ async def test_handler_devices_action_error_template(hass, caplog):
             }
         )
 
-        assert (await handlers.async_devices_action(hass, data, payload)).as_dict() == {
+        resp = await handlers.async_devices_action(hass, data, payload)
+        assert resp
+        assert resp.as_dict() == {
             "devices": [
                 {
                     "id": "switch.test",
@@ -582,7 +594,7 @@ async def test_handler_devices_action_error_template(hass, caplog):
         }
 
 
-async def test_handler_devices_action_not_allowed(hass, caplog):
+async def test_handler_devices_action_not_allowed(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     entry_data = MockConfigEntryData(entity_config={"switch.test": {"turn_on": False}})
     data = RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "test", REQ_ID)
 
@@ -607,7 +619,9 @@ async def test_handler_devices_action_not_allowed(hass, caplog):
         }
     )
 
-    assert (await handlers.async_devices_action(hass, data, payload)).as_dict() == {
+    resp = await handlers.async_devices_action(hass, data, payload)
+    assert resp
+    assert resp.as_dict() == {
         "devices": [
             {
                 "id": "switch.test",

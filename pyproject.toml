@@ -114,30 +114,6 @@ disable_error_code = [
     "func-returns-value",
 ]
 
-[[tool.mypy.overrides]]
-module = "tests.test_capability"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_cloud"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_cloud_stream"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_device"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_entry_data"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.test_handlers"
-ignore_errors = true
-
 [tool.tox]
 env_list = [
     "type",

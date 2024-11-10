@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from homeassistant.auth.models import User
 from homeassistant.const import CONF_PLATFORM
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
@@ -26,12 +27,12 @@ from custom_components.yandex_smart_home.schema import ResponseCode
 from . import MockConfigEntryData, generate_entity_filter
 
 
-def test_entry_data_unknown_version(hass):
+def test_entry_data_unknown_version(hass: HomeAssistant) -> None:
     entry_data = ConfigEntryData(hass, MockConfigEntry())
     assert entry_data.component_version == "unknown"
 
 
-def test_entry_data_platform(hass):
+def test_entry_data_platform(hass: HomeAssistant) -> None:
     entry_data = MockConfigEntryData(
         hass=hass,
         entry=MockConfigEntry(
@@ -53,7 +54,7 @@ def test_entry_data_platform(hass):
     assert entry_data.platform is None
 
 
-def test_entry_data_trackable_states(hass, caplog):
+def test_entry_data_trackable_states(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     entry_data = MockConfigEntryData(
         hass=hass,
         entity_config={
@@ -74,7 +75,7 @@ def test_entry_data_trackable_states(hass, caplog):
     assert caplog.messages == ["Failed to track custom capability: foo"]
 
 
-async def test_entry_data_get_context_user_id(hass, hass_read_only_user):
+async def test_entry_data_get_context_user_id(hass: HomeAssistant, hass_read_only_user: User) -> None:
     entry_data = MockConfigEntryData(
         hass=hass,
         entry=MockConfigEntry(domain=DOMAIN, version=ConfigFlowHandler.VERSION, data={}, options={CONF_USER_ID: "foo"}),
@@ -150,7 +151,7 @@ async def test_deprecated_notifier(
     assert issue_registry.async_get_issue(DOMAIN, "deprecated_yaml_several_notifiers") is None
     await hass.config_entries.async_unload(config_entry_direct.entry_id)
 
-    component: YandexSmartHome = hass.data[DOMAIN]
+    component = hass.data[DOMAIN]
     component._yaml_config = {CONF_NOTIFIER: ["foo", "bar"]}
     await hass.config_entries.async_setup(config_entry_direct.entry_id)
     assert issue_registry.async_get_issue(DOMAIN, "deprecated_yaml_notifier") is None

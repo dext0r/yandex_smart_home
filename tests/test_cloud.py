@@ -1,7 +1,6 @@
-# pyright: reportOptionalMemberAccess=false
 from asyncio import TimeoutError
 import json
-from typing import Any
+from typing import Any, Generator, Self
 from unittest.mock import AsyncMock, patch
 
 from aiohttp import WSMessage, WSMsgType
@@ -21,49 +20,51 @@ from custom_components.yandex_smart_home.cloud import CloudManager
 
 
 class MockWSConnection:
-    def __init__(self, url, headers, **kwargs):
+    def __init__(self, url: str, headers: dict[str, str], **kwargs: Any) -> None:
         self.headers = headers
         self.url = url
         self.close_code: int | None = kwargs.get("ws_close_code")
         self.closed = False
         self.msg = kwargs.get("msg", []) or []
-        self.send_queue = []
+        self.send_queue: list[Any] = []
 
-    def __aiter__(self):
+    def __aiter__(self) -> Self:
         return self
 
-    def __anext__(self):
+    def __anext__(self) -> Any:
         return self._async_next_msg()
 
-    async def _async_next_msg(self):
+    async def _async_next_msg(self) -> Any:
         try:
             return self.msg.pop(0)
         except IndexError:
             raise StopAsyncIteration
 
-    async def close(self):
+    async def close(self) -> None:
         self.closed = True
 
-    async def send_str(self, s):
+    async def send_str(self, s: str) -> None:
         self.send_queue.append(s)
 
 
 class MockSession:
-    def __init__(self, aioclient: AiohttpClientMocker, ws_close_code=None, msg=None):
+    def __init__(
+        self, aioclient: AiohttpClientMocker, ws_close_code: int | None = None, msg: list[WSMessage] | None = None
+    ):
         self.aioclient = aioclient
         self.ws: MockWSConnection | None = None
         self.ws_close_code = ws_close_code
-        self.msg = msg
+        self.msg = msg or []
 
-    async def ws_connect(self, *args, **kwargs):
+    async def ws_connect(self, *args: Any, **kwargs: Any) -> MockWSConnection:
         kwargs["ws_close_code"] = self.ws_close_code
         kwargs["msg"] = self.msg
         self.ws = MockWSConnection(*args, **kwargs)
         return self.ws
 
 
-def mock_client_session(hass, session):
-    hass.data[DATA_CLIENTSESSION] = {_make_key(): session}
+def mock_client_session(hass: HomeAssistant, session: MockSession) -> None:
+    hass.data[DATA_CLIENTSESSION] = {_make_key(): session}  # type: ignore[misc]
 
 
 async def async_setup_entry(
@@ -71,7 +72,7 @@ async def async_setup_entry(
     config_entry: MockConfigEntry,
     session: MockSession | None = None,
     aiohttp_client: Any | None = None,
-):
+) -> None:
     if session:
         mock_client_session(hass, session)
     elif aiohttp_client:
@@ -92,12 +93,17 @@ def _get_manager(hass: HomeAssistant, config_entry: MockConfigEntry) -> CloudMan
 
 
 @pytest.fixture(name="mock_call_later")
-def mock_call_later_fixture():
+def mock_call_later_fixture() -> Generator[AsyncMock, None, None]:
     with patch("custom_components.yandex_smart_home.cloud.async_call_later") as mock_call_later:
         yield mock_call_later
 
 
-async def test_cloud_connect(hass_platform, config_entry_cloud, aioclient_mock, caplog):
+async def test_cloud_connect(
+    hass_platform: HomeAssistant,
+    config_entry_cloud: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     hass = hass_platform
 
     session = MockSession(aioclient_mock)
@@ -106,6 +112,7 @@ async def test_cloud_connect(hass_platform, config_entry_cloud, aioclient_mock, 
     ) as mock_reconnect:
         await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_not_called()
+        assert session.ws
         assert session.ws.headers["Authorization"] == "Bearer token-foo"
         assert "yandex_smart_home/" in session.ws.headers["User-Agent"]
         await hass.config_entries.async_unload(config_entry_cloud.entry_id)
@@ -135,19 +142,24 @@ async def test_cloud_connect(hass_platform, config_entry_cloud, aioclient_mock, 
         await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
 
-async def test_cloud_disconnect_connected(hass_platform, config_entry_cloud, aioclient_mock):
+async def test_cloud_disconnect_connected(
+    hass_platform: HomeAssistant, config_entry_cloud: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
     hass = hass_platform
     session = MockSession(aioclient_mock)
     await async_setup_entry(hass, config_entry_cloud, session=session)
     manager = _get_manager(hass, config_entry_cloud)
     await hass.config_entries.async_unload(config_entry_cloud.entry_id)
 
+    assert session.ws
     assert session.ws.closed is True
     assert manager._ws_active is False
     assert manager._unsub_connect is None
 
 
-async def test_cloud_disconnect_scheduled(hass_platform, config_entry_cloud, aioclient_mock):
+async def test_cloud_disconnect_scheduled(
+    hass_platform: HomeAssistant, config_entry_cloud: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
     hass = hass_platform
     session = MockSession(aioclient_mock, ws_close_code=1001)
     await async_setup_entry(hass, config_entry_cloud, session=session)
@@ -158,12 +170,18 @@ async def test_cloud_disconnect_scheduled(hass_platform, config_entry_cloud, aio
     await hass.config_entries.async_unload(config_entry_cloud.entry_id)
     await hass.async_block_till_done()
 
+    assert session.ws
     assert session.ws.closed is True
     assert manager._ws_active is False
-    assert manager._unsub_connect is None
+    assert manager._unsub_connect is None  # type: ignore[unreachable]
 
 
-async def test_cloud_try_reconnect(hass_platform, config_entry_cloud, aioclient_mock, mock_call_later):
+async def test_cloud_try_reconnect(
+    hass_platform: HomeAssistant,
+    config_entry_cloud: MockConfigEntry,
+    aioclient_mock: AiohttpClientMocker,
+    mock_call_later: AsyncMock,
+) -> None:
     hass = hass_platform
     session = MockSession(aioclient_mock, ws_close_code=1000)
 
@@ -229,7 +247,9 @@ async def test_cloud_fast_reconnect(
     assert issue_registry.async_get_issue(DOMAIN, "reconnecting_too_fast") is None
 
 
-async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, aioclient_mock):
+async def test_cloud_messages_invalid_format(
+    hass_platform: HomeAssistant, config_entry_cloud: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
     hass = hass_platform
 
     requests = ["foo"]
@@ -262,10 +282,13 @@ async def test_cloud_messages_invalid_format(hass_platform, config_entry_cloud, 
         await async_setup_entry(hass, config_entry_cloud, session=session)
         mock_reconnect.assert_not_called()
         await hass.config_entries.async_unload(config_entry_cloud.entry_id)
+        assert session.ws
         assert json.loads(session.ws.send_queue[0]) == {"request_id": "req"}
 
 
-async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclient_mock):
+async def test_cloud_req_user_devices(
+    hass_platform: HomeAssistant, config_entry_cloud: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
     hass = hass_platform
 
     requests = [{"request_id": "req_user_devices", "platform": "yandex", "action": "/user/devices"}]
@@ -275,6 +298,7 @@ async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclie
     with patch("homeassistant.config_entries.ConfigEntries.async_update_entry"):  # prevent reloading after discovery
         await async_setup_entry(hass, config_entry_cloud, session=session)
 
+    assert session.ws
     assert json.loads(session.ws.send_queue[0]) == {
         "request_id": "req_user_devices",
         "payload": {
@@ -343,7 +367,9 @@ async def test_cloud_req_user_devices(hass_platform, config_entry_cloud, aioclie
     }
 
 
-async def test_cloud_req_user_devices_query(hass_platform, config_entry_cloud, aioclient_mock):
+async def test_cloud_req_user_devices_query(
+    hass_platform: HomeAssistant, config_entry_cloud: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
     hass = hass_platform
 
     requests = [
@@ -365,6 +391,7 @@ async def test_cloud_req_user_devices_query(hass_platform, config_entry_cloud, a
     )
     await async_setup_entry(hass, config_entry_cloud, session=session)
 
+    assert session.ws
     assert json.loads(session.ws.send_queue[0]) == {
         "request_id": "req_user_devices_query_1",
         "payload": {
@@ -384,7 +411,9 @@ async def test_cloud_req_user_devices_query(hass_platform, config_entry_cloud, a
     }
 
 
-async def test_cloud_req_user_devices_action(hass_platform, config_entry_cloud, aioclient_mock):
+async def test_cloud_req_user_devices_action(
+    hass_platform: HomeAssistant, config_entry_cloud: MockConfigEntry, aioclient_mock: AiohttpClientMocker
+) -> None:
     hass = hass_platform
 
     requests = [
@@ -417,7 +446,9 @@ async def test_cloud_req_user_devices_action(hass_platform, config_entry_cloud, 
         await async_setup_component(hass, demo.DOMAIN, {})
         await hass.async_block_till_done()
 
-    assert hass.states.get("switch.ac").state == "off"
+    switch_ac_state = hass.states.get("switch.ac")
+    assert switch_ac_state
+    assert switch_ac_state.state == "off"
 
     session = MockSession(
         aioclient_mock, msg=[WSMessage(type=WSMsgType.TEXT, extra=None, data=json.dumps(r)) for r in requests]
@@ -425,6 +456,7 @@ async def test_cloud_req_user_devices_action(hass_platform, config_entry_cloud, 
     await async_setup_entry(hass, config_entry_cloud, session=session)
     await hass.async_block_till_done()
 
+    assert session.ws
     assert json.loads(session.ws.send_queue[0]) == {
         "request_id": "req_user_devices_action",
         "payload": {
@@ -442,4 +474,6 @@ async def test_cloud_req_user_devices_action(hass_platform, config_entry_cloud, 
         },
     }
 
-    assert hass.states.get("switch.ac").state == "on"
+    switch_ac_state = hass.states.get("switch.ac")
+    assert switch_ac_state
+    assert switch_ac_state.state == "on"
