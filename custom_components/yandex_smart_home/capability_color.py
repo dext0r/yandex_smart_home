@@ -21,8 +21,6 @@ from homeassistant.components.light import (
     ATTR_WHITE,
     ATTR_XY_COLOR,
     COLOR_MODE_COLOR_TEMP,
-    SUPPORT_COLOR,
-    SUPPORT_COLOR_TEMP,
     ColorMode,
     LightEntityFeature,
     color_temp_supported,
@@ -129,9 +127,6 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
         if self.state.domain != light.DOMAIN:
             return False
 
-        if self._state_features & SUPPORT_COLOR:  # legacy
-            return True
-
         for color_mode in self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []):
             if color_mode in [
                 ColorMode.RGB,
@@ -220,7 +215,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
         if self.state.domain == light.DOMAIN:
             supported_color_modes = self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, [])
 
-            if self._state_features & SUPPORT_COLOR_TEMP or color_temp_supported(supported_color_modes):
+            if color_temp_supported(supported_color_modes):
                 return True
 
             if self._color_modes_temp_to_white & set(supported_color_modes):
@@ -233,7 +228,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
         """Return parameters for a devices list request."""
         supported_color_modes = set(self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []))
 
-        if self._state_features & SUPPORT_COLOR_TEMP or color_temp_supported(supported_color_modes):
+        if color_temp_supported(supported_color_modes):
             min_temp, max_temp = self._converter.supported_range
             return ColorSettingCapabilityParameters(
                 temperature_k=CapabilityParameterTemperatureK(min=min_temp, max=max_temp)
@@ -291,7 +286,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
         supported_color_modes = set(self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []))
         service_data: dict[str, Any] = {}
 
-        if self._state_features & SUPPORT_COLOR_TEMP or color_temp_supported(supported_color_modes):
+        if color_temp_supported(supported_color_modes):
             service_data[ATTR_KELVIN] = self._converter.get_ha_color_temperature(state.value)
 
         elif ColorMode.WHITE in supported_color_modes and state.value == self._default_white_temperature:

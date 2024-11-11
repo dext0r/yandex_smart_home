@@ -16,8 +16,6 @@ from homeassistant.components.light import (
     ATTR_SUPPORTED_COLOR_MODES,
     ATTR_WHITE,
     ATTR_XY_COLOR,
-    SUPPORT_COLOR,
-    SUPPORT_COLOR_TEMP,
     ColorMode,
     LightEntityFeature,
 )
@@ -97,16 +95,15 @@ async def test_capability_color_setting(hass: HomeAssistant, entry_data: MockCon
         [],
     ],
 )
-@pytest.mark.parametrize("features", [SUPPORT_COLOR, 0])
 async def test_capability_color_setting_rgb(
-    hass: HomeAssistant, entry_data: MockConfigEntryData, color_modes: list[ColorMode], features: int
+    hass: HomeAssistant, entry_data: MockConfigEntryData, color_modes: list[ColorMode]
 ) -> None:
     state = State("light.test", STATE_OFF)
     assert_no_capabilities(hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB)
     assert_no_capabilities(hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
 
-    state = State("light.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features, ATTR_SUPPORTED_COLOR_MODES: color_modes})
-    if not color_modes and not features:
+    state = State("light.test", STATE_OFF, {ATTR_SUPPORTED_COLOR_MODES: color_modes})
+    if not color_modes:
         assert_no_capabilities(
             hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         )
@@ -134,7 +131,7 @@ async def test_capability_color_setting_rgb(
     assert cap_rgb.get_value() is None
     assert cap_rgb.get_description() is None
 
-    attributes = {ATTR_SUPPORTED_FEATURES: features, ATTR_SUPPORTED_COLOR_MODES: color_modes}
+    attributes: dict[str, Any] = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
     if ColorMode.HS in color_modes:
         attributes[ATTR_HS_COLOR] = (240, 100)
     elif ColorMode.XY in color_modes:
@@ -155,7 +152,6 @@ async def test_capability_color_setting_rgb(
         "light.test",
         STATE_OFF,
         {
-            ATTR_SUPPORTED_FEATURES: features,
             ATTR_SUPPORTED_COLOR_MODES: color_modes,
             ATTR_RGB_COLOR: (255, 255, 255),
         },
@@ -187,7 +183,7 @@ async def test_capability_color_setting_rgb(
 async def test_capability_color_setting_rgb_near_colors(
     hass: HomeAssistant, entry_data: MockConfigEntryData, color_modes: list[ColorMode]
 ) -> None:
-    attributes = {ATTR_SUPPORTED_FEATURES: SUPPORT_COLOR, ATTR_SUPPORTED_COLOR_MODES: color_modes}
+    attributes: dict[str, Any] = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
     moonlight_color = ColorConverter._palette[ColorName.MOONLIGHT]
 
     if ColorMode.HS in color_modes:
@@ -249,10 +245,7 @@ async def test_capability_color_setting_rgb_near_colors(
         [ColorMode.XY],
     ],
 )
-@pytest.mark.parametrize("features", [SUPPORT_COLOR])
-async def test_capability_color_setting_rgb_with_profile(
-    hass: HomeAssistant, color_modes: list[ColorMode], features: int
-) -> None:
+async def test_capability_color_setting_rgb_with_profile(hass: HomeAssistant, color_modes: list[ColorMode]) -> None:
     config = _get_color_profile_entry_data(
         hass,
         {
@@ -261,7 +254,7 @@ async def test_capability_color_setting_rgb_with_profile(
         },
     )
 
-    attributes = {ATTR_SUPPORTED_FEATURES: features, ATTR_SUPPORTED_COLOR_MODES: color_modes}
+    attributes: dict[str, Any] = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
     if ColorMode.HS in color_modes:
         attributes[ATTR_HS_COLOR] = (45, 100)
     elif ColorMode.XY in color_modes:
@@ -313,13 +306,12 @@ async def test_capability_color_setting_rgb_with_profile(
         [ColorMode.XY],
     ],
 )
-@pytest.mark.parametrize("features", [SUPPORT_COLOR])
 async def test_capability_color_setting_rgb_with_internal_profile(
-    hass: HomeAssistant, color_modes: list[ColorMode], features: int
+    hass: HomeAssistant, color_modes: list[ColorMode]
 ) -> None:
     config = _get_color_profile_entry_data(hass, {"light.test": {CONF_COLOR_PROFILE: "natural"}})
 
-    attributes = {ATTR_SUPPORTED_FEATURES: features, ATTR_SUPPORTED_COLOR_MODES: color_modes}
+    attributes: dict[str, Any] = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
     if ColorMode.HS in color_modes:
         attributes[ATTR_HS_COLOR] = (0, 100)
     elif ColorMode.XY in color_modes:
@@ -343,7 +335,6 @@ async def test_capability_color_setting_rgb_with_internal_profile(
 @pytest.mark.parametrize(
     "attributes,temp_range",
     [
-        ({ATTR_SUPPORTED_FEATURES: SUPPORT_COLOR_TEMP}, (1500, 6500)),
         ({ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP]}, (1500, 6500)),
         ({ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP, ColorMode.RGB]}, (1500, 6500)),
         ({ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP, ColorMode.XY]}, (1500, 6500)),
@@ -531,7 +522,6 @@ async def test_capability_color_setting_temprature_k_extend(
 @pytest.mark.parametrize(
     "attributes",
     [
-        {ATTR_SUPPORTED_FEATURES: SUPPORT_COLOR_TEMP},
         {ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP]},
         {ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP, ColorMode.RGB]},
         {ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP, ColorMode.HS]},
