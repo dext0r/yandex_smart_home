@@ -4,11 +4,44 @@ from homeassistant.const import ATTR_DEVICE_CLASS, CONF_DEVICE_CLASS, STATE_OFF,
 from homeassistant.core import HomeAssistant, State
 import pytest
 
-from custom_components.yandex_smart_home.const import DEVICE_CLASS_BUTTON
+from custom_components.yandex_smart_home.const import CONF_ENTITY_EVENT_MAP, DEVICE_CLASS_BUTTON
 from custom_components.yandex_smart_home.schema import EventPropertyInstance, PropertyType
 
 from . import MockConfigEntryData
 from .test_property import assert_no_properties, get_exact_one_property
+
+
+async def test_property_event_custom_mapping(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state = State("sensor.button", "click", {ATTR_DEVICE_CLASS: "button"})
+    prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
+    assert not prop.retrievable
+    assert prop.parameters == {
+        "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
+        "instance": "button",
+    }
+    assert prop.get_value() == "click"
+    prop.state.state = "click_foo"
+    assert prop.get_value() is None
+
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={
+            state.entity_id: {
+                CONF_ENTITY_EVENT_MAP: {
+                    "button": {
+                        "double_click": ["click_foo"],
+                    }
+                }
+            }
+        },
+    )
+    prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
+    assert not prop.retrievable
+    assert prop.parameters == {
+        "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
+        "instance": "button",
+    }
+    assert prop.get_value() == "double_click"
 
 
 @pytest.mark.parametrize(

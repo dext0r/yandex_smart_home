@@ -30,6 +30,7 @@ from .const import (
     CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF,
     CONF_ENTITY_CUSTOM_TOGGLE_TURN_ON,
     CONF_ENTITY_CUSTOM_TOGGLES,
+    CONF_ENTITY_EVENT_MAP,
     CONF_ENTITY_MODE_MAP,
     CONF_ENTITY_PROPERTIES,
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
@@ -70,6 +71,7 @@ from .schema import (
     RangeCapabilityInstance,
     ToggleCapabilityInstance,
 )
+from .schema.property_event import get_supported_events_for_instance
 from .unit_conversion import UnitOfPressure, UnitOfTemperature
 
 _LOGGER = logging.getLogger(__name__)
@@ -191,6 +193,33 @@ def mode(value: str) -> str:
     raise vol.Invalid(f"Mode '{value}' is not supported")
 
 
+def event_instance(value: str) -> str:
+    try:
+        EventPropertyInstance(value)
+    except ValueError:
+        _LOGGER.error(
+            f"Event instance '{value}' is not supported, "
+            f"see valid event types at https://docs.yaha-cloud.ru/dev/devices/sensor/event/#event-types"
+        )
+        raise vol.Invalid(f"Event instance '{value}' is not supported")
+
+    return value
+
+
+def event_map(value: dict[str, dict[str, list[str]]]) -> dict[str, dict[str, list[str]]]:
+    for instance, mapped_events in value.items():
+        supported_events = get_supported_events_for_instance(EventPropertyInstance(instance))
+        for event in mapped_events:
+            if event not in supported_events:
+                _LOGGER.error(
+                    f"Event '{event}' is not supported for '{instance}' event instance, "
+                    f"see valid event types at https://docs.yaha-cloud.ru/dev/devices/sensor/event/#event-types"
+                )
+                raise vol.Invalid(f"Event '{event}' is not supported for '{instance}' event instance")
+
+    return value
+
+
 def toggle_instance(value: str) -> str:
     try:
         ToggleCapabilityInstance(value)
@@ -308,6 +337,11 @@ ENTITY_MODE_MAP_SCHEMA = vol.Schema(
     {vol.All(cv.string, mode_instance): vol.Schema({vol.All(cv.string, mode): [cv.string]})}
 )
 
+ENTITY_EVENT_MAP_SCHEMA = vol.Schema(
+    {vol.All(cv.string, event_instance): vol.Schema({cv.string: vol.All(cv.ensure_list, [cv.string])})}
+)
+
+
 ENTITY_RANGE_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_ENTITY_RANGE_MAX): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
@@ -390,6 +424,7 @@ ENTITY_SCHEMA = vol.All(
             vol.Optional(CONF_ERROR_CODE_TEMPLATE): cv.template,
             vol.Optional(CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
             vol.Optional(CONF_ENTITY_MODE_MAP): ENTITY_MODE_MAP_SCHEMA,
+            vol.Optional(CONF_ENTITY_EVENT_MAP): vol.All(ENTITY_EVENT_MAP_SCHEMA, event_map),
             vol.Optional(CONF_ENTITY_CUSTOM_MODES): ENTITY_CUSTOM_MODE_SCHEMA,
             vol.Optional(CONF_ENTITY_CUSTOM_TOGGLES): ENTITY_CUSTOM_TOGGLE_SCHEMA,
             vol.Optional(CONF_ENTITY_CUSTOM_RANGES): ENTITY_CUSTOM_RANGE_SCHEMA,

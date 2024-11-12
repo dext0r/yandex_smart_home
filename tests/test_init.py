@@ -182,6 +182,16 @@ async def test_valid_config(hass: HomeAssistant) -> None:
     assert entity_config["input_text.button"] == {
         "name": "Кнопка на автоматизации",
         "device_class": "button",
+        "events": {
+            "button": {
+                "click": [
+                    "foo",
+                ],
+                "double_click": [
+                    "bar",
+                ],
+            },
+        },
     }
 
     assert entity_config["lock.front_door"] == {

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from functools import cached_property
 from itertools import chain
 import logging
-from typing import Any, Protocol, Self
+from typing import Any, Protocol, Self, cast
 
 from homeassistant.components import binary_sensor, sensor
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
@@ -17,8 +17,9 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
+from homeassistant.helpers.typing import ConfigType
 
-from .const import DEVICE_CLASS_BUTTON, STATE_EMPTY, STATE_NONE, STATE_NONE_UI, XGW3DeviceClass
+from .const import CONF_ENTITY_EVENT_MAP, DEVICE_CLASS_BUTTON, STATE_EMPTY, STATE_NONE, STATE_NONE_UI, XGW3DeviceClass
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .schema import (
     BatteryLevelEventPropertyParameters,
@@ -26,6 +27,7 @@ from .schema import (
     ButtonEventPropertyParameters,
     ButtonInstanceEvent,
     EventInstanceEvent,
+    EventInstanceEventT,
     EventPropertyDescription,
     EventPropertyInstance,
     EventPropertyParameters,
@@ -47,6 +49,7 @@ from .schema import (
     WaterLevelEventPropertyParameters,
     WaterLevelInstanceEvent,
 )
+from .schema.property_event import get_event_class_for_instance
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,17 +57,17 @@ _BOOLEAN_TRUE = ["yes", "true", "1", STATE_ON]
 _BOOLEAN_FALSE = ["no", "false", "0", STATE_OFF]
 
 
-class EventProperty(Property, Protocol[EventInstanceEvent]):
+class EventProperty(Property, Protocol[EventInstanceEventT]):
     """Base class for event properties."""
 
     type: PropertyType = PropertyType.EVENT
     instance: EventPropertyInstance
 
-    _event_map: dict[EventInstanceEvent, list[str]] = {}
+    _event_map_default: dict[EventInstanceEventT, list[str]] = {}
 
     @property
     @abstractmethod
-    def parameters(self) -> EventPropertyParameters[EventInstanceEvent]:
+    def parameters(self) -> EventPropertyParameters[EventInstanceEventT]:
         """Return parameters for a devices list request."""
         ...
 
@@ -84,6 +87,23 @@ class EventProperty(Property, Protocol[EventInstanceEvent]):
         """Test if value changes should be reported immediately."""
         return True
 
+    @property
+    def event_map(self) -> dict[EventInstanceEventT, list[str]]:
+        """Return an event mapping between Yandex and HA."""
+        return self.event_map_config or self._event_map_default
+
+    @property
+    def event_map_config(self) -> dict[EventInstanceEventT, list[str]]:
+        """Return an event mapping from a entity configuration."""
+        if CONF_ENTITY_EVENT_MAP in self._entity_config:
+            event_cls = get_event_class_for_instance(self.instance)
+            return cast(
+                dict[EventInstanceEventT, list[str]],
+                {event_cls(k): v for k, v in self._entity_config[CONF_ENTITY_EVENT_MAP].get(self.instance, {}).items()},
+            )
+
+        return {}
+
     def get_value(self) -> EventInstanceEvent | None:
         """Return the current property value."""
         value = str(self._get_native_value()).lower()
@@ -91,13 +111,18 @@ class EventProperty(Property, Protocol[EventInstanceEvent]):
         if value in (STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE, STATE_NONE_UI, STATE_EMPTY):
             return None
 
-        for event, values in self._event_map.items():
+        for event, values in self.event_map.items():
             if value in values:
                 return event
 
         _LOGGER.debug(f"Unknown event {value} for instance {self.instance} of {self.device_id}")
 
         return None
+
+    @cached_property
+    def _entity_config(self) -> ConfigType:
+        """Return additional configuration for the device."""
+        return self._entry_data.get_entity_config(self.device_id)
 
     @abstractmethod
     def _get_native_value(self) -> str | None:
@@ -106,8 +131,8 @@ class EventProperty(Property, Protocol[EventInstanceEvent]):
 
     @cached_property
     def _supported_native_values(self) -> list[str]:
-        """Return list of supported native values."""
-        return list(chain.from_iterable(self._event_map.values()))
+        """Return a list of supported native values."""
+        return list(chain.from_iterable(self.event_map.values()))
 
 
 class SensorEventProperty(EventProperty[Any], ABC):
@@ -145,7 +170,7 @@ class OpenEventProperty(SensorEventProperty, EventProperty[OpenInstanceEvent], A
 
     instance = EventPropertyInstance.OPEN
 
-    _event_map = {
+    _event_map_default = {
         OpenInstanceEvent.OPENED: _BOOLEAN_TRUE + [STATE_OPEN],
         OpenInstanceEvent.CLOSED: _BOOLEAN_FALSE + [STATE_CLOSED],
     }
@@ -161,7 +186,7 @@ class MotionEventProperty(SensorEventProperty, EventProperty[MotionInstanceEvent
 
     instance = EventPropertyInstance.MOTION
 
-    _event_map = {
+    _event_map_default = {
         MotionInstanceEvent.DETECTED: _BOOLEAN_TRUE,
         MotionInstanceEvent.NOT_DETECTED: _BOOLEAN_FALSE,
     }
@@ -177,7 +202,7 @@ class GasEventProperty(SensorEventProperty, EventProperty[GasInstanceEvent], ABC
 
     instance = EventPropertyInstance.GAS
 
-    _event_map = {
+    _event_map_default = {
         GasInstanceEvent.DETECTED: _BOOLEAN_TRUE,
         GasInstanceEvent.NOT_DETECTED: _BOOLEAN_FALSE,
         GasInstanceEvent.HIGH: ["high"],
@@ -194,7 +219,7 @@ class SmokeEventProperty(SensorEventProperty, EventProperty[SmokeInstanceEvent],
 
     instance = EventPropertyInstance.SMOKE
 
-    _event_map = {
+    _event_map_default = {
         SmokeInstanceEvent.DETECTED: _BOOLEAN_TRUE,
         SmokeInstanceEvent.NOT_DETECTED: _BOOLEAN_FALSE,
         SmokeInstanceEvent.HIGH: ["high"],
@@ -211,7 +236,7 @@ class BatteryLevelEventProperty(SensorEventProperty, EventProperty[BatteryLevelI
 
     instance = EventPropertyInstance.BATTERY_LEVEL
 
-    _event_map = {
+    _event_map_default = {
         BatteryLevelInstanceEvent.LOW: _BOOLEAN_TRUE + ["low"],
         BatteryLevelInstanceEvent.NORMAL: _BOOLEAN_FALSE + ["normal"],
         BatteryLevelInstanceEvent.HIGH: ["high"],
@@ -228,7 +253,7 @@ class FoodLevelEventProperty(SensorEventProperty, EventProperty[FoodLevelInstanc
 
     instance = EventPropertyInstance.FOOD_LEVEL
 
-    _event_map = {
+    _event_map_default = {
         FoodLevelInstanceEvent.EMPTY: ["empty"],
         FoodLevelInstanceEvent.LOW: ["low"],
         FoodLevelInstanceEvent.NORMAL: ["normal"],
@@ -245,7 +270,7 @@ class WaterLevelEventProperty(SensorEventProperty, EventProperty[WaterLevelInsta
 
     instance = EventPropertyInstance.WATER_LEVEL
 
-    _event_map = {
+    _event_map_default = {
         WaterLevelInstanceEvent.EMPTY: ["empty"],
         WaterLevelInstanceEvent.LOW: _BOOLEAN_TRUE + ["low"],
         WaterLevelInstanceEvent.NORMAL: _BOOLEAN_FALSE + ["normal"],
@@ -262,7 +287,7 @@ class WaterLeakEventProperty(SensorEventProperty, EventProperty[WaterLeakInstanc
 
     instance = EventPropertyInstance.WATER_LEAK
 
-    _event_map = {
+    _event_map_default = {
         WaterLeakInstanceEvent.DRY: _BOOLEAN_FALSE + ["dry"],
         WaterLeakInstanceEvent.LEAK: _BOOLEAN_TRUE + ["leak"],
     }
@@ -278,7 +303,7 @@ class ButtonPressEventProperty(ReactiveEventProperty, EventProperty[ButtonInstan
 
     instance = EventPropertyInstance.BUTTON
 
-    _event_map = {
+    _event_map_default = {
         ButtonInstanceEvent.CLICK: ["click", "single"],
         ButtonInstanceEvent.DOUBLE_CLICK: ["double_click", "double", "triple", "quadruple", "many"],
         ButtonInstanceEvent.LONG_PRESS: ["long_press", "long", "long_click", "long_click_press", "hold"],
@@ -300,7 +325,7 @@ class VibrationEventProperty(ReactiveEventProperty, EventProperty[VibrationInsta
 
     instance = EventPropertyInstance.VIBRATION
 
-    _event_map = {
+    _event_map_default = {
         VibrationInstanceEvent.VIBRATION: _BOOLEAN_TRUE
         + [
             "vibration",

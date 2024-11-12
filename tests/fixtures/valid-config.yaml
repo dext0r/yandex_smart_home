@@ -147,6 +147,10 @@ yandex_smart_home:
     input_text.button:
       name: Кнопка на автоматизации
       device_class: button
+      events:
+        button:
+          click: foo
+          double_click: [bar]
     lock.front_door:
       type: openable
       turn_on: false

@@ -220,6 +220,45 @@ yandex_smart_home:
     ) in caplog.messages[-2]
 
 
+async def test_invalid_event_instance(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    sensor.test:
+      events:
+        invalid:
+"""
+    }
+    with patch_yaml_files(files):
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+    assert (
+        "Event instance 'invalid' is not supported, see valid "
+        "event types at https://docs.yaha-cloud.ru/dev/devices/sensor/event/#event-types" in caplog.messages[-2]
+    )
+
+
+async def test_invalid_event_map(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+    files = {
+        YAML_CONFIG_FILE: """
+yandex_smart_home:
+  entity_config:
+    sensor.test:
+      events:
+        smoke:
+          high: bar
+        button:
+          foo: baz
+"""
+    }
+    with patch_yaml_files(files):
+        assert await async_integration_yaml_config(hass, DOMAIN) is None
+    assert (
+        "Event 'foo' is not supported for 'button' event instance, see valid "
+        "event types at https://docs.yaha-cloud.ru/dev/devices/sensor/event/#event-types" in caplog.messages[-2]
+    )
+
+
 async def test_invalid_toggle_instance(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     files = {
         YAML_CONFIG_FILE: """

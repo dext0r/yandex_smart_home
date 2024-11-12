@@ -100,22 +100,21 @@
 
 ## Типы событий { id=event-types }
 
-Компонент автоматически пытается сопоставить значения датчика в Home Assistant со значением в УДЯ. Для каждого типа датчика поддерживается ограниченный набор событий.
+Компонент автоматически пытается сопоставить значения датчика в Home Assistant с событием в УДЯ.
+Для каждого типа датчика поддерживается ограниченный [набор событий](https://yandex.ru/dev/dialogs/smart-home/doc/ru/concepts/event-instance).
 
-Если в HA происходит событие (например, нажатие на кнопку), но в УДЯ оно не появляется - начните отладку на странице интеграции Yandex Smart Home, сгенерируйте событие и поищите в журнале событий по `Unknown event`.
-
-| Тип           | Поддерживаемые значения: HA - УДЯ                                                                                                            |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| battery_level | `on`, `low`- Низкий<br>`off`, `normal` - Нормальный                                                                                          |
-| button        | `click`, `single` - Одиночное нажатие<br>`double_click`, `double`, `many` - Двойное нажатие<br>`long_press`, `long`, `hold` - Долгое нажатие |
-| food_level    | `empty` - Пустой<br>`low`- Низкий<br>`normal` - Нормальный                                                                                   |
-| gas           | `on`, `detected` - Обнаружено<br>`off`, `not_detected` - Не обнаружено<br>`high` - Высокий уровень                                           |
-| motion        | `on`, `detected` - Обнаружено<br>`off`, `not_detected` - Не обнаружено                                                                       |
-| open          | `on`, `opened` - Открыто<br >`off`, `closed` - Закрыто                                                                                       |
-| smoke         | `on`, `detected` - Обнаружено<br>`off`, `not_detected` - Не обнаружено<br>`high` - Высокий уровень                                           |
-| vibration     | `tilt`, `rotate` - Переворачивание<br>`fall`, `drop` - Падение<br>`on`, `vibration` - Вибрация                                               |
-| water_leak    | `on`, `leak` - Протечка<br>`off`, `dry` - Нет протечки                                                                                       |
-| water_level   | `empty` - Пустой<br>`on`, `low`- Низкий<br>`off`, `normal` - Нормальный                                                                      |
+| Тип           | События                                                                                           | Поддерживаемые значения в HA                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| battery_level | `low` — Низкий<br>`normal` — Нормальный                                                           | `on`, `low`<br>`off`, `normal`                                                        |
+| button        | `single` — Одиночное нажатие<br>`double_click` — Двойное нажатие<br>`long_press` — Долгое нажатие | `click`, `single`<br>`double_click`, `double`, `many`<br>`long_press`, `long`, `hold` |
+| food_level    | `empty` — Пустой<br>`low`— Низкий<br>`normal` — Нормальный                                        | `empty` <br>`low`<br>`normal`                                                         |
+| gas           | `detected` — Обнаружено<br>`not_detected` — Не обнаружено<br>`high` — Высокий уровень             | `on`, `detected`<br>`off`, `not_detected`<br>`high`                                   |
+| motion        | `detected` — Обнаружено<br>`not_detected` — Не обнаружено                                         | `on`, `detected`<br>`off`, `not_detected`                                             |
+| open          | `opened` — Открыто<br >`off`, `closed` — Закрыто                                                  | `on`, `opened`<br >`off`, `closed`                                                    |
+| smoke         | `detected` — Обнаружено<br>`not_detected` — Не обнаружено<br>`high` — Высокий уровень             | `on`, `detected`<br>`off`, `not_detected`<br>`high`                                   |
+| vibration     | `tilt` — Переворачивание<br>`fall` — Падение<br>`vibration` — Вибрация                            | `tilt`, `rotate`<br>`fall`, `drop`<br>`on`, `vibration`                               |
+| water_leak    | `leak` — Протечка<br>`dry` — Нет протечки                                                         | `on`, `leak`<br>`off`, `dry`                                                          |
+| water_level   | `empty` — Пустой<br>`low` — Низкий<br>`normal` — Нормальный                                       | `empty`<br>`on`, `low`<br>`off`, `normal`                                             |
 
 !!! note ""
 
@@ -123,6 +122,27 @@
     * `off`: Любая логическая ложь: `off`, `false`, `no`, `0`
 
     Перечислена только часть поддерживаемых значений со стороны Home Assistant.
+
+Сопоставление значений можно так же можно настроить вручную через раздел `entity_config` в [YAML конфигурации](../../config/getting-started.md#yaml).
+При ручной настройке отключается автоматическое сопоставление для этого устройства и типа события.
+
+!!! example "Пример сопоставления событий"
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        sensor.button:
+          events:
+            button:
+              single: click_1
+              double_click: click_double_1
+    ```
+
+    * `button` - тип события со стороны УДЯ
+    * `single`, `double_click` - событие со стороны УДЯ
+    * `click_1`, `click_double_1` - значения датчика со стороны Home Assistant
+
+Если в HA происходит событие (например, нажатие на кнопку), но в УДЯ оно не появляется — начните отладку на странице интеграции Yandex Smart Home,
+сгенерируйте событие и поищите в журнале событий по `Unknown event`. После этого задайте соответствия вручную.
 
 ## Выбор класса бинарного датчика { id=device-class }
 
