@@ -67,6 +67,7 @@ exclude_also = [
     "raise NotImplementedError",
     "@abstractmethod",
     "if TYPE_CHECKING:",
+    "pyright: ignore\\[reportAttributeAccessIssue\\]",
 ]
 omit = ["tests/*"]
 
