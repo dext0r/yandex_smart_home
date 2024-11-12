@@ -1404,55 +1404,66 @@
 </code></pre></div>
 </div>
 <h2 id="event-types">Типы событий<a class="headerlink" href="#event-types" title="Permanent link">&para;</a></h2>
-<p>Компонент автоматически пытается сопоставить значения датчика в Home Assistant со значением в УДЯ. Для каждого типа датчика поддерживается ограниченный набор событий.</p>
-<p>Если в HA происходит событие (например, нажатие на кнопку), но в УДЯ оно не появляется - начните отладку на странице интеграции Yandex Smart Home, сгенерируйте событие и поищите в журнале событий по <code>Unknown event</code>.</p>
+<p>Компонент автоматически пытается сопоставить значения датчика в Home Assistant с событием в УДЯ.
+Для каждого типа датчика поддерживается ограниченный <a href="https://yandex.ru/dev/dialogs/smart-home/doc/ru/concepts/event-instance">набор событий</a>.</p>
 <table>
 <thead>
 <tr>
 <th>Тип</th>
-<th>Поддерживаемые значения: HA - УДЯ</th>
+<th>События</th>
+<th>Поддерживаемые значения в HA</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>battery_level</td>
-<td><code>on</code>, <code>low</code>- Низкий<br><code>off</code>, <code>normal</code> - Нормальный</td>
+<td><code>low</code> — Низкий<br><code>normal</code> — Нормальный</td>
+<td><code>on</code>, <code>low</code><br><code>off</code>, <code>normal</code></td>
 </tr>
 <tr>
 <td>button</td>
-<td><code>click</code>, <code>single</code> - Одиночное нажатие<br><code>double_click</code>, <code>double</code>, <code>many</code> - Двойное нажатие<br><code>long_press</code>, <code>long</code>, <code>hold</code> - Долгое нажатие</td>
+<td><code>single</code> — Одиночное нажатие<br><code>double_click</code> — Двойное нажатие<br><code>long_press</code> — Долгое нажатие</td>
+<td><code>click</code>, <code>single</code><br><code>double_click</code>, <code>double</code>, <code>many</code><br><code>long_press</code>, <code>long</code>, <code>hold</code></td>
 </tr>
 <tr>
 <td>food_level</td>
-<td><code>empty</code> - Пустой<br><code>low</code>- Низкий<br><code>normal</code> - Нормальный</td>
+<td><code>empty</code> — Пустой<br><code>low</code>— Низкий<br><code>normal</code> — Нормальный</td>
+<td><code>empty</code> <br><code>low</code><br><code>normal</code></td>
 </tr>
 <tr>
 <td>gas</td>
-<td><code>on</code>, <code>detected</code> - Обнаружено<br><code>off</code>, <code>not_detected</code> - Не обнаружено<br><code>high</code> - Высокий уровень</td>
+<td><code>detected</code> — Обнаружено<br><code>not_detected</code> — Не обнаружено<br><code>high</code> — Высокий уровень</td>
+<td><code>on</code>, <code>detected</code><br><code>off</code>, <code>not_detected</code><br><code>high</code></td>
 </tr>
 <tr>
 <td>motion</td>
-<td><code>on</code>, <code>detected</code> - Обнаружено<br><code>off</code>, <code>not_detected</code> - Не обнаружено</td>
+<td><code>detected</code> — Обнаружено<br><code>not_detected</code> — Не обнаружено</td>
+<td><code>on</code>, <code>detected</code><br><code>off</code>, <code>not_detected</code></td>
 </tr>
 <tr>
 <td>open</td>
-<td><code>on</code>, <code>opened</code> - Открыто<br ><code>off</code>, <code>closed</code> - Закрыто</td>
+<td><code>opened</code> — Открыто<br ><code>off</code>, <code>closed</code> — Закрыто</td>
+<td><code>on</code>, <code>opened</code><br ><code>off</code>, <code>closed</code></td>
 </tr>
 <tr>
 <td>smoke</td>
-<td><code>on</code>, <code>detected</code> - Обнаружено<br><code>off</code>, <code>not_detected</code> - Не обнаружено<br><code>high</code> - Высокий уровень</td>
+<td><code>detected</code> — Обнаружено<br><code>not_detected</code> — Не обнаружено<br><code>high</code> — Высокий уровень</td>
+<td><code>on</code>, <code>detected</code><br><code>off</code>, <code>not_detected</code><br><code>high</code></td>
 </tr>
 <tr>
 <td>vibration</td>
-<td><code>tilt</code>, <code>rotate</code> - Переворачивание<br><code>fall</code>, <code>drop</code> - Падение<br><code>on</code>, <code>vibration</code> - Вибрация</td>
+<td><code>tilt</code> — Переворачивание<br><code>fall</code> — Падение<br><code>vibration</code> — Вибрация</td>
+<td><code>tilt</code>, <code>rotate</code><br><code>fall</code>, <code>drop</code><br><code>on</code>, <code>vibration</code></td>
 </tr>
 <tr>
 <td>water_leak</td>
-<td><code>on</code>, <code>leak</code> - Протечка<br><code>off</code>, <code>dry</code> - Нет протечки</td>
+<td><code>leak</code> — Протечка<br><code>dry</code> — Нет протечки</td>
+<td><code>on</code>, <code>leak</code><br><code>off</code>, <code>dry</code></td>
 </tr>
 <tr>
 <td>water_level</td>
-<td><code>empty</code> - Пустой<br><code>on</code>, <code>low</code>- Низкий<br><code>off</code>, <code>normal</code> - Нормальный</td>
+<td><code>empty</code> — Пустой<br><code>low</code> — Низкий<br><code>normal</code> — Нормальный</td>
+<td><code>empty</code><br><code>on</code>, <code>low</code><br><code>off</code>, <code>normal</code></td>
 </tr>
 </tbody>
 </table>
@@ -1463,6 +1474,26 @@
 </ul>
 <p>Перечислена только часть поддерживаемых значений со стороны Home Assistant.</p>
 </div>
+<p>Сопоставление значений можно так же можно настроить вручную через раздел <code>entity_config</code> в <a href="../../../config/getting-started/#yaml">YAML конфигурации</a>.
+При ручной настройке отключается автоматическое сопоставление для этого устройства и типа события.</p>
+<div class="admonition example">
+<p class="admonition-title">Пример сопоставления событий</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">sensor.button</span><span class="p">:</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">events</span><span class="p">:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="nt">button</span><span class="p">:</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">          </span><span class="nt">single</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">click_1</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">          </span><span class="nt">double_click</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">click_double_1</span>
+</code></pre></div>
+<ul>
+<li><code>button</code> - тип события со стороны УДЯ</li>
+<li><code>single</code>, <code>double_click</code> - событие со стороны УДЯ</li>
+<li><code>click_1</code>, <code>click_double_1</code> - значения датчика со стороны Home Assistant</li>
+</ul>
+</div>
+<p>Если в HA происходит событие (например, нажатие на кнопку), но в УДЯ оно не появляется — начните отладку на странице интеграции Yandex Smart Home,
+сгенерируйте событие и поищите в журнале событий по <code>Unknown event</code>. После этого задайте соответствия вручную.</p>
 <h2 id="device-class">Выбор класса бинарного датчика<a class="headerlink" href="#device-class" title="Permanent link">&para;</a></h2>
 <p>Некоторые интеграции создают бинарные датчики с пустым или неверным атрибутом <code>device_class</code>. Такие датчики автоматически обнаружены не будут, но по-прежнему могут
 быть добавлены <a href="#properties">вручную</a>.</p>
