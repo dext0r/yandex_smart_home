@@ -4,7 +4,11 @@
 
 Поддерживаемые события: `single`, `click`, `double`, `double_click`, `long`, `long_click`, `long_click_press`, `hold`
 
-Такие кнопки, как правило, добавляются через интеграцию AlexxIT/Xiaomi Gateway 3 или Zigbee2MQTT с включенным `legacy` режимом.
+Такие кнопки обычно создают интеграции:
+
+* AlexxIT/Xiaomi Gateway 3
+* Zigbee2MQTT с включенным `legacy` режимом
+* Zigbee2MQTT с включенной настройкой `experimental_event_entities`
 
 ![](../assets/images/devices/button/easy.png){ width=750 }
 

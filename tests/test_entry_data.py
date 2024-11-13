@@ -22,7 +22,12 @@ from custom_components.yandex_smart_home.const import (
 )
 from custom_components.yandex_smart_home.entry_data import ConfigEntryData
 from custom_components.yandex_smart_home.helpers import APIError, SmartHomePlatform
+from custom_components.yandex_smart_home.property_custom import (
+    ButtonPressEventPlatformCustomProperty,
+    MotionEventPlatformCustomProperty,
+)
 from custom_components.yandex_smart_home.schema import ResponseCode
+from tests.test_device import CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_TYPE
 
 from . import MockConfigEntryData, generate_entity_filter
 
@@ -73,6 +78,69 @@ def test_entry_data_trackable_templates(hass: HomeAssistant, caplog: pytest.LogC
     ):
         assert entry_data._get_trackable_templates() == {}
     assert caplog.messages == ["Failed to track custom capability: foo"]
+
+    entry_data = MockConfigEntryData(
+        hass=hass,
+        entity_config={
+            "sensor.outside_temp": {
+                CONF_ENTITY_CUSTOM_TOGGLES: {
+                    "pause": {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID: "binary_sensor.pause"}
+                },
+                CONF_ENTITY_PROPERTIES: [
+                    {CONF_ENTITY_PROPERTY_TYPE: "motion", CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.motion"},
+                    {CONF_ENTITY_PROPERTY_TYPE: "button", CONF_ENTITY_PROPERTY_ENTITY: "event.button"},
+                ],
+            }
+        },
+        entity_filter=generate_entity_filter(include_entity_globs=["*"]),
+    )
+
+    assert len(entry_data._get_trackable_templates()) == 2
+
+
+def test_entry_data_trackable_entity_states(hass: HomeAssistant) -> None:
+    entry_data = MockConfigEntryData(
+        hass=hass,
+        entity_config={
+            "sensor.foo": {
+                CONF_ENTITY_PROPERTIES: [
+                    {CONF_ENTITY_PROPERTY_TYPE: "motion", CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.motion"},
+                    {CONF_ENTITY_PROPERTY_TYPE: "button", CONF_ENTITY_PROPERTY_ENTITY: "event.button"},
+                ],
+            },
+            "sensor.bar": {
+                CONF_ENTITY_PROPERTIES: [
+                    {CONF_ENTITY_PROPERTY_TYPE: "motion", CONF_ENTITY_PROPERTY_ENTITY: "event.motion"},
+                    {CONF_ENTITY_PROPERTY_TYPE: "button", CONF_ENTITY_PROPERTY_ENTITY: "event.button"},
+                ],
+            },
+            "switch.not_exposed": {
+                CONF_ENTITY_PROPERTIES: [
+                    {CONF_ENTITY_PROPERTY_TYPE: "button", CONF_ENTITY_PROPERTY_ENTITY: "event.button"},
+                ],
+            },
+        },
+        entity_filter=generate_entity_filter(include_entity_globs=["*"], exclude_entities=["switch.not_exposed"]),
+    )
+
+    assert entry_data._get_trackable_entity_states() == {
+        "event.button": [
+            (
+                "sensor.foo",
+                ButtonPressEventPlatformCustomProperty,
+            ),
+            (
+                "sensor.bar",
+                ButtonPressEventPlatformCustomProperty,
+            ),
+        ],
+        "event.motion": [
+            (
+                "sensor.bar",
+                MotionEventPlatformCustomProperty,
+            ),
+        ],
+    }
 
 
 async def test_entry_data_get_context_user_id(hass: HomeAssistant, hass_read_only_user: User) -> None:

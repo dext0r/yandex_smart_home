@@ -37,6 +37,7 @@ from .const import (
     CONF_ENTITY_CUSTOM_RANGES,
     CONF_ENTITY_CUSTOM_TOGGLES,
     CONF_ENTITY_PROPERTIES,
+    CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTRY_ALIASES,
     CONF_LINKED_PLATFORMS,
     CONF_NOTIFIER,
@@ -50,10 +51,13 @@ from .const import (
     ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS,
     ISSUE_ID_MISSING_SKILL_DATA,
     ConnectionType,
+    EntityId,
 )
+from .device import DeviceId
 from .helpers import APIError, CacheStore, SmartHomePlatform
 from .notifier import NotifierConfig, YandexCloudNotifier, YandexDirectNotifier, YandexNotifier
-from .property_custom import CustomProperty, get_custom_property
+from .property import StateProperty
+from .property_custom import CustomProperty, get_custom_property, get_event_platform_custom_property_type
 from .schema import CapabilityType
 
 _LOGGER = logging.getLogger(__name__)
@@ -286,6 +290,7 @@ class ConfigEntryData:
             return
 
         track_templates = self._get_trackable_templates()
+        track_entity_states = self._get_trackable_entity_states()
         extended_log = len(self._hass.config_entries.async_entries(DOMAIN)) > 1
 
         match self.connection_type:
@@ -293,7 +298,9 @@ class ConfigEntryData:
                 config = NotifierConfig(
                     user_id=self.cloud_instance_id, token=self.cloud_connection_token, extended_log=extended_log
                 )
-                self._notifiers.append(YandexCloudNotifier(self._hass, self, config, track_templates))
+                self._notifiers.append(
+                    YandexCloudNotifier(self._hass, self, config, track_templates, track_entity_states)
+                )
 
             case ConnectionType.CLOUD_PLUS:
                 if self.skill:
@@ -303,7 +310,9 @@ class ConfigEntryData:
                         skill_id=self.skill.id,
                         extended_log=extended_log,
                     )
-                    self._notifiers.append(YandexDirectNotifier(self._hass, self, config, track_templates))
+                    self._notifiers.append(
+                        YandexDirectNotifier(self._hass, self, config, track_templates, track_entity_states)
+                    )
 
             case ConnectionType.DIRECT:
                 if self.skill:
@@ -313,7 +322,9 @@ class ConfigEntryData:
                         skill_id=self.skill.id,
                         extended_log=extended_log,
                     )
-                    self._notifiers.append(YandexDirectNotifier(self._hass, self, config, track_templates))
+                    self._notifiers.append(
+                        YandexDirectNotifier(self._hass, self, config, track_templates, track_entity_states)
+                    )
 
         await asyncio.wait([asyncio.create_task(n.async_setup()) for n in self._notifiers])
 
@@ -368,10 +379,31 @@ class ConfigEntryData:
 
             for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
                 try:
+                    if not (custom_property := get_custom_property(self._hass, self, property_config, device_id)):
+                        continue
                     template = property_custom.get_value_template(self._hass, device_id, property_config)
                     templates.setdefault(template, [])
-                    templates[template].append(get_custom_property(self._hass, self, property_config, device_id))
+                    templates[template].append(custom_property)
                 except APIError as e:
                     _LOGGER.debug(f"Failed to track custom property: {e}")
 
         return templates
+
+    def _get_trackable_entity_states(self) -> dict[EntityId, list[tuple[DeviceId, type[StateProperty]]]]:
+        """Return entity capability and property class types to track state changes."""
+        states: dict[EntityId, list[tuple[DeviceId, type[StateProperty]]]] = {}
+
+        def _states_append(_entity_id: str, _device_id: str, t: type[StateProperty]) -> None:
+            states.setdefault(_entity_id, [])
+            states[_entity_id].append((_device_id, t))
+
+        for device_id, entity_config in self.entity_config.items():
+            if not self.should_expose(device_id):
+                continue
+
+            for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
+                if event_platform_property := get_event_platform_custom_property_type(property_config):
+                    entity_id: str = property_config[CONF_ENTITY_PROPERTY_ENTITY]
+                    _states_append(entity_id, device_id, event_platform_property)
+
+        return states

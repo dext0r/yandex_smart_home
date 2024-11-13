@@ -74,9 +74,6 @@ EVENT_DEVICE_ACTION = "yandex_smart_home_device_action"
 ATTR_CAPABILITY = "capability"
 ATTR_ERROR_CODE = "error_code"
 
-# Fake device class
-DEVICE_CLASS_BUTTON = "button"
-
 # Additional states
 STATE_NONE = "none"
 STATE_NONE_UI = "-"
@@ -104,6 +101,8 @@ SERVICE_FAN_SET_TARGET_HUMIDITY = "fan_set_target_humidity"
 
 # https://github.com/ClusterM/skykettle-ha/blob/c1b61c4a22693d6e2b7c2f57a989df418011f2c2/custom_components/skykettle/skykettle.py#L53
 SKYKETTLE_MODE_BOIL = "Boil"
+
+type EntityId = str
 
 
 class ConnectionType(StrEnum):

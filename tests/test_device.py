@@ -67,6 +67,7 @@ from custom_components.yandex_smart_home.device import Device
 from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.property_custom import (
     ButtonPressCustomEventProperty,
+    FoodLevelEventPlatformCustomProperty,
     VoltageCustomFloatProperty,
     get_custom_property,
 )
@@ -264,6 +265,10 @@ async def test_device_properties(hass: HomeAssistant, caplog: pytest.LogCaptureF
                         CONF_ENTITY_PROPERTY_TYPE: "temperature",
                         CONF_ENTITY_PROPERTY_ENTITY: "binary_sensor.foo",
                     },
+                    {
+                        CONF_ENTITY_PROPERTY_TYPE: "food_level",
+                        CONF_ENTITY_PROPERTY_ENTITY: "event.foo",
+                    },
                 ]
             }
         },
@@ -272,6 +277,7 @@ async def test_device_properties(hass: HomeAssistant, caplog: pytest.LogCaptureF
     assert [type(c) for c in device.get_properties()] == [
         VoltageCustomFloatProperty,
         ButtonPressCustomEventProperty,
+        FoodLevelEventPlatformCustomProperty,
         TemperatureSensor,
     ]
 
@@ -609,7 +615,7 @@ async def test_device_query(hass: HomeAssistant, entry_data: MockConfigEntryData
         },
     )
 
-    prop_temp = TemperatureSensor(hass, entry_data, state_temp)
+    prop_temp = TemperatureSensor(hass, entry_data, state_temp.entity_id, state_temp)
     prop_humidity_custom = get_custom_property(
         hass,
         entry_data,
@@ -619,7 +625,7 @@ async def test_device_query(hass: HomeAssistant, entry_data: MockConfigEntryData
         },
         state.entity_id,
     )
-    prop_voltage = VoltageSensor(hass, entry_data, state_voltage)
+    prop_voltage = VoltageSensor(hass, entry_data, state_voltage.entity_id, state_voltage)
 
     state_button = State("binary_sensor.button", "", attributes={"action": "click"})
     hass.states.async_set(state_button.entity_id, state_button.state, state_button.attributes)

@@ -1,4 +1,3 @@
-# pyright: reportOptionalMemberAccess=false
 import asyncio
 import json
 import logging
@@ -8,8 +7,17 @@ from unittest.mock import AsyncMock, patch
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.auth.models import User
+from homeassistant.components.event import ATTR_EVENT_TYPE, EventDeviceClass
 from homeassistant.components.light import ATTR_BRIGHTNESS
-from homeassistant.const import ATTR_DEVICE_CLASS, CONF_ID, CONF_TOKEN, EVENT_HOMEASSISTANT_STARTED, STATE_UNAVAILABLE
+from homeassistant.const import (
+    ATTR_DEVICE_CLASS,
+    CONF_ID,
+    CONF_TOKEN,
+    CONF_TYPE,
+    EVENT_HOMEASSISTANT_STARTED,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import CoreState, HomeAssistant, State
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.template import Template
@@ -39,7 +47,6 @@ from custom_components.yandex_smart_home.const import (
     CONF_LINKED_PLATFORMS,
     CONF_SKILL,
     CONF_USER_ID,
-    DEVICE_CLASS_BUTTON,
     ConnectionType,
 )
 from custom_components.yandex_smart_home.helpers import APIError, SmartHomePlatform
@@ -52,6 +59,7 @@ from custom_components.yandex_smart_home.notifier import (
 )
 from custom_components.yandex_smart_home.property_custom import (
     ButtonPressCustomEventProperty,
+    ButtonPressEventPlatformCustomProperty,
     CO2LevelCustomFloatProperty,
     HumidityCustomFloatProperty,
     PressureCustomFloatProperty,
@@ -280,8 +288,8 @@ async def test_notifier_postponed_setup(hass: HomeAssistant, hass_admin_user: Us
 async def test_notifier_format_log_message(
     hass: HomeAssistant, entry_data: MockConfigEntryData, cls: type[YandexNotifier], caplog: pytest.LogCaptureFixture
 ) -> None:
-    n = cls(hass, entry_data, NotifierConfig(user_id="foo", skill_id="bar", token="x"), {})
-    ne = cls(hass, entry_data, NotifierConfig(user_id="foo", skill_id="bar", token="x", extended_log=True), {})
+    n = cls(hass, entry_data, NotifierConfig(user_id="foo", skill_id="bar", token="x"), {}, {})
+    ne = cls(hass, entry_data, NotifierConfig(user_id="foo", skill_id="bar", token="x", extended_log=True), {}, {})
     assert n._format_log_message("test") == "test"
     assert ne._format_log_message("test") == "Mock Title: test"
 
@@ -349,7 +357,13 @@ async def test_notifier_track_templates(
     hass.states.async_set("sensor.button", "click")
     hass.states.async_set("sensor.float", "10")
     caplog.clear()
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
+    notifier = YandexDirectNotifier(
+        hass_platform,
+        entry_data,
+        BASIC_CONFIG,
+        entry_data._get_trackable_templates(),
+        entry_data._get_trackable_entity_states(),
+    )
     await notifier.async_setup()
 
     assert notifier._template_changes_tracker is not None
@@ -462,7 +476,13 @@ async def test_notifier_track_templates_exception(
         entity_filter=generate_entity_filter(include_entity_globs=["*"]),
     )
 
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
+    notifier = YandexDirectNotifier(
+        hass_platform,
+        entry_data,
+        BASIC_CONFIG,
+        entry_data._get_trackable_templates(),
+        entry_data._get_trackable_entity_states(),
+    )
     await notifier.async_setup()
 
     caplog.clear()
@@ -487,6 +507,83 @@ async def test_notifier_track_templates_exception(
     await notifier.async_unload()
 
 
+async def test_notifier_track_entity_states(
+    hass_platform: HomeAssistant, mock_call_later: AsyncMock, caplog: pytest.LogCaptureFixture
+) -> None:
+    hass = hass_platform
+    entry_data = MockConfigEntryData(
+        hass=hass,
+        entity_config={
+            "light.kitchen": {
+                CONF_ENTITY_PROPERTIES: [
+                    {
+                        CONF_ENTITY_PROPERTY_TYPE: "button",
+                        CONF_ENTITY_PROPERTY_ENTITY: "event.button",
+                    },
+                    {
+                        CONF_ENTITY_PROPERTY_TYPE: "motion",
+                        CONF_ENTITY_PROPERTY_ENTITY: "event.motion",
+                    },
+                ]
+            },
+            "input_text.button": {
+                CONF_TYPE: "devices.types.other",
+                CONF_ENTITY_PROPERTIES: [
+                    {
+                        CONF_ENTITY_PROPERTY_TYPE: "button",
+                        CONF_ENTITY_PROPERTY_ENTITY: "event.button",
+                    },
+                ],
+            },
+            "switch.not_exposed": {
+                CONF_ENTITY_PROPERTIES: [
+                    {
+                        CONF_ENTITY_PROPERTY_TYPE: "button",
+                        CONF_ENTITY_PROPERTY_ENTITY: "event.button",
+                    },
+                ]
+            },
+        },
+        entity_filter=generate_entity_filter(exclude_entities=["switch.not_exposed"]),
+    )
+
+    hass.states.async_set("input_text.button", "")
+    await hass.async_block_till_done()
+    caplog.clear()
+
+    notifier = YandexDirectNotifier(
+        hass_platform,
+        entry_data,
+        BASIC_CONFIG,
+        entry_data._get_trackable_templates(),
+        entry_data._get_trackable_entity_states(),
+    )
+    await notifier.async_setup()
+    assert notifier._pending.empty is True
+
+    mock_call_later.reset_mock()
+    await _async_set_state(hass, "event.motion", STATE_UNKNOWN, {ATTR_EVENT_TYPE: "motion"})
+    assert cast(bool, notifier._pending.empty) is False
+    pending = await notifier._pending.async_get_all()
+    assert list(pending.keys()) == ["light.kitchen"]
+    assert len(pending["light.kitchen"]) == 1
+    assert pending["light.kitchen"][0].get_value() == "detected"
+
+    await _async_set_state(hass, "event.button", STATE_UNKNOWN, {ATTR_EVENT_TYPE: "pressed"})
+    pending = await notifier._pending.async_get_all()
+    assert list(pending.keys()) == ["light.kitchen", "input_text.button"]
+    assert pending["light.kitchen"][0].get_value() == "click"
+    assert pending["input_text.button"][0].get_value() == "click"
+
+    mock_call_later.assert_called_once()
+    assert mock_call_later.call_args[1]["delay"] == 0
+
+    mock_call_later.reset_mock()
+    await _async_set_state(hass, "event.button", "tick", {ATTR_EVENT_TYPE: "pressed"})
+    pending = await notifier._pending.async_get_all()
+    assert list(pending.keys()) == ["light.kitchen", "input_text.button"]
+
+
 async def test_notifier_state_changed(
     hass_platform: HomeAssistant, mock_call_later: AsyncMock, caplog: pytest.LogCaptureFixture
 ) -> None:
@@ -496,7 +593,13 @@ async def test_notifier_state_changed(
         entity_filter=generate_entity_filter(exclude_entities=["switch.not_exposed"]),
     )
 
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
+    notifier = YandexDirectNotifier(
+        hass_platform,
+        entry_data,
+        BASIC_CONFIG,
+        entry_data._get_trackable_templates(),
+        entry_data._get_trackable_entity_states(),
+    )
     await notifier.async_setup()
 
     await _async_set_state(hass, "switch.not_exposed", "on")
@@ -572,7 +675,13 @@ async def test_notifier_track_templates_over_states(
         entity_filter=generate_entity_filter(include_entity_globs=["*"]),
     )
 
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
+    notifier = YandexDirectNotifier(
+        hass_platform,
+        entry_data,
+        BASIC_CONFIG,
+        entry_data._get_trackable_templates(),
+        entry_data._get_trackable_entity_states(),
+    )
     await notifier.async_setup()
     assert notifier._pending.empty is True
 
@@ -618,11 +727,17 @@ async def test_notifier_initial_report(
         },
         entity_filter=generate_entity_filter(exclude_entities=["switch.test"]),
     )
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
+    notifier = YandexDirectNotifier(
+        hass_platform,
+        entry_data,
+        BASIC_CONFIG,
+        entry_data._get_trackable_templates(),
+        entry_data._get_trackable_entity_states(),
+    )
 
     hass_platform.states.async_set("switch.test", "on")
     hass_platform.states.async_set(
-        "sensor.button", "on", {ATTR_DEVICE_CLASS: DEVICE_CLASS_BUTTON, "last_action": "click"}
+        "sensor.button", "on", {ATTR_DEVICE_CLASS: EventDeviceClass.BUTTON, "last_action": "click"}
     )
 
     await notifier._async_initial_report()
@@ -657,7 +772,7 @@ async def test_notifier_initial_report(
 async def test_notifier_send_callback_exception(
     hass: HomeAssistant, entry_data: MockConfigEntryData, caplog: pytest.LogCaptureFixture
 ) -> None:
-    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG, {})
+    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG, {}, {})
 
     with patch.object(notifier._session, "post", side_effect=ClientConnectionError()):
         caplog.clear()
@@ -678,7 +793,7 @@ async def test_notifier_send_direct(
     aioclient_mock: AiohttpClientMocker,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG, {})
+    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG, {}, {})
     token = BASIC_CONFIG.token
     skill_id = BASIC_CONFIG.skill_id
     user_id = BASIC_CONFIG.user_id
@@ -782,7 +897,7 @@ async def test_notifier_send_cloud(
 ) -> None:
     await async_setup_component(hass, DOMAIN, {})
 
-    notifier = YandexCloudNotifier(hass, entry_data, BASIC_CONFIG, {})
+    notifier = YandexCloudNotifier(hass, entry_data, BASIC_CONFIG, {}, {})
     token = BASIC_CONFIG.token
     user_id = BASIC_CONFIG.user_id
     now = time.time()
@@ -897,7 +1012,7 @@ async def test_notifier_report_states(
         def get_value(self) -> bool | None:
             raise APIError(ResponseCode.INTERNAL_ERROR, "api error prop")
 
-    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG, {})
+    notifier = YandexDirectNotifier(hass, entry_data, BASIC_CONFIG, {}, {})
     skill_id = BASIC_CONFIG.skill_id
     user_id = BASIC_CONFIG.user_id
     now = time.time()
@@ -914,9 +1029,15 @@ async def test_notifier_report_states(
 
     await notifier._pending.async_add([OnOffCapabilityBasic(hass, entry_data, State("switch.on", "on"))], [])
     await notifier._pending.async_add([MockCapabilityFail(hass, entry_data, State("switch.fail", "on"))], [])
-    await notifier._pending.async_add([TemperatureSensor(hass, entry_data, State("sensor.temperature", "5"))], [])
-    await notifier._pending.async_add([HumiditySensor(hass, entry_data, State("sensor.temperature", "5"))], [])
-    await notifier._pending.async_add([MockPropertyFail(hass, entry_data, State("sensor.fail", "5"))], [])
+    await notifier._pending.async_add(
+        [TemperatureSensor(hass, entry_data, "sensor.temperature", State("sensor.temperature", "5"))], []
+    )
+    await notifier._pending.async_add(
+        [HumiditySensor(hass, entry_data, "sensor.temperature", State("sensor.temperature", "5"))], []
+    )
+    await notifier._pending.async_add(
+        [MockPropertyFail(hass, entry_data, "sensor.fail", State("sensor.fail", "5"))], []
+    )
 
     assert notifier._pending.empty is False
     with patch("time.time", return_value=now):
@@ -1007,6 +1128,7 @@ async def test_notifier_float_property_check_value_change(
 ) -> None:
     ps = PendingStates()
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "sensor.foo")
+    assert prop
     await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template("5", hass))], []))
     await _assert_empty_list(
         ps.async_add(
@@ -1045,6 +1167,7 @@ async def test_notifier_binary_event_property_check_value_change(
 
     ps = PendingStates()
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
+    assert prop
     await _assert_empty_list(ps.async_add([prop.new_with_value_template(a_value)], []))
     await _assert_empty_list(
         ps.async_add([prop.new_with_value_template(a_value)], [prop.new_with_value_template(a_value)])
@@ -1072,12 +1195,14 @@ async def test_notifier_reactive_event_property_check_value_change(
 ) -> None:
     ps = PendingStates()
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
+    assert prop
     await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template(v, hass))], []))
     await _assert_empty_list(
         ps.async_add(
             [prop.new_with_value_template(Template(v, hass))], [prop.new_with_value_template(Template(v, hass))]
         )
     )
+    await _assert_empty_list(ps.async_add([prop.new_with_value_template(Template("foo", hass))], []))
     await _assert_not_empty_list(
         ps.async_add(
             [prop.new_with_value_template(Template(v, hass))], [prop.new_with_value_template(Template("off", hass))]
@@ -1093,5 +1218,44 @@ async def test_notifier_reactive_event_property_check_value_change(
         ps.async_add(
             [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
             [prop.new_with_value_template(Template(v, hass))],
+        )
+    )
+
+
+async def test_notifier_event_platform_property_check_value_change(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
+    ps = PendingStates()
+    cls = ButtonPressEventPlatformCustomProperty
+
+    await _assert_not_empty_list(
+        ps.async_add(
+            [cls(hass, entry_data, "foo", State("event.foo", STATE_UNKNOWN, {ATTR_EVENT_TYPE: "click"}))],
+            [],
+        )
+    )
+    await _assert_not_empty_list(
+        ps.async_add(
+            [cls(hass, entry_data, "foo", State("event.foo", "foo", {ATTR_EVENT_TYPE: "click"}))],
+            [cls(hass, entry_data, "foo", State("event.foo", "bar", {ATTR_EVENT_TYPE: "click"}))],
+        )
+    )
+
+    await _assert_empty_list(
+        ps.async_add(
+            [cls(hass, entry_data, "foo", State("event.foo", STATE_UNKNOWN, {ATTR_EVENT_TYPE: "foo"}))],
+            [],
+        )
+    )
+    await _assert_empty_list(
+        ps.async_add(
+            [cls(hass, entry_data, "foo", State("event.foo", "bar", {ATTR_EVENT_TYPE: "click"}))],
+            [cls(hass, entry_data, "foo", State("event.foo", "bar", {ATTR_EVENT_TYPE: "click"}))],
+        )
+    )
+    await _assert_empty_list(
+        ps.async_add(
+            [cls(hass, entry_data, "foo", State("event.foo", "bar", {ATTR_EVENT_TYPE: "click"}))],
+            [cls(hass, entry_data, "foo", State("event.foo", "bar", {ATTR_EVENT_TYPE: "double_click"}))],
         )
     )

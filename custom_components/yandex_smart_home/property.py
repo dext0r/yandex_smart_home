@@ -123,13 +123,13 @@ class StateProperty(Property, Protocol):
     _hass: HomeAssistant
     _entry_data: ConfigEntryData
 
-    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, state: State):
+    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, device_id: str, state: State):
         """Initialize a property for the state."""
         self._hass = hass
         self._entry_data = entry_data
 
         self.state = state
-        self.device_id = state.entity_id
+        self.device_id = device_id
 
     @property
     def _state_device_class(self) -> str | None:

@@ -1,6 +1,6 @@
 """Implement the Yandex Smart Home event properties."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from functools import cached_property
 from itertools import chain
 import logging
@@ -8,6 +8,7 @@ from typing import Any, Protocol, Self, cast
 
 from homeassistant.components import binary_sensor, sensor
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.event import ATTR_EVENT_TYPE, DOMAIN as EVENT_DOMAIN, EventDeviceClass
 from homeassistant.const import (
     CONF_DEVICE_CLASS,
     STATE_CLOSED,
@@ -19,7 +20,7 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.typing import ConfigType
 
-from .const import CONF_ENTITY_EVENT_MAP, DEVICE_CLASS_BUTTON, STATE_EMPTY, STATE_NONE, STATE_NONE_UI, XGW3DeviceClass
+from .const import CONF_ENTITY_EVENT_MAP, STATE_EMPTY, STATE_NONE, STATE_NONE_UI, XGW3DeviceClass
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .schema import (
     BatteryLevelEventPropertyParameters,
@@ -56,6 +57,8 @@ _LOGGER = logging.getLogger(__name__)
 _BOOLEAN_TRUE = ["yes", "true", "1", STATE_ON]
 _BOOLEAN_FALSE = ["no", "false", "0", STATE_OFF]
 
+type EventMapT[EventInstanceEventT] = dict[EventInstanceEventT, list[str]]
+
 
 class EventProperty(Property, Protocol[EventInstanceEventT]):
     """Base class for event properties."""
@@ -63,7 +66,7 @@ class EventProperty(Property, Protocol[EventInstanceEventT]):
     type: PropertyType = PropertyType.EVENT
     instance: EventPropertyInstance
 
-    _event_map_default: dict[EventInstanceEventT, list[str]] = {}
+    _event_map_default: EventMapT[EventInstanceEventT] = {}
 
     @property
     @abstractmethod
@@ -135,7 +138,7 @@ class EventProperty(Property, Protocol[EventInstanceEventT]):
         return list(chain.from_iterable(self.event_map.values()))
 
 
-class SensorEventProperty(EventProperty[Any], ABC):
+class SensorEventProperty(EventProperty[Any]):
     """Represent a binary-like property with stable current value."""
 
     def check_value_change(self, other: Self | None) -> bool:
@@ -150,27 +153,27 @@ class SensorEventProperty(EventProperty[Any], ABC):
         return bool(value != other_value)
 
 
-class ReactiveEventProperty(EventProperty[Any], ABC):
-    """Represent a button-like event property."""
+class ReactiveEventProperty(EventProperty[Any], Protocol):
+    """Represent a button-like event property (sensor and binary_sensor platforms)."""
 
     def check_value_change(self, other: Self | None) -> bool:
         """Test if the property value differs from other property."""
+        value = self.get_value()
+        if value is None:
+            return False
+
         if other is None:
             return True
 
-        value, other_value = self.get_value(), other.get_value()
-        if value == other_value:
-            return False
-
-        return value is not None
+        return value != other.get_value()
 
 
-class OpenEventProperty(SensorEventProperty, EventProperty[OpenInstanceEvent], ABC):
+class OpenEventProperty(EventProperty[OpenInstanceEvent], Protocol):
     """Base class for event property that detect opening of something."""
 
-    instance = EventPropertyInstance.OPEN
+    instance: EventPropertyInstance = EventPropertyInstance.OPEN
 
-    _event_map_default = {
+    _event_map_default: EventMapT[OpenInstanceEvent] = {
         OpenInstanceEvent.OPENED: _BOOLEAN_TRUE + [STATE_OPEN],
         OpenInstanceEvent.CLOSED: _BOOLEAN_FALSE + [STATE_CLOSED],
     }
@@ -181,13 +184,13 @@ class OpenEventProperty(SensorEventProperty, EventProperty[OpenInstanceEvent], A
         return OpenEventPropertyParameters()
 
 
-class MotionEventProperty(SensorEventProperty, EventProperty[MotionInstanceEvent], ABC):
+class MotionEventProperty(EventProperty[MotionInstanceEvent], Protocol):
     """Base class for event property that detect motion, presence or occupancy."""
 
-    instance = EventPropertyInstance.MOTION
+    instance: EventPropertyInstance = EventPropertyInstance.MOTION
 
-    _event_map_default = {
-        MotionInstanceEvent.DETECTED: _BOOLEAN_TRUE,
+    _event_map_default: EventMapT[MotionInstanceEvent] = {
+        MotionInstanceEvent.DETECTED: _BOOLEAN_TRUE + ["motion", "motion_detected"],
         MotionInstanceEvent.NOT_DETECTED: _BOOLEAN_FALSE,
     }
 
@@ -197,12 +200,12 @@ class MotionEventProperty(SensorEventProperty, EventProperty[MotionInstanceEvent
         return MotionEventPropertyParameters()
 
 
-class GasEventProperty(SensorEventProperty, EventProperty[GasInstanceEvent], ABC):
+class GasEventProperty(EventProperty[GasInstanceEvent], Protocol):
     """Base class for event property that detect gas presence."""
 
-    instance = EventPropertyInstance.GAS
+    instance: EventPropertyInstance = EventPropertyInstance.GAS
 
-    _event_map_default = {
+    _event_map_default: EventMapT[GasInstanceEvent] = {
         GasInstanceEvent.DETECTED: _BOOLEAN_TRUE,
         GasInstanceEvent.NOT_DETECTED: _BOOLEAN_FALSE,
         GasInstanceEvent.HIGH: ["high"],
@@ -214,12 +217,12 @@ class GasEventProperty(SensorEventProperty, EventProperty[GasInstanceEvent], ABC
         return GasEventPropertyParameters()
 
 
-class SmokeEventProperty(SensorEventProperty, EventProperty[SmokeInstanceEvent], ABC):
+class SmokeEventProperty(EventProperty[SmokeInstanceEvent], Protocol):
     """Base class for event property that detect smoke presence."""
 
-    instance = EventPropertyInstance.SMOKE
+    instance: EventPropertyInstance = EventPropertyInstance.SMOKE
 
-    _event_map_default = {
+    _event_map_default: EventMapT[SmokeInstanceEvent] = {
         SmokeInstanceEvent.DETECTED: _BOOLEAN_TRUE,
         SmokeInstanceEvent.NOT_DETECTED: _BOOLEAN_FALSE,
         SmokeInstanceEvent.HIGH: ["high"],
@@ -231,12 +234,12 @@ class SmokeEventProperty(SensorEventProperty, EventProperty[SmokeInstanceEvent],
         return SmokeEventPropertyParameters()
 
 
-class BatteryLevelEventProperty(SensorEventProperty, EventProperty[BatteryLevelInstanceEvent], ABC):
+class BatteryLevelEventProperty(EventProperty[BatteryLevelInstanceEvent], Protocol):
     """Base class for event property that detect low level of a battery."""
 
-    instance = EventPropertyInstance.BATTERY_LEVEL
+    instance: EventPropertyInstance = EventPropertyInstance.BATTERY_LEVEL
 
-    _event_map_default = {
+    _event_map_default: EventMapT[BatteryLevelInstanceEvent] = {
         BatteryLevelInstanceEvent.LOW: _BOOLEAN_TRUE + ["low"],
         BatteryLevelInstanceEvent.NORMAL: _BOOLEAN_FALSE + ["normal"],
         BatteryLevelInstanceEvent.HIGH: ["high"],
@@ -248,12 +251,12 @@ class BatteryLevelEventProperty(SensorEventProperty, EventProperty[BatteryLevelI
         return BatteryLevelEventPropertyParameters()
 
 
-class FoodLevelEventProperty(SensorEventProperty, EventProperty[FoodLevelInstanceEvent], ABC):
+class FoodLevelEventProperty(EventProperty[FoodLevelInstanceEvent], Protocol):
     """Base class for event property that detect food level."""
 
-    instance = EventPropertyInstance.FOOD_LEVEL
+    instance: EventPropertyInstance = EventPropertyInstance.FOOD_LEVEL
 
-    _event_map_default = {
+    _event_map_default: EventMapT[FoodLevelInstanceEvent] = {
         FoodLevelInstanceEvent.EMPTY: ["empty"],
         FoodLevelInstanceEvent.LOW: ["low"],
         FoodLevelInstanceEvent.NORMAL: ["normal"],
@@ -265,12 +268,12 @@ class FoodLevelEventProperty(SensorEventProperty, EventProperty[FoodLevelInstanc
         return FoodLevelEventPropertyParameters()
 
 
-class WaterLevelEventProperty(SensorEventProperty, EventProperty[WaterLevelInstanceEvent], ABC):
+class WaterLevelEventProperty(EventProperty[WaterLevelInstanceEvent], Protocol):
     """Base class for event property that detect low level of water."""
 
-    instance = EventPropertyInstance.WATER_LEVEL
+    instance: EventPropertyInstance = EventPropertyInstance.WATER_LEVEL
 
-    _event_map_default = {
+    _event_map_default: EventMapT[WaterLevelInstanceEvent] = {
         WaterLevelInstanceEvent.EMPTY: ["empty"],
         WaterLevelInstanceEvent.LOW: _BOOLEAN_TRUE + ["low"],
         WaterLevelInstanceEvent.NORMAL: _BOOLEAN_FALSE + ["normal"],
@@ -282,12 +285,12 @@ class WaterLevelEventProperty(SensorEventProperty, EventProperty[WaterLevelInsta
         return WaterLevelEventPropertyParameters()
 
 
-class WaterLeakEventProperty(SensorEventProperty, EventProperty[WaterLeakInstanceEvent], ABC):
+class WaterLeakEventProperty(EventProperty[WaterLeakInstanceEvent], Protocol):
     """Base class for event property that detect water leakage."""
 
-    instance = EventPropertyInstance.WATER_LEAK
+    instance: EventPropertyInstance = EventPropertyInstance.WATER_LEAK
 
-    _event_map_default = {
+    _event_map_default: EventMapT[WaterLeakInstanceEvent] = {
         WaterLeakInstanceEvent.DRY: _BOOLEAN_FALSE + ["dry"],
         WaterLeakInstanceEvent.LEAK: _BOOLEAN_TRUE + ["leak"],
     }
@@ -298,15 +301,31 @@ class WaterLeakEventProperty(SensorEventProperty, EventProperty[WaterLeakInstanc
         return WaterLeakEventPropertyParameters()
 
 
-class ButtonPressEventProperty(ReactiveEventProperty, EventProperty[ButtonInstanceEvent], ABC):
+class ButtonPressEventProperty(EventProperty[ButtonInstanceEvent], Protocol):
     """Base class for event property that detect a button interaction."""
 
-    instance = EventPropertyInstance.BUTTON
+    instance: EventPropertyInstance = EventPropertyInstance.BUTTON
 
-    _event_map_default = {
-        ButtonInstanceEvent.CLICK: ["click", "single"],
-        ButtonInstanceEvent.DOUBLE_CLICK: ["double_click", "double", "triple", "quadruple", "many"],
-        ButtonInstanceEvent.LONG_PRESS: ["long_press", "long", "long_click", "long_click_press", "hold"],
+    _event_map_default: EventMapT[ButtonInstanceEvent] = {
+        ButtonInstanceEvent.CLICK: ["click", "single", "press", "pressed"],
+        ButtonInstanceEvent.DOUBLE_CLICK: [
+            "double_click",
+            "double_press",
+            "double",
+            "many",
+            "quadruple",
+            "triple",
+            "triple_press",
+            "long_triple_press",
+            "long_double_press",
+        ],
+        ButtonInstanceEvent.LONG_PRESS: [
+            "hold",
+            "long_click_press",
+            "long_click",
+            "long_press",
+            "long",
+        ],
     }
 
     @property
@@ -320,12 +339,12 @@ class ButtonPressEventProperty(ReactiveEventProperty, EventProperty[ButtonInstan
         return ButtonEventPropertyParameters()
 
 
-class VibrationEventProperty(ReactiveEventProperty, EventProperty[VibrationInstanceEvent], ABC):
+class VibrationEventProperty(EventProperty[VibrationInstanceEvent], Protocol):
     """Base class for event property that detect vibration."""
 
-    instance = EventPropertyInstance.VIBRATION
+    instance: EventPropertyInstance = EventPropertyInstance.VIBRATION
 
-    _event_map_default = {
+    _event_map_default: EventMapT[VibrationInstanceEvent] = {
         VibrationInstanceEvent.VIBRATION: _BOOLEAN_TRUE
         + [
             "vibration",
@@ -359,7 +378,34 @@ class StateEventProperty(StateProperty, EventProperty[Any], Protocol):
         return self.state.state
 
 
-class OpenStateEventProperty(StateEventProperty, OpenEventProperty):
+class EventPlatformProperty(StateProperty, EventProperty[Any], Protocol):
+    """Base class for a event property based on the state of an event platform entity."""
+
+    @property
+    def retrievable(self) -> bool:
+        """Test if the property can return the current value."""
+        return False
+
+    def check_value_change(self, other: Self | None) -> bool:
+        """Test if the property value differs from other property."""
+        value = self.get_value()
+        if value is None:
+            return False
+
+        if other is None:
+            return True
+
+        if self.state.state == other.state.state:
+            return False
+
+        return True
+
+    def _get_native_value(self) -> str | None:
+        """Return the current property value without conversion."""
+        return self.state.attributes.get(ATTR_EVENT_TYPE)
+
+
+class OpenStateEventProperty(StateEventProperty, SensorEventProperty, OpenEventProperty):
     """Represents the state event property that detect opening of something."""
 
     @property
@@ -373,7 +419,7 @@ class OpenStateEventProperty(StateEventProperty, OpenEventProperty):
         )
 
 
-class MotionStateEventProperty(StateEventProperty, MotionEventProperty):
+class MotionStateEventProperty(SensorEventProperty, StateEventProperty, MotionEventProperty):
     """Represents the state event property that detect motion, presence or occupancy."""
 
     @property
@@ -386,7 +432,23 @@ class MotionStateEventProperty(StateEventProperty, MotionEventProperty):
         )
 
 
-class GasStateEventProperty(StateEventProperty, GasEventProperty):
+class MotionEventPlatformProperty(EventPlatformProperty, MotionEventProperty):
+    """Represents the event platform property that detect motion."""
+
+    @property
+    def parameters(self) -> MotionEventPropertyParameters:
+        """Return parameters for a devices list request."""
+        return MotionEventPropertyParameters(
+            events=[{"value": MotionInstanceEvent.DETECTED}]  # type: ignore[dict-item]
+        )
+
+    @property
+    def supported(self) -> bool:
+        """Test if the property is supported."""
+        return self.state.domain == EVENT_DOMAIN and self._state_device_class == EventDeviceClass.MOTION
+
+
+class GasStateEventProperty(StateEventProperty, SensorEventProperty, GasEventProperty):
     """Represents the state event property that detect gas presence."""
 
     @property
@@ -395,7 +457,7 @@ class GasStateEventProperty(StateEventProperty, GasEventProperty):
         return self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.GAS
 
 
-class SmokeStateEventProperty(StateEventProperty, SmokeEventProperty):
+class SmokeStateEventProperty(StateEventProperty, SensorEventProperty, SmokeEventProperty):
     """Represents the state event property that detect smoke presence."""
 
     @property
@@ -404,7 +466,7 @@ class SmokeStateEventProperty(StateEventProperty, SmokeEventProperty):
         return self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.SMOKE
 
 
-class BatteryLevelStateEvent(StateEventProperty, BatteryLevelEventProperty):
+class BatteryLevelStateEvent(StateEventProperty, SensorEventProperty, BatteryLevelEventProperty):
     """Represents the state event property that detect low level of a battery."""
 
     @property
@@ -413,7 +475,7 @@ class BatteryLevelStateEvent(StateEventProperty, BatteryLevelEventProperty):
         return self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.BATTERY
 
 
-class WaterLeakStateEventProperty(StateEventProperty, WaterLeakEventProperty):
+class WaterLeakStateEventProperty(StateEventProperty, SensorEventProperty, WaterLeakEventProperty):
     """Represents the state event property that detect water leakage."""
 
     @property
@@ -424,16 +486,19 @@ class WaterLeakStateEventProperty(StateEventProperty, WaterLeakEventProperty):
         )
 
 
-class ButtonPressStateEventProperty(StateEventProperty, ButtonPressEventProperty):
+class ButtonPressStateEventProperty(StateEventProperty, ReactiveEventProperty, ButtonPressEventProperty):
     """Represents the state property that detect a button interaction."""
 
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self._state_device_class == DEVICE_CLASS_BUTTON:
+        if self.state.domain == EVENT_DOMAIN:
+            return False
+
+        if self._state_device_class == EventDeviceClass.BUTTON:
             return True
 
-        if self._entry_data.get_entity_config(self.device_id).get(CONF_DEVICE_CLASS) == DEVICE_CLASS_BUTTON:
+        if self._entry_data.get_entity_config(self.device_id).get(CONF_DEVICE_CLASS) == EventDeviceClass.BUTTON:
             return True
 
         if self.state.domain == sensor.DOMAIN and self._state_device_class == XGW3DeviceClass.ACTION:
@@ -450,7 +515,23 @@ class ButtonPressStateEventProperty(StateEventProperty, ButtonPressEventProperty
         return False
 
 
-class VibrationStateEventProperty(StateEventProperty, VibrationEventProperty):
+class ButtonPressEventPlatformProperty(EventPlatformProperty, ButtonPressEventProperty):
+    """Represents the event platform property that detect a button interaction."""
+
+    @property
+    def supported(self) -> bool:
+        """Test if the property is supported."""
+        if self.state.domain == EVENT_DOMAIN:
+            if self._state_device_class in [EventDeviceClass.DOORBELL, EventDeviceClass.BUTTON]:
+                return True
+
+            if self._entry_data.get_entity_config(self.device_id).get(CONF_DEVICE_CLASS) == EventDeviceClass.BUTTON:
+                return True
+
+        return False
+
+
+class VibrationStateEventProperty(StateEventProperty, ReactiveEventProperty, VibrationEventProperty):
     """Represents the state event property that detect vibration."""
 
     @property
@@ -468,9 +549,11 @@ class VibrationStateEventProperty(StateEventProperty, VibrationEventProperty):
 
 STATE_PROPERTIES_REGISTRY.register(OpenStateEventProperty)
 STATE_PROPERTIES_REGISTRY.register(MotionStateEventProperty)
+STATE_PROPERTIES_REGISTRY.register(MotionEventPlatformProperty)
 STATE_PROPERTIES_REGISTRY.register(GasStateEventProperty)
 STATE_PROPERTIES_REGISTRY.register(SmokeStateEventProperty)
 STATE_PROPERTIES_REGISTRY.register(BatteryLevelStateEvent)
 STATE_PROPERTIES_REGISTRY.register(WaterLeakStateEventProperty)
 STATE_PROPERTIES_REGISTRY.register(ButtonPressStateEventProperty)
+STATE_PROPERTIES_REGISTRY.register(ButtonPressEventPlatformProperty)
 STATE_PROPERTIES_REGISTRY.register(VibrationStateEventProperty)

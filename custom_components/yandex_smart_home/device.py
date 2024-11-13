@@ -14,6 +14,7 @@ from homeassistant.components import (
     camera,
     climate,
     cover,
+    event,
     fan,
     group,
     humidifier,
@@ -34,6 +35,7 @@ from homeassistant.components import (
 )
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.cover import CoverDeviceClass
+from homeassistant.components.event import EventDeviceClass
 from homeassistant.components.media_player import MediaPlayerDeviceClass
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.components.switch import SwitchDeviceClass
@@ -45,6 +47,7 @@ from homeassistant.const import (
     CONF_ROOM,
     CONF_TYPE,
     STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
 )
 from homeassistant.core import Context, HomeAssistant, State, callback
 from homeassistant.helpers import area_registry, device_registry, entity_registry
@@ -59,7 +62,6 @@ from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_CUSTOM_TOGGLES,
     CONF_ENTITY_PROPERTIES,
     CONF_ERROR_CODE_TEMPLATE,
-    DEVICE_CLASS_BUTTON,
 )
 
 from . import (  # noqa: F401
@@ -78,7 +80,7 @@ from .capability import STATE_CAPABILITIES_REGISTRY, Capability, DummyCapability
 from .capability_custom import get_custom_capability
 from .helpers import ActionNotAllowed, APIError
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
-from .property_custom import get_custom_property
+from .property_custom import get_custom_property, get_event_platform_custom_property_type
 from .schema import (
     CapabilityDescription,
     CapabilityInstanceAction,
@@ -107,6 +109,7 @@ _DOMAIN_TO_DEVICE_TYPES: dict[str, DeviceType] = {
     camera.DOMAIN: DeviceType.CAMERA,
     climate.DOMAIN: DeviceType.THERMOSTAT,
     cover.DOMAIN: DeviceType.OPENABLE,
+    event.DOMAIN: DeviceType.SENSOR,
     fan.DOMAIN: DeviceType.VENTILATION_FAN,
     group.DOMAIN: DeviceType.SWITCH,
     humidifier.DOMAIN: DeviceType.HUMIDIFIER,
@@ -142,7 +145,7 @@ _DEVICE_CLASS_TO_DEVICE_TYPES: dict[tuple[str, str], DeviceType] = {
     (cover.DOMAIN, CoverDeviceClass.CURTAIN): DeviceType.OPENABLE_CURTAIN,
     (media_player.DOMAIN, MediaPlayerDeviceClass.RECEIVER): DeviceType.MEDIA_DEVICE_RECIEVER,
     (media_player.DOMAIN, MediaPlayerDeviceClass.TV): DeviceType.MEDIA_DEVICE_TV,
-    (sensor.DOMAIN, DEVICE_CLASS_BUTTON): DeviceType.SENSOR_BUTTON,
+    (sensor.DOMAIN, EventDeviceClass.BUTTON): DeviceType.SENSOR_BUTTON,
     (sensor.DOMAIN, SensorDeviceClass.CO): DeviceType.SENSOR_CLIMATE,
     (sensor.DOMAIN, SensorDeviceClass.CO2): DeviceType.SENSOR_CLIMATE,
     (sensor.DOMAIN, SensorDeviceClass.ENERGY): DeviceType.SMART_METER_ELECTRICITY,
@@ -157,7 +160,12 @@ _DEVICE_CLASS_TO_DEVICE_TYPES: dict[tuple[str, str], DeviceType] = {
     (sensor.DOMAIN, SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS): DeviceType.SENSOR_CLIMATE,
     (sensor.DOMAIN, SensorDeviceClass.WATER): DeviceType.SMART_METER_COLD_WATER,
     (switch.DOMAIN, SwitchDeviceClass.OUTLET): DeviceType.SOCKET,
+    (event.DOMAIN, EventDeviceClass.BUTTON): DeviceType.SENSOR_BUTTON,
+    (event.DOMAIN, EventDeviceClass.DOORBELL): DeviceType.SENSOR_BUTTON,
+    (event.DOMAIN, EventDeviceClass.MOTION): DeviceType.SENSOR_MOTION,
 }
+
+type DeviceId = str
 
 
 class Device:
@@ -236,11 +244,19 @@ class Device:
                 _LOGGER.error(e)
                 continue
 
-            if custom_property.supported and custom_property not in properties:
+            if custom_property and custom_property.supported and custom_property not in properties:
                 properties.append(custom_property)
+                continue
+
+            if event_platform_property_type := get_event_platform_custom_property_type(property_config):
+                event_platform_property = event_platform_property_type(
+                    self._hass, self._entry_data, self.id, State(self.id, STATE_UNKNOWN)
+                )
+                if event_platform_property.supported and event_platform_property not in properties:
+                    properties.append(event_platform_property)
 
         for PropertyT in STATE_PROPERTIES_REGISTRY:
-            device_property = PropertyT(self._hass, self._entry_data, self._state)
+            device_property = PropertyT(self._hass, self._entry_data, self.id, self._state)
             if device_property.supported and device_property not in properties:
                 properties.append(device_property)
 

@@ -51,7 +51,7 @@ def get_properties(
     props: list[StateProperty] = []
 
     for PropertyT in STATE_PROPERTIES_REGISTRY:
-        prop = PropertyT(hass, entry_data, state)
+        prop = PropertyT(hass, entry_data, state.entity_id, state)
 
         if prop.type != property_type or prop.instance != instance:
             continue
@@ -123,7 +123,7 @@ def assert_no_properties(
 async def test_property_demo_platform(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     with patch(
         "homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM",
-        [Platform.CLIMATE, Platform.SENSOR, Platform.BINARY_SENSOR],
+        [Platform.CLIMATE, Platform.SENSOR, Platform.BINARY_SENSOR, Platform.EVENT],
     ):
         await async_setup_component(hass, core.DOMAIN, {})
         await async_setup_component(hass, demo.DOMAIN, {})
@@ -254,3 +254,10 @@ async def test_property_demo_platform(hass: HomeAssistant, entry_data: MockConfi
     assert device.type == "devices.types.sensor.motion"
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.event", "motion")]
+
+    state = hass.states.get("event.none_button_press")
+    assert state is not None
+    device = Device(hass, entry_data, state.entity_id, state)
+    assert device.type == "devices.types.sensor.button"
+    props = list((p.type, p.instance) for p in device.get_properties())
+    assert props == [("devices.properties.event", "button")]

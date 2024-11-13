@@ -18,9 +18,11 @@ from custom_components.yandex_smart_home.const import (
 )
 from custom_components.yandex_smart_home.helpers import APIError, DictRegistry
 from custom_components.yandex_smart_home.property_custom import (
+    EVENT_PLATFORM_PROPERTIES_REGISTRY,
     EVENT_PROPERTIES_REGISTRY,
     FLOAT_PROPERTIES_REGISTRY,
     get_custom_property,
+    get_event_platform_custom_property_type,
 )
 from custom_components.yandex_smart_home.schema import (
     EventPropertyInstance,
@@ -37,7 +39,11 @@ ALL_INSTANCES = set(
 
 @pytest.mark.parametrize(
     "registry,instance",
-    ((FLOAT_PROPERTIES_REGISTRY, FloatPropertyInstance), (EVENT_PROPERTIES_REGISTRY, EventPropertyInstance)),
+    (
+        (FLOAT_PROPERTIES_REGISTRY, FloatPropertyInstance),
+        (EVENT_PROPERTIES_REGISTRY, EventPropertyInstance),
+        (EVENT_PLATFORM_PROPERTIES_REGISTRY, EventPropertyInstance),
+    ),
 )
 def test_property_custom_registry(registry: DictRegistry[Any], instance: type[StrEnum]) -> None:
     assert set(instance.__members__.values()) == set(registry.keys())
@@ -78,6 +84,7 @@ async def test_property_custom_short(
         return
 
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
+    assert prop
     if instance in ["vibration", "open", "button", "motion", "smoke", "gas", "water_leak"]:
         assert prop.type == PropertyType.EVENT
     else:
@@ -109,8 +116,50 @@ async def test_property_custom_event(
     hass: HomeAssistant, entry_data: MockConfigEntryData, domain: str, instance: str
 ) -> None:
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: f"event.{instance}"}, f"{domain}.test")
+    assert prop
     assert prop.type == PropertyType.EVENT
     assert prop.parameters.dict()["instance"] == instance
+
+
+@pytest.mark.parametrize("instance", EventPropertyInstance.__members__.values())
+async def test_property_custom_event_platform(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, instance: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    prop = get_custom_property(
+        hass,
+        entry_data,
+        {
+            CONF_ENTITY_PROPERTY_TYPE: f"event.{instance}",
+            CONF_ENTITY_PROPERTY_VALUE_TEMPLATE: Template("{{ states('event.foo') }}", hass),
+        },
+        "switch.test",
+    )
+    assert prop
+    assert prop.type == PropertyType.EVENT
+    assert prop.parameters.dict()["instance"] == instance
+    assert len(caplog.records) == 1
+    assert caplog.messages[-1] == "Entity event.foo is not supported in value_template, use state_entity instead"
+
+    caplog.clear()
+    prop_type = get_event_platform_custom_property_type(
+        {CONF_ENTITY_PROPERTY_TYPE: f"event.{instance}", CONF_ENTITY_PROPERTY_ENTITY: "event.foo"},
+    )
+    assert prop_type
+    assert prop.type == PropertyType.EVENT
+    assert prop.instance == instance
+    assert len(caplog.records) == 0
+
+
+async def test_property_custom_event_platform_unsupported(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.clear()
+    prop_type = get_event_platform_custom_property_type(
+        {CONF_ENTITY_PROPERTY_TYPE: "temperature", CONF_ENTITY_PROPERTY_ENTITY: "event.foo"},
+    )
+    assert prop_type is None
+    assert len(caplog.records) == 1
+    assert caplog.messages[-1] == "Property type temperature is not supported for entity event.foo"
 
 
 @pytest.mark.parametrize("domain", [sensor.DOMAIN, binary_sensor.DOMAIN])
@@ -119,6 +168,7 @@ async def test_property_custom_float(
     hass: HomeAssistant, entry_data: MockConfigEntryData, domain: str, instance: str
 ) -> None:
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: f"float.{instance}"}, f"{domain}.test")
+    assert prop
     assert prop.type == PropertyType.FLOAT
     assert prop.parameters.dict()["instance"] == instance
 
@@ -135,6 +185,7 @@ async def test_property_custom_get_value_button_event(hass: HomeAssistant, entry
         },
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() is None
 
     hass.states.async_set(state.entity_id, "", {"action": "foo"})
@@ -144,6 +195,7 @@ async def test_property_custom_get_value_button_event(hass: HomeAssistant, entry
         {CONF_ENTITY_PROPERTY_TYPE: "button", CONF_ENTITY_PROPERTY_ATTRIBUTE: "action"},
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() is None
 
     hass.states.async_set(state.entity_id, "", {"action": "long_click_press"})
@@ -153,6 +205,7 @@ async def test_property_custom_get_value_button_event(hass: HomeAssistant, entry
         {CONF_ENTITY_PROPERTY_TYPE: "button", CONF_ENTITY_PROPERTY_ATTRIBUTE: "action"},
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() == "long_press"
 
 
@@ -168,6 +221,7 @@ async def test_property_custom_get_value_binary_event(hass: HomeAssistant, entry
         },
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() is None
 
     hass.states.async_set(state.entity_id, STATE_ON)
@@ -179,6 +233,7 @@ async def test_property_custom_get_value_binary_event(hass: HomeAssistant, entry
         },
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() == "detected"
 
 
@@ -194,6 +249,7 @@ async def test_property_custom_get_value_float(hass: HomeAssistant, entry_data: 
         },
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() == 3.36
 
     for s in ["", "-", "none", "unknown"]:
@@ -217,6 +273,7 @@ async def test_property_custom_get_value_float(hass: HomeAssistant, entry_data: 
         },
         state.entity_id,
     )
+    assert prop
     prop.get_value()
     assert prop.get_value() is None
     hass.states.async_set(state.entity_id, "not-a-number", {"value": "55"})
@@ -231,6 +288,7 @@ async def test_property_custom_get_value_float(hass: HomeAssistant, entry_data: 
         },
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() is None
     hass.states.async_set("sensor.test_2", "4.52")
     assert prop.get_value() == 4.52
@@ -246,6 +304,7 @@ async def test_property_custom_get_value_float(hass: HomeAssistant, entry_data: 
         },
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() == 9.99
 
     prop = get_custom_property(
@@ -257,6 +316,7 @@ async def test_property_custom_get_value_float(hass: HomeAssistant, entry_data: 
         },
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() == 3
 
     prop = get_custom_property(
@@ -268,6 +328,7 @@ async def test_property_custom_get_value_float(hass: HomeAssistant, entry_data: 
         },
         state.entity_id,
     )
+    assert prop
     with pytest.raises(APIError) as e:
         prop.get_value()
     assert e.value.code == ResponseCode.INVALID_VALUE
@@ -289,6 +350,7 @@ async def test_property_custom_value_float_limit(hass: HomeAssistant, entry_data
         },
         state.entity_id,
     )
+    assert prop
     assert prop.get_value() == 0
 
 
@@ -342,6 +404,7 @@ async def test_property_custom_get_value_float_conversion(
         },
         state.entity_id,
     )
+    assert prop
     assert prop.parameters.dict()["unit"] == unit
     assert prop.get_value() == (value if assert_value is None else assert_value)
 
@@ -351,6 +414,7 @@ async def test_property_custom_get_value_float_conversion(
     state = State("sensor.test_with_uom", "100", {ATTR_UNIT_OF_MEASUREMENT: unit_of_measurement})
     hass.states.async_set(state.entity_id, state.state, state.attributes)
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
+    assert prop
     assert prop.parameters.dict()["unit"] == unit
     assert prop.get_value() == (value if assert_value is None else assert_value)
 
@@ -365,6 +429,7 @@ async def test_property_custom_get_value_float_conversion(
         },
         state.entity_id,
     )
+    assert prop
     assert prop.parameters.dict()["unit"] == (unit if fallback_unit is None else fallback_unit)
     assert prop.get_value() == value
 
@@ -380,6 +445,7 @@ async def test_property_custom_get_value_float_conversion(
         },
         state.entity_id,
     )
+    assert prop
     assert prop.parameters.dict()["unit"] == unit
     assert prop.get_value() == (value if assert_value is None else assert_value)
 
@@ -420,5 +486,6 @@ async def test_property_custom_get_value_float_conversion_override_target_unit(
         state.entity_id,
     )
 
+    assert prop
     assert prop.parameters.dict()["unit"] == target_unit
     assert prop.get_value() == assert_value

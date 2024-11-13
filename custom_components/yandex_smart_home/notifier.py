@@ -29,8 +29,8 @@ from pydantic import ValidationError
 
 from . import DOMAIN
 from .capability import Capability
-from .const import CLOUD_BASE_URL
-from .device import Device
+from .const import CLOUD_BASE_URL, EntityId
+from .device import Device, DeviceId
 from .helpers import APIError
 from .property import Property
 from .schema import (
@@ -89,6 +89,13 @@ class ReportableDeviceState(Protocol):
     @abstractmethod
     def get_instance_state(self) -> CapabilityInstanceState | PropertyInstanceState | None:
         """Return a state for a state query request."""
+        ...
+
+
+class ReportableDeviceStateFromEntityState(ReportableDeviceState, Protocol):
+    @abstractmethod
+    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, device_id: str, state: State):
+        """Initialize a capability or property for the state."""
         ...
 
 
@@ -167,6 +174,7 @@ class YandexNotifier(ABC):
         entry_data: ConfigEntryData,
         config: NotifierConfig,
         track_templates: Mapping[Template, Sequence[ReportableTemplateDeviceState]],
+        track_entity_states: Mapping[EntityId, Sequence[tuple[DeviceId, type[ReportableDeviceStateFromEntityState]]]],
     ):
         """Initialize."""
         self._hass = hass
@@ -176,6 +184,7 @@ class YandexNotifier(ABC):
 
         self._pending = PendingStates()
 
+        self._track_entity_states = track_entity_states
         self._track_templates = track_templates
         self._template_changes_tracker: TrackTemplateResultInfo | None = None
 
@@ -374,29 +383,34 @@ class YandexNotifier(ABC):
 
     async def _async_state_changed(self, event: Event[EventStateChangedData]) -> None:
         """Handle state changes."""
-        device_id = str(event.data.get(ATTR_ENTITY_ID))
+        entity_id = str(event.data.get(ATTR_ENTITY_ID))
         old_state: State | None = event.data.get("old_state")
         new_state: State | None = event.data.get("new_state")
 
         if not new_state:
             return None
 
-        new_device = Device(self._hass, self._entry_data, device_id, new_state)
+        old_device_states: list[ReportableDeviceState] = []
+        new_device_states: list[ReportableDeviceState] = []
+
+        for device_id, cls in self._track_entity_states.get(entity_id, []):
+            new_device_states.append(cls(self._hass, self._entry_data, device_id, new_state))
+            if old_state:
+                old_device_states.append(cls(self._hass, self._entry_data, device_id, old_state))
+
+        new_device = Device(self._hass, self._entry_data, entity_id, new_state)
         if not new_device.should_expose:
             return None
 
-        old_states: list[ReportableDeviceState] = []
-        new_states: list[ReportableDeviceState] = []
-
-        new_states.extend(new_device.get_state_capabilities())
-        new_states.extend(new_device.get_state_properties())
+        new_device_states.extend(new_device.get_state_capabilities())
+        new_device_states.extend(new_device.get_state_properties())
 
         if old_state:
-            old_device = Device(self._hass, self._entry_data, device_id, old_state)
-            old_states.extend(old_device.get_state_capabilities())
-            old_states.extend(old_device.get_state_properties())
+            old_device = Device(self._hass, self._entry_data, entity_id, old_state)
+            old_device_states.extend(old_device.get_state_capabilities())
+            old_device_states.extend(old_device.get_state_properties())
 
-        for pending_state in await self._pending.async_add(new_states, old_states):
+        for pending_state in await self._pending.async_add(new_device_states, old_device_states):
             self._debug_log(f"State report with value '{pending_state.get_value()}' scheduled for {pending_state!r}")
 
         return self._schedule_report_states()

@@ -17,7 +17,7 @@
 | Пульт                   | `remote`                   | Только включение и отключение                                                                                                                                       |
 | Пылесос                 | `vacuum`                   |                                                                                                                                                                     |
 | Скрипт                  | `script`                   |                                                                                                                                                                     |
-| Событийный датчик       | `binary_sensor`            | См. [событийные датчики](#event-sensor)                                                                                                                             |
+| Событийный датчик       | `binary_sensor`<br>`event` | См. [событийные датчики](#event-sensor)                                                                                                                             |
 | Сцена                   | `scene`                    |                                                                                                                                                                     |
 | Текст                   | `input_text`               | Только для создания [виртуальных кнопок](./devices/button.md)                                                                                                       |
 | Термостат               | `climate`                  | + кондиционеры и некоторые чайники                                                                                                                                  |
@@ -130,9 +130,11 @@
 | Датчик                | `device_class`                             | Домен                                                                              |
 | --------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------- |
 | Нажатие кнопки        | `button`                                   | Любой ([подробнее](devices/button.md))                                             |
+| Нажатие кнопки        | `button`, `doorbell`                       | `event`                                                                            |
 | Нажатие кнопки        |                                            | `sensor` (компонент [Xiaomi Gateway 3](https://github.com/AlexxIT/XiaomiGateway3)) |
 | Открытие/закрытие     | `door`, `garage_door`, `window`, `opening` | `binary_sensor`                                                                    |
 | Движение              | `motion`, `occupancy`, `presence`          | `binary_sensor`                                                                    |
+| Движение              | `motion`                                   | `event`                                                                            |
 | Наличие газа          | `gas`                                      | `binary_sensor`                                                                    |
 | Наличие дыма          | `smoke`                                    | `binary_sensor`                                                                    |
 | Низкий уровень заряда | `battery`                                  | `binary_sensor`                                                                    |

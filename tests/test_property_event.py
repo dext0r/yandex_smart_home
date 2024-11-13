@@ -1,10 +1,11 @@
 from homeassistant.components import input_text, sensor
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
-from homeassistant.const import ATTR_DEVICE_CLASS, CONF_DEVICE_CLASS, STATE_OFF, STATE_ON
+from homeassistant.components.event import ATTR_EVENT_TYPE, EventDeviceClass
+from homeassistant.const import ATTR_DEVICE_CLASS, CONF_DEVICE_CLASS, STATE_OFF, STATE_ON, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, State
 import pytest
 
-from custom_components.yandex_smart_home.const import CONF_ENTITY_EVENT_MAP, DEVICE_CLASS_BUTTON
+from custom_components.yandex_smart_home.const import CONF_ENTITY_EVENT_MAP
 from custom_components.yandex_smart_home.schema import EventPropertyInstance, PropertyType
 
 from . import MockConfigEntryData
@@ -80,14 +81,14 @@ async def test_state_property_event_open(
         (BinarySensorDeviceClass.BATTERY, False),
     ],
 )
-async def test_state_property_event_motion(
+async def test_state_property_event_motion_sensor(
     hass: HomeAssistant, entry_data: MockConfigEntryData, device_class: str, supported: bool
 ) -> None:
     state = State("binary_sensor.test", STATE_ON, {ATTR_DEVICE_CLASS: device_class})
     if supported:
         prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.MOTION)
     else:
-        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.OPEN)
+        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.MOTION)
         return
 
     assert prop.retrievable is True
@@ -95,6 +96,30 @@ async def test_state_property_event_motion(
     assert prop.get_value() == "detected"
     prop.state.state = STATE_OFF
     assert prop.get_value() == "not_detected"
+
+
+@pytest.mark.parametrize(
+    "device_class,supported",
+    [
+        (EventDeviceClass.MOTION, True),
+        (EventDeviceClass.BUTTON, False),
+    ],
+)
+async def test_state_property_event_motion_event(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, device_class: str, supported: bool
+) -> None:
+    state = State("event.test", STATE_UNKNOWN, {ATTR_DEVICE_CLASS: device_class})
+    if supported:
+        prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.MOTION)
+    else:
+        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.MOTION)
+        return
+
+    assert prop.retrievable is False
+    assert prop.parameters == {"events": [{"value": "detected"}], "instance": "motion"}
+    assert prop.get_value() is None
+    prop.state = State("event.test", STATE_UNKNOWN, {ATTR_DEVICE_CLASS: device_class, ATTR_EVENT_TYPE: "motion"})
+    assert prop.get_value() == "detected"
 
 
 @pytest.mark.parametrize(
@@ -215,7 +240,7 @@ async def test_state_property_event_water_leak(
         ("button", False, True),
     ],
 )
-async def test_state_property_event_button(
+async def test_state_property_event_button_sensor(
     hass: HomeAssistant,
     domain: str,
     device_class: str | None,
@@ -226,7 +251,7 @@ async def test_state_property_event_button(
 ) -> None:
     entity_id = f"{domain}.test"
     if mock_entry_data:
-        entry_data = MockConfigEntryData(hass, entity_config={entity_id: {CONF_DEVICE_CLASS: DEVICE_CLASS_BUTTON}})
+        entry_data = MockConfigEntryData(hass, entity_config={entity_id: {CONF_DEVICE_CLASS: EventDeviceClass.BUTTON}})
 
     state = State(entity_id, "click", {ATTR_DEVICE_CLASS: device_class})
     assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
@@ -273,6 +298,46 @@ async def test_state_property_event_button_gw3(hass: HomeAssistant, entry_data: 
     assert prop.get_value() is None
 
     prop.state.state = "double"
+    assert prop.get_value() == "double_click"
+
+
+@pytest.mark.parametrize(
+    "device_class,mock_entry_data,supported",
+    [
+        (EventDeviceClass.BUTTON, False, True),
+        (EventDeviceClass.DOORBELL, False, True),
+        (EventDeviceClass.MOTION, False, False),
+        (None, False, False),
+        (None, True, True),
+    ],
+)
+async def test_state_property_event_button_event(
+    hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
+    device_class: str | None,
+    mock_entry_data: bool,
+    supported: bool,
+) -> None:
+    entity_id = "event.test"
+    if mock_entry_data:
+        entry_data = MockConfigEntryData(hass, entity_config={entity_id: {CONF_DEVICE_CLASS: EventDeviceClass.BUTTON}})
+
+    state = State(entity_id, STATE_UNKNOWN, {ATTR_DEVICE_CLASS: device_class})
+    if supported:
+        prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
+    else:
+        assert_no_properties(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
+        return
+
+    assert prop.retrievable is False
+    assert prop.parameters == {
+        "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
+        "instance": "button",
+    }
+    assert prop.get_value() is None
+    prop.state = State(entity_id, STATE_UNKNOWN, {ATTR_DEVICE_CLASS: device_class, ATTR_EVENT_TYPE: "press"})
+    assert prop.get_value() == "click"
+    prop.state = State(entity_id, STATE_UNKNOWN, {ATTR_DEVICE_CLASS: device_class, ATTR_EVENT_TYPE: "double"})
     assert prop.get_value() == "double_click"
 
 

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any, Protocol, Self, cast
 
-from homeassistant.components import binary_sensor
+from homeassistant.components import binary_sensor, event
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant, split_entity_id
 from homeassistant.exceptions import TemplateError
@@ -25,11 +26,14 @@ from .property import Property
 from .property_event import (
     BatteryLevelEventProperty,
     ButtonPressEventProperty,
+    EventPlatformProperty,
     EventProperty,
     FoodLevelEventProperty,
     GasEventProperty,
     MotionEventProperty,
     OpenEventProperty,
+    ReactiveEventProperty,
+    SensorEventProperty,
     SmokeEventProperty,
     VibrationEventProperty,
     WaterLeakEventProperty,
@@ -63,6 +67,8 @@ from .unit_conversion import UnitOfPressure, UnitOfTemperature
 
 if TYPE_CHECKING:
     from .entry_data import ConfigEntryData
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class CustomProperty(Property, Protocol):
@@ -119,64 +125,122 @@ class CustomProperty(Property, Protocol):
         )
 
 
-class CustomEventProperty(CustomProperty, EventProperty[Any], Protocol):
-    """Base class for a event property that user can set up using yaml configuration."""
+class EventPlatformCustomProperty(EventPlatformProperty, Protocol):
+    "Base class for an event property of event platform that user can set up using yaml configuration."
 
-    def _get_native_value(self) -> str:
-        """Return the current property value without conversion."""
-        return super()._get_native_value()
+    @property
+    def supported(self) -> bool:
+        """Test if the property is supported."""
+        return True
+
+
+class CustomEventProperty(CustomProperty, EventProperty[Any], Protocol):
+    """Base class for an event property that user can set up using yaml configuration."""
 
 
 EVENT_PROPERTIES_REGISTRY = DictRegistry[type[CustomEventProperty]]()
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class OpenCustomEventProperty(OpenEventProperty, CustomEventProperty):
+class OpenCustomEventProperty(SensorEventProperty, OpenEventProperty, CustomEventProperty):
     pass
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class MotionCustomEventProperty(MotionEventProperty, CustomEventProperty):
+class MotionCustomEventProperty(SensorEventProperty, MotionEventProperty, CustomEventProperty):
     pass
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class GasCustomEventProperty(GasEventProperty, CustomEventProperty):
+class GasCustomEventProperty(SensorEventProperty, GasEventProperty, CustomEventProperty):
     pass
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class SmokeCustomEventProperty(SmokeEventProperty, CustomEventProperty):
+class SmokeCustomEventProperty(SensorEventProperty, SmokeEventProperty, CustomEventProperty):
     pass
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class BatteryLevelCustomEventProperty(BatteryLevelEventProperty, CustomEventProperty):
+class BatteryLevelCustomEventProperty(SensorEventProperty, BatteryLevelEventProperty, CustomEventProperty):
     pass
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class FoodLevelCustomEventProperty(FoodLevelEventProperty, CustomEventProperty):
+class FoodLevelCustomEventProperty(SensorEventProperty, FoodLevelEventProperty, CustomEventProperty):
     pass
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class WaterLevelCustomEventProperty(WaterLevelEventProperty, CustomEventProperty):
+class WaterLevelCustomEventProperty(SensorEventProperty, WaterLevelEventProperty, CustomEventProperty):
     pass
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class WaterLeakCustomEventProperty(WaterLeakEventProperty, CustomEventProperty):
+class WaterLeakCustomEventProperty(SensorEventProperty, WaterLeakEventProperty, CustomEventProperty):
     pass
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class ButtonPressCustomEventProperty(ButtonPressEventProperty, CustomEventProperty):
+class ButtonPressCustomEventProperty(ReactiveEventProperty, ButtonPressEventProperty, CustomEventProperty):
     pass
 
 
 @EVENT_PROPERTIES_REGISTRY.register
-class VibrationCustomEventProperty(VibrationEventProperty, CustomEventProperty):
+class VibrationCustomEventProperty(ReactiveEventProperty, VibrationEventProperty, CustomEventProperty):
+    pass
+
+
+EVENT_PLATFORM_PROPERTIES_REGISTRY = DictRegistry[type[EventPlatformCustomProperty]]()
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class OpenEventPlatformCustomProperty(OpenEventProperty, EventPlatformCustomProperty):
+    pass
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class MotionEventPlatformCustomProperty(MotionEventProperty, EventPlatformCustomProperty):
+    pass
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class GasEventPlatformCustomProperty(GasEventProperty, EventPlatformCustomProperty):
+    pass
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class SmokeEventPlatformCustomProperty(SmokeEventProperty, EventPlatformCustomProperty):
+    pass
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class BatteryLevelEventPlatformCustomProperty(BatteryLevelEventProperty, EventPlatformCustomProperty):
+    pass
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class FoodLevelEventPlatformCustomProperty(FoodLevelEventProperty, EventPlatformCustomProperty):
+    pass
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class WaterLevelEventPlatformCustomProperty(WaterLevelEventProperty, EventPlatformCustomProperty):
+    pass
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class WaterLeakEventPlatformCustomProperty(WaterLeakEventProperty, EventPlatformCustomProperty):
+    pass
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class ButtonPressEventPlatformCustomProperty(ButtonPressEventProperty, EventPlatformCustomProperty):
+    pass
+
+
+@EVENT_PLATFORM_PROPERTIES_REGISTRY.register
+class VibrationEventPlatformCustomProperty(VibrationEventProperty, EventPlatformCustomProperty):
     pass
 
 
@@ -324,12 +388,15 @@ class BatteryLevelCustomFloatProperty(BatteryLevelPercentageProperty, CustomFloa
 
 def get_custom_property(
     hass: HomeAssistant, entry_data: ConfigEntryData, config: ConfigType, device_id: str
-) -> CustomProperty:
+) -> CustomProperty | None:
     """Return initialized custom property based on property configuration."""
+    if _is_event_platform_entity(config.get(CONF_ENTITY_PROPERTY_ENTITY)):
+        return None
+
     cls: type[CustomEventProperty] | type[CustomFloatProperty]
     property_type: str = config[CONF_ENTITY_PROPERTY_TYPE]
     value_template = get_value_template(hass, device_id, config)
-    value_template.hass = hass
+    vault_template_info = value_template.async_render_to_info()
 
     if property_type.startswith(f"{PropertyInstanceType.EVENT}."):
         cls = EVENT_PROPERTIES_REGISTRY[property_type.split(".", 1)[1]]
@@ -342,9 +409,8 @@ def get_custom_property(
         else:
             property_type = PropertyType.FLOAT
 
-        info = value_template.async_render_to_info()
-        if len(info.entities) == 1:
-            entity_id = next(iter(info.entities))
+        if len(vault_template_info.entities) == 1:
+            entity_id = next(iter(vault_template_info.entities))
             domain, _ = split_entity_id(entity_id)
 
             if domain == binary_sensor.DOMAIN:
@@ -361,7 +427,29 @@ def get_custom_property(
         else:
             cls = FLOAT_PROPERTIES_REGISTRY[instance]
 
+    for entity_id in vault_template_info.entities:
+        if _is_event_platform_entity(entity_id):
+            _LOGGER.warning(f"Entity {entity_id} is not supported in value_template, use state_entity instead")
+
     return cls(hass, entry_data, config, device_id, value_template)
+
+
+def get_event_platform_custom_property_type(config: ConfigType) -> type[EventPlatformCustomProperty] | None:
+    """Return the class type of event platform custom property based on property configuration."""
+    entity_id = config.get(CONF_ENTITY_PROPERTY_ENTITY)
+    if not _is_event_platform_entity(entity_id):
+        return None
+
+    property_type: str = config[CONF_ENTITY_PROPERTY_TYPE]
+    if property_type.startswith(f"{PropertyInstanceType.EVENT}."):
+        return EVENT_PLATFORM_PROPERTIES_REGISTRY[property_type.split(".", 1)[1]]
+
+    try:
+        return EVENT_PLATFORM_PROPERTIES_REGISTRY[property_type]
+    except KeyError:
+        _LOGGER.warning(f"Property type {property_type} is not supported for entity {entity_id}")
+
+    return None
 
 
 def get_value_template(hass: HomeAssistant, device_id: str, property_config: ConfigType) -> Template:
@@ -376,3 +464,12 @@ def get_value_template(hass: HomeAssistant, device_id: str, property_config: Con
         return Template("{{ state_attr('%s', '%s') }}" % (entity_id, attribute), hass)
 
     return Template("{{ states('%s') }}" % entity_id, hass)
+
+
+def _is_event_platform_entity(entity_id: str | None) -> bool:
+    """Check if the entity provided by event platform."""
+    if not entity_id:
+        return False
+
+    domain, _ = split_entity_id(entity_id)
+    return domain == event.DOMAIN

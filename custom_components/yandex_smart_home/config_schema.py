@@ -4,6 +4,7 @@ from contextlib import suppress
 import logging
 from typing import Any
 
+from homeassistant.components.event import EventDeviceClass
 from homeassistant.components.sensor.const import SensorDeviceClass
 from homeassistant.const import CONF_DEVICE_CLASS, CONF_NAME, CONF_ROOM, CONF_TYPE
 from homeassistant.helpers import config_validation as cv
@@ -56,7 +57,6 @@ from .const import (
     CONF_SUPPORT_SET_CHANNEL,
     CONF_TURN_OFF,
     CONF_TURN_ON,
-    DEVICE_CLASS_BUTTON,
     MediaPlayerFeature,
     PropertyInstanceType,
 )
@@ -415,7 +415,7 @@ ENTITY_SCHEMA = vol.All(
             vol.Optional(CONF_TYPE): vol.All(cv.string, device_type),
             vol.Optional(CONF_TURN_ON): vol.Any(cv.SERVICE_SCHEMA, cv.boolean),
             vol.Optional(CONF_TURN_OFF): vol.Any(cv.SERVICE_SCHEMA, cv.boolean),
-            vol.Optional(CONF_DEVICE_CLASS): vol.In(DEVICE_CLASS_BUTTON),
+            vol.Optional(CONF_DEVICE_CLASS): vol.In(EventDeviceClass.BUTTON),
             vol.Optional(CONF_FEATURES): vol.All(cv.ensure_list, entity_features),
             vol.Optional(CONF_ENTITY_PROPERTIES): [ENTITY_PROPERTY_SCHEMA],
             vol.Optional(CONF_SUPPORT_SET_CHANNEL): cv.boolean,
