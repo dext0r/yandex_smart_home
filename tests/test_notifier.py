@@ -349,7 +349,7 @@ async def test_notifier_track_templates(
     hass.states.async_set("sensor.button", "click")
     hass.states.async_set("sensor.float", "10")
     caplog.clear()
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_states())
+    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
     await notifier.async_setup()
 
     assert notifier._template_changes_tracker is not None
@@ -462,7 +462,7 @@ async def test_notifier_track_templates_exception(
         entity_filter=generate_entity_filter(include_entity_globs=["*"]),
     )
 
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_states())
+    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
     await notifier.async_setup()
 
     caplog.clear()
@@ -496,7 +496,7 @@ async def test_notifier_state_changed(
         entity_filter=generate_entity_filter(exclude_entities=["switch.not_exposed"]),
     )
 
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_states())
+    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
     await notifier.async_setup()
 
     await _async_set_state(hass, "switch.not_exposed", "on")
@@ -572,7 +572,7 @@ async def test_notifier_track_templates_over_states(
         entity_filter=generate_entity_filter(include_entity_globs=["*"]),
     )
 
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_states())
+    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
     await notifier.async_setup()
     assert notifier._pending.empty is True
 
@@ -618,7 +618,7 @@ async def test_notifier_initial_report(
         },
         entity_filter=generate_entity_filter(exclude_entities=["switch.test"]),
     )
-    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_states())
+    notifier = YandexDirectNotifier(hass_platform, entry_data, BASIC_CONFIG, entry_data._get_trackable_templates())
 
     hass_platform.states.async_set("switch.test", "on")
     hass_platform.states.async_set(

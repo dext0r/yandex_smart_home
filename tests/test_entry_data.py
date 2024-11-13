@@ -54,7 +54,7 @@ def test_entry_data_platform(hass: HomeAssistant) -> None:
     assert entry_data.platform is None
 
 
-def test_entry_data_trackable_states(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
+def test_entry_data_trackable_templates(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     entry_data = MockConfigEntryData(
         hass=hass,
         entity_config={
@@ -71,7 +71,7 @@ def test_entry_data_trackable_states(hass: HomeAssistant, caplog: pytest.LogCapt
         "custom_components.yandex_smart_home.entry_data.get_custom_capability",
         side_effect=APIError(ResponseCode.INTERNAL_ERROR, "foo"),
     ):
-        assert entry_data._get_trackable_states() == {}
+        assert entry_data._get_trackable_templates() == {}
     assert caplog.messages == ["Failed to track custom capability: foo"]
 
 

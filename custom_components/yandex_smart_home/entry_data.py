@@ -285,7 +285,7 @@ class ConfigEntryData:
         if not self.linked_platforms:
             return
 
-        track_templates = self._get_trackable_states()
+        track_templates = self._get_trackable_templates()
         extended_log = len(self._hass.config_entries.async_entries(DOMAIN)) > 1
 
         match self.connection_type:
@@ -328,8 +328,8 @@ class ConfigEntryData:
             self._hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._cloud_manager.async_disconnect)
         )
 
-    def _get_trackable_states(self) -> dict[Template, list[CustomCapability | CustomProperty]]:
-        """Return states with their value templates."""
+    def _get_trackable_templates(self) -> dict[Template, list[CustomCapability | CustomProperty]]:
+        """Return templates for track changes."""
         templates: dict[Template, list[CustomCapability | CustomProperty]] = {}
 
         for device_id, entity_config in self.entity_config.items():

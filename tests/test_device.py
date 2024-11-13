@@ -210,7 +210,7 @@ async def test_device_disabled_capabilities(hass: HomeAssistant, entry_data: Moc
     assert [type(c) for c in device.get_capabilities()] == [
         OnOffCapabilityMediaPlayer,
     ]
-    assert len(entry_data._get_trackable_states()) == 0
+    assert len(entry_data._get_trackable_templates()) == 0
 
 
 async def test_device_duplicate_properties(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
