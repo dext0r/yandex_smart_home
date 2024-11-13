@@ -355,14 +355,9 @@ class BrightnessCapability(StateRangeCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == light.DOMAIN:
-            if self._state_features & light.SUPPORT_BRIGHTNESS:
-                return True
-
-            if light.brightness_supported(self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES)):
-                return True
-
-        return False
+        return self.state.domain == light.DOMAIN and light.brightness_supported(
+            self.state.attributes.get(light.ATTR_SUPPORTED_COLOR_MODES)
+        )
 
     @property
     def support_random_access(self) -> bool:

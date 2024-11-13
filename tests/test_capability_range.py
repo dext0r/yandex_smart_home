@@ -427,58 +427,10 @@ async def test_capability_range_humidity_fan(hass: HomeAssistant, entry_data: Mo
     assert calls[4].data[humidifier.ATTR_HUMIDITY] == 45
 
 
-async def test_capability_range_brightness_legacy(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
-    state = State("light.test", STATE_OFF)
-    assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS)
-
-    state = State("light.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: light.SUPPORT_BRIGHTNESS})
-    cap = cast(
-        RangeCapability,
-        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
-    )
-    assert cap.retrievable is True
-    assert cap.support_random_access is True
-    assert cap.parameters.as_dict() == {
-        "instance": "brightness",
-        "random_access": True,
-        "range": {"max": 100, "min": 1, "precision": 1},
-        "unit": "unit.percent",
-    }
-    assert cap.get_value() is None
-
-    state = State(
-        "light.test", STATE_ON, {ATTR_SUPPORTED_FEATURES: light.SUPPORT_BRIGHTNESS, light.ATTR_BRIGHTNESS: 128}
-    )
-    cap = cast(
-        RangeCapability,
-        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
-    )
-    assert cap.get_value() == 50
-
-
 @pytest.mark.parametrize("color_mode", sorted(light.COLOR_MODES_BRIGHTNESS))
 async def test_capability_range_brightness(
     hass: HomeAssistant, entry_data: MockConfigEntryData, color_mode: ColorMode
 ) -> None:
-    state = State(
-        "light.test",
-        STATE_ON,
-        {ATTR_SUPPORTED_FEATURES: light.SUPPORT_BRIGHTNESS, light.ATTR_SUPPORTED_COLOR_MODES: [color_mode]},
-    )
-    cap = cast(
-        RangeCapability,
-        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
-    )
-    assert cap.retrievable is True
-    assert cap.support_random_access is True
-    assert cap.parameters.as_dict() == {
-        "instance": "brightness",
-        "random_access": True,
-        "range": {"max": 100, "min": 1, "precision": 1},
-        "unit": "unit.percent",
-    }
-    assert cap.get_value() is None
-
     state = State("light.test", STATE_ON, {light.ATTR_SUPPORTED_COLOR_MODES: [color_mode], light.ATTR_BRIGHTNESS: 128})
     cap = cast(
         RangeCapability,
