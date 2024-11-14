@@ -1105,6 +1105,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v1-not-breaking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Прочие изменения
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1199,6 +1208,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#v1-not-breaking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Прочие изменения
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1255,6 +1273,11 @@
 <h3 id="v1-pressure-unit">Параметр pressure_unit<a class="headerlink" href="#v1-pressure-unit" title="Permanent link">&para;</a></h3>
 <p>Параметр <code>pressure_unit</code> (раздел <code>settings</code>) больше не поддерживается, удалите его из YAML конфигурации.</p>
 <p>Теперь компонент автоматически пытается сохранить единицы измерения при передаче значений датчиков из Home Assistant в УДЯ (<a href="../devices/sensor/float/#unit-conversion">подробнее о конвертации значений</a>)</p>
+<h3 id="v1-not-breaking">Прочие изменения<a class="headerlink" href="#v1-not-breaking" title="Permanent link">&para;</a></h3>
+<p>Прочие изменения в 1.x не ломающие обратную совместимость с v0.x:</p>
+<ol>
+<li>При <a href="../config/modes/">настройке режимов</a> в параметре <code>entity_config.*.modes</code> теперь рекомендуется использовать строки, а не списки. Использование списков допустимо, и менять это не планируется.</li>
+</ol>
 
 
 
