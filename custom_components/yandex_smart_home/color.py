@@ -263,7 +263,7 @@ class LightState(Protocol):
             rgb_color = self.state.attributes.get(ATTR_RGBWW_COLOR)
         elif ColorMode.RGBW in self._supported_color_modes:
             rgb_color = self.state.attributes.get(ATTR_RGBW_COLOR)
-        elif ColorMode.RGB in self._supported_color_modes:
+        else:
             rgb_color = self.state.attributes.get(ATTR_RGB_COLOR)
 
         if rgb_color:

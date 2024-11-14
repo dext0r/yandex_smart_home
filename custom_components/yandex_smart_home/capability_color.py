@@ -17,7 +17,6 @@ from homeassistant.components.light import (
     ATTR_RGB_COLOR,
     ATTR_RGBW_COLOR,
     ATTR_RGBWW_COLOR,
-    ATTR_SUPPORTED_COLOR_MODES,
     ATTR_WHITE,
     COLOR_MODE_COLOR_TEMP,
     ColorMode,
@@ -190,7 +189,7 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState], LightState):
         return ColorConverter()
 
 
-class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState]):
+class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState], LightState):
     """Capability to control color temperature of a light device."""
 
     type = CapabilityType.COLOR_SETTING
@@ -204,12 +203,10 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
     def supported(self) -> bool:
         """Test if capability is supported."""
         if self.state.domain == light.DOMAIN:
-            supported_color_modes = self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, [])
-
-            if color_temp_supported(supported_color_modes):
+            if color_temp_supported(self._supported_color_modes):
                 return True
 
-            if self._color_modes_temp_to_white & set(supported_color_modes):
+            if self._color_modes_temp_to_white & self._supported_color_modes:
                 return True
 
         return False
@@ -217,9 +214,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
     @property
     def parameters(self) -> ColorSettingCapabilityParameters:
         """Return parameters for a devices list request."""
-        supported_color_modes = set(self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []))
-
-        if color_temp_supported(supported_color_modes):
+        if color_temp_supported(self._supported_color_modes):
             min_temp, max_temp = self._converter.supported_range
             return ColorSettingCapabilityParameters(
                 temperature_k=CapabilityParameterTemperatureK(min=min_temp, max=max_temp)
@@ -227,7 +222,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
 
         min_temp = self._default_white_temperature
         max_temp = self._default_white_temperature
-        if ColorMode.RGBW in supported_color_modes or ColorMode.WHITE in supported_color_modes:
+        if {ColorMode.RGBW, ColorMode.WHITE} & self._supported_color_modes:
             max_temp = self._cold_white_temperature
 
         return ColorSettingCapabilityParameters(
@@ -244,61 +239,48 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
         if color_temperature is not None:
             return self._converter.get_yandex_color_temperature(color_temperature)
 
-        supported_color_modes = self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, [])
         color_mode = self.state.attributes.get(ATTR_COLOR_MODE)
-
-        if color_mode == ColorMode.WHITE:
-            return self._default_white_temperature
-
-        if color_mode == ColorMode.RGBW:
-            rgbw_color = self.state.attributes.get(ATTR_RGBW_COLOR)
-            if rgbw_color is not None:
-                if rgbw_color[:3] == (0, 0, 0) and rgbw_color[3] > 0:
-                    return self._default_white_temperature
-                elif rgbw_color[:3] == (255, 255, 255):
-                    return self._cold_white_temperature
-
-            return None
-
-        if color_mode in [ColorMode.RGB, ColorMode.HS, ColorMode.XY]:
-            rgb_color = self.state.attributes.get(ATTR_RGB_COLOR)
-            if rgb_color is not None and rgb_color == (255, 255, 255):
-                if ColorMode.WHITE in supported_color_modes:
-                    return self._cold_white_temperature
-
+        match color_mode:
+            case ColorMode.WHITE:
                 return self._default_white_temperature
 
-            return None
+            case ColorMode.RGBW:
+                if self._rgb_color == RGBColor(0, 0, 0) and (self._white_brightness or 0) > 0:
+                    return self._default_white_temperature
+                elif self._rgb_color == RGBColor(255, 255, 255):
+                    return self._cold_white_temperature
+
+            case _:
+                if self._rgb_color == RGBColor(255, 255, 255):
+                    if ColorMode.WHITE in self._supported_color_modes:
+                        return self._cold_white_temperature
+
+                    return self._default_white_temperature
 
         return None
 
     async def set_instance_state(self, context: Context, state: TemperatureKInstanceActionState) -> None:
         """Change the capability state."""
-        supported_color_modes = set(self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []))
-        service_data: dict[str, Any] = {}
+        service_data: dict[str, Any] = {ATTR_ENTITY_ID: self.state.entity_id}
 
-        if color_temp_supported(supported_color_modes):
+        if color_temp_supported(self._supported_color_modes):
             service_data[ATTR_KELVIN] = self._converter.get_ha_color_temperature(state.value)
 
-        elif ColorMode.WHITE in supported_color_modes and state.value == self._default_white_temperature:
+        elif ColorMode.WHITE in self._supported_color_modes and state.value == self._default_white_temperature:
             service_data[ATTR_WHITE] = self.state.attributes.get(ATTR_BRIGHTNESS, 255)
 
-        elif ColorMode.RGBW in supported_color_modes:
+        elif ColorMode.RGBW in self._supported_color_modes:
             if state.value == self._default_white_temperature:
                 service_data[ATTR_RGBW_COLOR] = (0, 0, 0, self.state.attributes.get(ATTR_BRIGHTNESS, 255))
             else:
                 service_data[ATTR_RGBW_COLOR] = (255, 255, 255, 0)
 
-        elif {ColorMode.RGB, ColorMode.HS, ColorMode.XY} & supported_color_modes:
+        else:
             service_data[ATTR_RGB_COLOR] = (255, 255, 255)
 
-        if service_data:
-            service_data[ATTR_ENTITY_ID] = self.state.entity_id
-            await self._hass.services.async_call(
-                light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=True, context=context
-            )
-        else:
-            raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Unsupported value '{state.value}' for {self}")
+        await self._hass.services.async_call(
+            light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=True, context=context
+        )
 
     @cached_property
     def _converter(self) -> ColorTemperatureConverter:

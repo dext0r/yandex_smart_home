@@ -63,6 +63,17 @@ def _get_color_setting_capability(
     )
 
 
+def _get_temperature_capability(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, state: State
+) -> ColorTemperatureCapability:
+    return cast(
+        ColorTemperatureCapability,
+        get_exact_one_capability(
+            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
+        ),
+    )
+
+
 def _get_color_profile_entry_data(hass: HomeAssistant, entity_config: ConfigType) -> MockConfigEntryData:
     return MockConfigEntryData(
         hass,
@@ -444,51 +455,21 @@ async def test_capability_color_setting_temperature_k(
     assert_no_capabilities(hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.BASE)
 
     state = State("light.test", STATE_OFF, attributes)
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_cs.retrievable is True
     assert cap_cs.parameters.dict()["temperature_k"] == {"min": temp_range[0], "max": temp_range[1]}
     assert cap_temp.get_value() is None
     assert cap_temp.get_description() is None
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 2700}, **attributes))
-    cap = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap = _get_temperature_capability(hass, entry_data, state)
     assert cap.get_value() == 2700
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
     await cap.set_instance_state(Context(), TemperatureKInstanceActionState(value=6500))
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_KELVIN: 6500}
-
-    state = State(
-        "light.test",
-        STATE_OFF,
-        {
-            ATTR_SUPPORTED_FEATURES: 0,
-            ATTR_COLOR_MODE: ColorMode.UNKNOWN,
-        },
-    )
-    cap.state = state
-    with pytest.raises(APIError) as e:
-        await cap.set_instance_state(
-            Context(),
-            TemperatureKInstanceActionState(value=6500),
-        )
-    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert (
-        e.value.message
-        == "Unsupported value '6500' for instance temperature_k of color_setting capability of light.test"
-    )
 
 
 async def test_capability_color_setting_temprature_k_extend(
@@ -545,12 +526,7 @@ async def test_capability_color_setting_temprature_k_extend(
         },
     )
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_cs.parameters.dict()["temperature_k"] == {"min": 4500, "max": 4500}
     assert cap_temp.get_value() == 4500
 
@@ -570,30 +546,15 @@ async def test_capability_color_setting_temprature_k_extend(
     assert cap_cs.parameters.dict()["temperature_k"] == {"min": 1500, "max": 7500}
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 2300}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() == 1500
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 6800}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() == 7500
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 6700}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() == 6700
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -633,12 +594,7 @@ async def test_capability_color_setting_temperature_k_with_profile(
 
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, config, state)
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, config, state)
     assert cap_cs.retrievable is True
     assert cap_cs.parameters.dict()["temperature_k"] == {
         "min": 1500,
@@ -647,30 +603,15 @@ async def test_capability_color_setting_temperature_k_with_profile(
     assert cap_temp.get_value() is None
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 2702}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, config, state)
     assert cap_temp.get_value() == 2700
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 4201}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, config, state)
     assert cap_temp.get_value() == 4200
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 4115}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, config, state)
     assert cap_temp.get_value() == 4500
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -679,12 +620,7 @@ async def test_capability_color_setting_temperature_k_with_profile(
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_KELVIN: 4100}
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 4115}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() == 4100
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -693,12 +629,7 @@ async def test_capability_color_setting_temperature_k_with_profile(
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_KELVIN: 4100}
 
     state = State("light.invalid", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 4115}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, config, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, config, state)
     with pytest.raises(APIError) as e:
         cap_temp.get_value()
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
@@ -717,19 +648,14 @@ async def test_capability_color_setting_temperature_k_with_profile(
     )
 
 
-@pytest.mark.parametrize("color_modes", [[ColorMode.RGB], [ColorMode.HS], [ColorMode.XY]])
+@pytest.mark.parametrize("color_mode", [ColorMode.RGB, ColorMode.HS, ColorMode.XY])
 async def test_capability_color_setting_temperature_k_rgb(
-    hass: HomeAssistant, entry_data: MockConfigEntryData, color_modes: list[ColorMode]
+    hass: HomeAssistant, entry_data: MockConfigEntryData, color_mode: ColorMode
 ) -> None:
-    attributes = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
+    attributes = {ATTR_SUPPORTED_COLOR_MODES: [color_mode]}
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_cs.retrievable is True
     assert cap_cs.parameters.as_dict() == {
         "color_model": "rgb",
@@ -737,18 +663,20 @@ async def test_capability_color_setting_temperature_k_rgb(
     }
     assert cap_temp.get_value() is None
 
-    cap_temp.state = State(
+    state = State(
         "light.test",
         STATE_OFF,
-        dict({ATTR_RGB_COLOR: (0, 0, 0), ATTR_COLOR_MODE: color_modes[0]}, **attributes),
+        dict({ATTR_RGB_COLOR: (0, 0, 0), ATTR_COLOR_MODE: color_mode}, **attributes),
     )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() is None
 
-    cap_temp.state = State(
+    state = State(
         "light.test",
         STATE_OFF,
-        dict({ATTR_RGB_COLOR: (255, 255, 255), ATTR_COLOR_MODE: color_modes[0]}, **attributes),
+        dict({ATTR_RGB_COLOR: (255, 255, 255), ATTR_COLOR_MODE: color_mode}, **attributes),
     )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() == 4500
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -767,12 +695,7 @@ async def test_capability_color_setting_temperature_k_rgb_white(
     attributes = {ATTR_SUPPORTED_COLOR_MODES: color_modes + [ColorMode.WHITE]}
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_cs.retrievable is True
     assert cap_cs.parameters.as_dict() == {
         "color_model": "rgb",
@@ -780,21 +703,23 @@ async def test_capability_color_setting_temperature_k_rgb_white(
     }
     assert cap_temp.get_value() is None
 
-    cap_temp.state = State(
+    state = State(
         "light.test",
         STATE_OFF,
         dict({ATTR_RGB_COLOR: (0, 0, 0), ATTR_COLOR_MODE: color_modes[0]}, **attributes),
     )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() is None
 
-    cap_temp.state = State(
+    state = State(
         "light.test",
         STATE_OFF,
         dict({ATTR_RGB_COLOR: (255, 255, 255), ATTR_COLOR_MODE: color_modes[0]}, **attributes),
     )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() == 6500
 
-    cap_temp.state = State(
+    state = State(
         "light.test",
         STATE_OFF,
         dict(
@@ -806,6 +731,7 @@ async def test_capability_color_setting_temperature_k_rgb_white(
             **attributes
         ),
     )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() == 4500
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -823,12 +749,7 @@ async def test_capability_color_setting_temperature_k_rgbw(
     attributes = {ATTR_SUPPORTED_COLOR_MODES: [ColorMode.RGBW]}
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_cs.retrievable is True
     assert cap_cs.parameters.as_dict() == {
         "color_model": "rgb",
@@ -836,32 +757,36 @@ async def test_capability_color_setting_temperature_k_rgbw(
     }
     assert cap_temp.get_value() is None
 
-    cap_temp.state = State(
+    state = State(
         "light.test",
         STATE_OFF,
         dict({ATTR_RGBW_COLOR: (0, 0, 0, 0), ATTR_COLOR_MODE: ColorMode.RGBW}, **attributes),
     )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() is None
 
-    cap_temp.state = State(
+    state = State(
         "light.test",
         STATE_OFF,
         dict({ATTR_RGBW_COLOR: (100, 100, 100, 255), ATTR_COLOR_MODE: ColorMode.RGBW}, **attributes),
     )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() is None
 
-    cap_temp.state = State(
+    state = State(
         "light.test",
         STATE_OFF,
         dict({ATTR_RGBW_COLOR: (255, 255, 255, 0), ATTR_COLOR_MODE: ColorMode.RGBW}, **attributes),
     )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() == 6500
 
-    cap_temp.state = State(
+    state = State(
         "light.test",
         STATE_OFF,
         dict({ATTR_RGBW_COLOR: (0, 0, 0, 255), ATTR_COLOR_MODE: ColorMode.RGBW}, **attributes),
     )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_temp.get_value() == 4500
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -883,14 +808,9 @@ async def test_capability_color_mode_color_temp(hass: HomeAssistant, entry_data:
     }
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_MODE: ColorMode.RGB}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     cap_rgb = cast(
-        ColorTemperatureCapability,
+        RGBColorCapability,
         get_exact_one_capability(
             hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         ),
@@ -899,14 +819,9 @@ async def test_capability_color_mode_color_temp(hass: HomeAssistant, entry_data:
     assert cap_rgb.get_value() == 16711680
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_MODE: ColorMode.COLOR_TEMP}, **attributes))
-    cap_temp = cast(
-        ColorTemperatureCapability,
-        get_exact_one_capability(
-            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.TEMPERATURE_K
-        ),
-    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
     cap_rgb = cast(
-        ColorTemperatureCapability,
+        RGBColorCapability,
         get_exact_one_capability(
             hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
         ),
