@@ -3,9 +3,10 @@
 from enum import StrEnum
 from functools import cached_property
 from math import sqrt
-from typing import Protocol, Self
+from typing import Final, Protocol, Self
 
 from homeassistant.components.light import (
+    ATTR_EFFECT_LIST,
     ATTR_HS_COLOR,
     ATTR_MAX_COLOR_TEMP_KELVIN,
     ATTR_MIN_COLOR_TEMP_KELVIN,
@@ -18,6 +19,8 @@ from homeassistant.components.light import (
 )
 from homeassistant.core import State
 from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
+
+SOLID_LIGHT_EFFECT: Final = "Solid"
 
 
 class ColorName(StrEnum):
@@ -305,3 +308,8 @@ class LightState(Protocol):
                 return rgbww_color[4]
 
         return None
+
+    @property
+    def _solid_effect_supported(self) -> bool:
+        """Check if the solid light effect is supported by the state."""
+        return SOLID_LIGHT_EFFECT in self.state.attributes.get(ATTR_EFFECT_LIST, [])

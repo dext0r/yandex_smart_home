@@ -1,6 +1,6 @@
 from typing import cast
 
-from homeassistant.components import cover, fan, media_player, vacuum
+from homeassistant.components import cover, fan, light, media_player, vacuum
 from homeassistant.components.cover import CoverEntityFeature
 from homeassistant.components.fan import FanEntityFeature
 from homeassistant.components.media_player.const import MediaPlayerEntityFeature
@@ -11,6 +11,7 @@ from homeassistant.const import (
     SERVICE_MEDIA_PAUSE,
     SERVICE_MEDIA_PLAY,
     SERVICE_STOP_COVER,
+    SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
     STATE_CLOSED,
     STATE_CLOSING,
@@ -30,6 +31,7 @@ from custom_components.yandex_smart_home.schema import (
     ToggleCapabilityInstance,
     ToggleCapabilityInstanceActionState,
 )
+from tests.test_capability_color import LightEntityFeature
 
 from . import MockConfigEntryData
 from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
@@ -165,6 +167,59 @@ async def test_capability_pause_cover(hass: HomeAssistant, entry_data: MockConfi
     assert len(calls) == 2
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
     assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id}
+
+
+async def test_capability_pause_light(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state = State("light.test", STATE_ON)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
+
+    state = State(
+        "light.test",
+        STATE_ON,
+        {ATTR_SUPPORTED_FEATURES: LightEntityFeature.EFFECT, light.ATTR_EFFECT_LIST: ["foo", "bar"]},
+    )
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE)
+
+    for attributes in ({}, {light.ATTR_EFFECT: "bar"}):
+        state = State(
+            "light.test",
+            STATE_ON,
+            dict(
+                {
+                    ATTR_SUPPORTED_FEATURES: LightEntityFeature.EFFECT,
+                    light.ATTR_EFFECT_LIST: ["Solid", "bar"],
+                },
+                **attributes
+            ),
+        )
+        cap = cast(
+            ToggleCapability,
+            get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+        )
+        assert cap.retrievable is True
+        assert cap.parameters.dict() == {"instance": "pause"}
+        assert cap.get_value() is False
+
+    state = State(
+        "light.test",
+        STATE_ON,
+        {
+            ATTR_SUPPORTED_FEATURES: LightEntityFeature.EFFECT,
+            light.ATTR_EFFECT_LIST: ["Solid", "bar"],
+            light.ATTR_EFFECT: "Solid",
+        },
+    )
+    cap = cast(
+        ToggleCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
+    )
+    assert cap.get_value() is True
+    calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
+    await cap.set_instance_state(Context(), _action_state_on(ToggleCapabilityInstance.PAUSE))
+    await cap.set_instance_state(Context(), _action_state_off(ToggleCapabilityInstance.PAUSE))
+    assert len(calls) == 2
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_EFFECT: "Solid"}
+    assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, light.ATTR_EFFECT: "Solid"}
 
 
 async def test_capability_pause_vacuum(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:

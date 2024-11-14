@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from homeassistant.components import cover, fan, media_player, vacuum
+from homeassistant.components import cover, fan, light, media_player, vacuum
 from homeassistant.components.cover import CoverEntityFeature
 from homeassistant.components.fan import FanEntityFeature
 from homeassistant.components.media_player.const import MediaPlayerEntityFeature
@@ -12,6 +12,7 @@ from homeassistant.const import (
     SERVICE_MEDIA_PAUSE,
     SERVICE_MEDIA_PLAY,
     SERVICE_STOP_COVER,
+    SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
     STATE_PAUSED,
     STATE_PLAYING,
@@ -19,6 +20,7 @@ from homeassistant.const import (
 from homeassistant.core import Context
 
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, Capability, StateCapability
+from .color import SOLID_LIGHT_EFFECT, LightState
 from .const import CONF_FEATURES, MediaPlayerFeature
 from .schema import (
     CapabilityType,
@@ -143,6 +145,31 @@ class PauseCapabilityCover(ActionOnlyCapabilityMixin, StateToggleCapability):
         )
 
 
+class PauseCapabilityLight(StateToggleCapability, LightState):
+    """Capability to turn on solid light effect for a light device."""
+
+    instance = ToggleCapabilityInstance.PAUSE
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        return self.state.domain == light.DOMAIN and self._solid_effect_supported
+
+    def get_value(self) -> bool:
+        """Return the current capability value."""
+        return self.state.attributes.get(light.ATTR_EFFECT) == SOLID_LIGHT_EFFECT
+
+    async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
+            light.DOMAIN,
+            SERVICE_TURN_ON,
+            {ATTR_ENTITY_ID: self.state.entity_id, light.ATTR_EFFECT: SOLID_LIGHT_EFFECT},
+            blocking=True,
+            context=context,
+        )
+
+
 class PauseCapabilityVacuum(StateToggleCapability):
     """Capability to stop a vacuum."""
 
@@ -197,5 +224,6 @@ class OscillationCapability(StateToggleCapability):
 STATE_CAPABILITIES_REGISTRY.register(MuteCapability)
 STATE_CAPABILITIES_REGISTRY.register(PauseCapabilityMediaPlayer)
 STATE_CAPABILITIES_REGISTRY.register(PauseCapabilityCover)
+STATE_CAPABILITIES_REGISTRY.register(PauseCapabilityLight)
 STATE_CAPABILITIES_REGISTRY.register(PauseCapabilityVacuum)
 STATE_CAPABILITIES_REGISTRY.register(OscillationCapability)
