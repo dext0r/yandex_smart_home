@@ -196,9 +196,10 @@ async def test_capability_pause_light(hass: HomeAssistant, entry_data: MockConfi
             ToggleCapability,
             get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
         )
-        assert cap.retrievable is True
+        assert cap.retrievable is False
+        assert cap.reportable is False
         assert cap.parameters.dict() == {"instance": "pause"}
-        assert cap.get_value() is False
+        assert cap.get_value() is None
 
     state = State(
         "light.test",
@@ -213,7 +214,7 @@ async def test_capability_pause_light(hass: HomeAssistant, entry_data: MockConfi
         ToggleCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
     )
-    assert cap.get_value() is True
+    assert cap.get_value() is None
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
     await cap.set_instance_state(Context(), _action_state_on(ToggleCapabilityInstance.PAUSE))
     await cap.set_instance_state(Context(), _action_state_off(ToggleCapabilityInstance.PAUSE))

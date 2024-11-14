@@ -145,7 +145,7 @@ class PauseCapabilityCover(ActionOnlyCapabilityMixin, StateToggleCapability):
         )
 
 
-class PauseCapabilityLight(StateToggleCapability, LightState):
+class PauseCapabilityLight(ActionOnlyCapabilityMixin, StateToggleCapability, LightState):
     """Capability to turn on solid light effect for a light device."""
 
     instance = ToggleCapabilityInstance.PAUSE
@@ -154,10 +154,6 @@ class PauseCapabilityLight(StateToggleCapability, LightState):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == light.DOMAIN and self._solid_effect_supported
-
-    def get_value(self) -> bool:
-        """Return the current capability value."""
-        return self.state.attributes.get(light.ATTR_EFFECT) == SOLID_LIGHT_EFFECT
 
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
