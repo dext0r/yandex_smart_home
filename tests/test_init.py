@@ -116,11 +116,11 @@ async def test_valid_config(hass: HomeAssistant) -> None:
             "fan_speed": {
                 "auto": ["auto"],
                 "min": ["1", "1.0"],
-                "low": ["2", "2.0"],
-                "medium": ["3", "3.0"],
-                "high": ["4", "4.0"],
-                "turbo": ["5", "5.0"],
-                "max": ["6", "6.0"],
+                "low": ["2"],
+                "medium": ["3"],
+                "high": ["4"],
+                "turbo": ["5"],
+                "max": ["6"],
             }
         },
     }

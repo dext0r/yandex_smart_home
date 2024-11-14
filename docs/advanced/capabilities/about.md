@@ -55,8 +55,8 @@
         media_player.tv:
           modes:
             input_source:
-              one: ['HW1']
-              two: ['HW2']
+              one: 'HW1'
+              two: 'HW2'
           custom_modes:
             input_source:
               state_entity_id: sensor.tv_input_source
@@ -97,8 +97,8 @@
         vacuum.mop:
           modes:
             work_speed:
-              eco: ['V1']
-              medium: ['V2']
+              eco: 'V1'
+              medium: 'V2'
           custom_modes:
             work_speed:
               state_entity_id: vacuum.mop

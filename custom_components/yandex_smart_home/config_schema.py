@@ -334,7 +334,7 @@ ENTITY_PROPERTY_SCHEMA = vol.All(
 
 
 ENTITY_MODE_MAP_SCHEMA = vol.Schema(
-    {vol.All(cv.string, mode_instance): vol.Schema({vol.All(cv.string, mode): [cv.string]})}
+    {vol.All(cv.string, mode_instance): vol.Schema({vol.All(cv.string, mode): vol.All(cv.ensure_list, [cv.string])})}
 )
 
 ENTITY_EVENT_MAP_SCHEMA = vol.Schema(

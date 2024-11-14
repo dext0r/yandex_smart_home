@@ -24,29 +24,26 @@
         light.led_strip:
           modes:
             scene:
-              sunrise:
-                - Wake up
-              alarm:
-                - Blink
-              fantasy:
-                - Огоньки
+              sunrise: 'Wake up'
+              alarm: 'Blink'
+              fantasy: 'Огоньки'
         climate.some_ac:
           modes:
             fan_speed:
-              auto: ['auto']
-              min: ['1','1.0']
-              turbo: ['5','5.0']
-              max: ['6','6.0']
+              auto: 'auto'
+              min: '1'
+              turbo: '5'
+              max: '6'
             swing:
-              auto: ['SWING']
-              stationary: ['OFF']
+              auto: 'SWING'
+              stationary: 'OFF'
     ```
 
 * `scene`, `fan_speed`, `swing` - режим/функция со стороны УДЯ ([все функции](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance.html) + `scene` для светильников `light.X`)
 * `auto`, `stationary` - значение режима со стороны УДЯ ([возможные значения](https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html))
 * `sunrise`, `alarm`, `fantasy` - (только для функции `scene`) название сцены со стороны УДЯ ([возможные значения](#scene))
-* Списки значений (`Wake Up`, `Swing` и т.п.) - значения атрибута объекта в Home Assistant, которое соответствует значению режима в УДЯ.
-  Задавать лучше строками в кавычках. Узнать все поддерживаемые режимы можно в атрибутах объекта через (Панель разработчика --> [Состояния](https://my.home-assistant.io/redirect/developer_states/)).
+* `Wake Up`, `Огоньки`, `Swing` и д.р. - значение атрибута объекта в Home Assistant, которое соответствует значению режима в УДЯ.
+  Задавать лучше строками в кавычках. Узнать все поддерживаемые режимы можно в атрибутах объекта через (Панель разработчика --> [Состояния](https://my.home-assistant.io/redirect/developer_states/)). Допустимо использование списка значений.
 
 ## Автоматически определяемые режимы { id=internal }
 
@@ -102,8 +99,8 @@
         fan.xiaomi:
           modes:
             fan_speed:
-              low: ['10%']  # округляйте до целого
-              normal: ['50%']
+              low: '10%'  # округляйте до целого
+              normal: '50%'
     ```
 
 Рекомендуемые значения режимов: `eco`, `quiet`, `low`, `medium`, `normal`, `high`, `turbo`

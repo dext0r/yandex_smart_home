@@ -73,10 +73,10 @@ yandex_smart_home:
             entity_id: switch.deerma_jsq2w_2976_alarm
       modes:
         program:
-          low: ["Level1"]
-          medium: ["Level2"]
-          high: ["Level3"]
-          auto: ["Level4"]
+          low: "Level1"
+          medium: "Level2"
+          high: "Level3"
+          auto: "Level4"
       custom_modes:
         program:
           state_entity_id: fan.deerma_jsq2w_2976_fan_level
@@ -103,9 +103,9 @@ yandex_smart_home:
           entity: sensor.gostinaya_temp_humidity
       modes:
         program:
-          quiet: ['Sleep']
-          normal: ['Const Humidity']
-          turbo: ['Strong']
+          quiet: 'Sleep'
+          normal: 'Const Humidity'
+          turbo: 'Strong'
       custom_toggles:
         keep_warm: # подогрев
           state_entity_id: switch.leshow_jsq1_ee06_warm_wind_turn
@@ -467,16 +467,16 @@ yandex_smart_home:
       # https://docs.yaha-cloud.ru/dev/advanced/capabilities/mode/
       modes:
         input_source:
-          one: ['HW1'] # HDMI 1
-          two: ['HW2'] # HDMI 2
-          three: ['HW3'] # HDMI 3
-          four: ['HW4'] # HDMI 4
-          five: ['com.google.android.tvlauncher'] # home
-          six: ['ru.yourok.num'] # NUM
-          seven: ['ru.kinopoisk.tv'] # Кинопоиск
-          eight: ['ru.more.play'] # ОККО
-          nine: ['com.google.android.youtube.tv'] # YouTube
-          ten: ['unknown'] # unknown app/source
+          one: 'HW1' # HDMI 1
+          two: 'HW2' # HDMI 2
+          three: 'HW3' # HDMI 3
+          four: 'HW4' # HDMI 4
+          five: 'com.google.android.tvlauncher' # home
+          six: 'ru.yourok.num' # NUM
+          seven: 'ru.kinopoisk.tv' # Кинопоиск
+          eight: 'ru.more.play' # ОККО
+          nine: 'com.google.android.youtube.tv' # YouTube
+          ten: 'unknown' # unknown app/source
       custom_modes:
         input_source:
           state_entity_id: sensor.tv_input_source

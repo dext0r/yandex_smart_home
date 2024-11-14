@@ -56,9 +56,9 @@
         vacuum.xiaomi_mop:
           modes:
             work_speed:  # соответствие между режимами УДЯ и HA
-              eco: ['Low']
-              medium: ['Med']
-              max: ['High']
+              eco: 'Low'
+              medium: 'Med'
+              max: 'High'
           custom_modes:
             work_speed:
               state_entity_id: vacuum.xiaomi_mop
@@ -82,8 +82,8 @@
           type: cooking.coffee_maker
           modes:
             coffee_mode:
-              cappuccino: ['cappuccino']
-              latte: ['latte']
+              cappuccino: 'cappuccino'
+              latte: 'latte'
           custom_modes:
             coffee_mode:
               set_mode:

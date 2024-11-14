@@ -127,21 +127,17 @@
         light.led_strip:
           modes:
             scene:
-              sunrise:
-                - Wake up
-              alarm:
-                - Blink
-              fantasy:
-                - Огоньки
+              sunrise: 'Wake up'
+              alarm: 'Blink'
+              fantasy: 'Огоньки'
         light.kitchen_lamp:
           modes:
             scene:
-              ocean:
-                - Много воды
+              ocean: 'Много воды'
     ```
 
 * `sunrise`, `alarm`, `fantasy` - значение режима со стороны УДЯ
-* `Wake up`, `Blink`, `Огоньки` - названия режимов (эффектов) светильника со стороны Home Assistant (атрибут `effect_list`)
+* `Wake up`, `Blink`, `Огоньки` - названия режимов (эффектов) светильника со стороны Home Assistant (атрибут `effect_list`), допускается использование списка значений
 
 ### Доступные режимы  { id=scene-list }
 
