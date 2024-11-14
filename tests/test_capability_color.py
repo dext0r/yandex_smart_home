@@ -798,6 +798,30 @@ async def test_capability_color_setting_temperature_k_rgbw(
     assert calls[2].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBW_COLOR: (255, 255, 255, 0)}
 
 
+async def test_capability_color_setting_temperature_k_rgbw_wled(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
+    state = State(
+        "light.test",
+        STATE_OFF,
+        {
+            ATTR_RGBW_COLOR: (255, 0, 0, 0),
+            ATTR_COLOR_MODE: ColorMode.RGBW,
+            ATTR_SUPPORTED_COLOR_MODES: [ColorMode.RGBW],
+            ATTR_EFFECT_LIST: ["Solid", "foo"],
+        },
+    )
+    cap_temp = _get_temperature_capability(hass, entry_data, state)
+    assert cap_temp.get_value() is None
+
+    calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
+    await cap_temp.set_instance_state(Context(), TemperatureKInstanceActionState(value=4500))
+    await cap_temp.set_instance_state(Context(), TemperatureKInstanceActionState(value=6500))
+    assert len(calls) == 2
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBW_COLOR: (0, 0, 0, 255), ATTR_EFFECT: "Solid"}
+    assert calls[1].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBW_COLOR: (255, 255, 255, 0)}
+
+
 async def test_capability_color_mode_color_temp(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     attributes = {
         ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP, ColorMode.RGB],

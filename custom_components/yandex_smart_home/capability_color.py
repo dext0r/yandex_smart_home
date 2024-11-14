@@ -28,7 +28,7 @@ from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.util.color import RGBColor
 
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
-from .color import ColorConverter, ColorTemperatureConverter, LightState
+from .color import SOLID_LIGHT_EFFECT, ColorConverter, ColorTemperatureConverter, LightState
 from .const import CONF_COLOR_PROFILE, CONF_ENTITY_CUSTOM_MODES, CONF_ENTITY_MODE_MAP
 from .helpers import APIError
 from .schema import (
@@ -272,6 +272,8 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
         elif ColorMode.RGBW in self._supported_color_modes:
             if state.value == self._default_white_temperature:
                 service_data[ATTR_RGBW_COLOR] = (0, 0, 0, self.state.attributes.get(ATTR_BRIGHTNESS, 255))
+                if self._solid_effect_supported:
+                    service_data[ATTR_EFFECT] = SOLID_LIGHT_EFFECT
             else:
                 service_data[ATTR_RGBW_COLOR] = (255, 255, 255, 0)
 
