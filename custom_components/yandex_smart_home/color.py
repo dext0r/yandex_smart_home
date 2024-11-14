@@ -1,12 +1,23 @@
 """Color manipulation helpers."""
 
 from enum import StrEnum
+from functools import cached_property
 from math import sqrt
-from typing import Self
+from typing import Protocol, Self
 
-from homeassistant.components import light
+from homeassistant.components.light import (
+    ATTR_HS_COLOR,
+    ATTR_MAX_COLOR_TEMP_KELVIN,
+    ATTR_MIN_COLOR_TEMP_KELVIN,
+    ATTR_RGB_COLOR,
+    ATTR_RGBW_COLOR,
+    ATTR_RGBWW_COLOR,
+    ATTR_SUPPORTED_COLOR_MODES,
+    ATTR_XY_COLOR,
+    ColorMode,
+)
 from homeassistant.core import State
-from homeassistant.util.color import RGBColor
+from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
 
 
 class ColorName(StrEnum):
@@ -163,12 +174,8 @@ class ColorTemperatureConverter:
 
         profile = profile or {}
         range_extend_threshold = 200
-        min_color_temp = self._round_color_temperature(
-            int(state.attributes.get(light.ATTR_MIN_COLOR_TEMP_KELVIN, 2000))
-        )
-        max_color_temp = self._round_color_temperature(
-            int(state.attributes.get(light.ATTR_MAX_COLOR_TEMP_KELVIN, 6500))
-        )
+        min_color_temp = self._round_color_temperature(int(state.attributes.get(ATTR_MIN_COLOR_TEMP_KELVIN, 2000)))
+        max_color_temp = self._round_color_temperature(int(state.attributes.get(ATTR_MAX_COLOR_TEMP_KELVIN, 6500)))
 
         for color_name, yandex_value in self._palette.items():
             ha_value = self._round_color_temperature(profile.get(color_name, yandex_value))
@@ -234,4 +241,67 @@ class ColorTemperatureConverter:
         """Add mapping between yandex values and HA."""
         self._yandex_mapping[yandex_value] = ha_value
         self._ha_mapping[ha_value] = yandex_value
+        return None
+
+
+class LightState(Protocol):
+    """Helper class for the state of a light device."""
+
+    state: State
+
+    @cached_property
+    def _supported_color_modes(self) -> set[ColorMode]:
+        """Return a set of supported color modes."""
+        return set(self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []))
+
+    @cached_property
+    def _rgb_color(self) -> RGBColor | None:
+        """Return current RGB color."""
+        rgb_color: tuple[int, ...] | None = None
+
+        if ColorMode.RGBWW in self._supported_color_modes:
+            rgb_color = self.state.attributes.get(ATTR_RGBWW_COLOR)
+        elif ColorMode.RGBW in self._supported_color_modes:
+            rgb_color = self.state.attributes.get(ATTR_RGBW_COLOR)
+        elif ColorMode.RGB in self._supported_color_modes:
+            rgb_color = self.state.attributes.get(ATTR_RGB_COLOR)
+
+        if rgb_color:
+            return RGBColor(*rgb_color[:3])
+
+        if ColorMode.HS in self._supported_color_modes:
+            hs_color: tuple[float, float] | None = self.state.attributes.get(ATTR_HS_COLOR)
+            if hs_color:
+                return RGBColor(*color_hs_to_RGB(*hs_color))
+
+        xy_color: tuple[float, float] | None = self.state.attributes.get(ATTR_XY_COLOR)
+        if xy_color:
+            return RGBColor(*color_xy_to_RGB(*xy_color, Gamut=None))
+
+        return None
+
+    @cached_property
+    def _white_brightness(self) -> int | None:
+        """Return current white brightness or cold white brightness."""
+        rgbw_color: tuple[int, ...] | None = None
+
+        if ColorMode.RGBWW in self._supported_color_modes:
+            rgbw_color = self.state.attributes.get(ATTR_RGBWW_COLOR)
+        elif ColorMode.RGBW in self._supported_color_modes:
+            rgbw_color = self.state.attributes.get(ATTR_RGBW_COLOR)
+
+        if rgbw_color:
+            return rgbw_color[3]
+
+        return None
+
+    @cached_property
+    def _warm_white_brightness(self) -> int | None:
+        """Return current warm white brightness."""
+
+        if ColorMode.RGBWW in self._supported_color_modes:
+            rgbww_color: tuple[int, int, int, int, int] | None = self.state.attributes.get(ATTR_RGBWW_COLOR)
+            if rgbww_color:
+                return rgbww_color[4]
+
         return None

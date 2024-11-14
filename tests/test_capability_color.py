@@ -13,13 +13,14 @@ from homeassistant.components.light import (
     ATTR_MIN_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ATTR_RGBW_COLOR,
+    ATTR_RGBWW_COLOR,
     ATTR_SUPPORTED_COLOR_MODES,
     ATTR_WHITE,
     ATTR_XY_COLOR,
     ColorMode,
     LightEntityFeature,
 )
-from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, SERVICE_TURN_ON, STATE_OFF
+from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, SERVICE_TURN_ON, STATE_OFF, STATE_ON
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util.color import RGBColor
@@ -87,11 +88,11 @@ async def test_capability_color_setting(hass: HomeAssistant, entry_data: MockCon
 @pytest.mark.parametrize(
     "color_modes",
     [
+        [ColorMode.HS],
+        [ColorMode.XY],
         [ColorMode.RGB],
         [ColorMode.RGBW],
         [ColorMode.RGBWW],
-        [ColorMode.HS],
-        [ColorMode.XY],
         [],
     ],
 )
@@ -136,8 +137,12 @@ async def test_capability_color_setting_rgb(
         attributes[ATTR_HS_COLOR] = (240, 100)
     elif ColorMode.XY in color_modes:
         attributes[ATTR_XY_COLOR] = (0.135, 0.039)
-    else:
+    elif ColorMode.RGB in color_modes:
         attributes[ATTR_RGB_COLOR] = (0, 0, 255)
+    elif ColorMode.RGBW in color_modes:
+        attributes[ATTR_RGBW_COLOR] = (0, 0, 255, 0)
+    elif ColorMode.RGBWW in color_modes:
+        attributes[ATTR_RGBWW_COLOR] = (0, 0, 255, 0, 0)
 
     state = State("light.test", STATE_OFF, attributes)
     cap_rgb = cast(
@@ -148,14 +153,25 @@ async def test_capability_color_setting_rgb(
     )
     assert cap_rgb.get_value() == 255
 
-    state = State(
-        "light.test",
-        STATE_OFF,
-        {
-            ATTR_SUPPORTED_COLOR_MODES: color_modes,
-            ATTR_RGB_COLOR: (255, 255, 255),
-        },
-    )
+    for level in (0, 255):
+        attributes = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
+        if ColorMode.RGBWW in color_modes:
+            attributes[ATTR_RGBWW_COLOR] = (level, level, level, 10, 10)
+        elif ColorMode.RGBW in color_modes:
+            attributes[ATTR_RGBW_COLOR] = (level, level, level, 10)
+        else:
+            attributes[ATTR_RGB_COLOR] = (level, level, level)
+
+        state = State("light.test", STATE_OFF, attributes)
+        cap_rgb = cast(
+            RGBColorCapability,
+            get_exact_one_capability(
+                hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+            ),
+        )
+        assert cap_rgb.get_value() is None
+
+    state = State("light.test", STATE_OFF, {ATTR_SUPPORTED_COLOR_MODES: color_modes})
     cap_rgb = cast(
         RGBColorCapability,
         get_exact_one_capability(
@@ -163,21 +179,61 @@ async def test_capability_color_setting_rgb(
         ),
     )
     assert cap_rgb.get_value() is None
+    calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
+    await cap_rgb.set_instance_state(Context(), RGBInstanceActionState(value=720711))
+    assert len(calls) == 1
+    if ColorMode.RGBWW in color_modes:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBWW_COLOR: (10, 255, 71, 0, 0)}
+    elif ColorMode.RGBW in color_modes:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBW_COLOR: (10, 255, 71, 0)}
+    else:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGB_COLOR: (10, 255, 71)}
+
+    attributes = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
+    if ColorMode.HS in color_modes:
+        attributes[ATTR_HS_COLOR] = (209.677, 62)
+    elif ColorMode.XY in color_modes:
+        attributes[ATTR_XY_COLOR] = (0.186, 0.225)
+    elif ColorMode.RGB in color_modes:
+        attributes[ATTR_RGB_COLOR] = (50, 100, 150)
+    elif ColorMode.RGBW in color_modes:
+        attributes[ATTR_RGBW_COLOR] = (50, 100, 150, 12)
+    elif ColorMode.RGBWW in color_modes:
+        attributes[ATTR_RGBWW_COLOR] = (50, 100, 150, 12, 15)
+
+    state = State("light.test", STATE_ON, attributes)
+    cap_rgb = cast(
+        RGBColorCapability,
+        get_exact_one_capability(
+            hass, entry_data, state, CapabilityType.COLOR_SETTING, ColorSettingCapabilityInstance.RGB
+        ),
+    )
+    if ColorMode.HS in color_modes:
+        assert cap_rgb.get_value() == 6336767
+    elif ColorMode.XY in color_modes:
+        assert cap_rgb.get_value() == 6927615
+    else:
+        assert cap_rgb.get_value() == 3302550
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
     await cap_rgb.set_instance_state(Context(), RGBInstanceActionState(value=720711))
     assert len(calls) == 1
-    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGB_COLOR: (10, 255, 71)}
+    if ColorMode.RGBWW in color_modes:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBWW_COLOR: (10, 255, 71, 12, 15)}
+    elif ColorMode.RGBW in color_modes:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBW_COLOR: (10, 255, 71, 12)}
+    else:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGB_COLOR: (10, 255, 71)}
 
 
 @pytest.mark.parametrize(
     "color_modes",
     [
+        [ColorMode.HS],
+        [ColorMode.XY],
         [ColorMode.RGB],
         [ColorMode.RGBW],
         [ColorMode.RGBWW],
-        [ColorMode.HS],
-        [ColorMode.XY],
     ],
 )
 async def test_capability_color_setting_rgb_near_colors(
@@ -190,8 +246,12 @@ async def test_capability_color_setting_rgb_near_colors(
         attributes[ATTR_HS_COLOR] = (230.769, 10.196)
     elif ColorMode.XY in color_modes:
         attributes[ATTR_XY_COLOR] = (0.303, 0.3055)
-    else:
+    elif ColorMode.RGB in color_modes:
         attributes[ATTR_RGB_COLOR] = (229, 233, 255)
+    elif ColorMode.RGBW in color_modes:
+        attributes[ATTR_RGBW_COLOR] = (229, 233, 255, 10)
+    elif ColorMode.RGBWW in color_modes:
+        attributes[ATTR_RGBWW_COLOR] = (229, 233, 255, 10, 15)
 
     state = State("light.test", STATE_OFF, attributes)
     cap = cast(
@@ -206,8 +266,12 @@ async def test_capability_color_setting_rgb_near_colors(
         attributes[ATTR_HS_COLOR] = (226.154, 10.236)
     elif ColorMode.XY in color_modes:
         attributes[ATTR_XY_COLOR] = (0.302, 0.3075)
-    else:
+    elif ColorMode.RGB in color_modes:
         attributes[ATTR_RGB_COLOR] = (228, 234, 254)
+    elif ColorMode.RGBW in color_modes:
+        attributes[ATTR_RGBW_COLOR] = (228, 234, 254, 10)
+    elif ColorMode.RGBWW in color_modes:
+        attributes[ATTR_RGBWW_COLOR] = (228, 234, 254, 10, 15)
 
     state = State("light.test", STATE_OFF, attributes)
     cap = cast(
@@ -222,8 +286,12 @@ async def test_capability_color_setting_rgb_near_colors(
         attributes[ATTR_HS_COLOR] = (231.5, 9.1)
     elif ColorMode.XY in color_modes:
         attributes[ATTR_XY_COLOR] = (0.301, 0.307)
-    else:
+    elif ColorMode.RGB in color_modes:
         attributes[ATTR_RGB_COLOR] = (226, 230, 250)
+    elif ColorMode.RGBW in color_modes:
+        attributes[ATTR_RGBW_COLOR] = (226, 230, 250, 10)
+    elif ColorMode.RGBWW in color_modes:
+        attributes[ATTR_RGBWW_COLOR] = (226, 230, 250, 10, 10)
 
     state = State("light.test", STATE_OFF, attributes)
     cap = cast(
@@ -238,11 +306,11 @@ async def test_capability_color_setting_rgb_near_colors(
 @pytest.mark.parametrize(
     "color_modes",
     [
+        [ColorMode.HS],
+        [ColorMode.XY],
         [ColorMode.RGB],
         [ColorMode.RGBW],
         [ColorMode.RGBWW],
-        [ColorMode.HS],
-        [ColorMode.XY],
     ],
 )
 async def test_capability_color_setting_rgb_with_profile(hass: HomeAssistant, color_modes: list[ColorMode]) -> None:
@@ -259,8 +327,12 @@ async def test_capability_color_setting_rgb_with_profile(hass: HomeAssistant, co
         attributes[ATTR_HS_COLOR] = (45, 100)
     elif ColorMode.XY in color_modes:
         attributes[ATTR_XY_COLOR] = (0.527, 0.447)
-    else:
+    elif ColorMode.RGB in color_modes:
         attributes[ATTR_RGB_COLOR] = (255, 191, 0)
+    elif ColorMode.RGBW in color_modes:
+        attributes[ATTR_RGBW_COLOR] = (255, 191, 0, 10)
+    elif ColorMode.RGBWW in color_modes:
+        attributes[ATTR_RGBWW_COLOR] = (255, 191, 0, 10, 15)
 
     state = State("light.test", STATE_OFF, attributes)
     cap = cast(
@@ -272,7 +344,12 @@ async def test_capability_color_setting_rgb_with_profile(hass: HomeAssistant, co
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
     await cap.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
     assert len(calls) == 1
-    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGB_COLOR: (255, 191, 0)}
+    if ColorMode.RGBW in color_modes:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBW_COLOR: (255, 191, 0, 10)}
+    elif ColorMode.RGBWW in color_modes:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBWW_COLOR: (255, 191, 0, 10, 15)}
+    else:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGB_COLOR: (255, 191, 0)}
 
     state = State("light.invalid", STATE_OFF, attributes)
     cap = cast(
@@ -299,11 +376,11 @@ async def test_capability_color_setting_rgb_with_profile(hass: HomeAssistant, co
 @pytest.mark.parametrize(
     "color_modes",
     [
+        [ColorMode.HS],
+        [ColorMode.XY],
         [ColorMode.RGB],
         [ColorMode.RGBW],
         [ColorMode.RGBWW],
-        [ColorMode.HS],
-        [ColorMode.XY],
     ],
 )
 async def test_capability_color_setting_rgb_with_internal_profile(
@@ -316,8 +393,12 @@ async def test_capability_color_setting_rgb_with_internal_profile(
         attributes[ATTR_HS_COLOR] = (0, 100)
     elif ColorMode.XY in color_modes:
         attributes[ATTR_XY_COLOR] = (0.701, 0.299)
-    else:
+    elif ColorMode.RGB in color_modes:
         attributes[ATTR_RGB_COLOR] = (255, 0, 0)
+    elif ColorMode.RGBW in color_modes:
+        attributes[ATTR_RGBW_COLOR] = (255, 0, 0, 10)
+    elif ColorMode.RGBWW in color_modes:
+        attributes[ATTR_RGBWW_COLOR] = (255, 0, 0, 10, 15)
 
     state = State("light.test", STATE_OFF, attributes)
     cap = cast(
@@ -329,7 +410,12 @@ async def test_capability_color_setting_rgb_with_internal_profile(
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
     await cap.set_instance_state(Context(), RGBInstanceActionState(value=16714250))
     assert len(calls) == 1
-    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGB_COLOR: (255, 0, 0)}
+    if ColorMode.RGBW in color_modes:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBW_COLOR: (255, 0, 0, 10)}
+    elif ColorMode.RGBWW in color_modes:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGBWW_COLOR: (255, 0, 0, 10, 15)}
+    else:
+        assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, ATTR_RGB_COLOR: (255, 0, 0)}
 
 
 @pytest.mark.parametrize(

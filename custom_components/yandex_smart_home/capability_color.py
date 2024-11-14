@@ -13,13 +13,12 @@ from homeassistant.components.light import (
     ATTR_COLOR_TEMP_KELVIN,
     ATTR_EFFECT,
     ATTR_EFFECT_LIST,
-    ATTR_HS_COLOR,
     ATTR_KELVIN,
     ATTR_RGB_COLOR,
     ATTR_RGBW_COLOR,
+    ATTR_RGBWW_COLOR,
     ATTR_SUPPORTED_COLOR_MODES,
     ATTR_WHITE,
-    ATTR_XY_COLOR,
     COLOR_MODE_COLOR_TEMP,
     ColorMode,
     LightEntityFeature,
@@ -27,10 +26,10 @@ from homeassistant.components.light import (
 )
 from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_ON
 from homeassistant.core import Context, HomeAssistant, State
-from homeassistant.util.color import RGBColor, color_hs_to_RGB, color_xy_to_RGB
+from homeassistant.util.color import RGBColor
 
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
-from .color import ColorConverter, ColorTemperatureConverter
+from .color import ColorConverter, ColorTemperatureConverter, LightState
 from .const import CONF_COLOR_PROFILE, CONF_ENTITY_CUSTOM_MODES, CONF_ENTITY_MODE_MAP
 from .helpers import APIError
 from .schema import (
@@ -115,7 +114,7 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
         return [self._color, self._temperature, self._scene]
 
 
-class RGBColorCapability(StateCapability[RGBInstanceActionState]):
+class RGBColorCapability(StateCapability[RGBInstanceActionState], LightState):
     """Capability to control color of a light device."""
 
     type = CapabilityType.COLOR_SETTING
@@ -124,20 +123,16 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
     @property
     def supported(self) -> bool:
         """Test if capability is supported."""
-        if self.state.domain != light.DOMAIN:
-            return False
-
-        for color_mode in self.state.attributes.get(ATTR_SUPPORTED_COLOR_MODES, []):
-            if color_mode in [
+        return self.state.domain == light.DOMAIN and bool(
+            {
                 ColorMode.RGB,
                 ColorMode.RGBW,
                 ColorMode.RGBWW,
                 ColorMode.HS,
                 ColorMode.XY,
-            ]:
-                return True
-
-        return False
+            }
+            & self._supported_color_modes
+        )
 
     @property
     def parameters(self) -> ColorSettingCapabilityParameters:
@@ -153,35 +148,31 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState]):
         if self.state.attributes.get(ATTR_COLOR_MODE) == COLOR_MODE_COLOR_TEMP:
             return None
 
-        rgb_color = self.state.attributes.get(ATTR_RGB_COLOR)
-        if rgb_color is None:
-            hs_color = self.state.attributes.get(ATTR_HS_COLOR)
-            if hs_color is not None:
-                rgb_color = color_hs_to_RGB(*hs_color)
-
-            xy_color = self.state.attributes.get(ATTR_XY_COLOR)
-            if xy_color is not None:
-                rgb_color = color_xy_to_RGB(*xy_color)
-
-        if rgb_color is not None:
-            if rgb_color == (255, 255, 255):
+        if self._rgb_color:
+            if self._rgb_color in (RGBColor(255, 255, 255), RGBColor(0, 0, 0)):
                 return None
 
-            return self._converter.get_yandex_color(RGBColor(*rgb_color))
+            return self._converter.get_yandex_color(self._rgb_color)
 
         return None
 
     async def set_instance_state(self, context: Context, state: RGBInstanceActionState) -> None:
         """Change the capability state."""
+        color = self._converter.get_ha_color(state.value)
+        service_data: dict[str, Any] = {ATTR_ENTITY_ID: self.state.entity_id}
+
+        if ColorMode.RGBWW in self._supported_color_modes:
+            service_data[ATTR_RGBWW_COLOR] = tuple(color) + (
+                self._white_brightness or 0,
+                self._warm_white_brightness or 0,
+            )
+        elif ColorMode.RGBW in self._supported_color_modes:
+            service_data[ATTR_RGBW_COLOR] = tuple(color) + (self._white_brightness or 0,)
+        else:
+            service_data[ATTR_RGB_COLOR] = tuple(color)
+
         await self._hass.services.async_call(
-            light.DOMAIN,
-            SERVICE_TURN_ON,
-            {
-                ATTR_ENTITY_ID: self.state.entity_id,
-                ATTR_RGB_COLOR: tuple(self._converter.get_ha_color(state.value)),
-            },
-            blocking=True,
-            context=context,
+            light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=True, context=context
         )
 
     @cached_property

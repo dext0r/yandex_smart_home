@@ -3,11 +3,13 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
 import logging
+import math
 from typing import Any, Protocol
 
 from homeassistant.components import climate, cover, fan, humidifier, light, media_player, valve, water_heater
 from homeassistant.components.climate import ClimateEntityFeature
 from homeassistant.components.cover import CoverEntityFeature
+from homeassistant.components.light import ColorMode
 from homeassistant.components.media_player import MediaPlayerDeviceClass, MediaPlayerEntityFeature, MediaType
 from homeassistant.components.valve import ValveEntityFeature
 from homeassistant.components.water_heater import WaterHeaterEntityFeature
@@ -29,8 +31,10 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 from homeassistant.core import Context
+from homeassistant.util.color import RGBColor
 
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
+from .capability_color import LightState
 from .const import (
     ATTR_TARGET_HUMIDITY,
     CONF_ENTITY_RANGE,
@@ -392,6 +396,105 @@ class BrightnessCapability(StateRangeCapability):
         return RangeCapabilityRange(min=1, max=100, precision=1)
 
 
+class WhiteLightBrightnessCapability(StateRangeCapability, LightState):
+    """Capability to control white brightness and cold white brightness of a RGBW/RGBWW light device."""
+
+    instance = RangeCapabilityInstance.VOLUME
+    volume_default_relative_step = 3
+    brightness_relative_step = 20
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        return self.state.domain == light.DOMAIN and bool(
+            {ColorMode.RGBW, ColorMode.RGBWW} & self._supported_color_modes
+        )
+
+    @property
+    def support_random_access(self) -> bool:
+        """Test if the capability accept arbitrary values to be set."""
+        return True
+
+    async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        service_data: dict[str, Any] = {ATTR_ENTITY_ID: self.state.entity_id}
+        color = self._rgb_color or RGBColor(0, 0, 0)
+        brightness_pct = state.value
+
+        if state.relative:
+            if abs(state.value) == self.volume_default_relative_step:
+                brightness_pct = self._get_absolute_value(self.brightness_relative_step * math.copysign(1, state.value))
+            else:
+                brightness_pct = self._get_absolute_value(state.value)
+
+        brightness = round(255 * brightness_pct / 100)
+
+        if ColorMode.RGBWW in self._supported_color_modes:
+            service_data[light.ATTR_RGBWW_COLOR] = color + (brightness, self._warm_white_brightness or 0)
+        else:
+            service_data[light.ATTR_RGBW_COLOR] = color + (brightness,)
+
+        await self._hass.services.async_call(
+            light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=True, context=context
+        )
+
+    def _get_value(self) -> float | None:
+        """Return the current capability value (unguarded)."""
+        if (value := self._white_brightness) is not None:
+            return int(100 * (value / 255))
+
+        return None
+
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Return supporting value range."""
+        return RangeCapabilityRange(min=0, max=100, precision=1)
+
+
+class WarmWhiteLightBrightnessCapability(StateRangeCapability, LightState):
+    """Capability to control warm white brightness of a RGBWW light device."""
+
+    instance = RangeCapabilityInstance.OPEN
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        return self.state.domain == light.DOMAIN and ColorMode.RGBWW in self._supported_color_modes
+
+    @property
+    def support_random_access(self) -> bool:
+        """Test if the capability accept arbitrary values to be set."""
+        return True
+
+    async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        color = self._rgb_color or RGBColor(0, 0, 0)
+        brightness_pct = self._get_service_call_value(state)
+
+        await self._hass.services.async_call(
+            light.DOMAIN,
+            SERVICE_TURN_ON,
+            {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                light.ATTR_RGBWW_COLOR: color + (self._white_brightness or 0, round(255 * brightness_pct / 100)),
+            },
+            blocking=True,
+            context=context,
+        )
+
+    def _get_value(self) -> float | None:
+        """Return the current capability value (unguarded)."""
+        if (value := self._warm_white_brightness) is not None:
+            return int(100 * (value / 255))
+
+        return None
+
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Return supporting value range."""
+        return RangeCapabilityRange(min=0, max=100, precision=1)
+
+
 class VolumeCapability(StateRangeCapability):
     """Capability to control volume of a device."""
 
@@ -632,6 +735,8 @@ STATE_CAPABILITIES_REGISTRY.register(TemperatureCapabilityClimate)
 STATE_CAPABILITIES_REGISTRY.register(HumidityCapabilityHumidifier)
 STATE_CAPABILITIES_REGISTRY.register(HumidityCapabilityXiaomiFan)
 STATE_CAPABILITIES_REGISTRY.register(BrightnessCapability)
+STATE_CAPABILITIES_REGISTRY.register(WhiteLightBrightnessCapability)
+STATE_CAPABILITIES_REGISTRY.register(WarmWhiteLightBrightnessCapability)
 STATE_CAPABILITIES_REGISTRY.register(VolumeCapability)
 STATE_CAPABILITIES_REGISTRY.register(ChannelCapability)
 STATE_CAPABILITIES_REGISTRY.register(ValvePositionCapability)

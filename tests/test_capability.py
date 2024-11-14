@@ -318,6 +318,8 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
         ("devices.capabilities.range", "brightness"),
+        ("devices.capabilities.range", "volume"),
+        ("devices.capabilities.range", "open"),
         ("devices.capabilities.on_off", "on"),
     ]
 
@@ -331,6 +333,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
         ("devices.capabilities.color_setting", "rgb"),
         ("devices.capabilities.color_setting", "temperature_k"),
         ("devices.capabilities.range", "brightness"),
+        ("devices.capabilities.range", "volume"),
         ("devices.capabilities.on_off", "on"),
     ]
 

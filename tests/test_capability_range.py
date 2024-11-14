@@ -1,6 +1,6 @@
 from abc import ABC
 from enum import IntFlag
-from typing import cast
+from typing import Any, cast
 from unittest.mock import patch
 
 from homeassistant.components import climate, cover, humidifier, light, media_player, valve, water_heater
@@ -431,7 +431,11 @@ async def test_capability_range_humidity_fan(hass: HomeAssistant, entry_data: Mo
 async def test_capability_range_brightness(
     hass: HomeAssistant, entry_data: MockConfigEntryData, color_mode: ColorMode
 ) -> None:
-    state = State("light.test", STATE_ON, {light.ATTR_SUPPORTED_COLOR_MODES: [color_mode], light.ATTR_BRIGHTNESS: 128})
+    attributes: dict[str, Any] = {
+        light.ATTR_SUPPORTED_COLOR_MODES: [color_mode],
+        light.ATTR_BRIGHTNESS: 128,
+    }
+    state = State("light.test", STATE_ON, attributes)
     cap = cast(
         RangeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
@@ -456,6 +460,129 @@ async def test_capability_range_brightness(
     assert calls[2].data[light.ATTR_BRIGHTNESS_PCT] == 126
     assert calls[3].data[light.ATTR_BRIGHTNESS_STEP_PCT] == 30
     assert calls[4].data[light.ATTR_BRIGHTNESS_STEP_PCT] == -60
+
+    attributes[light.ATTR_BRIGHTNESS] = None
+    state = State("light.test", STATE_ON, attributes)
+    cap = cast(
+        RangeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
+    )
+    assert cap.get_value() is None
+
+
+@pytest.mark.parametrize("color_mode", [ColorMode.RGBW, ColorMode.RGBWW])
+async def test_capability_range_white_light_brightness(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, color_mode: ColorMode
+) -> None:
+    attributes: dict[str, Any] = {light.ATTR_SUPPORTED_COLOR_MODES: [color_mode], light.ATTR_BRIGHTNESS: 128}
+    if color_mode == ColorMode.RGBW:
+        attributes[light.ATTR_RGBW_COLOR] = (255, 10, 20, 192)
+    elif color_mode == ColorMode.RGBWW:
+        attributes[light.ATTR_RGBWW_COLOR] = (255, 10, 20, 192, 64)
+    state = State("light.test", STATE_ON, attributes)
+    cap = cast(
+        RangeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+    )
+    assert cap.get_value() == 75
+
+    calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
+    for value, relative in ((0, False), (30, False), (3, True), (30, True), (-60, True)):
+        await cap.set_instance_state(
+            Context(),
+            RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=value, relative=relative),
+        )
+
+    assert len(calls) == 5
+    for i in range(0, len(calls)):
+        assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
+
+    if color_mode == ColorMode.RGBW:
+        assert calls[0].data[light.ATTR_RGBW_COLOR] == (255, 10, 20, 0)
+        assert calls[1].data[light.ATTR_RGBW_COLOR] == (255, 10, 20, 76)
+        assert calls[2].data[light.ATTR_RGBW_COLOR] == (255, 10, 20, 242)
+        assert calls[3].data[light.ATTR_RGBW_COLOR] == (255, 10, 20, 255)
+        assert calls[4].data[light.ATTR_RGBW_COLOR] == (255, 10, 20, 38)
+    elif color_mode == ColorMode.RGBWW:
+        assert calls[0].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 0, 64)
+        assert calls[1].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 76, 64)
+        assert calls[2].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 242, 64)
+        assert calls[3].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 255, 64)
+        assert calls[4].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 38, 64)
+
+    if color_mode == ColorMode.RGBW:
+        attributes[light.ATTR_RGBW_COLOR] = None
+    elif color_mode == ColorMode.RGBWW:
+        attributes[light.ATTR_RGBWW_COLOR] = None
+
+    state = State("light.test", STATE_ON, attributes)
+    cap = cast(
+        RangeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+    )
+    assert cap.get_value() is None
+
+    calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
+    await cap.set_instance_state(
+        Context(),
+        RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=50, relative=False),
+    )
+
+    assert len(calls) == 1
+    if color_mode == ColorMode.RGBW:
+        assert calls[0].data[light.ATTR_RGBW_COLOR] == (0, 0, 0, 128)
+    elif color_mode == ColorMode.RGBWW:
+        assert calls[0].data[light.ATTR_RGBWW_COLOR] == (0, 0, 0, 128, 0)
+
+
+async def test_capability_range_warm_white_light_brightness(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
+    attributes: dict[str, Any] = {
+        light.ATTR_SUPPORTED_COLOR_MODES: [ColorMode.RGBWW],
+        light.ATTR_BRIGHTNESS: 128,
+        light.ATTR_RGBWW_COLOR: (255, 10, 20, 64, 192),
+    }
+    state = State("light.test", STATE_ON, attributes)
+    cap = cast(
+        RangeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
+    )
+    assert cap.get_value() == 75
+
+    calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
+    for value, relative in ((0, False), (30, False), (3, True), (30, True), (-60, True)):
+        await cap.set_instance_state(
+            Context(),
+            RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=value, relative=relative),
+        )
+
+    assert len(calls) == 5
+    for i in range(0, len(calls)):
+        assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
+
+    assert calls[0].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 64, 0)
+    assert calls[1].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 64, 76)
+    assert calls[2].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 64, 199)
+    assert calls[3].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 64, 255)
+    assert calls[4].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 64, 38)
+
+    attributes[light.ATTR_RGBWW_COLOR] = None
+    state = State("light.test", STATE_ON, attributes)
+    cap = cast(
+        RangeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
+    )
+    assert cap.get_value() is None
+
+    calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
+    await cap.set_instance_state(
+        Context(),
+        RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=50, relative=False),
+    )
+
+    assert len(calls) == 1
+    assert calls[0].data[light.ATTR_RGBWW_COLOR] == (0, 0, 0, 0, 128)
 
 
 async def test_capability_range_volume(hass: HomeAssistant) -> None:
