@@ -34,6 +34,7 @@ from .const import (
     CONF_CLOUD_INSTANCE,
     CONF_CLOUD_INSTANCE_CONNECTION_TOKEN,
     CONF_CLOUD_INSTANCE_ID,
+    CONF_CLOUD_INSTANCE_OTP,
     CONF_CLOUD_INSTANCE_PASSWORD,
     CONF_CONNECTION_TYPE,
     CONF_ENTRY_ALIASES,
@@ -401,7 +402,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
             self._data.update(user_input)
 
             try:
-                instance = await cloud.register_instance(self.hass, user_input[CONF_PLATFORM])
+                instance = await cloud.register_instance(self.hass, SmartHomePlatform(user_input[CONF_PLATFORM]))
                 self._data[CONF_CLOUD_INSTANCE] = {
                     CONF_CLOUD_INSTANCE_ID: instance.id,
                     CONF_CLOUD_INSTANCE_PASSWORD: instance.password,
@@ -426,6 +427,17 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         description_placeholders: dict[str, str] = self._data.get(CONF_CLOUD_INSTANCE, {}).copy()
         if self._data[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD_PLUS:
             description_placeholders[CONF_SKILL] = self._options[CONF_SKILL][CONF_NAME]
+
+        if self._data[CONF_CONNECTION_TYPE] in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
+            description_placeholders[CONF_CLOUD_INSTANCE_OTP] = "-"
+            try:
+                description_placeholders[CONF_CLOUD_INSTANCE_OTP] = await cloud.get_instance_otp(
+                    self.hass,
+                    self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
+                    self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_CONNECTION_TOKEN],
+                )
+            except Exception:
+                _LOGGER.exception("Failed to get one time password for cloud connection")
 
         return self.async_create_entry(
             title=await async_config_entry_title(self.hass, self._data, self._options),
@@ -469,6 +481,7 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
 
     async def async_step_cloud_credentials(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Show cloud connection credentials."""
+        errors = {}
         if user_input is not None:
             return await self.async_step_init()
 
@@ -476,11 +489,24 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
             CONF_SKILL: "Yaha Cloud",
             CONF_CLOUD_INSTANCE_ID: self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
             CONF_CLOUD_INSTANCE_PASSWORD: self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_PASSWORD],
+            CONF_CLOUD_INSTANCE_OTP: "-",
         }
         if self._data[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD_PLUS:
             description_placeholders[CONF_SKILL] = self._options[CONF_SKILL][CONF_NAME]
 
-        return self.async_show_form(step_id="cloud_credentials", description_placeholders=description_placeholders)
+        try:
+            description_placeholders[CONF_CLOUD_INSTANCE_OTP] = await cloud.get_instance_otp(
+                self.hass,
+                self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
+                self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_CONNECTION_TOKEN],
+            )
+        except Exception:
+            errors["base"] = "cannot_connect"
+            _LOGGER.exception("Failed to get one time password for cloud connection")
+
+        return self.async_show_form(
+            step_id="cloud_credentials", description_placeholders=description_placeholders, errors=errors
+        )
 
     async def async_step_context_user(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose user for a service calls context."""

@@ -39,6 +39,12 @@ class CloudInstanceData(BaseModel):
     connection_token: str
 
 
+class CloudInstanceOTP(BaseModel):
+    """Hold response for one time password request."""
+
+    code: str
+
+
 class CloudRequest(BaseModel):
     """Request from the cloud."""
 
@@ -175,6 +181,19 @@ async def register_instance(hass: HomeAssistant, platform: SmartHomePlatform | N
     response.raise_for_status()
 
     return CloudInstanceData.parse_raw(await response.text())
+
+
+async def get_instance_otp(hass: HomeAssistant, instance_id: str, token: str) -> str:
+    """Return one time password for a cloud instance linking."""
+    session = async_create_clientsession(hass)
+
+    response = await session.post(
+        f"{BASE_API_URL}/instance/{instance_id}/otp",
+        headers={hdrs.AUTHORIZATION: f"Bearer {token}"},
+    )
+    response.raise_for_status()
+
+    return CloudInstanceOTP.parse_raw(await response.text()).code
 
 
 async def reset_connection_token(hass: HomeAssistant, instance_id: str, token: str) -> CloudInstanceData:

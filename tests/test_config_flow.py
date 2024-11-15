@@ -223,7 +223,8 @@ async def test_config_flow_update_filter(hass: HomeAssistant, hass_admin_user: U
     assert result2["data_schema"]({}) == {"entities": ["climate.foo", "fan.foo", "lock.test"]}
 
 
-async def test_config_flow_cloud(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker) -> None:
+@pytest.mark.parametrize("otp_fail", [True, False])
+async def test_config_flow_cloud(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, otp_fail: bool) -> None:
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
@@ -271,6 +272,15 @@ async def test_config_flow_cloud(hass: HomeAssistant, aioclient_mock: AiohttpCli
     assert result6["type"] == FlowResultType.FORM
     assert result6["step_id"] == "include_entities"
 
+    if otp_fail:
+        aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/1234567890/otp", status=500)
+    else:
+        aioclient_mock.post(
+            f"{cloud.BASE_API_URL}/instance/1234567890/otp",
+            status=200,
+            json={"code": "654123"},
+        )
+
     result7 = await hass.config_entries.flow.async_configure(
         result6["flow_id"],
         {CONF_ENTITIES: ["foo.bar", "script.test"]},
@@ -279,6 +289,22 @@ async def test_config_flow_cloud(hass: HomeAssistant, aioclient_mock: AiohttpCli
     assert result7["type"] == FlowResultType.CREATE_ENTRY
     assert result7["title"] == "Yaha Cloud (12345678)"
     assert result7["description"] == "cloud"
+    if otp_fail:
+        assert result7["description_placeholders"] == {
+            "id": "1234567890",
+            "password": "simple",
+            "token": "foo",
+            "otp": "-",
+        }
+
+    else:
+        assert result7["description_placeholders"] == {
+            "id": "1234567890",
+            "password": "simple",
+            "token": "foo",
+            "otp": "654123",
+        }
+
     assert result7["data"] == {
         "connection_type": "cloud",
         "cloud_instance": {"id": "1234567890", "password": "simple", "token": "foo"},
@@ -293,7 +319,10 @@ async def test_config_flow_cloud(hass: HomeAssistant, aioclient_mock: AiohttpCli
     assert len(component._entry_datas) == 1
 
 
-async def test_config_flow_cloud_plus_yandex(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker) -> None:
+@pytest.mark.parametrize("otp_fail", [True, False])
+async def test_config_flow_cloud_plus_yandex(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, otp_fail: bool
+) -> None:
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
@@ -360,6 +389,15 @@ async def test_config_flow_cloud_plus_yandex(hass: HomeAssistant, aioclient_mock
     assert result8["type"] == FlowResultType.FORM
     assert result8["step_id"] == "include_entities"
 
+    if otp_fail:
+        aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/1234567890/otp", status=500)
+    else:
+        aioclient_mock.post(
+            f"{cloud.BASE_API_URL}/instance/1234567890/otp",
+            status=200,
+            json={"code": "654123"},
+        )
+
     result9 = await hass.config_entries.flow.async_configure(
         result8["flow_id"],
         {CONF_ENTITIES: ["foo.bar", "script.test"]},
@@ -368,6 +406,24 @@ async def test_config_flow_cloud_plus_yandex(hass: HomeAssistant, aioclient_mock
     assert result9["type"] == FlowResultType.CREATE_ENTRY
     assert result9["title"] == "Yandex Smart Home: Cloud Plus (c8f46d6c)"
     assert result9["description"] == "cloud_plus"
+
+    if otp_fail:
+        assert result9["description_placeholders"] == {
+            "skill": "buz",
+            "id": "1234567890",
+            "password": "simple",
+            "token": "foo",
+            "otp": "-",
+        }
+    else:
+        assert result9["description_placeholders"] == {
+            "skill": "buz",
+            "id": "1234567890",
+            "password": "simple",
+            "token": "foo",
+            "otp": "654123",
+        }
+
     assert result9["data"] == {
         "connection_type": "cloud_plus",
         "platform": "yandex",
@@ -580,7 +636,10 @@ async def test_options_step_init_direct(hass: HomeAssistant, platform: SmartHome
     assert result["menu_options"] == ["expose_settings", f"skill_{platform}_direct", "maintenance"]
 
 
-async def test_options_step_cloud_credentinals(hass: HomeAssistant) -> None:
+@pytest.mark.parametrize("otp_fail", [True, False])
+async def test_options_step_cloud_credentinals(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, otp_fail: bool
+) -> None:
     config_entry = await _async_mock_config_entry(hass, {CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
     config_entry.add_to_hass(hass)
 
@@ -588,19 +647,47 @@ async def test_options_step_cloud_credentinals(hass: HomeAssistant) -> None:
     assert result["type"] == FlowResultType.MENU
     assert result["step_id"] == "init"
 
+    if otp_fail:
+        aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/test/otp", status=500)
+    else:
+        aioclient_mock.post(
+            f"{cloud.BASE_API_URL}/instance/test/otp",
+            status=200,
+            json={"code": "654123"},
+        )
+
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "cloud_credentials"}
     )
     assert result2["type"] == FlowResultType.FORM
     assert result2["step_id"] == "cloud_credentials"
-    assert result2["description_placeholders"] == {"skill": "Yaha Cloud", "id": "test", "password": "secret"}
+
+    if otp_fail:
+        assert result2["description_placeholders"] == {
+            "skill": "Yaha Cloud",
+            "id": "test",
+            "password": "secret",
+            "otp": "-",
+        }
+        assert result2["errors"] == {"base": "cannot_connect"}
+    else:
+        assert result2["description_placeholders"] == {
+            "skill": "Yaha Cloud",
+            "id": "test",
+            "password": "secret",
+            "otp": "654123",
+        }
+        assert result2["errors"] == {}
 
     result3 = await hass.config_entries.options.async_configure(result["flow_id"], user_input={})
     assert result3["type"] == FlowResultType.MENU
     assert result3["step_id"] == "init"
 
 
-async def test_options_step_cloud_credentinals_plus(hass: HomeAssistant) -> None:
+@pytest.mark.parametrize("otp_fail", [True, False])
+async def test_options_step_cloud_credentinals_plus(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, otp_fail: bool
+) -> None:
     config_entry = await _async_mock_config_entry(
         hass,
         data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS},
@@ -612,12 +699,31 @@ async def test_options_step_cloud_credentinals_plus(hass: HomeAssistant) -> None
     assert result["type"] == FlowResultType.MENU
     assert result["step_id"] == "init"
 
+    if otp_fail:
+        aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/test/otp", status=500)
+    else:
+        aioclient_mock.post(
+            f"{cloud.BASE_API_URL}/instance/test/otp",
+            status=200,
+            json={"code": "654123"},
+        )
+
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "cloud_credentials"}
     )
     assert result2["type"] == FlowResultType.FORM
     assert result2["step_id"] == "cloud_credentials"
-    assert result2["description_placeholders"] == {"skill": "foo", "id": "test", "password": "secret"}
+    if otp_fail:
+        assert result2["description_placeholders"] == {"skill": "foo", "id": "test", "password": "secret", "otp": "-"}
+        assert result2["errors"] == {"base": "cannot_connect"}
+    else:
+        assert result2["description_placeholders"] == {
+            "skill": "foo",
+            "id": "test",
+            "password": "secret",
+            "otp": "654123",
+        }
+        assert result2["errors"] == {}
 
     result3 = await hass.config_entries.options.async_configure(result["flow_id"], user_input={})
     assert result3["type"] == FlowResultType.MENU

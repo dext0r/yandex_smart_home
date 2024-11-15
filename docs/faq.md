@@ -1,6 +1,6 @@
-## Где найти ID и пароль для облачного подключения? { id=cloud-creds }
+## Где найти одноразовый код или ID и пароль для облачного подключения? { id=cloud-creds }
 
-Откройте [настройки интеграции](./config/getting-started.md#gui) --> `ID и пароль (облачное подключение)`
+Откройте [настройки интеграции](./config/getting-started.md#gui) --> `Реквизиты для привязки`
 
 ![](assets/images/config/gui-1.png){ width=750 }
 ![](assets/images/config/gui-2.png){ width=750 }
