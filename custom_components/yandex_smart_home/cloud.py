@@ -163,11 +163,15 @@ class CloudManager:
         return None
 
 
-async def register_instance(hass: HomeAssistant) -> CloudInstanceData:
+async def register_instance(hass: HomeAssistant, platform: SmartHomePlatform | None = None) -> CloudInstanceData:
     """Register a new cloud instance."""
     session = async_create_clientsession(hass)
 
-    response = await session.post(f"{BASE_API_URL}/instance/register")
+    if platform:
+        response = await session.post(f"{BASE_API_URL}/instance/register", json={"platform": platform.value})
+    else:
+        response = await session.post(f"{BASE_API_URL}/instance/register")
+
     response.raise_for_status()
 
     return CloudInstanceData.parse_raw(await response.text())

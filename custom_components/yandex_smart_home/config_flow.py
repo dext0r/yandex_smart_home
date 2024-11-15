@@ -352,7 +352,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._data.update(user_input)
 
-            if user_input[CONF_CONNECTION_TYPE] in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
+            if user_input[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD:
                 try:
                     instance = await cloud.register_instance(self.hass)
                     self._data[CONF_CLOUD_INSTANCE] = {
@@ -396,14 +396,29 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
 
     async def async_step_platform_cloud_plus(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose smart home platform for cloud p connection."""
+        errors = {}
         if user_input is not None:
             self._data.update(user_input)
-            step_fn = getattr(self, f"async_step_skill_{self._data[CONF_PLATFORM]}_cloud_plus")
-            return cast(ConfigFlowResult, await step_fn())
+
+            try:
+                instance = await cloud.register_instance(self.hass, user_input[CONF_PLATFORM])
+                self._data[CONF_CLOUD_INSTANCE] = {
+                    CONF_CLOUD_INSTANCE_ID: instance.id,
+                    CONF_CLOUD_INSTANCE_PASSWORD: instance.password,
+                    CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: instance.connection_token,
+                }
+            except (ClientConnectorError, ClientResponseError):
+                errors["base"] = "cannot_connect"
+                _LOGGER.exception("Failed to register instance in Yandex Smart Home cloud")
+
+            if not errors:
+                step_fn = getattr(self, f"async_step_skill_{self._data[CONF_PLATFORM]}_cloud_plus")
+                return cast(ConfigFlowResult, await step_fn())
 
         return self.async_show_form(
             step_id="platform_cloud_plus",
             data_schema=vol.Schema({vol.Required(CONF_PLATFORM): PLATFORM_SELECTOR}),
+            errors=errors,
         )
 
     async def async_step_done(self, _: ConfigType | None = None) -> ConfigFlowResult:
