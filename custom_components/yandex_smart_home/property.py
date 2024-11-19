@@ -50,8 +50,8 @@ class Property(Protocol):
         return self._entry_data.is_reporting_states
 
     @property
-    def report_on_startup(self) -> bool:
-        """Test if property value should be reported on startup."""
+    def heartbeat_report(self) -> bool:
+        """Test if property value should be reported on startup and periodically."""
         return True
 
     @property

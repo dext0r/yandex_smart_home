@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 import itertools
 import logging
+from random import randint
 from typing import TYPE_CHECKING, Any, Mapping, Protocol, Self, Sequence
 
 from aiohttp import ClientTimeout, JsonPayload, hdrs
@@ -53,6 +54,7 @@ _LOGGER = logging.getLogger(__name__)
 
 INITIAL_REPORT_DELAY = timedelta(seconds=15)
 DISCOVERY_REQUEST_DELAY = timedelta(seconds=5)
+HEARTBEAT_REPORT_INTERVAL = timedelta(hours=1)
 REPORT_STATE_WINDOW = timedelta(seconds=1)
 
 
@@ -192,6 +194,7 @@ class Notifier(ABC):
 
         self._unsub_state_changed: CALLBACK_TYPE | None = None
         self._unsub_initial_report: CALLBACK_TYPE | None = None
+        self._unsub_heartbeat_report: CALLBACK_TYPE | None = None
         self._unsub_report_states: CALLBACK_TYPE | None = None
         self._unsub_discovery: CALLBACK_TYPE | None = None
 
@@ -200,6 +203,11 @@ class Notifier(ABC):
         self._unsub_state_changed = self._hass.bus.async_listen(EVENT_STATE_CHANGED, self._async_state_changed)
         self._unsub_initial_report = async_call_later(
             self._hass, INITIAL_REPORT_DELAY, HassJob(self._async_initial_report)
+        )
+        self._unsub_heartbeat_report = async_call_later(
+            self._hass,
+            delay=HEARTBEAT_REPORT_INTERVAL + timedelta(minutes=randint(1, 15)),
+            action=HassJob(self._async_hearbeat_report),
         )
         self._unsub_discovery = async_call_later(
             self._hass, DISCOVERY_REQUEST_DELAY, HassJob(self.async_send_discovery)
@@ -220,6 +228,7 @@ class Notifier(ABC):
         for unsub in [
             self._unsub_state_changed,
             self._unsub_initial_report,
+            self._unsub_heartbeat_report,
             self._unsub_report_states,
             self._unsub_discovery,
         ]:
@@ -228,6 +237,7 @@ class Notifier(ABC):
 
         self._unsub_state_changed = None
         self._unsub_initial_report = None
+        self._unsub_heartbeat_report = None
         self._unsub_report_states = None
         self._unsub_discovery = None
 
@@ -426,8 +436,25 @@ class Notifier(ABC):
                 continue
 
             await self._pending.async_add(device.get_capabilities(), [])
-            await self._pending.async_add([p for p in device.get_properties() if p.report_on_startup], [])
+            await self._pending.async_add([p for p in device.get_properties() if p.heartbeat_report], [])
 
+        return self._schedule_report_states()
+
+    async def _async_hearbeat_report(self, *_: Any) -> None:
+        """Schedule periodical state report."""
+        self._debug_log("Reporting states (heartbeat)")
+        for state in self._hass.states.async_all():
+            device = Device(self._hass, self._entry_data, state.entity_id, state)
+            if not device.should_expose:
+                continue
+
+            await self._pending.async_add([p for p in device.get_properties() if p.heartbeat_report], [])
+
+        self._unsub_heartbeat_report = async_call_later(
+            self._hass,
+            delay=HEARTBEAT_REPORT_INTERVAL,
+            action=HassJob(self._async_hearbeat_report),
+        )
         return self._schedule_report_states()
 
     def _schedule_report_states(self) -> None:

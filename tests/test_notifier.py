@@ -238,6 +238,7 @@ async def test_notifier_lifecycle_link_platform_cloud(
     for notifier in component.get_entry_data(config_entry)._notifiers:
         assert notifier._unsub_state_changed is not None
         assert notifier._unsub_initial_report is not None
+        assert notifier._unsub_heartbeat_report is not None
         assert notifier._unsub_report_states is None
         assert notifier._unsub_discovery is not None
         assert notifier._config.platform is not None
@@ -247,6 +248,7 @@ async def test_notifier_lifecycle_link_platform_cloud(
     for notifier in component.get_entry_data(config_entry)._notifiers:
         assert notifier._unsub_state_changed is None
         assert notifier._unsub_initial_report is None
+        assert notifier._unsub_heartbeat_report is None
         assert notifier._unsub_report_states is None
         assert notifier._unsub_discovery is None
 
@@ -891,6 +893,67 @@ async def test_notifier_initial_report(
 
     assert notifier._pending.empty is True
     assert caplog.messages[-1:] == ["Unsupported entity binary_sensor.foo for temperature property of light.kitchen"]
+
+
+async def test_notifier_heartbeat_report(
+    hass_platform: HomeAssistant, mock_call_later: AsyncMock, caplog: pytest.LogCaptureFixture
+) -> None:
+    entry_data = MockConfigEntryData(
+        hass=hass_platform,
+        entity_config={
+            "light.kitchen": {
+                CONF_ENTITY_PROPERTIES: [
+                    {
+                        CONF_ENTITY_PROPERTY_TYPE: "temperature",
+                    }
+                ]
+            }
+        },
+        entity_filter=generate_entity_filter(exclude_entities=["switch.test"]),
+    )
+    notifier = YandexDirectNotifier(
+        hass_platform,
+        entry_data,
+        BASIC_CONFIG,
+        entry_data._get_trackable_templates(),
+        entry_data._get_trackable_entity_states(),
+    )
+
+    hass_platform.states.async_set("switch.test", "on")
+    hass_platform.states.async_set(
+        "sensor.button", "on", {ATTR_DEVICE_CLASS: EventDeviceClass.BUTTON, "last_action": "click"}
+    )
+
+    await notifier.async_setup()
+
+    call_args = mock_call_later.mock_calls[1].kwargs
+    assert isinstance(call_args["delay"], timedelta)
+    assert 3660 <= call_args["delay"].seconds <= 3600 + 15 * 60
+
+    mock_call_later.reset_mock()
+    await notifier._async_hearbeat_report()
+
+    devices = await notifier._pending.async_get_all()
+    assert list(devices.keys()) == ["sensor.outside_temp", "light.kitchen"]
+
+    def _get_states(entity_id: str) -> list[dict[str, Any]]:
+        states: list[dict[str, Any]] = []
+        for s in devices[entity_id]:
+            instance_state = s.get_instance_state()
+            if instance_state:
+                states.append(instance_state.as_dict())
+
+        return states
+
+    assert _get_states("sensor.outside_temp") == [
+        {"state": {"instance": "temperature", "value": 15.6}, "type": "devices.properties.float"},
+    ]
+
+    assert notifier._pending.empty is True
+
+    call_args = mock_call_later.mock_calls[0].kwargs
+    assert isinstance(call_args["delay"], timedelta)
+    assert call_args["delay"].seconds == 3600
 
 
 async def test_notifier_send_callback_exception(

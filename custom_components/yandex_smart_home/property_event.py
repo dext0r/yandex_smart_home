@@ -81,8 +81,8 @@ class EventProperty(Property, Protocol[EventInstanceEventT]):
         )
 
     @property
-    def report_on_startup(self) -> bool:
-        """Test if property value should be reported on startup."""
+    def heartbeat_report(self) -> bool:
+        """Test if property value should be reported on startup and periodically."""
         return False
 
     @property
