@@ -118,11 +118,6 @@ disable_error_code = [
 [tool.tox]
 env_list = [
     "type",
-    "2024_4",
-    "2024_5",
-    "2024_6",
-    "2024_7",
-    "2024_8",
     "2024_9",
     "2024_10",
     "2024_11",
@@ -141,51 +136,6 @@ PATH = "{env_dir}/bin:/usr/bin:/bin"
 PYTHONPATH = "{tox_root}"
 PYTHONDONTWRITEBYTECODE = "1"
 MYPY_CACHE_DIR = "{env_dir}/.cache/mypy"
-UV_EXTRA_INDEX_URL = "https://packagecloud.io/dext0r/pypi/pypi/simple"
-
-[tool.tox.env.2024_4]
-deps = [
-    "pytest-homeassistant-custom-component==0.13.112",
-    "home_assistant_intents==2024.2.2",
-    "hassil==1.5.1",
-]
-
-[tool.tox.env.2024_5]
-deps = [
-    "pytest-homeassistant-custom-component==0.13.121",
-    "home_assistant_intents==2024.4.24",
-    "hassil==1.7.0",
-    "mutagen==1.47.0",
-    "ha-ffmpeg==3.2.0",
-]
-
-[tool.tox.env.2024_6]
-deps = [
-    "pytest-homeassistant-custom-component==0.13.132",
-    "home_assistant_intents==2024.4.24",
-    "hassil==1.7.0",
-    "mutagen==1.47.0",
-    "ha-ffmpeg==3.2.0",
-]
-
-[tool.tox.env.2024_7]
-deps = [
-    "pytest-homeassistant-custom-component==0.13.144",
-    "home_assistant_intents==2024.4.24",
-    "hassil==1.7.0",
-    "mutagen==1.47.0",
-    "ha-ffmpeg==3.2.0",
-]
-
-[tool.tox.env.2024_8]
-deps = [
-    "pytest-homeassistant-custom-component==0.13.152",
-    "home_assistant_intents==2024.4.24",
-    "hassil==1.7.0",
-    "mutagen==1.47.0",
-    "ha-ffmpeg==3.2.0",
-    "pymicro-vad==1.0.2",
-]
 
 [tool.tox.env.2024_9]
 deps = [
