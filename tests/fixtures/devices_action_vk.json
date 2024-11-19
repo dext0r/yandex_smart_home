@@ -1,0 +1,19 @@
+{
+  "payload": {
+    "devices": [
+      {
+        "id": "test",
+        "capabilities": [
+          {
+            "type": "devices.capabilities.range",
+            "state": {
+              "instance": "volume",
+              "value": 54,
+              "relative": null
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -12,6 +12,7 @@ from homeassistant.components.light import ATTR_BRIGHTNESS
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     CONF_ID,
+    CONF_PLATFORM,
     CONF_TOKEN,
     CONF_TYPE,
     EVENT_HOMEASSISTANT_STARTED,
@@ -51,11 +52,11 @@ from custom_components.yandex_smart_home.const import (
 )
 from custom_components.yandex_smart_home.helpers import APIError, SmartHomePlatform
 from custom_components.yandex_smart_home.notifier import (
+    CloudNotifier,
+    Notifier,
     NotifierConfig,
     PendingStates,
-    YandexCloudNotifier,
     YandexDirectNotifier,
-    YandexNotifier,
 )
 from custom_components.yandex_smart_home.property_custom import (
     ButtonPressCustomEventProperty,
@@ -105,19 +106,35 @@ async def test_notifier_setup_no_linked_platforms(
 ) -> None:
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
-    config_entry_direct = MockConfigEntry(
+    config_entry_direct_yandex = MockConfigEntry(
+        title="Direct Yandex",
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
+        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.YANDEX},
         options={
             CONF_SKILL: {
                 CONF_ID: "skill_id",
                 CONF_TOKEN: "token",
                 CONF_USER_ID: hass_admin_user.id,
-            }
+            },
+            "_reporting_states": True,
+        },
+    )
+    config_entry_direct_vk = MockConfigEntry(
+        title="Direct VK",
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.VK},
+        options={
+            CONF_SKILL: {
+                CONF_ID: "skill_id",
+                CONF_USER_ID: hass_admin_user.id,
+            },
+            "_reporting_states": False,
         },
     )
     config_entry_cloud = MockConfigEntry(
+        title="Cloud",
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
@@ -127,31 +144,125 @@ async def test_notifier_setup_no_linked_platforms(
                 CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
         },
+        options={
+            "_reporting_states": True,
+        },
     )
-
-    config_entry_cloud_plus = MockConfigEntry(
+    config_entry_cloud_plus_yandex = MockConfigEntry(
+        title="Cloud Plus Yandex",
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
             CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
+            CONF_PLATFORM: SmartHomePlatform.YANDEX,
             CONF_CLOUD_INSTANCE: {
                 CONF_CLOUD_INSTANCE_ID: "test",
                 CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
         },
+        options={
+            CONF_SKILL: {
+                CONF_ID: "skill_id",
+                CONF_TOKEN: "token",
+            },
+            "_reporting_states": True,
+        },
+    )
+    config_entry_cloud_plus_vk = MockConfigEntry(
+        title="Cloud Plus VK",
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={
+            CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
+            CONF_PLATFORM: SmartHomePlatform.VK,
+            CONF_CLOUD_INSTANCE: {
+                CONF_CLOUD_INSTANCE_ID: "test",
+                CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+            },
+        },
+        options={
+            CONF_SKILL: {
+                CONF_ID: "skill_id",
+            },
+            "_reporting_states": False,
+        },
     )
 
-    for config_entry in [config_entry_direct, config_entry_cloud, config_entry_cloud_plus]:
+    for config_entry in [
+        config_entry_direct_yandex,
+        config_entry_direct_vk,
+        config_entry_cloud,
+        config_entry_cloud_plus_yandex,
+        config_entry_cloud_plus_vk,
+    ]:
         config_entry.add_to_hass(hass)
         await hass.config_entries.async_setup(config_entry.entry_id)
 
         component: YandexSmartHome = hass.data[DOMAIN]
-        assert component.get_entry_data(config_entry).is_reporting_states is True
+        assert component.get_entry_data(config_entry).is_reporting_states is config_entry.options["_reporting_states"]
         assert len(component.get_entry_data(config_entry)._notifiers) == 0
 
 
-async def test_notifier_lifecycle_link_platform(
-    hass: HomeAssistant, hass_admin_user: User, aioclient_mock: AiohttpClientMocker
+@pytest.mark.parametrize(
+    "platforms",
+    [
+        [SmartHomePlatform.YANDEX],
+        [SmartHomePlatform.YANDEX, SmartHomePlatform.VK],
+    ],
+)
+async def test_notifier_lifecycle_link_platform_cloud(
+    hass: HomeAssistant, hass_admin_user: User, platforms: list[SmartHomePlatform], aioclient_mock: AiohttpClientMocker
+) -> None:
+    test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
+
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={
+            CONF_CONNECTION_TYPE: ConnectionType.CLOUD,
+            CONF_CLOUD_INSTANCE: {
+                CONF_CLOUD_INSTANCE_ID: "test",
+                CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
+            },
+            CONF_LINKED_PLATFORMS: platforms,
+        },
+    )
+
+    config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+
+    component: YandexSmartHome = hass.data[DOMAIN]
+    assert len(component.get_entry_data(config_entry)._notifiers) == len(platforms)
+
+    for notifier in component.get_entry_data(config_entry)._notifiers:
+        assert notifier._unsub_state_changed is not None
+        assert notifier._unsub_initial_report is not None
+        assert notifier._unsub_report_states is None
+        assert notifier._unsub_discovery is not None
+        assert notifier._config.platform is not None
+
+    await hass.config_entries.async_unload(config_entry.entry_id)
+
+    for notifier in component.get_entry_data(config_entry)._notifiers:
+        assert notifier._unsub_state_changed is None
+        assert notifier._unsub_initial_report is None
+        assert notifier._unsub_report_states is None
+        assert notifier._unsub_discovery is None
+
+
+@pytest.mark.parametrize(
+    "platform,supported",
+    [
+        (SmartHomePlatform.YANDEX, True),
+        (SmartHomePlatform.VK, False),
+    ],
+)
+async def test_notifier_lifecycle_link_platform_direct(
+    hass: HomeAssistant,
+    hass_admin_user: User,
+    platform: SmartHomePlatform,
+    supported: bool,
+    aioclient_mock: AiohttpClientMocker,
 ) -> None:
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
@@ -160,7 +271,8 @@ async def test_notifier_lifecycle_link_platform(
         version=ConfigFlowHandler.VERSION,
         data={
             CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
-            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+            CONF_PLATFORM: platform,
+            CONF_LINKED_PLATFORMS: [platform],
         },
         options={
             CONF_SKILL: {
@@ -170,29 +282,18 @@ async def test_notifier_lifecycle_link_platform(
             }
         },
     )
-    config_entry_cloud = MockConfigEntry(
-        domain=DOMAIN,
-        version=ConfigFlowHandler.VERSION,
-        data={
-            CONF_CONNECTION_TYPE: ConnectionType.CLOUD,
-            CONF_CLOUD_INSTANCE: {
-                CONF_CLOUD_INSTANCE_ID: "test",
-                CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
-            },
-            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
-        },
-    )
 
     config_entry_cloud_plus = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
             CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
+            CONF_PLATFORM: platform,
             CONF_CLOUD_INSTANCE: {
                 CONF_CLOUD_INSTANCE_ID: "test",
                 CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "foo",
             },
-            CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
+            CONF_LINKED_PLATFORMS: [platform],
         },
         options={
             CONF_SKILL: {
@@ -202,16 +303,19 @@ async def test_notifier_lifecycle_link_platform(
         },
     )
 
-    for config_entry in [config_entry_direct, config_entry_cloud, config_entry_cloud_plus]:
+    for config_entry in [config_entry_direct, config_entry_cloud_plus]:
         config_entry.add_to_hass(hass)
         await hass.config_entries.async_setup(config_entry.entry_id)
 
     component: YandexSmartHome = hass.data[DOMAIN]
-    assert len(component.get_entry_data(config_entry_direct)._notifiers) == 1
-    assert len(component.get_entry_data(config_entry_cloud)._notifiers) == 1
-    assert len(component.get_entry_data(config_entry_cloud_plus)._notifiers) == 1
+    if not supported:
+        assert len(component.get_entry_data(config_entry_direct)._notifiers) == 0
+        assert len(component.get_entry_data(config_entry_cloud_plus)._notifiers) == 0
+    else:
+        assert len(component.get_entry_data(config_entry_direct)._notifiers) == 1
+        assert len(component.get_entry_data(config_entry_cloud_plus)._notifiers) == 1
 
-    for config_entry in [config_entry_direct, config_entry_cloud, config_entry_cloud_plus]:
+    for config_entry in [config_entry_direct, config_entry_cloud_plus]:
         for notifier in component.get_entry_data(config_entry)._notifiers:
             assert notifier._unsub_state_changed is not None
             assert notifier._unsub_initial_report is not None
@@ -227,7 +331,7 @@ async def test_notifier_lifecycle_link_platform(
             assert notifier._unsub_discovery is None
 
 
-async def test_notifier_missing_skill_data(
+async def test_notifier_missing_skill_data_yandex(
     hass: HomeAssistant, hass_admin_user: User, issue_registry: ir.IssueRegistry
 ) -> None:
     config_entry = MockConfigEntry(
@@ -235,6 +339,7 @@ async def test_notifier_missing_skill_data(
         version=ConfigFlowHandler.VERSION,
         data={
             CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            CONF_PLATFORM: SmartHomePlatform.YANDEX,
             CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
     )
@@ -258,12 +363,30 @@ async def test_notifier_missing_skill_data(
     await hass.config_entries.async_unload(config_entry.entry_id)
 
 
+async def test_notifier_missing_skill_data_vk(
+    hass: HomeAssistant, hass_admin_user: User, issue_registry: ir.IssueRegistry
+) -> None:
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={
+            CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            CONF_PLATFORM: SmartHomePlatform.VK,
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.VK],
+        },
+    )
+    config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    assert issue_registry.async_get_issue(DOMAIN, "missing_skill_data") is None
+
+
 async def test_notifier_postponed_setup(hass: HomeAssistant, hass_admin_user: User) -> None:
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
         data={
             CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            CONF_PLATFORM: SmartHomePlatform.YANDEX,
             CONF_LINKED_PLATFORMS: [SmartHomePlatform.YANDEX],
         },
         options={
@@ -284,9 +407,9 @@ async def test_notifier_postponed_setup(hass: HomeAssistant, hass_admin_user: Us
         assert len(component.get_entry_data(config_entry)._notifiers) == 1
 
 
-@pytest.mark.parametrize("cls", [YandexDirectNotifier, YandexCloudNotifier])
+@pytest.mark.parametrize("cls", [YandexDirectNotifier, CloudNotifier])
 async def test_notifier_format_log_message(
-    hass: HomeAssistant, entry_data: MockConfigEntryData, cls: type[YandexNotifier], caplog: pytest.LogCaptureFixture
+    hass: HomeAssistant, entry_data: MockConfigEntryData, cls: type[Notifier], caplog: pytest.LogCaptureFixture
 ) -> None:
     n = cls(hass, entry_data, NotifierConfig(user_id="foo", skill_id="bar", token="x"), {}, {})
     ne = cls(hass, entry_data, NotifierConfig(user_id="foo", skill_id="bar", token="x", extended_log=True), {}, {})
@@ -889,21 +1012,30 @@ async def test_notifier_send_direct(
     assert "Unexpected exception" in caplog.messages[-1]
 
 
+@pytest.mark.parametrize(
+    "platform,config",
+    [
+        (SmartHomePlatform.YANDEX, NotifierConfig(user_id="bread", token="xyz", platform=SmartHomePlatform.YANDEX)),
+        (SmartHomePlatform.VK, NotifierConfig(user_id="bread", token="xyz", platform=SmartHomePlatform.VK)),
+    ],
+)
 async def test_notifier_send_cloud(
     hass: HomeAssistant,
+    platform: SmartHomePlatform,
+    config: NotifierConfig,
     entry_data: MockConfigEntryData,
     aioclient_mock: AiohttpClientMocker,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     await async_setup_component(hass, DOMAIN, {})
 
-    notifier = YandexCloudNotifier(hass, entry_data, BASIC_CONFIG, {}, {})
-    token = BASIC_CONFIG.token
-    user_id = BASIC_CONFIG.user_id
+    notifier = CloudNotifier(hass, entry_data, config, {}, {})
+    token = config.token
+    user_id = config.user_id
     now = time.time()
 
     aioclient_mock.post(
-        "https://yaha-cloud.ru/api/home_assistant/v1/callback/discovery",
+        f"https://yaha-cloud.ru/api/home_assistant/v2/callback/{platform}/discovery",
         status=202,
         json={"request_id": REQ_ID, "status": "ok"},
     )
@@ -919,7 +1051,7 @@ async def test_notifier_send_cloud(
     caplog.clear()
 
     aioclient_mock.post(
-        "https://yaha-cloud.ru/api/home_assistant/v1/callback/state",
+        f"https://yaha-cloud.ru/api/home_assistant/v2/callback/{platform}/state",
         status=202,
         json={"request_id": REQ_ID, "status": "ok"},
     )
@@ -953,7 +1085,7 @@ async def test_notifier_send_cloud(
     caplog.clear()
 
     aioclient_mock.post(
-        "https://yaha-cloud.ru/api/home_assistant/v1/callback/discovery",
+        f"https://yaha-cloud.ru/api/home_assistant/v2/callback/{platform}/discovery",
         status=400,
         json={"request_id": REQ_ID, "status": "error", "error_message": "some error"},
     )
@@ -965,7 +1097,7 @@ async def test_notifier_send_cloud(
     caplog.clear()
 
     aioclient_mock.post(
-        "https://yaha-cloud.ru/api/home_assistant/v1/callback/discovery",
+        f"https://yaha-cloud.ru/api/home_assistant/v2/callback/{platform}/discovery",
         status=400,
         json={"request_id": REQ_ID, "status": "error", "error_code": "some code"},
     )
@@ -977,7 +1109,7 @@ async def test_notifier_send_cloud(
     caplog.clear()
 
     aioclient_mock.post(
-        "https://yaha-cloud.ru/api/home_assistant/v1/callback/discovery",
+        f"https://yaha-cloud.ru/api/home_assistant/v2/callback/{platform}/discovery",
         status=500,
         content=b"ERROR",
     )

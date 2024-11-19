@@ -88,6 +88,7 @@ class SmartHomePlatform(StrEnum):
     """Supported smart home platform."""
 
     YANDEX = "yandex"
+    VK = "vk"
 
     @classmethod
     def from_client_id(cls, client_id: str) -> SmartHomePlatform | None:
@@ -95,6 +96,8 @@ class SmartHomePlatform(StrEnum):
         host = urlparse(client_id).netloc
         if "yandex" in host:
             return cls.YANDEX
+        elif host == "vc.go.mail.ru":
+            return cls.VK
 
         return None
 

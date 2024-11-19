@@ -83,7 +83,7 @@ async def _async_mock_config_entry(
     )
 
 
-async def _async_forward_to_step_skill_yandex(hass: HomeAssistant) -> ConfigFlowResult:
+async def _async_forward_to_step_skill_direct(hass: HomeAssistant, platform: SmartHomePlatform) -> ConfigFlowResult:
     await async_process_ha_core_config(hass, {"external_url": "https://example.com"})
 
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
@@ -100,28 +100,34 @@ async def _async_forward_to_step_skill_yandex(hass: HomeAssistant) -> ConfigFlow
     assert result3["type"] == FlowResultType.FORM
     assert result3["step_id"] == "platform_direct"
 
-    result4 = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {CONF_PLATFORM: SmartHomePlatform.YANDEX}
-    )
+    result4 = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_PLATFORM: platform})
     assert result4["type"] == FlowResultType.FORM
-    assert result4["step_id"] == "skill_yandex_direct"
+    assert result4["step_id"] == f"skill_{platform}_direct"
     assert result4["description_placeholders"] == {"external_url": "https://example.com"}
     return result4
 
 
-async def _async_forward_to_step_expose_settings(hass: HomeAssistant, user: User) -> ConfigFlowResult:
+async def _async_forward_to_step_expose_settings(
+    hass: HomeAssistant, user: User, platform: SmartHomePlatform
+) -> ConfigFlowResult:
+    user_input = {CONF_ID: "foo", CONF_TOKEN: "foo", CONF_USER_ID: user.id}
+    if platform == SmartHomePlatform.VK:
+        user_input = {CONF_ID: "foo", CONF_USER_ID: user.id}
+
     result = await hass.config_entries.flow.async_configure(
-        (await _async_forward_to_step_skill_yandex(hass))["flow_id"],
-        {CONF_ID: "foo", CONF_TOKEN: "foo", CONF_USER_ID: user.id},
+        (await _async_forward_to_step_skill_direct(hass, platform))["flow_id"],
+        user_input,
     )
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "expose_settings"
     return result
 
 
-async def _async_forward_to_step_include_entities(hass: HomeAssistant, user: User) -> ConfigFlowResult:
+async def _async_forward_to_step_include_entities(
+    hass: HomeAssistant, user: User, platform: SmartHomePlatform
+) -> ConfigFlowResult:
     result = await hass.config_entries.flow.async_configure(
-        (await _async_forward_to_step_expose_settings(hass, user))["flow_id"],
+        (await _async_forward_to_step_expose_settings(hass, user, platform))["flow_id"],
         {CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY},
     )
     assert result["type"] == FlowResultType.FORM
@@ -129,9 +135,11 @@ async def _async_forward_to_step_include_entities(hass: HomeAssistant, user: Use
     return result
 
 
-async def _async_forward_to_step_update_filter(hass: HomeAssistant, user: User) -> ConfigFlowResult:
+async def _async_forward_to_step_update_filter(
+    hass: HomeAssistant, user: User, platform: SmartHomePlatform
+) -> ConfigFlowResult:
     result = await hass.config_entries.flow.async_configure(
-        (await _async_forward_to_step_expose_settings(hass, user))["flow_id"],
+        (await _async_forward_to_step_expose_settings(hass, user, platform))["flow_id"],
         {CONF_FILTER_SOURCE: EntityFilterSource.GET_FROM_CONFIG_ENTRY},
     )
 
@@ -153,9 +161,12 @@ async def _async_forward_to_step_maintenance(hass: HomeAssistant, config_entry: 
     return result2
 
 
-async def test_config_flow_empty_entities(hass: HomeAssistant, hass_admin_user: User) -> None:
+@pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX, SmartHomePlatform.VK])
+async def test_config_flow_empty_entities(
+    hass: HomeAssistant, hass_admin_user: User, platform: SmartHomePlatform
+) -> None:
     result = await hass.config_entries.flow.async_configure(
-        (await _async_forward_to_step_include_entities(hass, hass_admin_user))["flow_id"],
+        (await _async_forward_to_step_include_entities(hass, hass_admin_user, platform))["flow_id"],
         {CONF_ENTITIES: []},
     )
     assert result["type"] == FlowResultType.FORM
@@ -164,7 +175,7 @@ async def test_config_flow_empty_entities(hass: HomeAssistant, hass_admin_user: 
 
 
 async def test_config_flow_update_filter(hass: HomeAssistant, hass_admin_user: User) -> None:
-    result = await _async_forward_to_step_update_filter(hass, hass_admin_user)
+    result = await _async_forward_to_step_update_filter(hass, hass_admin_user, SmartHomePlatform.YANDEX)
     assert result["errors"] == {"base": "missing_config_entry"}
 
     entry1 = MockConfigEntry(
@@ -176,18 +187,18 @@ async def test_config_flow_update_filter(hass: HomeAssistant, hass_admin_user: U
     )
     entry1.add_to_hass(hass)
 
-    result = await _async_forward_to_step_update_filter(hass, hass_admin_user)
+    result = await _async_forward_to_step_update_filter(hass, hass_admin_user, SmartHomePlatform.YANDEX)
     assert result["errors"] == {"base": "missing_config_entry"}
 
     entry2 = MockConfigEntry(
         domain=DOMAIN,
         title="Mock Entry 2",
-        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.YANDEX},
+        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.VK},
         options={CONF_FILTER: {CONF_INCLUDE_ENTITIES: ["switch.foo"]}},
         source=SOURCE_IGNORE,
     )
     entry2.add_to_hass(hass)
-    result = await _async_forward_to_step_update_filter(hass, hass_admin_user)
+    result = await _async_forward_to_step_update_filter(hass, hass_admin_user, SmartHomePlatform.YANDEX)
     assert result["errors"] is None
     assert result["data_schema"] is not None
     assert len(result["data_schema"].schema.keys()) == 1
@@ -203,7 +214,7 @@ async def test_config_flow_update_filter(hass: HomeAssistant, hass_admin_user: U
     entry3.source = SOURCE_IGNORE
     entry3.add_to_hass(hass)
 
-    result = await _async_forward_to_step_update_filter(hass, hass_admin_user)
+    result = await _async_forward_to_step_update_filter(hass, hass_admin_user, SmartHomePlatform.YANDEX)
     assert result["errors"] is None
     assert result["data_schema"] is not None
     assert len(result["data_schema"].schema.keys()) == 1
@@ -319,9 +330,10 @@ async def test_config_flow_cloud(hass: HomeAssistant, aioclient_mock: AiohttpCli
     assert len(component._entry_datas) == 1
 
 
+@pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX, SmartHomePlatform.VK])
 @pytest.mark.parametrize("otp_fail", [True, False])
-async def test_config_flow_cloud_plus_yandex(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, otp_fail: bool
+async def test_config_flow_cloud_plus(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, platform: SmartHomePlatform, otp_fail: bool
 ) -> None:
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
@@ -340,17 +352,13 @@ async def test_config_flow_cloud_plus_yandex(
     assert result3["step_id"] == "platform_cloud_plus"
 
     aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/register", status=500)
-    result4 = await hass.config_entries.flow.async_configure(
-        result3["flow_id"], {CONF_PLATFORM: SmartHomePlatform.YANDEX}
-    )
+    result4 = await hass.config_entries.flow.async_configure(result3["flow_id"], {CONF_PLATFORM: platform})
     assert result4["type"] == FlowResultType.FORM
     assert result4["step_id"] == "platform_cloud_plus"
     assert result4["errors"] == {"base": "cannot_connect"}
 
     aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/register", side_effect=Exception())
-    result5 = await hass.config_entries.flow.async_configure(
-        result4["flow_id"], {CONF_PLATFORM: SmartHomePlatform.YANDEX}
-    )
+    result5 = await hass.config_entries.flow.async_configure(result4["flow_id"], {CONF_PLATFORM: platform})
     assert result5["type"] == FlowResultType.FORM
     assert result5["step_id"] == "platform_cloud_plus"
     assert result5["errors"] == {"base": "cannot_connect"}
@@ -362,24 +370,31 @@ async def test_config_flow_cloud_plus_yandex(
         json={"id": "1234567890", "password": "simple", "connection_token": "foo"},
     )
 
-    result6 = await hass.config_entries.flow.async_configure(
-        result5["flow_id"], {CONF_PLATFORM: SmartHomePlatform.YANDEX}
-    )
+    result6 = await hass.config_entries.flow.async_configure(result5["flow_id"], {CONF_PLATFORM: platform})
     await hass.async_block_till_done()
 
     assert result6["type"] == FlowResultType.FORM
-    assert result6["step_id"] == "skill_yandex_cloud_plus"
+    assert result6["step_id"] == f"skill_{platform}_cloud_plus"
     assert result6["description_placeholders"] == {"cloud_base_url": CLOUD_BASE_URL, "instance_id": "1234567890"}
-    assert aioclient_mock.mock_calls[0][2] == {"platform": "yandex"}
+    assert aioclient_mock.mock_calls[0][2] == {"platform": platform}
 
-    result7 = await hass.config_entries.flow.async_configure(
-        result6["flow_id"],
-        {
-            CONF_NAME: "buz",
-            CONF_ID: "c8f46d6c-ee32-4022-a286-91e8c208ed0b",
-            CONF_TOKEN: "bar",
-        },
-    )
+    if platform == SmartHomePlatform.VK:
+        result7 = await hass.config_entries.flow.async_configure(
+            result6["flow_id"],
+            {
+                CONF_NAME: "buz",
+                CONF_ID: "478278354",
+            },
+        )
+    else:
+        result7 = await hass.config_entries.flow.async_configure(
+            result6["flow_id"],
+            {
+                CONF_NAME: "buz",
+                CONF_ID: "c8f46d6c-ee32-4022-a286-91e8c208ed0b",
+                CONF_TOKEN: "bar",
+            },
+        )
     assert result7["type"] == FlowResultType.FORM
     assert result7["step_id"] == "expose_settings"
 
@@ -404,8 +419,11 @@ async def test_config_flow_cloud_plus_yandex(
     )
 
     assert result9["type"] == FlowResultType.CREATE_ENTRY
-    assert result9["title"] == "Yandex Smart Home: Cloud Plus (c8f46d6c)"
-    assert result9["description"] == "cloud_plus"
+    if platform == SmartHomePlatform.VK:
+        assert result9["title"] == "Marusia: Cloud Plus (47827835)"
+    else:
+        assert result9["title"] == "Yandex Smart Home: Cloud Plus (c8f46d6c)"
+    assert result9["description"] == f"cloud_plus_{platform}"
 
     if otp_fail:
         assert result9["description_placeholders"] == {
@@ -426,15 +444,23 @@ async def test_config_flow_cloud_plus_yandex(
 
     assert result9["data"] == {
         "connection_type": "cloud_plus",
-        "platform": "yandex",
+        "platform": platform,
         "cloud_instance": {"id": "1234567890", "password": "simple", "token": "foo"},
     }
-    assert result9["options"] == {
-        "entry_aliases": True,
-        "filter_source": "config_entry",
-        "filter": {"include_entities": ["foo.bar", "script.test"]},
-        "skill": {"name": "buz", "id": "c8f46d6c-ee32-4022-a286-91e8c208ed0b", "token": "bar"},
-    }
+    if platform == SmartHomePlatform.VK:
+        assert result9["options"] == {
+            "entry_aliases": True,
+            "filter_source": "config_entry",
+            "filter": {"include_entities": ["foo.bar", "script.test"]},
+            "skill": {"name": "buz", "id": "478278354"},
+        }
+    else:
+        assert result9["options"] == {
+            "entry_aliases": True,
+            "filter_source": "config_entry",
+            "filter": {"include_entities": ["foo.bar", "script.test"]},
+            "skill": {"name": "buz", "id": "c8f46d6c-ee32-4022-a286-91e8c208ed0b", "token": "bar"},
+        }
 
     component: YandexSmartHome = hass.data[DOMAIN]
     assert len(component._entry_datas) == 1
@@ -489,7 +515,7 @@ async def test_config_flow_direct_duplicate_skill(
     )
     entry2.add_to_hass(hass)
 
-    result = await _async_forward_to_step_skill_yandex(hass)
+    result = await _async_forward_to_step_skill_direct(hass, SmartHomePlatform.YANDEX)
     assert result["data_schema"] is not None
     assert [o["value"] for o in result["data_schema"].schema["user_id"].config["options"]] == [
         hass_admin_user.id,
@@ -530,7 +556,7 @@ async def test_config_flow_direct_yandex(
     response = await http_client.head(YandexSmartHomeUnauthorizedView.url)
     assert response.status == HTTPStatus.NOT_FOUND
 
-    result = await _async_forward_to_step_skill_yandex(hass)
+    result = await _async_forward_to_step_skill_direct(hass, SmartHomePlatform.YANDEX)
     assert result["data_schema"] is not None
     assert [o["label"] for o in result["data_schema"].schema["user_id"].config["options"]] == ["Mock User"]
 
@@ -558,7 +584,7 @@ async def test_config_flow_direct_yandex(
         result3["flow_id"], {CONF_ENTITIES: ["foo.bar", "script.test"]}
     )
     assert result4["type"] == FlowResultType.CREATE_ENTRY
-    assert result4["description"] == "direct"
+    assert result4["description"] == "direct_yandex"
     assert result4["title"] == "Yandex Smart Home: Direct (Mock User / c8f46d6c)"
     assert result4["data"] == {"connection_type": "direct", "platform": "yandex"}
     assert result4["options"] == {
@@ -576,9 +602,63 @@ async def test_config_flow_direct_yandex(
     assert len(component._entry_datas) == 1
 
 
+async def test_config_flow_direct_vk(
+    hass: HomeAssistant, hass_client_no_auth: ClientSessionGenerator, hass_admin_user: User
+) -> None:
+    await async_setup_component(hass, http.DOMAIN, {})
+    http_client = await hass_client_no_auth()
+
+    assert YandexSmartHomeUnauthorizedView.url
+    response = await http_client.head(YandexSmartHomeUnauthorizedView.url)
+    assert response.status == HTTPStatus.NOT_FOUND
+
+    result = await _async_forward_to_step_skill_direct(hass, SmartHomePlatform.VK)
+    assert result["data_schema"] is not None
+    assert [o["label"] for o in result["data_schema"].schema["user_id"].config["options"]] == ["Mock User"]
+
+    response = await http_client.head(YandexSmartHomeUnauthorizedView.url)
+    assert response.status == HTTPStatus.OK
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_ID: "478278354",
+            CONF_USER_ID: hass_admin_user.id,
+        },
+    )
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "expose_settings"
+
+    result3 = await hass.config_entries.flow.async_configure(
+        result2["flow_id"], {CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY}
+    )
+    assert result3["type"] == FlowResultType.FORM
+    assert result3["step_id"] == "include_entities"
+
+    result4 = await hass.config_entries.flow.async_configure(
+        result3["flow_id"], {CONF_ENTITIES: ["foo.bar", "script.test"]}
+    )
+    assert result4["type"] == FlowResultType.CREATE_ENTRY
+    assert result4["description"] == "direct_vk"
+    assert result4["title"] == "Marusia: Direct (Mock User / 47827835)"
+    assert result4["data"] == {"connection_type": "direct", "platform": "vk"}
+    assert result4["options"] == {
+        "entry_aliases": True,
+        "filter_source": "config_entry",
+        "filter": {"include_entities": ["foo.bar", "script.test"]},
+        "skill": {
+            "id": "478278354",
+            "user_id": hass_admin_user.id,
+        },
+    }
+
+    component: YandexSmartHome = hass.data[DOMAIN]
+    assert len(component._entry_datas) == 1
+
+
 async def test_config_flow_direct_filter_source_yaml(hass: HomeAssistant, hass_admin_user: User) -> None:
     result = await hass.config_entries.flow.async_configure(
-        (await _async_forward_to_step_expose_settings(hass, hass_admin_user))["flow_id"],
+        (await _async_forward_to_step_expose_settings(hass, hass_admin_user, SmartHomePlatform.YANDEX))["flow_id"],
         {CONF_FILTER_SOURCE: EntityFilterSource.YAML},
     )
     await hass.async_block_till_done()
@@ -606,9 +686,15 @@ async def test_options_step_init_cloud(hass: HomeAssistant) -> None:
     assert result["menu_options"] == ["expose_settings", "cloud_credentials", "context_user", "maintenance"]
 
 
-@pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX])
+@pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX, SmartHomePlatform.VK])
 async def test_options_step_init_cloud_plus(hass: HomeAssistant, platform: SmartHomePlatform) -> None:
-    config_entry = await _async_mock_config_entry(hass, {CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS})
+    config_entry = await _async_mock_config_entry(
+        hass,
+        {
+            CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
+            CONF_PLATFORM: platform,
+        },
+    )
     config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
@@ -623,7 +709,7 @@ async def test_options_step_init_cloud_plus(hass: HomeAssistant, platform: Smart
     ]
 
 
-@pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX])
+@pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX, SmartHomePlatform.VK])
 async def test_options_step_init_direct(hass: HomeAssistant, platform: SmartHomePlatform) -> None:
     config_entry = await _async_mock_config_entry(
         hass, data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: platform}
@@ -684,13 +770,14 @@ async def test_options_step_cloud_credentinals(
     assert result3["step_id"] == "init"
 
 
+@pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX, SmartHomePlatform.VK])
 @pytest.mark.parametrize("otp_fail", [True, False])
 async def test_options_step_cloud_credentinals_plus(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, otp_fail: bool
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, platform: SmartHomePlatform, otp_fail: bool
 ) -> None:
     config_entry = await _async_mock_config_entry(
         hass,
-        data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS},
+        data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS, CONF_PLATFORM: platform},
         options={CONF_SKILL: {CONF_NAME: "foo"}},
     )
     config_entry.add_to_hass(hass)
@@ -960,7 +1047,7 @@ async def test_options_flow_filter_no_entities(hass: HomeAssistant, connection_t
     assert result4["errors"] == {"base": "entities_not_selected"}
 
 
-@pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX])
+@pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX, SmartHomePlatform.VK])
 async def test_options_flow_skill_missing_external_url(hass: HomeAssistant, platform: SmartHomePlatform) -> None:
     config_entry = await _async_mock_config_entry(
         hass, data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: platform}
@@ -1061,6 +1148,84 @@ async def test_options_flow_skill_yandex_direct(
     "attr_to_change,expect_unlink",
     [
         (CONF_ID, True),
+        (CONF_USER_ID, True),
+    ],
+)
+async def test_options_flow_skill_vk_direct(
+    hass: HomeAssistant, hass_admin_user: User, hass_owner_user: User, attr_to_change: str, expect_unlink: bool
+) -> None:
+    await async_process_ha_core_config(hass, {"external_url": "https://example.com"})
+
+    skill = {CONF_ID: "foo", CONF_USER_ID: hass_admin_user.id}
+    config_entry = await _async_mock_config_entry(
+        hass,
+        data={
+            CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            CONF_PLATFORM: SmartHomePlatform.VK,
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.VK],
+        },
+        options={CONF_SKILL: skill.copy()},
+    )
+    config_entry.add_to_hass(hass)
+    assert config_entry.title == "Marusia: Direct (Mock User / foo)"
+
+    config_entry_dup = await _async_mock_config_entry(
+        hass,
+        data={
+            CONF_CONNECTION_TYPE: ConnectionType.DIRECT,
+            CONF_PLATFORM: SmartHomePlatform.VK,
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.VK],
+        },
+        options={CONF_SKILL: skill.copy()},
+    )
+    config_entry_dup.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result["type"] == FlowResultType.MENU
+    assert result["step_id"] == "init"
+
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "skill_vk_direct"}
+    )
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "skill_vk_direct"
+    assert result2["description_placeholders"] == {"external_url": "https://example.com"}
+
+    result3 = await hass.config_entries.options.async_configure(result2["flow_id"], user_input=skill)
+    assert result3["type"] == FlowResultType.FORM
+    assert result3["step_id"] == "skill_vk_direct"
+    assert result3["errors"] == {"base": "already_configured"}
+
+    if attr_to_change == CONF_USER_ID:
+        skill[CONF_USER_ID] = hass_owner_user.id
+    else:
+        skill[attr_to_change] += "bar"
+
+    if attr_to_change in (CONF_ID,):
+        result3x = await hass.config_entries.options.async_configure(result2["flow_id"], user_input=skill)
+        assert result3x["type"] == FlowResultType.FORM
+        assert result3x["step_id"] == "skill_vk_direct"
+        assert result3x["errors"] == {"base": "already_configured"}
+
+        hass.config_entries.async_update_entry(config_entry_dup, data={**config_entry_dup.data, CONF_PLATFORM: "foo"})
+        await hass.async_block_till_done()
+
+    result4 = await hass.config_entries.options.async_configure(result3["flow_id"], user_input=skill)
+    assert result4["type"] == FlowResultType.CREATE_ENTRY
+    assert config_entry.options[CONF_SKILL] == skill
+
+    await hass.async_block_till_done()
+
+    if expect_unlink:
+        assert config_entry.data[CONF_LINKED_PLATFORMS] == []
+    if attr_to_change == CONF_ID:
+        assert config_entry.title == "Marusia: Direct (Mock User / foobar)"
+
+
+@pytest.mark.parametrize(
+    "attr_to_change,expect_unlink",
+    [
+        (CONF_ID, True),
         (CONF_TOKEN, False),
         (CONF_NAME, False),
     ],
@@ -1104,6 +1269,52 @@ async def test_options_flow_skill_yandex_cloud_plus(
         assert config_entry.data[CONF_LINKED_PLATFORMS] == []
     if attr_to_change == CONF_ID:
         assert config_entry.title == "Yandex Smart Home: Cloud Plus (foobar)"
+
+
+@pytest.mark.parametrize(
+    "attr_to_change,expect_unlink",
+    [
+        (CONF_ID, True),
+        (CONF_NAME, False),
+    ],
+)
+async def test_options_flow_skill_vk_cloud_plus(hass: HomeAssistant, attr_to_change: str, expect_unlink: bool) -> None:
+    skill = {CONF_NAME: "bar", CONF_ID: "foo"}
+    config_entry = await _async_mock_config_entry(
+        hass,
+        data={
+            CONF_CONNECTION_TYPE: ConnectionType.CLOUD_PLUS,
+            CONF_PLATFORM: SmartHomePlatform.VK,
+            CONF_LINKED_PLATFORMS: [SmartHomePlatform.VK],
+        },
+        options={CONF_SKILL: skill.copy()},
+    )
+    config_entry.add_to_hass(hass)
+    assert config_entry.title == "Marusia: Cloud Plus (foo)"
+
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result["type"] == FlowResultType.MENU
+    assert result["step_id"] == "init"
+
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "skill_vk_cloud_plus"}
+    )
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "skill_vk_cloud_plus"
+    assert result2["description_placeholders"] == {"cloud_base_url": CLOUD_BASE_URL, "instance_id": "test"}
+
+    skill[attr_to_change] += "bar"
+
+    result3 = await hass.config_entries.options.async_configure(result2["flow_id"], user_input=skill)
+    assert result3["type"] == FlowResultType.CREATE_ENTRY
+    assert config_entry.options[CONF_SKILL] == skill
+
+    await hass.async_block_till_done()
+
+    if expect_unlink:
+        assert config_entry.data[CONF_LINKED_PLATFORMS] == []
+    if attr_to_change == CONF_ID:
+        assert config_entry.title == "Marusia: Cloud Plus (foobar)"
 
 
 async def test_options_flow_maintenance_direct(hass: HomeAssistant) -> None:

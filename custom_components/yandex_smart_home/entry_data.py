@@ -55,7 +55,7 @@ from .const import (
 )
 from .device import DeviceId
 from .helpers import APIError, CacheStore, SmartHomePlatform
-from .notifier import NotifierConfig, YandexCloudNotifier, YandexDirectNotifier, YandexNotifier
+from .notifier import CloudNotifier, Notifier, NotifierConfig, YandexDirectNotifier
 from .property import StateProperty
 from .property_custom import CustomProperty, get_custom_property, get_event_platform_custom_property_type
 from .schema import CapabilityType
@@ -69,7 +69,7 @@ class SkillConfig:
 
     user_id: str
     id: str
-    token: str
+    token: str | None
 
 
 class ConfigEntryData:
@@ -95,7 +95,7 @@ class ConfigEntryData:
         self._hass = hass
         self._entity_filter = entity_filter
         self._cloud_manager: CloudManager | None = None
-        self._notifiers: list[YandexNotifier] = []
+        self._notifiers: list[Notifier] = []
 
     async def async_setup(self) -> Self:
         """Set up the config entry data."""
@@ -167,8 +167,10 @@ class ConfigEntryData:
     @cached_property
     def is_reporting_states(self) -> bool:
         """Test if the config entry can report state changes."""
-        if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
+        if self.connection_type == ConnectionType.CLOUD:
             return True
+        if self.platform == SmartHomePlatform.VK:
+            return False
 
         return self.skill is not None
 
@@ -223,7 +225,7 @@ class ConfigEntryData:
             return None
 
         user_id = self.cloud_instance_id if self.connection_type == ConnectionType.CLOUD_PLUS else config[CONF_USER_ID]
-        return SkillConfig(user_id=user_id, id=config[CONF_ID], token=config[CONF_TOKEN])
+        return SkillConfig(user_id=user_id, id=config[CONF_ID], token=config.get(CONF_TOKEN))
 
     @property
     def color_profiles(self) -> ColorProfiles:
@@ -272,7 +274,7 @@ class ConfigEntryData:
 
     async def _async_setup_notifiers(self, *_: Any) -> None:
         """Set up notifiers."""
-        if self.is_reporting_states:
+        if self.is_reporting_states or self.platform == SmartHomePlatform.VK:
             ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_MISSING_SKILL_DATA)
         else:
             ir.async_create_issue(
@@ -295,15 +297,19 @@ class ConfigEntryData:
 
         match self.connection_type:
             case ConnectionType.CLOUD:
-                config = NotifierConfig(
-                    user_id=self.cloud_instance_id, token=self.cloud_connection_token, extended_log=extended_log
-                )
-                self._notifiers.append(
-                    YandexCloudNotifier(self._hass, self, config, track_templates, track_entity_states)
-                )
+                for platform in self.linked_platforms:
+                    config = NotifierConfig(
+                        user_id=self.cloud_instance_id,
+                        token=self.cloud_connection_token,
+                        platform=platform,
+                        extended_log=extended_log,
+                    )
+                    self._notifiers.append(
+                        CloudNotifier(self._hass, self, config, track_templates, track_entity_states)
+                    )
 
             case ConnectionType.CLOUD_PLUS:
-                if self.skill:
+                if self.platform == SmartHomePlatform.YANDEX and self.skill and self.skill.token:
                     config = NotifierConfig(
                         user_id=self.cloud_instance_id,
                         token=self.skill.token,
@@ -315,7 +321,7 @@ class ConfigEntryData:
                     )
 
             case ConnectionType.DIRECT:
-                if self.skill:
+                if self.platform == SmartHomePlatform.YANDEX and self.skill and self.skill.token:
                     config = NotifierConfig(
                         user_id=self.skill.user_id,
                         token=self.skill.token,
@@ -326,7 +332,8 @@ class ConfigEntryData:
                         YandexDirectNotifier(self._hass, self, config, track_templates, track_entity_states)
                     )
 
-        await asyncio.wait([asyncio.create_task(n.async_setup()) for n in self._notifiers])
+        if self._notifiers:
+            await asyncio.wait([asyncio.create_task(n.async_setup()) for n in self._notifiers])
 
         return None
 

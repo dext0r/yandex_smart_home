@@ -6,7 +6,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range.html
 from enum import StrEnum
 from typing import Any
 
-from pydantic import root_validator
+from pydantic import root_validator, validator
 
 from .base import APIModel
 
@@ -89,3 +89,11 @@ class RangeCapabilityInstanceActionState(APIModel):
     instance: RangeCapabilityInstance
     value: float
     relative: bool = False
+
+    @validator("relative", pre=True, always=True)
+    def set_relative(cls, v: Any) -> Any:
+        """Update relative value."""
+        if v is None:  # VK
+            return False
+
+        return v

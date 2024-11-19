@@ -3,7 +3,7 @@ from unittest.mock import patch
 from homeassistant.auth.models import User
 from homeassistant.config import YAML_CONFIG_FILE
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, SERVICE_RELOAD
+from homeassistant.const import CONF_PLATFORM, MAJOR_VERSION, MINOR_VERSION, SERVICE_RELOAD
 from homeassistant.core import Context, HomeAssistant
 from homeassistant.exceptions import Unauthorized
 from homeassistant.helpers.reload import async_integration_yaml_config
@@ -331,7 +331,7 @@ async def test_setup_entry_filters(hass: HomeAssistant, hass_admin_user: User) -
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
-        data={CONF_CONNECTION_TYPE: "direct"},
+        data={CONF_CONNECTION_TYPE: "direct", CONF_PLATFORM: "yandex"},
         options={
             CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
             CONF_FILTER: {

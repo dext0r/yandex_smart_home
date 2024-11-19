@@ -48,3 +48,13 @@ def test_devices_action_request() -> None:
     assert request.payload.devices[0].capabilities[9] == ToggleCapabilityInstanceAction(
         state=ToggleCapabilityInstanceActionState(instance=ToggleCapabilityInstance.IONIZATION, value=False),
     )
+
+
+def test_devices_action_request_vk() -> None:
+    request = ActionRequest.parse_raw(load_fixture("devices_action_vk.json"))
+    assert len(request.payload.devices) == 1
+    assert len(request.payload.devices[0].capabilities) == 1
+
+    assert request.payload.devices[0].capabilities[0] == RangeCapabilityInstanceAction(
+        state=RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=54.0, relative=False),
+    )

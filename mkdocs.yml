@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/mkdocs-1.6.json
 site_name: Yandex Smart Home
 site_url: https://docs.yaha-cloud.ru
 repo_url: https://github.com/dext0r/yandex_smart_home
@@ -23,7 +24,10 @@ nav:
       - Кондиционеры: devices/climate.md
       - Кнопки: devices/button.md
   - Для продвинутых:
-      - Прямое подключение: advanced/direct-connection.md
+      - Прямое подключение:
+          - advanced/direct-connection/index.md
+          - Дом с Алисой: advanced/direct-connection/yandex.md
+          - Маруся: advanced/direct-connection/vk.md
       - Пользовательские умения:
           - О пользовательских умениях: advanced/capabilities/about.md
           - Умения "Режимы работы": advanced/capabilities/mode.md
@@ -33,6 +37,7 @@ nav:
       - Коды ошибок: advanced/error-codes.md
   - Платформы умного дома:
       - Дом с Алисой: platforms/yandex.md
+      - Маруся: platforms/vk.md
   - Устранение проблем: troubleshoot.md
   - Часто задаваемые вопросы: faq.md
   - Поддерживаемые устройства: supported-devices.md
@@ -54,6 +59,7 @@ theme:
     primary: light blue
     accent: indigo
   features:
+    - navigation.indexes
     - navigation.tracking
     - navigation.top
     - navigation.footer

@@ -31,7 +31,7 @@ from . import DOMAIN
 from .capability import Capability
 from .const import CLOUD_BASE_URL, EntityId
 from .device import Device, DeviceId
-from .helpers import APIError
+from .helpers import APIError, SmartHomePlatform
 from .property import Property
 from .schema import (
     CallbackDiscoveryRequest,
@@ -62,6 +62,7 @@ class NotifierConfig:
     user_id: str
     token: str
     skill_id: str | None = None
+    platform: SmartHomePlatform | None = None
     extended_log: bool = False
 
 
@@ -165,7 +166,7 @@ class PendingStates:
         return False
 
 
-class YandexNotifier(ABC):
+class Notifier(ABC):
     """Base class for a notifier."""
 
     def __init__(
@@ -442,7 +443,7 @@ class YandexNotifier(ABC):
         return None
 
 
-class YandexDirectNotifier(YandexNotifier):
+class YandexDirectNotifier(Notifier):
     """Notifier for direct connection."""
 
     @property
@@ -456,13 +457,13 @@ class YandexDirectNotifier(YandexNotifier):
         return {hdrs.AUTHORIZATION: f"OAuth {self._config.token}"}
 
 
-class YandexCloudNotifier(YandexNotifier):
-    """Notifier for cloud connection."""
+class CloudNotifier(Notifier):
+    """Notifier for cloud connections."""
 
     @property
     def _base_url(self) -> str:
         """Return base URL."""
-        return f"{CLOUD_BASE_URL}/api/home_assistant/v1/callback"
+        return f"{CLOUD_BASE_URL}/api/home_assistant/v2/callback/{self._config.platform}"
 
     @property
     def _request_headers(self) -> dict[str, str]:

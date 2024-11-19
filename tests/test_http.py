@@ -29,6 +29,7 @@ from custom_components.yandex_smart_home.helpers import SmartHomePlatform
 from . import REQ_ID
 
 CLIENT_ID_YANDEX = "https://social.yandex.net"
+CLIENT_ID_VK = "https://vc.go.mail.ru"
 
 
 @pytest.fixture
@@ -154,6 +155,89 @@ async def test_http_config_entry_selection(
     assert response.status == HTTPStatus.OK
     assert (await response.json())["payload"]["user_id"] == user_baz.id
     assert [d["id"] for d in (await response.json())["payload"]["devices"]] == ["sensor.outside_temp"]
+
+
+async def test_http_config_entry_selection_multiplatform(
+    hass_platform: HomeAssistant,
+    hass_client: ClientSessionGenerator,
+    aiohttp_client: ClientSessionGenerator,
+    caplog: pytest.LogCaptureFixture,
+    issue_registry: ir.IssueRegistry,
+) -> None:
+    hass = hass_platform
+
+    await async_setup_component(hass, DOMAIN, {})
+
+    user_yandex = MockUser(name="User Yandex").add_to_hass(hass)
+    http_client_yandex = await hass_client(
+        hass.auth.async_create_access_token(await hass.auth.async_create_refresh_token(user_yandex, CLIENT_ID_YANDEX))
+    )
+
+    user_vk = MockUser(name="User VK").add_to_hass(hass)
+    http_client_vk = await hass_client(
+        hass.auth.async_create_access_token(await hass.auth.async_create_refresh_token(user_vk, CLIENT_ID_VK))
+    )
+
+    caplog.clear()
+    response = await http_client_yandex.get(
+        "/api/yandex_smart_home/v1.0/user/devices", headers={"X-Request-Id": REQ_ID}
+    )
+    assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
+    assert (
+        caplog.messages[-2] == "Failed to find Yandex Smart Home integration for request from yandex (user User Yandex)"
+    )
+    assert issue_registry.async_get_issue(DOMAIN, f"missing_integration_yandex_{user_yandex.id}") is not None
+
+    caplog.clear()
+    response = await http_client_vk.get("/api/yandex_smart_home/v1.0/user/devices", headers={"X-Request-Id": REQ_ID})
+    assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
+    assert caplog.messages[-2] == "Failed to find Yandex Smart Home integration for request from vk (user User VK)"
+    assert issue_registry.async_get_issue(DOMAIN, f"missing_integration_vk_{user_vk.id}") is not None
+
+    entry_yandex = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.YANDEX},
+        options={
+            CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
+            CONF_FILTER: {CONF_INCLUDE_ENTITIES: ["light.kitchen"]},
+            CONF_SKILL: {
+                CONF_USER_ID: user_yandex.id,
+                CONF_ID: "foo",
+                CONF_TOKEN: "token",
+            },
+        },
+    )
+    entry_yandex.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry_yandex.entry_id)
+    response = await http_client_yandex.get(
+        "/api/yandex_smart_home/v1.0/user/devices", headers={"X-Request-Id": REQ_ID}
+    )
+    assert response.status == HTTPStatus.OK
+    assert (await response.json())["payload"]["user_id"] == user_yandex.id
+    assert [d["id"] for d in (await response.json())["payload"]["devices"]] == ["light.kitchen"]
+    assert issue_registry.async_get_issue(DOMAIN, f"missing_integration_yandex_{user_yandex.id}") is None
+
+    entry_vk = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.VK},
+        options={
+            CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
+            CONF_FILTER: {CONF_INCLUDE_ENTITIES: ["sensor.outside_temp"]},
+            CONF_SKILL: {
+                CONF_USER_ID: user_vk.id,
+                CONF_ID: "foo",
+            },
+        },
+    )
+    entry_vk.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry_vk.entry_id)
+    response = await http_client_vk.get("/api/yandex_smart_home/v1.0/user/devices", headers={"X-Request-Id": REQ_ID})
+    assert response.status == HTTPStatus.OK
+    assert (await response.json())["payload"]["user_id"] == user_vk.id
+    assert [d["id"] for d in (await response.json())["payload"]["devices"]] == ["sensor.outside_temp"]
+    assert issue_registry.async_get_issue(DOMAIN, f"missing_integration_vk_{user_vk.id}") is None
 
 
 async def test_http_config_entry_no_skill(

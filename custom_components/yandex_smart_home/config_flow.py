@@ -81,6 +81,7 @@ PLATFORM_SELECTOR = SelectSelector(
         translation_key=CONF_PLATFORM,
         options=[
             SelectOptionDict(value=SmartHomePlatform.YANDEX, label=SmartHomePlatform.YANDEX),
+            SelectOptionDict(value=SmartHomePlatform.VK, label=SmartHomePlatform.VK),
         ],
     ),
 )
@@ -110,8 +111,10 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
 
         super().__init__()
 
-    async def async_step_skill_yandex_direct(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
-        """Choose skill settings for direct connection to the Yandex Smart Home platform."""
+    async def _async_step_skill_direct(
+        self, platform: SmartHomePlatform, user_input: ConfigType | None = None
+    ) -> ConfigFlowResult:
+        """Choose skill settings for direct connection."""
         errors = {}
         description_placeholders = {"external_url": self._get_external_url()}
         entry_skill = self._options.get(CONF_SKILL, {})
@@ -121,7 +124,7 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
 
         if user_input is not None:
             if existed_entry := self._get_direct_connection_entry(
-                platform=SmartHomePlatform.YANDEX,
+                platform=platform,
                 user_id=user_input[CONF_USER_ID],
             ):
                 description_placeholders["entry_title"] = existed_entry.title
@@ -144,23 +147,45 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
 
                 return await self.async_step_expose_settings()
 
-        return self.async_show_form(
-            step_id="skill_yandex_direct",
-            data_schema=vol.Schema(
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_USER_ID, default=entry_skill.get(CONF_USER_ID)): await _async_get_user_selector(
+                    self.hass, mode=SelectSelectorMode.DROPDOWN, required=True
+                ),
+                vol.Required(CONF_ID, default=entry_skill.get(CONF_ID)): TextSelector(),
+                vol.Required(CONF_TOKEN, default=entry_skill.get(CONF_TOKEN)): TextSelector(),
+            },
+        )
+
+        if platform == SmartHomePlatform.VK:
+            data_schema = vol.Schema(
                 {
                     vol.Required(CONF_USER_ID, default=entry_skill.get(CONF_USER_ID)): await _async_get_user_selector(
                         self.hass, mode=SelectSelectorMode.DROPDOWN, required=True
                     ),
                     vol.Required(CONF_ID, default=entry_skill.get(CONF_ID)): TextSelector(),
-                    vol.Required(CONF_TOKEN, default=entry_skill.get(CONF_TOKEN)): TextSelector(),
                 },
-            ),
+            )
+
+        return self.async_show_form(
+            step_id=f"skill_{platform}_direct",
+            data_schema=data_schema,
             errors=errors,
             description_placeholders=description_placeholders,
         )
 
-    async def async_step_skill_yandex_cloud_plus(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
-        """Choose skill settings for cloud plus connection to the Yandex Smart Home platform."""
+    async def async_step_skill_yandex_direct(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Choose skill settings for direct connection to the Yandex Smart Home platform."""
+        return await self._async_step_skill_direct(SmartHomePlatform.YANDEX, user_input)
+
+    async def async_step_skill_vk_direct(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Choose skill settings for direct connection to the VK Smart Home platform."""
+        return await self._async_step_skill_direct(SmartHomePlatform.VK, user_input)
+
+    async def _async_step_skill_cloud_plus(
+        self, platform: SmartHomePlatform, user_input: ConfigType | None = None
+    ) -> ConfigFlowResult:
+        """Choose skill settings for cloud plus connection."""
         errors: dict[str, str] = {}
         description_placeholders = {
             "cloud_base_url": CLOUD_BASE_URL,
@@ -188,18 +213,36 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
 
             return await self.async_step_expose_settings()
 
-        return self.async_show_form(
-            step_id="skill_yandex_cloud_plus",
-            data_schema=vol.Schema(
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_NAME, default=entry_skill.get(CONF_NAME)): TextSelector(),
+                vol.Required(CONF_ID, default=entry_skill.get(CONF_ID)): TextSelector(),
+                vol.Required(CONF_TOKEN, default=entry_skill.get(CONF_TOKEN)): TextSelector(),
+            }
+        )
+
+        if platform == SmartHomePlatform.VK:
+            data_schema = vol.Schema(
                 {
                     vol.Required(CONF_NAME, default=entry_skill.get(CONF_NAME)): TextSelector(),
                     vol.Required(CONF_ID, default=entry_skill.get(CONF_ID)): TextSelector(),
-                    vol.Required(CONF_TOKEN, default=entry_skill.get(CONF_TOKEN)): TextSelector(),
-                },
-            ),
+                }
+            )
+
+        return self.async_show_form(
+            step_id=f"skill_{platform}_cloud_plus",
+            data_schema=data_schema,
             errors=errors,
             description_placeholders=description_placeholders,
         )
+
+    async def async_step_skill_yandex_cloud_plus(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Choose skill settings for cloud plus connection to the Yandex Smart Home platform."""
+        return await self._async_step_skill_cloud_plus(SmartHomePlatform.YANDEX, user_input)
+
+    async def async_step_skill_vk_cloud_plus(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Choose skill settings for cloud plus connection to the VK Smart Home platform."""
+        return await self._async_step_skill_cloud_plus(SmartHomePlatform.VK, user_input)
 
     async def async_step_expose_settings(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose entity expose settings."""
@@ -424,7 +467,12 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
 
     async def async_step_done(self, _: ConfigType | None = None) -> ConfigFlowResult:
         """Finish the flow."""
+        description = self._data[CONF_CONNECTION_TYPE]
         description_placeholders: dict[str, str] = self._data.get(CONF_CLOUD_INSTANCE, {}).copy()
+
+        if self._data[CONF_CONNECTION_TYPE] in (ConnectionType.DIRECT, ConnectionType.CLOUD_PLUS):
+            description += f"_{self._data[CONF_PLATFORM]}"
+
         if self._data[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD_PLUS:
             description_placeholders[CONF_SKILL] = self._options[CONF_SKILL][CONF_NAME]
 
@@ -441,7 +489,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
 
         return self.async_create_entry(
             title=await async_config_entry_title(self.hass, self._data, self._options),
-            description=self._data[CONF_CONNECTION_TYPE],
+            description=description,
             description_placeholders=description_placeholders,
             data=self._data,
             options=self._options,
@@ -631,6 +679,8 @@ async def async_config_entry_title(hass: HomeAssistant, data: ConfigType, option
     match data.get(CONF_PLATFORM):
         case SmartHomePlatform.YANDEX:
             title = f"Yandex Smart Home: {connection_type}"
+        case SmartHomePlatform.VK:
+            title = f"Marusia: {connection_type}"
 
     if skill := options.get(CONF_SKILL):
         parts: list[str] = []
@@ -638,7 +688,7 @@ async def async_config_entry_title(hass: HomeAssistant, data: ConfigType, option
             parts.append(user.name or user.id[:6])
         if skill_id := skill.get(CONF_ID, ""):
             parts.append(skill_id[:8])
-
-        title += f' ({" / ".join(parts)})'
+        if parts:
+            title += f' ({" / ".join(parts)})'
 
     return title
