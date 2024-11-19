@@ -22,12 +22,12 @@
       },
       "connection_type": {
         "title": "Выберите тип подключения",
-        "description": "* **Облачное**: лёгкое и быстрое подключение через навык [Yaha Cloud](https://dialogs.yandex.ru/store/skills/cef326b2-home-assistant), рекомендуется для всех пользователей\n* **Облачное Плюс**: как облачное, но для дополнительного Home Assistant, потребуется создать навык вручную (не используйте этот тип, если у вас только один Home Assistant)\n* **Прямое**: требуется доступ к Home Assistant по HTTPS через интернет, сложная [многоступенчатая настройка](https://docs.yaha-cloud.ru/dev/advanced/direct-connection/), только для продвинутых пользователей",
+        "description": "* **Облачное**: лёгкое и быстрое подключение через навык [Yaha Cloud](https://dialogs.yandex.ru/store/skills/cef326b2-home-assistant), рекомендуется для всех пользователей\n* **Облачное Плюс**: для подключения дополнительного Home Assistant через облако Yaha Cloud, потребуется создать навык вручную (не используйте этот тип, если у вас только один Home Assistant)\n* **Прямое**: требуется доступ к Home Assistant по HTTPS через интернет, сложная [многоступенчатая настройка](https://docs.yaha-cloud.ru/dev/advanced/direct-connection/), только для продвинутых пользователей",
         "data": {
           "connection_type": "Тип подключения"
         },
         "data_description": {
-          "connection_type": "[Какой тип подключения лучше?](https://docs.yaha-cloud.ru/dev/config/connection-type/#compare)"
+          "connection_type": "\\* [Какой тип подключения лучше?](https://docs.yaha-cloud.ru/dev/config/connection-type/#compare)\n\\* [Подключение нескольких HA](https://docs.yaha-cloud.ru/dev/config/multi-ha/)"
         }
       },
       "platform_direct": {

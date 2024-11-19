@@ -14,6 +14,7 @@ nav:
       - Параметры устройств: config/entity.md
       - Режимы/функции: config/modes.md
       - Тип подключения: config/connection-type.md
+      - Подключение нескольких HA: config/multi-ha.md
   - Устройства:
       - Датчики:
           - О датчиках: devices/sensor/about.md
