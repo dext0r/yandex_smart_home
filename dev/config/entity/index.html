@@ -517,6 +517,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#state_template" class="md-nav__link">
+    <span class="md-ellipsis">
+      Состояние из шаблона
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#range" class="md-nav__link">
     <span class="md-ellipsis">
       Ограничение уровня громкости
@@ -1473,6 +1482,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#state_template" class="md-nav__link">
+    <span class="md-ellipsis">
+      Состояние из шаблона
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#range" class="md-nav__link">
     <span class="md-ellipsis">
       Ограничение уровня громкости
@@ -1581,6 +1599,7 @@
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="nt">turn_on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 </code></pre></div>
 </div>
+<p>Для добавления функции включения тем объектам, которые изначально её не поддерживают, кроме параметров <code>turn_on</code> или <code>turn_off</code> необходимо дополнительно добавить параметр <a href="#state_template"><code>state_template</code></a>.</p>
 <h2 id="features">Поддерживаемые функции (media_player)<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p>Параметр: <code>features</code> (только для <code>media_player</code>)</p>
@@ -1634,6 +1653,25 @@
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">      </span><span class="nt">state_unknown</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 </div>
+<h2 id="state_template">Состояние из шаблона<a class="headerlink" href="#state_template" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>Параметр: <code>state_unknown</code></p>
+</blockquote>
+<p>Включает вычисление состояния устройства не из состояния объекта, а из шаблона. Полезно использовать с параметрами <code>turn_on</code> и <code>turn_off</code> для добавления функции включения тем устройствам, которые её не поддерживают (например камерам).</p>
+<div class="admonition example">
+<p class="admonition-title">Пример управления розеткой из карточки камеры</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="nt">camera.aquarium</span><span class="p">:</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">      </span><span class="nt">state_template</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{{</span><span class="nv"> </span><span class="s">states(&quot;switch.camera_aquarium&quot;)</span><span class="nv"> </span><span class="s">}}&#39;</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">      </span><span class="nt">turn_on</span><span class="p">:</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">        </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">switch.turn_on</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">        </span><span class="nt">entity_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">switch.camera_aquarium</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">      </span><span class="nt">turn_off</span><span class="p">:</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">        </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">switch.turn_off</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">        </span><span class="nt">entity_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">switch.camera_aquarium</span>
+</code></pre></div>
+</div>
 <h2 id="range">Ограничение уровня громкости<a class="headerlink" href="#range" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p>Параметр: <code>range</code></p>
@@ -1641,13 +1679,13 @@
 <p>Ограничивает диапазон, в котором может регулироваться громкость устройства.</p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="nt">media_player.receiver</span><span class="p">:</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">      </span><span class="nt">range</span><span class="p">:</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">95</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">        </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">        </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">  </span><span class="c1"># шаг регулировки</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">media_player.receiver</span><span class="p">:</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">      </span><span class="nt">range</span><span class="p">:</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">        </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">95</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">        </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">        </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">  </span><span class="c1"># шаг регулировки</span>
 </code></pre></div>
 </div>
 
