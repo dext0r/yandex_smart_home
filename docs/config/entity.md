@@ -87,7 +87,7 @@
 
 > Параметр: `features` (только для `media_player`)
 
-> Возможные значения: `volume_mute`, `volume_set`, `next_previous_track`, `select_source`[^1], `turn_on_off`[^1], `play_pause`[^1], `play_media`[^1] (список, можно все сразу)
+> Возможные значения: `volume_mute`, `volume_set`, `next_previous_track`, `select_source`, `turn_on_off`, `play_pause`, `play_media` (список, можно все сразу)
 
 Используется для явного указания поддерживаемых устройством функций.
 Необходим для устройств, которые меняют набор функций в зависимости от своего состояния (например Chrome Cast или Universal Mediaplayer).
@@ -106,8 +106,6 @@
             - play_pause
             - play_media
     ```
-
-[^1]: Начиная с версии 0.6.1
 
 ## Выбор каналов (media_player) { id=support_set_channel }
 
@@ -146,8 +144,6 @@
         cover.ir_shades:
           state_unknown: true
     ```
-
-В версии 0.6.0 поддерживаются только домены `cover` и `media_player`.
 
 ## Ограничение уровня громкости { id=range }
 
