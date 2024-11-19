@@ -18,12 +18,12 @@
     ![](assets/images/faq/entity-id-3.png){ width=750 }
     ![](assets/images/faq/entity-id-4.png){ width=750 }
 
-## Как узнать entity_id объекта из устройства в УДЯ { id=get-entity-id-quasar }
+## Как узнать entity_id объекта из устройства в УДЯ { id=get-entity-id-yandex }
 
-В приложении [Дом с Алисой](https://mobile.yandex.ru/apps/smarthome) или [квазаре](./quasar.md):
+В приложении [Дом с Алисой](https://ya.cc/iot_app):
 Зайдите в устройство --> Нажмите :fontawesome-solid-gear: в правом верхнем углу --> `Об устройстве` --> `Модель устройства`
 
-![](assets/images/faq/entity-id-quasar.png){ width=300 }
+![](assets/images/faq/entity-id-yandex.png){ width=300 }
 
 ## Почему навык называется Yaha Cloud, а не Home Assistant? { id=yaha }
 
