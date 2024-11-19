@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from pydantic import BaseModel
-from pydantic.generics import GenericModel
+from pydantic.v1 import BaseModel
+from pydantic.v1.generics import GenericModel
 
 
 class APIModel(BaseModel):

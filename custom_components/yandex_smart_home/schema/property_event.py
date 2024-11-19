@@ -6,7 +6,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event.html
 from enum import StrEnum
 from typing import Any, Generic, Literal, TypeVar
 
-from pydantic import validator
+from pydantic.v1 import validator
 
 from .base import GenericAPIModel
 

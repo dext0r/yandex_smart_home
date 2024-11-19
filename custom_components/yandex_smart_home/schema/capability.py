@@ -3,7 +3,7 @@
 from enum import StrEnum
 from typing import Annotated, Any, Literal, TypeVar, Union
 
-from pydantic import Field
+from pydantic.v1 import Field
 
 from .base import APIModel
 from .capability_color import (

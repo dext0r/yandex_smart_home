@@ -25,7 +25,7 @@ from homeassistant.helpers.event import (
     async_track_template_result,
 )
 from homeassistant.helpers.template import Template
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 
 from . import DOMAIN
 from .capability import Capability

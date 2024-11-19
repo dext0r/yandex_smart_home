@@ -6,7 +6,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html
 from enum import StrEnum
 from typing import Annotated, Any, Literal, Self, Union
 
-from pydantic import Field, root_validator
+from pydantic.v1 import Field, root_validator
 
 from .base import APIModel
 

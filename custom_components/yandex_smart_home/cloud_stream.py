@@ -28,7 +28,7 @@ from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.http import KEY_HASS
 from multidict import MultiDictProxy
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 import yarl
 
 from .const import CLOUD_STREAM_BASE_URL

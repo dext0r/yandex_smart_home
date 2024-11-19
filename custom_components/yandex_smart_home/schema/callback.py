@@ -6,7 +6,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/reference-alerts/resources-alerts.h
 from enum import StrEnum
 import time
 
-from pydantic import Field
+from pydantic.v1 import Field
 
 from .base import APIModel
 from .device import DeviceState

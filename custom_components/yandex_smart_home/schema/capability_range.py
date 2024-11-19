@@ -6,7 +6,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range.html
 from enum import StrEnum
 from typing import Any
 
-from pydantic import root_validator, validator
+from pydantic.v1 import root_validator, validator
 
 from .base import APIModel
 
