@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://docs.yaha-cloud.ru/dev/troubleshoot/">
       
       
-        <link rel="prev" href="../advanced/error-codes/">
+        <link rel="prev" href="../platforms/yandex/">
       
       
         <link rel="next" href="../faq/">
@@ -944,6 +944,71 @@
       
   
   
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Платформы умного дома
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Платформы умного дома
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../platforms/yandex/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Дом с Алисой
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -1110,26 +1175,6 @@
   
   <span class="md-ellipsis">
     Поддерживаемые устройства
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../quasar/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Квазар и "Дом с Алисой"
   </span>
   
 
@@ -1318,7 +1363,7 @@
 <li>
 <p>Перезапустите Home Assistant</p>
 </li>
-<li>Выполните ручное <a href="../quasar/#discovery">Обновление списка устройств</a></li>
+<li>Выполните ручное <a href="../platforms/yandex/#discovery">Обновление списка устройств</a></li>
 </ul>
 <p>Если это не помогло - создайте <a href="https://github.com/dext0r/yandex_smart_home/issues">issue</a> или напишите в <a href="https://t.me/yandex_smart_home">чат</a>.
 К сообщению приложите:</p>
@@ -1338,13 +1383,13 @@
 </ul>
 <h2 id="blinking-features">Устройство в УДЯ поддерживает не все функции<a class="headerlink" href="#blinking-features" title="Permanent link">&para;</a></h2>
 <p>Некоторые устройства изменяют список поддерживаемых функций в зависимости от своего состояния. Особенно часто это поведение замечено за <code>media_player</code>.</p>
-<p>Если в УДЯ у устройства отсутствует функция, которая точно должна быть - попробуйте <a href="../quasar/#discovery">Обновить список устройств</a> при включенном устройстве.</p>
+<p>Если в УДЯ у устройства отсутствует функция, которая точно должна быть - попробуйте <a href="../platforms/yandex/#discovery">Обновить список устройств</a> при включенном устройстве.</p>
 <p>Так же может помочь настройка <a href="../config/entity/#features"><code>features</code></a> для явного указания поддерживаемых устройством функций.</p>
 <h2 id="unlinked">Устройство отвязалось<a class="headerlink" href="#unlinked" title="Permanent link">&para;</a></h2>
-<p>Необходимо вручную <a href="../quasar/#discovery">Обновить список устройств</a>, но сделать это не из списка навыков, а <strong>зайти в навык</strong> и нажать там кнопку <code>Обновить список устройств</code> или <code>Привязать к Яндексу</code>.</p>
+<p>Необходимо вручную <a href="../platforms/yandex/#discovery">Обновить список устройств</a>, но сделать это не из списка навыков, а <strong>зайти в навык</strong> и нажать там кнопку <code>Обновить список устройств</code> или <code>Привязать к Яндексу</code>.</p>
 <h2 id="unexposed-entity">State requested for unexposed entity<a class="headerlink" href="#unexposed-entity" title="Permanent link">&para;</a></h2>
 <p>В УДЯ присутствует устройство, но объект по которому оно создано не выбран в <a href="../config/filter/">объектах для передачи в УДЯ</a>.</p>
-<p>Для исправления: удалите устройство из УДЯ или добавьте <a href="../faq/#get-entity-id-quasar">объект</a> в список устройств для передачи.</p>
+<p>Для исправления: удалите устройство из УДЯ или добавьте <a href="../faq/#get-entity-id-yandex">объект</a> в список устройств для передачи.</p>
 <h2 id="unsupported-mode">Unsupported mode "XXX"<a class="headerlink" href="#unsupported-mode" title="Permanent link">&para;</a></h2>
 <p>Не удалось сопоставить режим из Home Assistant c режимом в УДЯ. Если нет необходимости выбирать проблемные режимы - ошибку можно игнорировать.</p>
 <p>Для исправления: настройте <a href="../config/modes/">связь режимов</a> УДЯ &harr; HA</p>
@@ -1352,7 +1397,7 @@
 <p>Ряд ошибок, которые могут возникает при отправке в УДЯ уведомлений об изменении состояний устройств. Ошибки могут возникать периодически - это нормально. Если ошибок мало - просто очистите журнал.</p>
 <h3 id="unknown-user">State notification request failed: UNKNOWN_USER<a class="headerlink" href="#unknown-user" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Вручную <a href="../quasar/#discovery">обновите список устройств</a></li>
+<li>Вручную <a href="../platforms/yandex/#discovery">обновите список устройств</a></li>
 <li>Для прямого подключения: убедитесь, что в параметрах навыка в <a href="../config/getting-started/#gui">настройках интеграции</a> выбран пользователь, который использовался при привязке Home Assistant к УДЯ</li>
 </ul>
 <h3 id="notifier-unauthorized">State notification request failed: Unauthorized<a class="headerlink" href="#notifier-unauthorized" title="Permanent link">&para;</a></h3>
@@ -1392,7 +1437,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Нижний колонтитул" >
         
           
-          <a href="../advanced/error-codes/" class="md-footer__link md-footer__link--prev" aria-label="Назад: Коды ошибок">
+          <a href="../platforms/yandex/" class="md-footer__link md-footer__link--prev" aria-label="Назад: Дом с Алисой">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -1402,7 +1447,7 @@
                 Назад
               </span>
               <div class="md-ellipsis">
-                Коды ошибок
+                Дом с Алисой
               </div>
             </div>
           </a>
