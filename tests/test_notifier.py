@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 import json
 import logging
 import time
@@ -551,7 +552,7 @@ async def test_notifier_track_templates(
     await _async_set_state(hass, "sensor.dishwashing", "unavailable")
     assert notifier._pending.empty is True
     mock_call_later.assert_called_once()
-    assert mock_call_later.call_args[1]["delay"] == 1
+    assert mock_call_later.call_args[1]["delay"] == timedelta(seconds=1)
     assert notifier._unsub_report_states is not None
 
     # toggle

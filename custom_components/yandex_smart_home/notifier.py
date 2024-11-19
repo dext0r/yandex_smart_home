@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 import asyncio
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import timedelta
 import itertools
 import logging
 from typing import TYPE_CHECKING, Any, Mapping, Protocol, Self, Sequence
@@ -50,9 +51,9 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-INITIAL_REPORT_DELAY = 15
-DISCOVERY_REQUEST_DELAY = 5
-REPORT_STATE_WINDOW = 1
+INITIAL_REPORT_DELAY = timedelta(seconds=15)
+DISCOVERY_REQUEST_DELAY = timedelta(seconds=5)
+REPORT_STATE_WINDOW = timedelta(seconds=1)
 
 
 @dataclass
