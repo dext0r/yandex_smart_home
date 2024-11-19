@@ -36,11 +36,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.yaha-cloud.ru/dev/advanced/direct-connection/</loc>
-         <lastmod>2024-11-19</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.yaha-cloud.ru/dev/advanced/error-codes/</loc>
          <lastmod>2024-11-19</lastmod>
          <changefreq>daily</changefreq>
@@ -67,6 +62,21 @@
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/dev/advanced/capabilities/toggle/</loc>
+         <lastmod>2024-11-19</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/advanced/direct-connection/</loc>
+         <lastmod>2024-11-19</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/advanced/direct-connection/vk/</loc>
+         <lastmod>2024-11-19</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/advanced/direct-connection/yandex/</loc>
          <lastmod>2024-11-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -137,6 +147,11 @@
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/dev/install/integration/</loc>
+         <lastmod>2024-11-19</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/platforms/vk/</loc>
          <lastmod>2024-11-19</lastmod>
          <changefreq>daily</changefreq>
     </url>
