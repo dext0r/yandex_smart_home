@@ -7,7 +7,7 @@ import itertools
 import logging
 from typing import TYPE_CHECKING, Any, Iterable, Protocol, Self, cast
 
-from homeassistant.const import STATE_OFF, STATE_UNKNOWN
+from homeassistant.const import CONF_STATE_TEMPLATE, STATE_OFF, STATE_ON, STATE_UNKNOWN
 from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.service import async_call_from_config
@@ -17,12 +17,12 @@ from homeassistant.helpers.typing import ConfigType
 from .capability import Capability
 from .capability_color import ColorSceneCapability
 from .capability_mode import ModeCapability
+from .capability_onoff import OnOffCapability, OnOffCapabilityInstanceActionState
 from .capability_range import RangeCapability
 from .capability_toggle import ToggleCapability
 from .const import (
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE,
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
-    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE,
     CONF_ENTITY_CUSTOM_MODE_SET_MODE,
     CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
     CONF_ENTITY_CUSTOM_RANGE_INCREASE_VALUE,
@@ -34,6 +34,7 @@ from .const import (
     CONF_ENTITY_RANGE_MAX,
     CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION,
+    CONF_STATE_UNKNOWN,
 )
 from .helpers import ActionNotAllowed, APIError
 from .schema import (
@@ -44,6 +45,7 @@ from .schema import (
     ModeCapabilityInstance,
     ModeCapabilityInstanceActionState,
     ModeCapabilityMode,
+    OnOffCapabilityInstance,
     RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
     RangeCapabilityRange,
@@ -128,6 +130,39 @@ class CustomCapability(Capability[Any], Protocol):
             f" value_template={self._value_template}"
             f">"
         )
+
+
+class CustomOnOffCapability(CustomCapability, OnOffCapability):
+    """OnOff capability that user can set up using yaml configuration."""
+
+    instance: OnOffCapabilityInstance
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        return True
+
+    @property
+    def retrievable(self) -> bool:
+        """Test if the capability can return the current value."""
+        if self._entity_config.get(CONF_STATE_UNKNOWN):
+            return False
+
+        return True
+
+    def get_value(self) -> bool | None:
+        """Return the current capability value."""
+        if not self.retrievable:
+            return None
+
+        if self._value_template is not None:
+            return bool(self._get_source_value() == STATE_ON)
+
+        return False
+
+    async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
+        """Change the capability state (if wasn't overriden by the user)."""
+        raise ActionNotAllowed
 
 
 class CustomModeCapability(CustomCapability, ModeCapability):
@@ -357,6 +392,11 @@ def get_custom_capability(
     value_template = get_value_template(hass, device_id, capability_config)
 
     match capability_type:
+        case CapabilityType.ON_OFF:
+            return CustomOnOffCapability(
+                hass, entry_data, capability_config, OnOffCapabilityInstance(instance), device_id, value_template
+            )
+
         case CapabilityType.MODE:
             if instance == ColorSettingCapabilityInstance.SCENE:
                 return CustomColorSceneCapability(
@@ -380,7 +420,7 @@ def get_custom_capability(
 
 def get_value_template(hass: HomeAssistant, device_id: str, capability_config: ConfigType) -> Template | None:
     """Return capability value template from capability configuration."""
-    if template := capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE):
+    if template := capability_config.get(CONF_STATE_TEMPLATE):
         return cast(Template, template)
 
     entity_id = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)

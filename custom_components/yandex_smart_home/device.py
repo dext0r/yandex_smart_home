@@ -45,6 +45,7 @@ from homeassistant.const import (
     CONF_DEVICE_CLASS,
     CONF_NAME,
     CONF_ROOM,
+    CONF_STATE_TEMPLATE,
     CONF_TYPE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
@@ -91,6 +92,7 @@ from .schema import (
     DeviceInfo,
     DeviceState,
     DeviceType,
+    OnOffCapabilityInstance,
     PropertyDescription,
     PropertyInstanceState,
     ResponseCode,
@@ -190,6 +192,18 @@ class Device:
         capabilities: list[Capability[Any]] = []
         disabled_capabilities: list[Capability[Any]] = []
 
+        if (state_template := self._config.get(CONF_STATE_TEMPLATE)) is not None:
+            capabilities.append(
+                get_custom_capability(
+                    self._hass,
+                    self._entry_data,
+                    {CONF_STATE_TEMPLATE: state_template},
+                    CapabilityType.ON_OFF,
+                    OnOffCapabilityInstance.ON,
+                    self.id,
+                )
+            )
+
         for capability_type, config_key in (
             (CapabilityType.MODE, CONF_ENTITY_CUSTOM_MODES),
             (CapabilityType.TOGGLE, CONF_ENTITY_CUSTOM_TOGGLES),
@@ -282,8 +296,13 @@ class Device:
         return self._entry_data.should_expose(self.id)
 
     @property
+    @callback
     def unavailable(self) -> bool:
         """Test if the device is unavailable."""
+        state_template: Template | None
+        if (state_template := self._config.get(CONF_STATE_TEMPLATE)) is not None:
+            return bool(state_template.async_render() == STATE_UNAVAILABLE)
+
         return self._state.state == STATE_UNAVAILABLE
 
     @property

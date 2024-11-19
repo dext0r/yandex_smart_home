@@ -6,7 +6,7 @@ from typing import Any
 
 from homeassistant.components.event import EventDeviceClass
 from homeassistant.components.sensor.const import SensorDeviceClass
-from homeassistant.const import CONF_DEVICE_CLASS, CONF_NAME, CONF_ROOM, CONF_TYPE
+from homeassistant.const import CONF_DEVICE_CLASS, CONF_NAME, CONF_ROOM, CONF_STATE_TEMPLATE, CONF_TYPE
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entityfilter import BASE_FILTER_SCHEMA
 from homeassistant.helpers.typing import ConfigType
@@ -21,7 +21,6 @@ from .const import (
     CONF_ENTITY_CONFIG,
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE,
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
-    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE,
     CONF_ENTITY_CUSTOM_MODE_SET_MODE,
     CONF_ENTITY_CUSTOM_MODES,
     CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
@@ -305,7 +304,7 @@ def custom_capability_state(value: ConfigType) -> ConfigType:
     """Validate keys for custom capability."""
     state_entity_id = value.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID)
     state_attribute = value.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
-    state_template = value.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE)
+    state_template = value.get(CONF_STATE_TEMPLATE)
 
     if state_template and (state_entity_id or state_attribute):
         raise vol.Invalid("state_entity_id/state_attribute and state_template are mutually exclusive")
@@ -358,7 +357,7 @@ ENTITY_CUSTOM_MODE_SCHEMA = vol.Schema(
                     vol.Optional(CONF_ENTITY_CUSTOM_MODE_SET_MODE): cv.SERVICE_SCHEMA,
                     vol.Optional(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
                     vol.Optional(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-                    vol.Optional(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE): cv.template,
+                    vol.Optional(CONF_STATE_TEMPLATE): cv.template,
                 },
                 custom_capability_state,
             ),
@@ -378,7 +377,7 @@ ENTITY_CUSTOM_RANGE_SCHEMA = vol.Schema(
                     vol.Optional(CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,
                     vol.Optional(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
                     vol.Optional(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-                    vol.Optional(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE): cv.template,
+                    vol.Optional(CONF_STATE_TEMPLATE): cv.template,
                 },
                 custom_capability_state,
             ),
@@ -397,7 +396,7 @@ ENTITY_CUSTOM_TOGGLE_SCHEMA = vol.Schema(
                     vol.Optional(CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF): cv.SERVICE_SCHEMA,
                     vol.Optional(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID): cv.entity_id,
                     vol.Optional(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE): cv.string,
-                    vol.Optional(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE): cv.template,
+                    vol.Optional(CONF_STATE_TEMPLATE): cv.template,
                 },
                 custom_capability_state,
             ),
@@ -413,6 +412,7 @@ ENTITY_SCHEMA = vol.All(
             vol.Optional(CONF_NAME): cv.string,
             vol.Optional(CONF_ROOM): cv.string,
             vol.Optional(CONF_TYPE): vol.All(cv.string, device_type),
+            vol.Optional(CONF_STATE_TEMPLATE): cv.template,
             vol.Optional(CONF_TURN_ON): vol.Any(cv.SERVICE_SCHEMA, cv.boolean),
             vol.Optional(CONF_TURN_OFF): vol.Any(cv.SERVICE_SCHEMA, cv.boolean),
             vol.Optional(CONF_DEVICE_CLASS): vol.In(EventDeviceClass.BUTTON),

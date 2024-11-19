@@ -11,6 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_ID,
     CONF_PLATFORM,
+    CONF_STATE_TEMPLATE,
     CONF_TOKEN,
     EVENT_HOMEASSISTANT_STARTED,
     EVENT_HOMEASSISTANT_STOP,
@@ -58,7 +59,7 @@ from .helpers import APIError, CacheStore, SmartHomePlatform
 from .notifier import CloudNotifier, Notifier, NotifierConfig, YandexDirectNotifier
 from .property import StateProperty
 from .property_custom import CustomProperty, get_custom_property, get_event_platform_custom_property_type
-from .schema import CapabilityType
+from .schema import CapabilityType, OnOffCapabilityInstance
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -346,6 +347,34 @@ class ConfigEntryData:
             self._hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._cloud_manager.async_disconnect)
         )
 
+    def _append_trackable_templates_with_capability(
+        self,
+        templates: dict[Template, list[CustomCapability | CustomProperty]],
+        capability_config: ConfigType,
+        capability_type: CapabilityType,
+        instance: str,
+        device_id: str,
+    ) -> None:
+        """Append custom capability to list of templates."""
+        try:
+            capability = get_custom_capability(
+                self._hass,
+                self,
+                capability_config,
+                capability_type,
+                instance,
+                device_id,
+            )
+        except APIError as e:
+            _LOGGER.debug(f"Failed to track custom capability: {e}")
+            return
+
+        template = capability_custom.get_value_template(self._hass, device_id, capability_config)
+
+        if template:
+            templates.setdefault(template, [])
+            templates[template].append(capability)
+
     def _get_trackable_templates(self) -> dict[Template, list[CustomCapability | CustomProperty]]:
         """Return templates for track changes."""
         templates: dict[Template, list[CustomCapability | CustomProperty]] = {}
@@ -353,6 +382,15 @@ class ConfigEntryData:
         for device_id, entity_config in self.entity_config.items():
             if not self.should_expose(device_id):
                 continue
+
+            if (state_template := entity_config.get(CONF_STATE_TEMPLATE)) is not None:
+                self._append_trackable_templates_with_capability(
+                    templates,
+                    {CONF_STATE_TEMPLATE: state_template},
+                    CapabilityType.ON_OFF,
+                    OnOffCapabilityInstance.ON,
+                    device_id,
+                )
 
             for capability_type, config_key in (
                 (CapabilityType.MODE, CONF_ENTITY_CUSTOM_MODES),
@@ -362,27 +400,10 @@ class ConfigEntryData:
                 if config_key in entity_config:
                     for instance in entity_config[config_key]:
                         capability_config = entity_config[config_key][instance]
-                        if not isinstance(capability_config, dict):
-                            continue
-
-                        try:
-                            capability = get_custom_capability(
-                                self._hass,
-                                self,
-                                capability_config,
-                                capability_type,
-                                instance,
-                                device_id,
+                        if isinstance(capability_config, dict):
+                            self._append_trackable_templates_with_capability(
+                                templates, capability_config, capability_type, instance, device_id
                             )
-                        except APIError as e:
-                            _LOGGER.debug(f"Failed to track custom capability: {e}")
-                            continue
-
-                        template = capability_custom.get_value_template(self._hass, device_id, capability_config)
-
-                        if template:
-                            templates.setdefault(template, [])
-                            templates[template].append(capability)
 
             for property_config in entity_config.get(CONF_ENTITY_PROPERTIES, []):
                 try:

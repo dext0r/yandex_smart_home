@@ -83,6 +83,8 @@
             turn_on: false
     ```
 
+Для добавления функции включения тем объектам, которые изначально её не поддерживают, кроме параметров `turn_on` или `turn_off` необходимо дополнительно добавить параметр [`state_template`](#state_template).
+
 ## Поддерживаемые функции (media_player) { id=features }
 
 > Параметр: `features` (только для `media_player`)
@@ -143,6 +145,26 @@
       entity_config:
         cover.ir_shades:
           state_unknown: true
+    ```
+
+## Состояние из шаблона { id=state_template }
+
+> Параметр: `state_unknown`
+
+Включает вычисление состояния устройства не из состояния объекта, а из шаблона. Полезно использовать с параметрами `turn_on` и `turn_off` для добавления функции включения тем устройствам, которые её не поддерживают (например камерам).
+
+!!! example "Пример управления розеткой из карточки камеры"
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        camera.aquarium:
+          state_template: '{{ states("switch.camera_aquarium") }}'
+          turn_on:
+            service: switch.turn_on
+            entity_id: switch.camera_aquarium
+          turn_off:
+            service: switch.turn_off
+            entity_id: switch.camera_aquarium
     ```
 
 ## Ограничение уровня громкости { id=range }

@@ -57,7 +57,7 @@ async def test_valid_config(hass: HomeAssistant) -> None:
     }
 
     entity_config = config[DOMAIN]["entity_config"]
-    assert len(entity_config) == 16
+    assert len(entity_config) == 17
 
     assert entity_config["switch.kitchen"] == {
         "name": "Выключатель",
@@ -222,6 +222,22 @@ async def test_valid_config(hass: HomeAssistant) -> None:
                 "value_template": Template("{{ 0 }}", hass),
             },
         ]
+    }
+
+    assert entity_config["camera.pet"] == {
+        "state_template": Template('{{ states("switch.pet_camera") }}', hass),
+        "turn_off": {
+            "action": "switch.turn_off",
+            "entity_id": [
+                "switch.pet_camera",
+            ],
+        },
+        "turn_on": {
+            "action": "switch.turn_on",
+            "entity_id": [
+                "switch.pet_camera",
+            ],
+        },
     }
 
 

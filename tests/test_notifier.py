@@ -14,6 +14,7 @@ from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     CONF_ID,
     CONF_PLATFORM,
+    CONF_STATE_TEMPLATE,
     CONF_TOKEN,
     CONF_TYPE,
     EVENT_HOMEASSISTANT_STARTED,
@@ -29,7 +30,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome
-from custom_components.yandex_smart_home.capability_custom import get_custom_capability
+from custom_components.yandex_smart_home.capability_custom import CustomOnOffCapability, get_custom_capability
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapabilityBasic
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.const import (
@@ -38,7 +39,6 @@ from custom_components.yandex_smart_home.const import (
     CONF_CLOUD_INSTANCE_ID,
     CONF_CONNECTION_TYPE,
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
-    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE,
     CONF_ENTITY_CUSTOM_MODES,
     CONF_ENTITY_CUSTOM_RANGES,
     CONF_ENTITY_CUSTOM_TOGGLES,
@@ -449,6 +449,7 @@ async def test_notifier_track_templates(
                 ]
             },
             "sensor.outside_temp": {
+                CONF_STATE_TEMPLATE: Template("{{ states('sensor.state_template') }}", hass),
                 CONF_ENTITY_MODE_MAP: {"dishwashing": {"fowl": ["one"], "two": ["two"]}},
                 CONF_ENTITY_PROPERTIES: [
                     {
@@ -535,6 +536,17 @@ async def test_notifier_track_templates(
     )
     mock_call_later.assert_not_called()
 
+    # onoff
+    mock_call_later.reset_mock()
+    notifier._unsub_report_states = None
+    await _async_set_state(hass, "sensor.state_template", "off")
+    assert notifier._pending.empty is True
+    caplog.clear()
+    await _async_set_state(hass, "sensor.state_template", "on")
+    pending = await notifier._pending.async_get_all()
+    assert list(pending.keys()) == ["sensor.outside_temp"]
+    assert isinstance(pending["sensor.outside_temp"][0], CustomOnOffCapability)
+
     # mode
     mock_call_later.reset_mock()
     notifier._unsub_report_states = None
@@ -591,11 +603,7 @@ async def test_notifier_track_templates_exception(
         entity_config={
             "light.kitchen": {
                 CONF_ENTITY_CUSTOM_RANGES: {
-                    "volume": {
-                        CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template(
-                            "{{ 100 / states('sensor.v')|int(10) }}", hass
-                        )
-                    }
+                    "volume": {CONF_STATE_TEMPLATE: Template("{{ 100 / states('sensor.v')|int(10) }}", hass)}
                 },
             },
         },
@@ -887,8 +895,8 @@ async def test_notifier_initial_report(
 
     assert _get_states("light.kitchen") == [
         {"state": {"instance": "temperature_k", "value": 4200}, "type": "devices.capabilities.color_setting"},
-        {"state": {"instance": "brightness", "value": 70}, "type": "devices.capabilities.range"},
         {"state": {"instance": "on", "value": True}, "type": "devices.capabilities.on_off"},
+        {"state": {"instance": "brightness", "value": 70}, "type": "devices.capabilities.range"},
     ]
 
     assert notifier._pending.empty is True

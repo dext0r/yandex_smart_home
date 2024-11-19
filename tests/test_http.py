@@ -347,6 +347,7 @@ async def test_http_user_devices(
                             "reportable": True,
                             "parameters": {"color_model": "rgb", "temperature_k": {"min": 1500, "max": 6500}},
                         },
+                        {"type": "devices.capabilities.on_off", "retrievable": True, "reportable": True},
                         {
                             "type": "devices.capabilities.range",
                             "retrievable": True,
@@ -358,7 +359,6 @@ async def test_http_user_devices(
                                 "unit": "unit.percent",
                             },
                         },
-                        {"type": "devices.capabilities.on_off", "retrievable": True, "reportable": True},
                     ],
                     "device_info": {
                         "model": "light.kitchen",

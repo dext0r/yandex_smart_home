@@ -53,8 +53,8 @@
             '<ColorSettingCapability device_id=light.kitchen type=devices.capabilities.color_setting instance=base>',
             '<RGBColorCapability device_id=light.kitchen type=devices.capabilities.color_setting instance=rgb>',
             '<ColorTemperatureCapability device_id=light.kitchen type=devices.capabilities.color_setting instance=temperature_k>',
-            '<BrightnessCapability device_id=light.kitchen type=devices.capabilities.range instance=brightness>',
             '<OnOffCapabilityBasic device_id=light.kitchen type=devices.capabilities.on_off instance=on>',
+            '<BrightnessCapability device_id=light.kitchen type=devices.capabilities.range instance=brightness>',
           ]),
           'description': dict({
             'capabilities': list([
@@ -71,6 +71,11 @@
                 'type': 'devices.capabilities.color_setting',
               }),
               dict({
+                'reportable': True,
+                'retrievable': True,
+                'type': 'devices.capabilities.on_off',
+              }),
+              dict({
                 'parameters': dict({
                   'instance': 'brightness',
                   'random_access': True,
@@ -84,11 +89,6 @@
                 'reportable': True,
                 'retrievable': True,
                 'type': 'devices.capabilities.range',
-              }),
-              dict({
-                'reportable': True,
-                'retrievable': True,
-                'type': 'devices.capabilities.on_off',
               }),
             ]),
             'device_info': dict({
@@ -123,17 +123,17 @@
               }),
               dict({
                 'state': dict({
-                  'instance': 'brightness',
-                  'value': 70,
-                }),
-                'type': 'devices.capabilities.range',
-              }),
-              dict({
-                'state': dict({
                   'instance': 'on',
                   'value': True,
                 }),
                 'type': 'devices.capabilities.on_off',
+              }),
+              dict({
+                'state': dict({
+                  'instance': 'brightness',
+                  'value': 70,
+                }),
+                'type': 'devices.capabilities.range',
               }),
             ]),
             'id': 'light.kitchen',

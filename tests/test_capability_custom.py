@@ -5,6 +5,7 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     CONF_SERVICE,
     CONF_SERVICE_DATA,
+    CONF_STATE_TEMPLATE,
     STATE_OFF,
     STATE_ON,
     STATE_UNAVAILABLE,
@@ -26,7 +27,6 @@ from custom_components.yandex_smart_home.capability_custom import (
 from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE,
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
-    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE,
     CONF_ENTITY_CUSTOM_MODE_SET_MODE,
     CONF_ENTITY_CUSTOM_MODES,
     CONF_ENTITY_CUSTOM_RANGE_DECREASE_VALUE,
@@ -39,6 +39,8 @@ from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_RANGE_MAX,
     CONF_ENTITY_RANGE_MIN,
     CONF_ENTITY_RANGE_PRECISION,
+    CONF_STATE_UNKNOWN,
+    CONF_TURN_ON,
 )
 from custom_components.yandex_smart_home.device import Device
 from custom_components.yandex_smart_home.helpers import ActionNotAllowed, APIError
@@ -49,6 +51,8 @@ from custom_components.yandex_smart_home.schema import (
     ModeCapabilityInstanceActionState,
     ModeCapabilityMode,
     OnOffCapabilityInstance,
+    OnOffCapabilityInstanceActionState,
+    OnOffCapabilityParameters,
     RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
     ResponseCode,
@@ -89,11 +93,11 @@ async def test_capability_custom(hass: HomeAssistant, entry_data: MockConfigEntr
             hass,
             entry_data,
             {},
-            CapabilityType.ON_OFF,
+            CapabilityType.VIDEO_STREAM,
             ToggleCapabilityInstance.IONIZATION,
             "foo",
         )
-    assert e.value.message == "Unsupported capability type: devices.capabilities.on_off"
+    assert e.value.message == "Unsupported capability type: devices.capabilities.video_stream"
 
 
 async def test_capability_custom_value(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -137,7 +141,7 @@ async def test_capability_custom_value(hass: HomeAssistant, entry_data: MockConf
         hass,
         entry_data,
         {
-            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1 + 2 }}", hass),
+            CONF_STATE_TEMPLATE: Template("{{ 1 + 2 }}", hass),
         },
         CapabilityType.RANGE,
         RangeCapabilityInstance.HUMIDITY,
@@ -150,7 +154,7 @@ async def test_capability_custom_value(hass: HomeAssistant, entry_data: MockConf
         hass,
         entry_data,
         {
-            CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("{{ 1/0 }}", hass),
+            CONF_STATE_TEMPLATE: Template("{{ 1/0 }}", hass),
         },
         CapabilityType.RANGE,
         RangeCapabilityInstance.HUMIDITY,
@@ -164,6 +168,87 @@ async def test_capability_custom_value(hass: HomeAssistant, entry_data: MockConf
         e.value.message == "Failed to get current value for instance humidity of range capability of foo: "
         "TemplateError('ZeroDivisionError: division by zero')"
     )
+
+
+async def test_capability_custom_onoff(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state = State("camera.test", STATE_OFF)
+    cap = get_custom_capability(
+        hass,
+        entry_data,
+        {},
+        CapabilityType.ON_OFF,
+        OnOffCapabilityInstance.ON,
+        state.entity_id,
+    )
+    assert cap.supported is True
+    assert cap.retrievable is True
+    assert cap.parameters is None
+    assert cap.get_value() is False
+
+    cap = get_custom_capability(
+        hass,
+        entry_data,
+        {CONF_STATE_TEMPLATE: Template("on", hass)},
+        CapabilityType.ON_OFF,
+        OnOffCapabilityInstance.ON,
+        state.entity_id,
+    )
+    assert cap.supported is True
+    assert cap.retrievable is True
+    assert cap.parameters is None
+    assert cap.get_value() is True
+
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={state.entity_id: {CONF_STATE_UNKNOWN: True}},
+    )
+    cap = get_custom_capability(
+        hass,
+        entry_data,
+        {CONF_STATE_TEMPLATE: Template("on", hass)},
+        CapabilityType.ON_OFF,
+        OnOffCapabilityInstance.ON,
+        state.entity_id,
+    )
+    assert cap.supported is True
+    assert cap.retrievable is False
+    assert isinstance(cap.parameters, OnOffCapabilityParameters)
+    assert cap.parameters.split is True
+    assert cap.get_value() is None
+
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={
+            state.entity_id: {
+                CONF_TURN_ON: SERVICE_SCHEMA(
+                    {
+                        CONF_SERVICE: "switch.turn_on",
+                        ATTR_ENTITY_ID: "switch.test",
+                    }
+                ),
+            }
+        },
+    )
+    cap = get_custom_capability(
+        hass,
+        entry_data,
+        {},
+        CapabilityType.ON_OFF,
+        OnOffCapabilityInstance.ON,
+        state.entity_id,
+    )
+
+    with pytest.raises(ActionNotAllowed):
+        await cap.set_instance_state(
+            Context(), OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=False)
+        )
+
+    calls = async_mock_service(hass, "switch", "turn_on")
+    await cap.set_instance_state(
+        Context(), OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=True)
+    )
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: ["switch.test"]}
 
 
 async def test_capability_custom_mode(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:

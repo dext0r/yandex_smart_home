@@ -15,6 +15,7 @@ from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
     CONF_NAME,
     CONF_ROOM,
+    CONF_STATE_TEMPLATE,
     CONF_TYPE,
     PERCENTAGE,
     SERVICE_TURN_OFF,
@@ -25,6 +26,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers import area_registry as ar, device_registry as dr, entity_registry as er
+from homeassistant.helpers.template import Template
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
@@ -35,6 +37,7 @@ from custom_components.yandex_smart_home.capability_color import (
 )
 from custom_components.yandex_smart_home.capability_custom import (
     CustomModeCapability,
+    CustomOnOffCapability,
     CustomRangeCapability,
     CustomToggleCapability,
 )
@@ -130,10 +133,11 @@ async def test_device_capabilities(hass: HomeAssistant) -> None:
     light._attr_name = "Light"  # type: ignore[assignment]
     light.async_write_ha_state()
 
-    state = hass.states.get("light.test")
-    assert state
+    state_light = hass.states.get("light.test")
+    assert state_light
     state_sensor = State("sensor.test", "33")
-    hass.states.async_set(state_sensor.entity_id, state_sensor.state)
+    state_switch = State("switch.test", "off")
+
     entry_data = MockConfigEntryData(
         hass,
         entity_config={
@@ -158,20 +162,25 @@ async def test_device_capabilities(hass: HomeAssistant) -> None:
                         CONF_ENTITY_CUSTOM_MODE_SET_MODE: {},
                     }
                 },
-            }
+            },
+            state_switch.entity_id: {CONF_STATE_TEMPLATE: Template("on", hass)},
         },
     )
-    device = Device(hass, entry_data, state.entity_id, state)
-    assert [type(c) for c in device.get_capabilities()] == [
+
+    device_light = Device(hass, entry_data, state_light.entity_id, state_light)
+    assert [type(c) for c in device_light.get_capabilities()] == [
         CustomModeCapability,
         CustomToggleCapability,
         CustomRangeCapability,
         ColorSettingCapability,
         RGBColorCapability,
         ColorTemperatureCapability,
-        BrightnessCapability,
         OnOffCapabilityBasic,
+        BrightnessCapability,
     ]
+
+    device_switch = Device(hass, entry_data, state_switch.entity_id, state_switch)
+    assert [type(c) for c in device_switch.get_capabilities()] == [CustomOnOffCapability]
 
 
 async def test_device_disabled_capabilities(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -190,9 +199,9 @@ async def test_device_disabled_capabilities(hass: HomeAssistant, entry_data: Moc
     device = Device(hass, entry_data, state.entity_id, state)
     assert [type(c) for c in device.get_capabilities()] == [
         InputSourceCapability,
+        OnOffCapabilityMediaPlayer,
         VolumeCapability,
         MuteCapability,
-        OnOffCapabilityMediaPlayer,
     ]
 
     entry_data = MockConfigEntryData(
@@ -478,7 +487,37 @@ async def test_device_should_expose(hass: HomeAssistant, entry_data: MockConfigE
     assert device.should_expose is False
 
 
-async def test_devoce_should_expose_empty_filters(hass: HomeAssistant) -> None:
+async def test_device_unavaialble(hass: HomeAssistant) -> None:
+    state_unavailable = State("sensor.unavailable", STATE_UNAVAILABLE)
+    state_on = State("sensor.on", STATE_ON)
+    state_switch = State("switch.test", STATE_OFF)
+    for s in (state_unavailable, state_on, state_switch):
+        hass.states.async_set(s.entity_id, s.state)
+
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={
+            state_switch.entity_id: {
+                CONF_STATE_TEMPLATE: Template("{{ states('sensor.on') }}", hass),
+            }
+        },
+    )
+    device = Device(hass, entry_data, state_switch.entity_id, state_switch)
+    assert device.unavailable is False
+
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={
+            state_switch.entity_id: {
+                CONF_STATE_TEMPLATE: Template("{{ states('sensor.unavailable') }}", hass),
+            }
+        },
+    )
+    device = Device(hass, entry_data, state_switch.entity_id, state_switch)
+    assert device.unavailable is True
+
+
+async def test_device_should_expose_empty_filters(hass: HomeAssistant) -> None:
     entry_data = MockConfigEntryData(hass, entity_filter=generate_entity_filter())
 
     device = Device(hass, entry_data, "switch.test", State("switch.test", STATE_ON))

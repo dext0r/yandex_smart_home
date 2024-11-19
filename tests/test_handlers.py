@@ -3,7 +3,7 @@ from typing import Any
 from unittest.mock import Mock, patch
 
 from homeassistant.auth.models import User
-from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
+from homeassistant.const import CONF_STATE_TEMPLATE, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers.template import Template
 from homeassistant.util.decorator import Registry
@@ -13,7 +13,6 @@ from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome, handler
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.capability_toggle import StateToggleCapability
 from custom_components.yandex_smart_home.const import (
-    CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE,
     CONF_ENTITY_CUSTOM_RANGES,
     CONF_ENTITY_PROPERTIES,
     CONF_ENTITY_PROPERTY_TYPE,
@@ -99,9 +98,7 @@ async def test_handler_devices_query(hass: HomeAssistant, caplog: pytest.LogCapt
         hass,
         entity_config={
             switch_1.entity_id: {
-                CONF_ENTITY_CUSTOM_RANGES: {
-                    "volume": {CONF_ENTITY_CUSTOM_CAPABILITY_STATE_TEMPLATE: Template("not-float", hass)}
-                },
+                CONF_ENTITY_CUSTOM_RANGES: {"volume": {CONF_STATE_TEMPLATE: Template("not-float", hass)}},
                 CONF_ENTITY_PROPERTIES: [
                     {
                         CONF_ENTITY_PROPERTY_TYPE: "temperature",
