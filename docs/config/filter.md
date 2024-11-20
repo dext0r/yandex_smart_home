@@ -14,7 +14,7 @@
 
 Выбрать объекты для передачи можно в [настройках интеграции](../config/getting-started.md#gui) --> Объекты для передачи в УДЯ:
 
-![](../assets/images/filter-gui.png){ width=750 }
+![](../assets/images/config/filter-gui.png){ width=750 }
 
 ## Через YAML конфигурацию { id=yaml }
 

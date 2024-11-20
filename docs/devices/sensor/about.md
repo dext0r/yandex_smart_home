@@ -4,9 +4,9 @@
 
 При выборе [поддерживаемых](../../supported-devices.md#float-sensor) объектов в доменах `sensor` и `binary_sensor` в УДЯ будут созданы несколько независимых устройств:
 
-![](../../assets/images/devices/sensor/simple-1.png){ width=480 }
-![](../../assets/images/devices/sensor/simple-3.png){ width=200 }
-![](../../assets/images/devices/sensor/simple-2.png){ width=480 }
+![](../../assets/images/devices/sensor/simple-1.png){ width=750 }
+![](../../assets/images/devices/sensor/simple-2.png){ width=530 }
+![](../../assets/images/devices/sensor/simple-3.png){ width=220 }
 
 ## Сборка нескольких датчиков в одном устройство { id=combine }
 
@@ -62,15 +62,15 @@
 
 В [объектах для передачи в УДЯ](../../config/filter.md) нужно выбрать **только** `sensor.room_temperature`.
 
-![](../../assets/images/devices/sensor/combine-1.png){ width=480 }
-![](../../assets/images/devices/sensor/combine-2.png){ width=200 }
+![](../../assets/images/devices/sensor/combine-1.png){ width=530 }
+![](../../assets/images/devices/sensor/combine-2.png){ width=220 }
 
 ## Добавление датчиков к устройству { id=attach }
 
 Некоторые устройства (термостат) уже содержат в своих атрибутах датчики, которые будет подхвачены автоматически.
 А некоторые, например, увлажнитель - наоборот, все датчики выносят в отдельные объекты.
 
-В качестве примера используем увлажнитель Xiaomi, он состоит из объектов:
+В качестве примера используем увлажнитель, он состоит из объектов:
 
 * Непосредственно увлажнитель: `humidifier.air_humidifier`
 * Температура: `sensor.air_humidifier_temperature`
@@ -106,5 +106,5 @@
 
 В объектах для передачи в УДЯ нужно выбрать **только** `humidifier.air_humidifier`.
 
-![](../../assets/images/devices/sensor/attach-1.png){ width=480 }
-![](../../assets/images/devices/sensor/attach-2.png){ width=200 }
+![](../../assets/images/devices/sensor/attach-1.png){ width=530 }
+![](../../assets/images/devices/sensor/attach-2.png){ width=220 }

@@ -137,7 +137,7 @@
 
 Рекомендуется использовать для устройств, которые не возвращают своё актуальное состояние (например шторы или вентилятор, управляемые по IR каналу).
 
-![](../assets/images/config/state_unknown.png)
+![](../assets/images/config/state-unknown.png){ width=200 }
 
 !!! example "Пример"
     ```yaml

@@ -3,8 +3,8 @@
 Нажмите :fontawesome-solid-plus: в правом верхнем углу --> `Устройство умного дома` -->
 Найдите производителя `Yaha Cloud` (или другой навык) --> :fontawesome-solid-arrows-rotate:
 
-![](../assets/images/app/yandex/discovery-1.png){ width=340 }
-![](../assets/images/app/yandex/discovery-2.png){ width=340 }
+![](../assets/images/app/yandex/discovery-1.png){ width=360 }
+![](../assets/images/app/yandex/discovery-2.png){ width=360 }
 
 ## Отвязка навыка (производителя) и удаление устройств { id=unlink }
 
@@ -16,5 +16,5 @@
 * Поставьте галочку `Удалить устройства` (если планируется повторно привязывать производителя - галочку ставить не нужно)
 * Нажмите `Отвязать от Яндекса` или `Удалить аккаунт и устройства`
 
-![](../assets/images/app/yandex/discovery-3.png){ width=270 }
-![](../assets/images/app/yandex/unlink-4.png){ width=270 }
+![](../assets/images/app/yandex/discovery-1.png){ width=360 }
+![](../assets/images/app/yandex/unlink.png){ width=360 }

@@ -1,0 +1,5 @@
+if [ "$1" == "wide" ]; then
+    osascript -e 'tell application "Safari" to set bounds of front window to {0, 0, 1150, 650}'
+else
+    osascript -e 'tell application "Safari" to set bounds of front window to {0, 0, 1000, 650}'
+fi
