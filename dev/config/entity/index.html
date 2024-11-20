@@ -290,7 +290,7 @@
         
   
   <span class="md-ellipsis">
-    Установка компонента
+    Установка и обновление компонента
   </span>
   
 
@@ -1655,9 +1655,12 @@
 </div>
 <h2 id="state_template">Состояние из шаблона<a class="headerlink" href="#state_template" title="Permanent link">&para;</a></h2>
 <blockquote>
-<p>Параметр: <code>state_unknown</code></p>
+<p>Параметр: <code>state_template</code></p>
 </blockquote>
 <p>Включает вычисление состояния устройства не из состояния объекта, а из шаблона. Полезно использовать с параметрами <code>turn_on</code> и <code>turn_off</code> для добавления функции включения тем устройствам, которые её не поддерживают (например камерам).</p>
+<div class="admonition warning">
+<p class="admonition-title">При использование <code>state_template</code> обязательно задать параметры <code>turn_on</code> и <code>turn_off</code> вручную, в противном случае включение/выключение устройства работать не будет.</p>
+</div>
 <div class="admonition example">
 <p class="admonition-title">Пример управления розеткой из карточки камеры</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>

@@ -22,7 +22,7 @@
     
     
       
-        <title>Установка компонента - Yandex Smart Home</title>
+        <title>Установка и обновление компонента - Yandex Smart Home</title>
       
     
     
@@ -58,7 +58,7 @@
     
     
 <meta property="og:title" content="Yandex Smart Home">
-<meta property="og:description" content="Установка компонента">
+<meta property="og:description" content="Установка и обновление компонента">
 <meta property="og:url" content="https://docs.yaha-cloud.ru/dev/install/component/">
 <meta property="og:image" content="../../assets/logo/logo.png">
 
@@ -130,7 +130,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Установка компонента
+              Установка и обновление компонента
             
           </span>
         </div>
@@ -297,7 +297,7 @@
           
   
   <span class="md-ellipsis">
-    Установка компонента
+    Установка и обновление компонента
   </span>
   
 
@@ -308,7 +308,7 @@
         
   
   <span class="md-ellipsis">
-    Установка компонента
+    Установка и обновление компонента
   </span>
   
 
@@ -330,7 +330,7 @@
         <li class="md-nav__item">
   <a href="#hacs" class="md-nav__link">
     <span class="md-ellipsis">
-      Через HACS (рекомендованный способ)
+      Установка через HACS
     </span>
   </a>
   
@@ -339,16 +339,16 @@
         <li class="md-nav__item">
   <a href="#manual" class="md-nav__link">
     <span class="md-ellipsis">
-      Вручную (не рекомендуется)
+      Установка вручную
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#change-version" class="md-nav__link">
+  <a href="#update" class="md-nav__link">
     <span class="md-ellipsis">
-      Переход на бета-версию
+      Обновление через HACS
     </span>
   </a>
   
@@ -1383,7 +1383,7 @@
         <li class="md-nav__item">
   <a href="#hacs" class="md-nav__link">
     <span class="md-ellipsis">
-      Через HACS (рекомендованный способ)
+      Установка через HACS
     </span>
   </a>
   
@@ -1392,16 +1392,16 @@
         <li class="md-nav__item">
   <a href="#manual" class="md-nav__link">
     <span class="md-ellipsis">
-      Вручную (не рекомендуется)
+      Установка вручную
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#change-version" class="md-nav__link">
+  <a href="#update" class="md-nav__link">
     <span class="md-ellipsis">
-      Переход на бета-версию
+      Обновление через HACS
     </span>
   </a>
   
@@ -1425,42 +1425,48 @@
   
 
 
-  <h1>Установка компонента</h1>
+  <h1>Установка и обновление компонента</h1>
 
-<h2 id="hacs">Через HACS (рекомендованный способ)<a class="headerlink" href="#hacs" title="Permanent link">&para;</a></h2>
+<h2 id="hacs">Установка через HACS<a class="headerlink" href="#hacs" title="Permanent link">&para;</a></h2>
+<div class="admonition success">
+<p class="admonition-title">Рекомендованный способ</p>
+</div>
 <ul>
-<li>Установите <a href="https://hacs.xyz/docs/setup/download">HACS</a></li>
-<li>Откройте HACS &rarr; Интеграции</li>
-<li>Нажмите кнопку <code>Исследуйте и устанавливайте репозитории</code> в правом нижнем углу</li>
-<li>В поиске введите <code>Yandex</code> и выберите <code>Yandex Smart Home</code></li>
-<li>Нажмите <code>Загрузить этот репозиторий с помощью HACS</code> &rarr; <code>Скачать</code></li>
+<li><a href="https://hacs.xyz/docs/use/download/download/">Установите</a> компонент HACS &rarr; Перезагрузите Home Assistant &rarr; <a href="https://hacs.xyz/docs/use/configuration/basic/">Добавьте интеграцию</a> HACS</li>
+<li>Откройте HACS через боковую панель</li>
+<li>В поиске введите <code>Yandex Smart Home</code></li>
+<li>Нажмите <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M64 360a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm0-160a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm56-104A56 56 0 1 0 8 96a56 56 0 1 0 112 0z"/></svg></span> в строчке с интеграцией &rarr; <code>Скачать</code></li>
 <li>Для завершения установки перезагрузите Home Assistant</li>
 </ul>
 <p><img alt="" src="../../assets/images/install/hacs-1.png" width="750" />
 <img alt="" src="../../assets/images/install/hacs-2.png" width="750" /></p>
-<h2 id="manual">Вручную (не рекомендуется)<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h2>
+<h2 id="manual">Установка вручную<a class="headerlink" href="#manual" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Не рекомендуется!</p>
+</div>
+<div class="admonition hint">
+<p class="admonition-title">Обновление выполняется аналогично установке</p>
+</div>
 <ul>
 <li>Скачайте архив <code>yandex_smart_home.zip</code> из <a href="https://github.com/dext0r/yandex_smart_home/releases/latest">последнего релиза</a></li>
 <li>Создайте подкаталог <code>custom_components/yandex_smart_home</code> в каталоге где расположен файл <code>configuration.yaml</code></li>
 <li>Распакуйте содержимое архива в <code>custom_components/yandex_smart_home</code></li>
 <li>Перезапустите Home Assistant</li>
 </ul>
-<h2 id="change-version">Переход на бета-версию<a class="headerlink" href="#change-version" title="Permanent link">&para;</a></h2>
-<p>Для перехода на бета-версию компонента или установки другой версии:</p>
+<h2 id="update">Обновление через HACS<a class="headerlink" href="#update" title="Permanent link">&para;</a></h2>
+<p>При выпуска новой версии компонента информация о необходимости обновления появится в разделе Настройки. Если этого не произошло, проверьте обновления вручную через Настройки &rarr; Система &rarr; <a href="https://my.home-assistant.io/redirect/updates/">Обновления</a> &rarr; <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4a8 8 0 0 0-8 8 8 8 0 0 0 8 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18a6 6 0 0 1-6-6 6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35Z"/></svg></span></p>
+<p>Если по какой-то причине обновление не появляется, скачайте компонент повторно через HACS:</p>
 <ul>
-<li>Откройте HACS, найдите компонент <code>Yandex Smart Home</code> и кликните по нему</li>
-<li>Нажмите три точки в правом верхнем углу</li>
-<li>Нажмите <code>Обновить информацию</code>, затем <code>Скачать повторно</code></li>
-<li>Поставьте галочку <code>Показывать бета-версии</code> и выберите нужную версию</li>
-<li>Перезапустите Home Assistant</li>
+<li>Откройте HACS через боковую панель</li>
+<li>В поиске введите <code>Yandex Smart Home</code></li>
+<li>Нажмите <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M64 360a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm0-160a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm56-104A56 56 0 1 0 8 96a56 56 0 1 0 112 0z"/></svg></span> в строчке с интеграцией &rarr; <code>Скачать повторно</code></li>
+<li>Для завершения обновления перезагрузите Home Assistant</li>
 </ul>
 <div class="admonition hint">
 <p class="admonition-title">Не беспокойтесь</p>
-<p>Повторное скачивание компонента <strong>не удаляет</strong> уже настроенную интеграцию</p>
+<p>Повторное скачивание компонента <strong>не удаляет</strong> уже настроенную интеграцию.</p>
 </div>
-<p><img alt="" src="../../assets/images/install/reinstall-1.png" width="750" />
-<img alt="" src="../../assets/images/install/reinstall-2.png" width="750" />
-<img alt="" src="../../assets/images/install/reinstall-3.png" width="750" /></p>
+<p><img alt="" src="../../assets/images/install/reinstall.png" width="750" /></p>
 
 
 
