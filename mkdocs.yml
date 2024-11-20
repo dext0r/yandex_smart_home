@@ -43,6 +43,8 @@ nav:
       - О рецептах: recipes/about.md
       - Увлажнители: recipes/humidifier.md
       - Телевизоры: recipes/tv.md
+      - Посудомоечные машины: recipes/dishwasher.md
+      - Обогреватели: recipes/heater.md
       - Чайники: recipes/kettle.md
       - Прочее: recipes/other.md
 

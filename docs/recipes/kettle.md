@@ -89,3 +89,120 @@ yandex_smart_home:
             max: 100
             precision: 5
 ```
+
+## Xiaomi Smart Kettle 2 Pro { id=xiaomi-smart-kettle-2-pro }
+
+> Интеграция: [Xiaomi Miot](https://github.com/al-one/hass-xiaomi-miot)
+
+```yaml
+# Потребуется создать вспомогательный свитч и две автоматизации включения и выключения. В первом случае - установка температуры на #99, во втором случае - нажатие кнопки Stop-work.
+yandex_smart_home:
+  entity_config:
+    input_boolean.kettle_switch:
+      type: devices.types.cooking.kettle
+      properties:
+        - type: temperature
+          entity: water_heater.yunmi_v19_4c2c_kettle
+          attribute: current_temperature
+      custom_toggles:
+        mute:
+          state_entity_id: switch.yunmi_v19_4c2c_no_disturb
+          turn_on:
+            action: switch.turn_on
+            entity_id: switch.yunmi_v19_4c2c_no_disturb
+          turn_off:
+            action: switch.turn_off
+            entity_id: switch.yunmi_v19_4c2c_no_disturb
+      custom_ranges:
+        temperature:
+          state_entity_id: water_heater.yunmi_v19_4c2c_kettle
+          set_value:
+            action: water_heater.set_temperature
+            entity_id: water_heater.yunmi_v19_4c2c_kettle
+            data:
+              temperature: '{{ value }}'
+          range:
+            min: 40
+            max: 100
+            precision: 1
+```
+
+## Polaris PWK 1775CGLD { id=polaris-pwk-1775cgld }
+
+> Интеграция: MQTT
+
+```yaml
+yandex_smart_home:
+  entity_config:
+    water_heater.polaris_kettle:
+      name: Чайник
+      room: Кухня
+      type: devices.types.cooking.kettle
+      properties:
+        - type: water_level
+          entity: sensor.polaris_kettle_water_level_percent
+      turn_on:
+        action: water_heater.set_operation_mode
+        target:
+          entity_id: water_heater.polaris_kettle
+        data:
+          operation_mode: Разогрев с удержанием
+      turn_off:
+        action: water_heater.turn_off
+        target:
+          entity_id: water_heater.polaris_kettle
+      custom_ranges:
+        temperature:
+          state_entity_id: water_heater.polaris_kettle
+          state_attribute: temperature
+          set_value:
+            action: water_heater.set_temperature
+            target:
+              entity_id: water_heater.polaris_kettle
+            data:
+              temperature: '{{ value }}'
+              operation_mode: Разогрев с удержанием
+          range:
+            min: 30
+            max: 100
+            precision: 1
+      custom_toggles:
+        mute:
+          state_entity_id: switch.polaris_kettle_mute
+          turn_on:
+            action: switch.turn_on
+            target:
+              entity_id: switch.polaris_kettle_mute
+          turn_off:
+            action: switch.turn_off
+            target:
+              entity_id: switch.polaris_kettle_mute
+        keep_warm:
+          state_entity_id: binary_sensor.polaris_kettle_keep_warm_on
+          turn_on:
+            action: water_heater.set_operation_mode
+            target:
+              entity_id: water_heater.polaris_kettle
+            data:
+              operation_mode: Разогрев с удержанием
+          turn_off:
+            action: water_heater.set_operation_mode
+            target:
+              entity_id: water_heater.polaris_kettle
+            data:
+              operation_mode: 'off'
+      modes:
+        tea_mode:
+          black_tea: 'black_tea'
+          flower_tea: 'flower_tea'
+          green_tea: 'green_tea'
+          herbal_tea: 'herbal_tea'
+          oolong_tea: 'oolong_tea'
+          puerh_tea: 'puerh_tea'
+          red_tea: 'red_tea'
+          white_tea: 'white_tea'
+      custom_modes:
+        tea_mode:
+          set_mode:
+            action: script.{{ mode }}
+```

@@ -216,3 +216,34 @@ yandex_smart_home:
             max: 100
             precision: 1
 ```
+
+## AIRMX A3S { id=airmx-a3s }
+
+> Интеграция: [AIRMX](https://github.com/dext0r/airmx)
+
+```yaml
+yandex_smart_home:
+  entity_config:
+    humidifier.airwater_a3s_48403:
+      properties:
+        - type: water_level
+          entity: sensor.airwater_a3s_48403_water_level
+      modes:
+        program:
+          quiet: "sleep"
+          medium: "manual" #  ручной режим, в нем целевая влажность 0
+          auto: "auto"
+      custom_ranges:
+        volume:  # вентилятор для ручного режима, как самое подходящее
+          state_entity_id: number.airwater_a3s_48403_fan_speed
+          set_value:
+            action: number.set_value
+            target:
+              entity_id: number.airwater_a3s_48403_fan_speed
+            data:
+              value: '{{ value }}'
+          range:
+            min: 0
+            max: 100
+            precision: 10
+```
