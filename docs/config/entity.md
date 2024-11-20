@@ -52,23 +52,23 @@
 * `thermostat.ac`: Кондиционер
 * `cooking.kettle`: Чайник
 
-## Сервис включения/выключения { id=turn_on-off }
+## Действие включения/выключения { id=turn_on-off }
 
 > Параметр: `turn_on` и `turn_off`
 
-Переопределяет сервис, который будет вызван при включении или отключении устройства через УДЯ.
+Переопределяет действие, которое будет выполнено при включении или отключении устройства через УДЯ.
 
 Параметр может быть использован, например, для [выбора режима включения](../devices/climate.md) кондиционера.
 
-!!! example "Переопределение сервиса включения/выключения телевизора"
+!!! example "Переопределение действия включения/выключения телевизора"
     ```yaml
     yandex_smart_home:
       entity_config:
         media_player.tv:
           turn_on:
-            service: script.tv_on
+            action: script.tv_on
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.tv_outlet
     ```
 
@@ -115,9 +115,9 @@
 
 > Возможные значения: `false`
 
-Отключает функцию выбора канала для `media_player` через цифровую панель и сервис `media_player.play_media`.
+Отключает функцию выбора канала для `media_player` через цифровую панель и действие `media_player.play_media`.
 
-Может потребоваться для устройств, которые не поддерживают выбор канала, но поддерживают сервис `play_media` и переключение треков.
+Может потребоваться для устройств, которые не поддерживают выбор канала, но поддерживают действие `play_media` и переключение треков.
 
 !!! example "Пример"
     ```yaml
@@ -162,10 +162,10 @@
         camera.aquarium:
           state_template: '{{ states("switch.camera_aquarium") }}'
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.camera_aquarium
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.camera_aquarium
     ```
 

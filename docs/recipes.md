@@ -21,20 +21,20 @@ yandex_smart_home:
         controls_locked: # блокировка управления
           state_entity_id: switch.smartmi_humidifier_child_lock
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.smartmi_humidifier_child_lock
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.smartmi_humidifier_child_lock
         backlight: # подсветка
           state_template: '{{ not is_state("select.smartmi_humidifier_led_brightness", "off") }}'
           turn_on:
-            service: select.select_option
+            action: select.select_option
             entity_id: select.smartmi_humidifier_led_brightness
             data:
               option: bright # или dim
           turn_off:
-            service: select.select_option
+            action: select.select_option
             entity_id: select.smartmi_humidifier_led_brightness
             data:
               option: 'off'
@@ -58,18 +58,18 @@ yandex_smart_home:
         backlight:
           state_entity_id: light.deerma_jsq2w_2976_indicator_light
           turn_on:
-            service: light.turn_on
+            action: light.turn_on
             entity_id: light.deerma_jsq2w_2976_indicator_light
           turn_off:
-            service: light.turn_off
+            action: light.turn_off
             entity_id: light.deerma_jsq2w_2976_indicator_light
         mute:
           state_template: '{( is_state("switch.deerma_jsq2w_2976_alarm", "off") }}'
           turn_on:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.deerma_jsq2w_2976_alarm
           turn_off:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.deerma_jsq2w_2976_alarm
       modes:
         program:
@@ -82,7 +82,7 @@ yandex_smart_home:
           state_entity_id: fan.deerma_jsq2w_2976_fan_level
           state_attribute: preset_mode
           set_mode:
-            service: fan.set_preset_mode
+            action: fan.set_preset_mode
             entity_id: fan.deerma_jsq2w_2976_fan_level
             data:
               preset_mode: "{{ mode }}"
@@ -110,20 +110,20 @@ yandex_smart_home:
         keep_warm: # подогрев
           state_entity_id: switch.leshow_jsq1_ee06_warm_wind_turn
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.leshow_jsq1_ee06_warm_wind_turn
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.leshow_jsq1_ee06_warm_wind_turn
         backlight: # подсветка
           state_entity_id: number.leshow_jsq1_ee06_screen_brightness
           turn_on:
-            service: number.set_value
+            action: number.set_value
             entity_id: number.leshow_jsq1_ee06_screen_brightness
             data:
               value: '1'
           turn_off:
-            service: number.set_value
+            action: number.set_value
             entity_id: number.leshow_jsq1_ee06_screen_brightness
             data:
               value: '0'
@@ -151,18 +151,18 @@ yandex_smart_home:
         backlight:
           state_entity_id: switch.ochistitel_vozdukha_led
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.ochistitel_vozdukha_led
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.ochistitel_vozdukha_led
         controls_locked:
           state_entity_id: switch.ochistitel_vozdukha_child_lock
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.ochistitel_vozdukha_child_lock
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.ochistitel_vozdukha_child_lock
 ```
 
@@ -182,24 +182,24 @@ yandex_smart_home:
         controls_locked: # блокировка управления
           state_entity_id: switch.mi_air_purifier_3c_child_lock
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.mi_air_purifier_3c_child_lock
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.mi_air_purifier_3c_child_lock
         mute: # Звук
           state_template: '{( is_state("switch.mi_air_purifier_3c_buzzer", "off") }}'
           turn_on:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.mi_air_purifier_3c_buzzer
           turn_off:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.mi_air_purifier_3c_buzzer
       custom_ranges:
         brightness: # Яркость подсветки
           state_entity_id: number.mi_air_purifier_3c_led_brightness
           set_value:
-            service: number.set_value
+            action: number.set_value
             target:
               entity_id: number.mi_air_purifier_3c_led_brightness
             data:
@@ -212,7 +212,7 @@ yandex_smart_home:
           state_entity_id: fan.mi_air_purifier_3c
           state_attribute: favorit_speed
           set_value:
-            service: number.set_value
+            action: number.set_value
             target:
               entity_id: number.mi_air_purifier_3c_favorite_motor_speed
             data:
@@ -241,24 +241,24 @@ yandex_smart_home:
         backlight:
           state_entity_id: switch.rk_g200s_state_led
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.rk_g200s_state_led
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.rk_g200s_state_led
         mute:
           state_entity_id: switch.rk_g200s_beeper
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.rk_g200s_beeper
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.rk_g200s_beeper
       custom_ranges:
         temperature:
           state_entity_id: number.rk_g200s_target
           set_value:
-            service: number.set_value
+            action: number.set_value
             entity_id: number.rk_g200s_target
             data:
               value: '{{ value }}'
@@ -287,25 +287,25 @@ yandex_smart_home:
         backlight:
           state_entity_id: switch.skykettle_rk_m216s_enable_sync_light
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.skykettle_rk_m216s_enable_sync_light
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.skykettle_rk_m216s_enable_sync_light
         mute:
           state_entity_id: switch.skykettle_rk_m216s_enable_sound
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.skykettle_rk_m216s_enable_sound
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.skykettle_rk_m216s_enable_sound
       custom_ranges:
         temperature:
           state_entity_id: water_heater.skykettle_rk_m216s
           state_attribute: temperature
           set_value:
-            service: water_heater.set_temperature
+            action: water_heater.set_temperature
             target: water_heater.skykettle_rk_m216s
             data:
               temperature: '{{ value }}'
@@ -367,7 +367,7 @@ script:
               - condition: template
                 value_template: "{{ input_source == 'HW1 }}"
             sequence:
-              - service: androidtv.adb_command
+              - action: androidtv.adb_command
                 target:
                   entity_id: media_player.androidtv
                 data:
@@ -376,7 +376,7 @@ script:
               - condition: template
                 value_template: "{{ input_source == 'HW2' }}"
             sequence:
-              - service: androidtv.adb_command
+              - action: androidtv.adb_command
                 target:
                   entity_id: media_player.androidtv
                 data:
@@ -385,7 +385,7 @@ script:
               - condition: template
                 value_template: "{{ input_source == 'HW3' }}"
             sequence:
-                - service: androidtv.adb_command
+                - action: androidtv.adb_command
                   target:
                     entity_id: media_player.androidtv
                   data:
@@ -394,7 +394,7 @@ script:
               - condition: template
                 value_template: "{{ input_source == 'HW4 }}"
             sequence:
-              - service: androidtv.adb_command
+              - action: androidtv.adb_command
                 target:
                   entity_id: media_player.androidtv
                 data:
@@ -403,7 +403,7 @@ script:
               - condition: template
                 value_template: "{{ input_source == 'ru.yourok.num' }}"
             sequence:
-              - service: media_player.select_source
+              - action: media_player.select_source
                 target:
                   entity_id: media_player.androidtv
                 data:
@@ -412,7 +412,7 @@ script:
               - condition: template
                 value_template: "{{ input_source == 'ru.kinopoisk.tv' }}"
             sequence:
-              - service: media_player.select_source
+              - action: media_player.select_source
                 target:
                   entity_id: media_player.androidtv
                 data:
@@ -421,7 +421,7 @@ script:
               - condition: template
                 value_template: "{{ input_source == 'com.google.android.tvlauncher'' }}"
             sequence:
-              - service: androidtv.adb_command
+              - action: androidtv.adb_command
                 target:
                   entity_id: media_player.androidtv
                 data:
@@ -430,7 +430,7 @@ script:
               - condition: template
                 value_template: "{{ input_source == 'ru.more.play' }}"
             sequence:
-              - service: media_player.select_source
+              - action: media_player.select_source
                 target:
                   entity_id: media_player.androidtv
                 data:
@@ -439,13 +439,13 @@ script:
               - condition: template
                 value_template: "{{ input_source == 'com.google.android.youtube.tv' }}"
             sequence:
-              - service: media_player.select_source
+              - action: media_player.select_source
                 target:
                   entity_id: media_player.androidtv
                 data:
                   source: com.google.android.youtube.tv
         default:
-          - service: system_log.write
+          - action: system_log.write
             data:
               message: "[change_tv_input_source script] No action is defined for input source '{{ input_source }}'"
 
@@ -459,10 +459,10 @@ yandex_smart_home:
       custom_ranges:
         volume:
           increase_value:
-            service: media_player.volume_up
+            action: media_player.volume_up
             entity_id: media_player.androidtv
           decrease_value:
-            service: media_player.volume_down
+            action: media_player.volume_down
             entity_id: media_player.androidtv
       # https://docs.yaha-cloud.ru/dev/advanced/capabilities/mode/
       modes:
@@ -481,7 +481,7 @@ yandex_smart_home:
         input_source:
           state_entity_id: sensor.tv_input_source
           set_mode:
-            service: script.change_tv_input_source
+            action: script.change_tv_input_source
             data:
               input_source: '{{ mode }}'
 ```
@@ -501,12 +501,12 @@ yandex_smart_home:
           state_entity_id: climate.tasmota_ac
           state_attribute: light
           turn_on:
-            service: tasmota_irhvac.set_light
+            action: tasmota_irhvac.set_light
             entity_id: climate.tasmota_ac
             data:
               light: 'on'
           turn_off:
-            service: tasmota_irhvac.set_light
+            action: tasmota_irhvac.set_light
             entity_id: climate.tasmota_ac
             data:
               light: 'off'
@@ -530,7 +530,7 @@ yandex_smart_home:
         temperature:
           state_entity_id: number.thermex_lima_80v_set_target_temperature
           set_value:
-            service: number.set_value
+            action: number.set_value
             entity_id: number.thermex_lima_80v_set_target_temperature
             data:
               value: '{{ value }}'

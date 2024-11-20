@@ -39,7 +39,7 @@ yandex_smart_home:
       custom_ranges:
         channel:
           set_value:
-            service: media_player.play_media
+            action: media_player.play_media
             entity_id: media_player.stupid_tv
             data:
               media_content_type: channel
@@ -53,9 +53,9 @@ yandex_smart_home:
             max: 999
         volume:
           increase_value:
-            service: script.increase_volume
+            action: script.increase_volume
           decrease_value:
-            service: script.decrease_volume
+            action: script.decrease_volume
     fan.xiaomi_miio_device:
       name: Увлажнитель
       room: Гостиная
@@ -100,18 +100,18 @@ yandex_smart_home:
         ionization:
           state_entity_id: switch.ac_ionizer
           turn_on:
-            service: switch.turn_on
+            action: switch.turn_on
             entity_id: switch.ac_ionizer
           turn_off:
-            service: switch.turn_off
+            action: switch.turn_off
             entity_id: switch.ac_ionizer
         backlight:
           state_entity_id: input_boolean.ac_lighting
           turn_on:
-            service: input_boolean.turn_on
+            action: input_boolean.turn_on
             entity_id: input_boolean.ac_lighting
           turn_off:
-            service: input_boolean.turn_off
+            action: input_boolean.turn_off
             entity_id: input_boolean.ac_lighting
     switch.r4s1_kettle_boil:
       name: Чайник
@@ -127,7 +127,7 @@ yandex_smart_home:
         temperature:
           state_attribute: temperature
           set_value:
-            service: climate.set_temperature
+            action: climate.set_temperature
             data:
               temperature: '{{ value }}'
             target:
@@ -155,7 +155,7 @@ yandex_smart_home:
       turn_on: false
     climate.ac:
       turn_on:
-        service: climate.turn_on
+        action: climate.turn_on
         entity_id: climate.ac
         data:
           mode: cool
@@ -198,8 +198,8 @@ yandex_smart_home:
     camera.pet:
       state_template: '{{ states("switch.pet_camera") }}'
       turn_on:
-        service: switch.turn_on
+        action: switch.turn_on
         entity_id: switch.pet_camera
       turn_off:
-        service: switch.turn_off
+        action: switch.turn_off
         entity_id: switch.pet_camera

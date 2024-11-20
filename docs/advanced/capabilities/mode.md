@@ -1,18 +1,18 @@
-Выбирает режим работы устройства, при изменении которого будет вызываться определённый сервис. [Настраиваются](about.md) через словарь `custom_modes`.
+Выбирает режим работы устройства, при изменении которого будет вызываться определённое действие. [Настраиваются](about.md) через словарь `custom_modes`.
 
-Примеры: кофеварка, которая варит кофе скриптом `script.makemeonecupofcoffee` или моющий пылесос Xiaomi, в котором хочется управлять количеством подаваемой воды через сервис `xiaomi_vacuum.set_water_level`.
+Примеры: кофеварка, которая варит кофе скриптом `script.makemeonecupofcoffee` или моющий пылесос Xiaomi, в котором хочется управлять количеством подаваемой воды через действие `xiaomi_vacuum.set_water_level`.
 
 Для пользовательского режима автоматического связывание между значениями УДЯ и Home Assistant не производится. Вам нужно
 вручную [задать соответствия](../../config/modes.md) через `modes`!
 
 ## Параметры { id=settings }
 
-* `set_mode`: Вызываемый сервис при выборе режима в УДЯ. В переменной `mode` - значение режима на стороне Home Assistant. Если не задан - режим из УДЯ меняться не будет.
+* `set_mode`: Вызываемое действие при выборе режима в УДЯ. В переменной `mode` - значение режима на стороне Home Assistant. Если не задан - режим из УДЯ меняться не будет.
 
     !!! example "Пример"
         ```yaml
         set_mode:
-          service: xiaomi_vacuum.set_water_level
+          action: xiaomi_vacuum.set_water_level
           entity_id: vacuum.xiaomi_mop
           data:
             water_level: '{{ mode }}'
@@ -64,7 +64,7 @@
               state_entity_id: vacuum.xiaomi_mop
               state_attribute: water_level
               set_mode:
-                service: xiaomi_vacuum.set_water_level
+                action: xiaomi_vacuum.set_water_level
                 entity_id: vacuum.xiaomi_mop
                 data:
                   water_level: '{{ mode }}' # сюда подставятся Low/Med/High
@@ -87,5 +87,5 @@
           custom_modes:
             coffee_mode:
               set_mode:
-                service: script.make_me_{{ mode }}_coffee  # вызовется script.make_me_latte_coffee
+                action: script.make_me_{{ mode }}_coffee  # вызовется script.make_me_latte_coffee
     ```

@@ -2,15 +2,15 @@
 
 ## Параметры { id=settings }
 
-* `turn_on` и `turn_off`: Вызываемые сервисы при включении/выключении функции в УДЯ. Если не задан один или несколько сервисов - соответствующее действие выполняться не будет.
+* `turn_on` и `turn_off`: Вызываемые действия при включении/выключении функции в УДЯ. Если не задано одно или несколько действий - соответствующая команда выполняться не будет.
 
     !!! example "Пример"
         ```yaml
         turn_on:
-          service: xiaomi_miio_airpurifier.fan_set_ptc_on
+          action: xiaomi_miio_airpurifier.fan_set_ptc_on
           entity_id: fan.xiaomi_airfresh_va4
         turn_off:
-          service: xiaomi_miio_airpurifier.fan_set_ptc_off
+          action: xiaomi_miio_airpurifier.fan_set_ptc_off
           entity_id: fan.xiaomi_airfresh_va4
         ```
 
@@ -48,9 +48,9 @@
               state_entity_id: fan.xiaomi_airfresh_va4
               state_attribute: ptc
               turn_on:
-                service: xiaomi_miio_airpurifier.fan_set_ptc_on
+                action: xiaomi_miio_airpurifier.fan_set_ptc_on
                 entity_id: fan.xiaomi_airfresh_va4
               turn_off:
-                service: xiaomi_miio_airpurifier.fan_set_ptc_off
+                action: xiaomi_miio_airpurifier.fan_set_ptc_off
                 entity_id: fan.xiaomi_airfresh_va4
     ```

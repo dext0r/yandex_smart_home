@@ -76,10 +76,10 @@ yandex_smart_home:
         backlight: &custom_toggle
           state_entity_id: input_boolean.ysh_toggle_debug
           turn_on:
-            service: input_boolean.turn_on
+            action: input_boolean.turn_on
             entity_id: input_boolean.ysh_toggle_debug
           turn_off:
-            service: input_boolean.turn_on
+            action: input_boolean.turn_on
             entity_id: input_boolean.ysh_toggle_debug
         controls_locked:
           << : *custom_toggle
@@ -97,7 +97,7 @@ yandex_smart_home:
         channel: &custom_range_random_access
           state_entity_id: input_number.ysh_float_debug
           set_value:
-            service: input_number.set_value
+            action: input_number.set_value
             entity_id: input_number.ysh_float_debug
             data:
               value: '{{ value }}'
@@ -107,10 +107,10 @@ yandex_smart_home:
             precision: 1
         volume:
           increase_value:
-            service: input_number.increment
+            action: input_number.increment
             entity_id: input_number.ysh_float_debug
           decrease_value:
-            service: input_number.decrement
+            action: input_number.decrement
             entity_id: input_number.ysh_float_debug
         humidity:
           << : *custom_range_random_access
@@ -122,7 +122,7 @@ yandex_smart_home:
         cleanup_mode:  &custom_mode
           state_entity_id: input_text.ysh_mode_debug
           set_mode:
-            service: input_text.set_value
+            action: input_text.set_value
             entity_id: input_text.ysh_mode_debug
             data:
               value: '{{ mode }}'
@@ -440,7 +440,7 @@ yandex_smart_home:
         temperature:
           state_entity_id: input_number.ysh_float_debug
           set_value:
-            service: input_number.set_value
+            action: input_number.set_value
             entity_id: input_number.ysh_float_debug
             data:
               value: '{{ value }}'

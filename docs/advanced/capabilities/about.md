@@ -29,16 +29,16 @@
           custom_ranges:
             channel:
               set_value:
-                service: media_player.play_media
+                action: media_player.play_media
                 entity_id: media_player.tv
                 data:
                   media_content_type: channel
                   media_content_id: '{{ value }}'
             volume:
               increase_value:
-                service: script.increase_volume
+                action: script.increase_volume
               decrease_value:
-                service: script.decrease_volume
+                action: script.decrease_volume
         climate.room_ac:
           custom_toggles:
             backlight:
@@ -47,10 +47,10 @@
             mute:
               state_template: '{{ is_state("switch.room_ac_beeper", "off") }}'
               turn_on:
-                service: switch.turn_off
+                action: switch.turn_off
                 entity_id: switch.room_ac_beeper
               turn_off:
-                service: switch.turn_on
+                action: switch.turn_on
                 entity_id: switch.room_ac_beeper
         media_player.tv:
           modes:
@@ -61,7 +61,7 @@
             input_source:
               state_entity_id: sensor.tv_input_source
               set_mode:
-                service: script.change_tv_input_source
+                action: script.change_tv_input_source
                 data:
                   input_source: '{{ mode }}'
     ```
