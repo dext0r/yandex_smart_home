@@ -39,11 +39,17 @@ nav:
   - Платформы умного дома:
       - Дом с Алисой: platforms/yandex.md
       - Маруся: platforms/vk.md
+  - Рецепты:
+      - О рецептах: recipes/about.md
+      - Увлажнители: recipes/humidifier.md
+      - Телевизоры: recipes/tv.md
+      - Чайники: recipes/kettle.md
+      - Прочее: recipes/other.md
+
   - Устранение проблем: troubleshoot.md
   - Часто задаваемые вопросы: faq.md
   - Поддерживаемые устройства: supported-devices.md
   - Обратная совместимость: breaking-changes.md
-  - Рецепты: recipes.md
 
 theme:
   name: material
