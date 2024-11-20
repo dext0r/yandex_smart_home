@@ -678,7 +678,7 @@ async def test_notifier_track_entity_states(
                 ]
             },
         },
-        entity_filter=generate_entity_filter(exclude_entities=["switch.not_exposed"]),
+        entity_filter=generate_entity_filter(exclude_entities=["switch.not_exposed", "event.button", "event.motion"]),
     )
 
     hass.states.async_set("input_text.button", "")

@@ -411,16 +411,14 @@ class Notifier(ABC):
                 old_device_states.append(cls(self._hass, self._entry_data, device_id, old_state))
 
         new_device = Device(self._hass, self._entry_data, entity_id, new_state)
-        if not new_device.should_expose:
-            return None
+        if new_device.should_expose:
+            new_device_states.extend(new_device.get_state_capabilities())
+            new_device_states.extend(new_device.get_state_properties())
 
-        new_device_states.extend(new_device.get_state_capabilities())
-        new_device_states.extend(new_device.get_state_properties())
-
-        if old_state:
-            old_device = Device(self._hass, self._entry_data, entity_id, old_state)
-            old_device_states.extend(old_device.get_state_capabilities())
-            old_device_states.extend(old_device.get_state_properties())
+            if old_state:
+                old_device = Device(self._hass, self._entry_data, entity_id, old_state)
+                old_device_states.extend(old_device.get_state_capabilities())
+                old_device_states.extend(old_device.get_state_properties())
 
         for pending_state in await self._pending.async_add(new_device_states, old_device_states):
             self._debug_log(f"State report with value '{pending_state.get_value()}' scheduled for {pending_state!r}")
