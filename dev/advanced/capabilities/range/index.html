@@ -1479,12 +1479,12 @@
 <h2 id="settings">Параметры<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
 <ul>
 <li>
-<p><code>set_value</code>: Сервис вызываемый при установке абсолютного значения функции. В переменной <code>value</code> абсолютное или относительное значение (в зависимости от настроек <code>range</code> и наличия <code>increase_value</code> и <code>decrease_value</code>).
+<p><code>set_value</code>: Действие выполняемое при установке абсолютного значения функции. В переменной <code>value</code> абсолютное или относительное значение (в зависимости от настроек <code>range</code> и наличия <code>increase_value</code> и <code>decrease_value</code>).
 Если не задан - установка абсолютного значения поддерживаться не будет.</p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="w"> </span><span class="nt">set_value</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">   </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xiaomi_miio_airpurifier.fan_set_favorite_speed</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">   </span><span class="nt">action</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xiaomi_miio_airpurifier.fan_set_favorite_speed</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">   </span><span class="nt">entity_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fan.xiaomi_airfresh_a1</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">   </span><span class="nt">data</span><span class="p">:</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">     </span><span class="nt">speed</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{{</span><span class="nv"> </span><span class="s">value</span><span class="nv"> </span><span class="s">}}&#39;</span>
@@ -1492,7 +1492,7 @@
 </div>
 </li>
 <li>
-<p><code>increase_value</code> и <code>decrease_value</code>: Сервисы, вызываемые при относительной регулировке (кнопки <code>+</code> и <code>-</code> и "Алиса, убавь температуру"). Если не заданы - будет вызываться сервис <code>set_value</code>.</p>
+<p><code>increase_value</code> и <code>decrease_value</code>: Действия, вызываемые при относительной регулировке (кнопки <code>+</code> и <code>-</code> и "Алиса, убавь температуру"). Если не заданы - будет вызываться действие <code>set_value</code>.</p>
 </li>
 <li>
 <p><code>range</code>: Граничные значения диапазона. Для <code>humidity</code>, <code>open</code>, <code>brightness</code> есть ограничение: минимум <code>0</code>, максимум <code>100</code>.
@@ -1511,7 +1511,7 @@
 </ul>
 <p>Для устройств, поддерживающих установку абсолютного значения, достаточно задать только <code>set_value</code>.
 А для устройств с поддержкой только относительного (например IR пульт) - <code>increase_value</code> и <code>decrease_value</code>.</p>
-<p>Если ни один сервис не задан - умение из УДЯ управляться не будет.</p>
+<p>Если ни одно действие не задано - умение из УДЯ управляться не будет.</p>
 <h2 id="instance">Доступные функции<a class="headerlink" href="#instance" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1578,7 +1578,7 @@
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">          </span><span class="nt">state_entity_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fan.xiaomi_airfresh_a1</span>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">          </span><span class="nt">state_attribute</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">favorit_speed</span>
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">          </span><span class="nt">set_value</span><span class="p">:</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xiaomi_miio_airpurifier.fan_set_favorite_speed</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="nt">action</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">xiaomi_miio_airpurifier.fan_set_favorite_speed</span>
 <a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">            </span><span class="nt">data</span><span class="p">:</span>
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">              </span><span class="nt">speed</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{{</span><span class="nv"> </span><span class="s">value</span><span class="nv"> </span><span class="s">}}&#39;</span>
 <a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">          </span><span class="c1"># значения для примера</span>
@@ -1598,17 +1598,17 @@
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="nt">custom_ranges</span><span class="p">:</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="nt">channel</span><span class="p">:</span>
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">          </span><span class="nt">set_value</span><span class="p">:</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">            </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">media_player.play_media</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">            </span><span class="nt">action</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">media_player.play_media</span>
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">            </span><span class="nt">entity_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">media_player.stupid_tv</span>
 <a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">            </span><span class="nt">data</span><span class="p">:</span>
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">              </span><span class="nt">media_content_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">channel</span>
 <a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">              </span><span class="nt">media_content_id</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;{{</span><span class="nv"> </span><span class="s">value</span><span class="nv"> </span><span class="s">}}&#39;</span>
 <a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">          </span><span class="nt">increase_value</span><span class="p">:</span>
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">            </span><span class="c1"># сервис отправит нажатие кнопки &quot;канал вверх&quot; по IR</span>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">            </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">script.next_channel_via_ir</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">            </span><span class="c1"># действие отправит нажатие кнопки &quot;канал вверх&quot; по IR</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">            </span><span class="nt">action</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">script.next_channel_via_ir</span>
 <a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">          </span><span class="nt">decrease_value</span><span class="p">:</span>
-<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">            </span><span class="c1"># сервис отправит нажатие кнопки &quot;канал вниз&quot; по IR</span>
-<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">            </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">script.prev_channel_via_ir</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">            </span><span class="c1"># действие отправит нажатие кнопки &quot;канал вниз&quot; по IR</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">            </span><span class="nt">action</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">script.prev_channel_via_ir</span>
 <a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">          </span><span class="nt">range</span><span class="p">:</span>
 <a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">            </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
 <a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">            </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">999</span>
