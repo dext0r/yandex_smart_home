@@ -88,7 +88,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#gui" class="md-skip">
+        <a href="#config-flow" class="md-skip">
           Перейти к содержанию
         </a>
       
@@ -449,9 +449,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gui" class="md-nav__link">
+  <a href="#config-flow" class="md-nav__link">
     <span class="md-ellipsis">
-      Через интерфейс
+      В настройках интеграции
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#label" class="md-nav__link">
+    <span class="md-ellipsis">
+      Через ярлыки на объектах
     </span>
   </a>
   
@@ -1369,9 +1378,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gui" class="md-nav__link">
+  <a href="#config-flow" class="md-nav__link">
     <span class="md-ellipsis">
-      Через интерфейс
+      В настройках интеграции
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#label" class="md-nav__link">
+    <span class="md-ellipsis">
+      Через ярлыки на объектах
     </span>
   </a>
   
@@ -1407,7 +1425,7 @@
   <h1>Выбор объектов для передачи</h1>
 
 <p>По умолчанию в УДЯ не передаются никакие объекты.</p>
-<p>Выбрать объекты, которые будут переданы в УДЯ в виде устройств можно двумя способами (в зависимости от ваших предпочтений): YAML конфигурация или интерфейс Home Assistant.</p>
+<p>Выбрать объекты, которые будут переданы в УДЯ в виде устройств можно несколькими способами (в зависимости от ваших предпочтений): в настройках интеграции, ярлыки на объектах, или YAML конфигурацию.</p>
 <div class="admonition danger">
 <p class="admonition-title">Внимание!</p>
 <p>Удаление устройств из УДЯ возможно <strong>только</strong> вручную. Удаляйте устройство из УДЯ только после исключения объекта из списка для передачи.
@@ -1417,9 +1435,22 @@
 <div class="admonition warning">
 <p class="admonition-title">Недопустимо оставлять в УДЯ устройства, у которых объект не выбран для передачи. Такие устройства будут работать некорректно.</p>
 </div>
-<h2 id="gui">Через интерфейс<a class="headerlink" href="#gui" title="Permanent link">&para;</a></h2>
-<p>Выбрать объекты для передачи можно в <a href="../getting-started/#gui">настройках интеграции</a> &rarr; Объекты для передачи в УДЯ:</p>
-<p><a class="glightbox" href="../../assets/images/config/filter-gui.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="" src="../../assets/images/config/filter-gui.png" width="750" /></a></p>
+<h2 id="config-flow">В настройках интеграции<a class="headerlink" href="#config-flow" title="Permanent link">&para;</a></h2>
+<p>Выбрать объекты для передачи можно в <a href="../getting-started/#gui">настройках интеграции</a> &rarr; Объекты для передачи в УДЯ &rarr; Через интерфейс:</p>
+<p><a class="glightbox" href="../../assets/images/config/filter-gui-1.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="" src="../../assets/images/config/filter-gui-1.png" width="750" /></a>
+<a class="glightbox" href="../../assets/images/config/filter-gui-2.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="" src="../../assets/images/config/filter-gui-2.png" width="750" /></a></p>
+<h2 id="label">Через ярлыки на объектах<a class="headerlink" href="#label" title="Permanent link">&para;</a></h2>
+<p>Выбирать объекты в настройках интеграции может быть не всегда удобным, поэтому есть альтернативный вариант - ярлыки на объектах. Для его использования:</p>
+<ul>
+<li>Создайте ярлык в разделе <code>Настройки</code> &rarr; <a href="https://my.home-assistant.io/redirect/areas/"><code>Пространства, зоны и ярлыки</code></a> &rarr; Ярлыки</li>
+<li>Назначьте ярлык на объекты, которые вы хотите передать в УДЯ.</li>
+<li>Используйте способ выбора объектов для передачи в УДЯ <code>Через ярлыки на объектах</code> в настройке существующей интеграции или при создании новой.</li>
+</ul>
+<div class="admonition hint">
+<p class="admonition-title">После добавления ярлыка к новым объектам перезагрузите интеграцию на странице <code>Настройки</code> &rarr; <code>Устройства и службы</code> &rarr; <code>Интеграции</code> &rarr; <code>Yandex Smart Home</code> или <a href="../../platforms/yandex/#discovery">Обновите список устройств</a> вручную</p>
+</div>
+<p><a class="glightbox" href="../../assets/images/config/filter-gui-1.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="" src="../../assets/images/config/filter-gui-1.png" width="750" /></a>
+<a class="glightbox" href="../../assets/images/config/filter-gui-3.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="" src="../../assets/images/config/filter-gui-3.png" width="750" /></a></p>
 <h2 id="yaml">Через YAML конфигурацию<a class="headerlink" href="#yaml" title="Permanent link">&para;</a></h2>
 <p>Объекты выбираются в разделе <code>filter</code>, поддерживаемые фильтры:</p>
 <ul>

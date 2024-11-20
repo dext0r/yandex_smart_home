@@ -1316,6 +1316,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#v1-multi-skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      Прямое подключение: несколько пользователей/навыков
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#v1-marusia" class="md-nav__link">
     <span class="md-ellipsis">
       Прямое подключение: поддержка Маруси
@@ -1343,9 +1352,27 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#v1-cloning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Клонирование интеграции
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#v1-not-breaking" class="md-nav__link">
     <span class="md-ellipsis">
       Прочие изменения
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v1-downgrade-v0" class="md-nav__link">
+    <span class="md-ellipsis">
+      Даунгрейд
     </span>
   </a>
   
@@ -1428,6 +1455,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#v1-multi-skill" class="md-nav__link">
+    <span class="md-ellipsis">
+      Прямое подключение: несколько пользователей/навыков
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#v1-marusia" class="md-nav__link">
     <span class="md-ellipsis">
       Прямое подключение: поддержка Маруси
@@ -1455,9 +1491,27 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#v1-cloning" class="md-nav__link">
+    <span class="md-ellipsis">
+      Клонирование интеграции
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#v1-not-breaking" class="md-nav__link">
     <span class="md-ellipsis">
       Прочие изменения
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v1-downgrade-v0" class="md-nav__link">
+    <span class="md-ellipsis">
+      Даунгрейд
     </span>
   </a>
   
@@ -1490,9 +1544,12 @@
 
 <h2 id="0x-1x">Переход с 0.x на 1.x<a class="headerlink" href="#0x-1x" title="Permanent link">&para;</a></h2>
 <h3 id="v1-notifier">Прямое подключение: настройки нотификатора<a class="headerlink" href="#v1-notifier" title="Permanent link">&para;</a></h3>
-<p>С версии 1.x для прямого подключения служба уведомлений о состоянии устройств (<a href="https://docs.yaha-cloud.ru/v0.6.x/advanced/direct-connection/#notifier">нотификатор</a>) настраивается через <a href="../config/getting-started/#gui">интерфейс</a> (раздел <code>Параметры навыка</code>), а не YAML конфигурацию.</p>
+<p>С версии 1.0 для прямого подключения служба уведомлений о состоянии устройств (<a href="https://docs.yaha-cloud.ru/v0.6.x/advanced/direct-connection/#notifier">нотификатор</a>) настраивается через <a href="../config/getting-started/#gui">интерфейс</a> (раздел <code>Параметры навыка</code>), а не YAML конфигурацию.</p>
 <p>Параметры из секции <code>notifier</code> YAML конфигурации будут перенесены <strong>автоматически</strong> если в ней задан только один навык/пользователь.</p>
 <p>Если у вас несколько записей в секции <code>notifier</code> (например задействованы несколько пользователей) – необходимо перенести параметры вручную. Для каждого пользователя/навыка потребуется создать отдельную интеграцию с прямым типом подключения.</p>
+<h3 id="v1-multi-skill">Прямое подключение: несколько пользователей/навыков<a class="headerlink" href="#v1-multi-skill" title="Permanent link">&para;</a></h3>
+<p>С версии 1.0 при использовании прямого подключения для каждой пары навык-пользователь требуется создавать отдельную интеграцию. Если в вашем навыке авторизованы разные пользователи, или к вашему HA подключено несколько разных навыков, вы можете получить ошибку <code>Failed to find Yandex Smart Home integration for request from yandex (user XXX)</code>.</p>
+<p>В этом случае нужно добавить отдельные интеграции с прямым подключением для каждого авторизуемого пользователя.</p>
 <h3 id="v1-marusia">Прямое подключение: поддержка Маруси<a class="headerlink" href="#v1-marusia" title="Permanent link">&para;</a></h3>
 <p>Если к вашему Home Assistant уже подключена Маруся, то при обновлении на v1.x она перестанет работать, а в журнале сервера появится ошибка <code>Failed to find Yandex Smart Home integration for request from vk (user XXX)</code></p>
 <p>Для её устранения вам нужно <a href="../install/integration/">добавить</a> новую интеграцию с типом подключения "Прямое" и платформой умного дома "Маруся". Список устройств для передачи можно скопировать с существующей интеграции.</p>
@@ -1501,7 +1558,7 @@
 <p>Пользовательские умения типа "Переключатели" теперь ожидают бинарные значения (<code>on/off/yes/no/True/False/1/0</code>) при определении своего состояния.
 До версии 1.0 умение считалось включенным, когда состояние отличалось от <code>off</code>.</p>
 <div class="admonition example">
-<p class="admonition-title">До 1.х</p>
+<p class="admonition-title">До 1.0</p>
 </div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
@@ -1511,7 +1568,7 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">          </span><span class="nt">state_entity_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">select.humidifier_led_brightness</span><span class="w">  </span><span class="c1"># значения high/med/off</span>
 </code></pre></div>
 <div class="admonition example">
-<p class="admonition-title">После 1.х</p>
+<p class="admonition-title">После 1.0</p>
 </div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
@@ -1523,13 +1580,23 @@
 <h3 id="v1-pressure-unit">Параметр pressure_unit<a class="headerlink" href="#v1-pressure-unit" title="Permanent link">&para;</a></h3>
 <p>Параметр <code>pressure_unit</code> (раздел <code>settings</code>) больше не поддерживается, удалите его из YAML конфигурации.</p>
 <p>Теперь компонент автоматически пытается сохранить единицы измерения при передаче значений датчиков из Home Assistant в УДЯ (<a href="../devices/sensor/float/#unit-conversion">подробнее о конвертации значений</a>)</p>
+<h3 id="v1-cloning">Клонирование интеграции<a class="headerlink" href="#v1-cloning" title="Permanent link">&para;</a></h3>
+<p>C версии 1.0 <a href="https://docs.yaha-cloud.ru/v0.6.x/advanced/clone/">клонирование</a> компонента не рекомендуется. Компонент теперь поддерживает добавление нескольких интеграций с разными фильтрами.</p>
 <h3 id="v1-not-breaking">Прочие изменения<a class="headerlink" href="#v1-not-breaking" title="Permanent link">&para;</a></h3>
-<p>Прочие изменения в 1.x не ломающие обратную совместимость с v0.x:</p>
+<p>Прочие изменения в 1.0 не ломающие обратную совместимость с 0.x:</p>
 <ol>
 <li>При <a href="../config/modes/">настройке режимов</a> в параметре <code>entity_config.*.modes</code> теперь рекомендуется использовать строки, а не списки. Использование списков допустимо, и менять это не планируется.</li>
 <li>В настройках интеграции пункт меню "ID и Пароль (облачное подключение)" переименован в "Реквизиты для привязки".</li>
 <li>Вызовы действий (сервисов) заменены c <code>service:</code> на <code>action:</code> (<a href="https://www.home-assistant.io/blog/2024/08/07/release-20248/#goodbye-service-calls-hello-actions-">причина</a>). Поддерживаются оба способа вызова, менять конфигурацию не требуется.</li>
 </ol>
+<h3 id="v1-downgrade-v0">Даунгрейд<a class="headerlink" href="#v1-downgrade-v0" title="Permanent link">&para;</a></h3>
+<p>Если вы обновились с 0.x до 1.x и что-то работает не правильно - даунгрейд обратно на 0.x возможен при выполнении нескольких условий:</p>
+<ol>
+<li>Создана только одна запись интеграции Yandex Smart Home (страница Настройки &rarr; Устройства и службы &rarr; Интеграции &rarr; Yandex Smart Home)</li>
+<li>В YAML конфигурации не используются новые для 1.x параметры</li>
+<li>Способ выбор объектов для передачи в УДЯ не изменён на "Через ярлыки на объектах"</li>
+</ol>
+<p>Для даунгрейда <a href="https://docs.yaha-cloud.ru/dev/install/component/#update">скачайте</a> последнюю версию 0.6.х через HACS.</p>
 
 
 
