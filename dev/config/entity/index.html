@@ -542,6 +542,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#slow-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      "Медленные" устройства
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#range" class="md-nav__link">
     <span class="md-ellipsis">
       Ограничение уровня громкости
@@ -1504,6 +1513,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#slow-device" class="md-nav__link">
+    <span class="md-ellipsis">
+      "Медленные" устройства
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#range" class="md-nav__link">
     <span class="md-ellipsis">
       Ограничение уровня громкости
@@ -1704,6 +1722,24 @@
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">      </span><span class="nt">backlight_entity_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">switch.ac_backlight</span>
 </code></pre></div>
 </div>
+<h2 id="slow-device">"Медленные" устройства<a class="headerlink" href="#slow-device" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>Параметр: <code>slow</code></p>
+<p>Возможные значения: <code>true</code></p>
+</blockquote>
+<p>При получении команды от УДЯ компонент выполняет действие над устройством, ждёт его завершения, и только после этого возвращает ответ "команда успешно  выполнена". Некоторые устройства (например интеграция Starline) выполняют действия очень долго (дольше 5 секунд), из-за этого при управлении через Алису постоянно возникает ошибка.</p>
+<p>После включении флага <code>slow: true</code> в УДЯ будет отправлен ответ "команда успешно выполнена" сразу же после её получения без фактического ожидания завершения выполнения действия на стороне Home Assistant.</p>
+<div class="admonition warning">
+<p class="admonition-title">Включайте этот флаг только для проблемных устройств</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">Пример</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="nt">switch.starline_engine</span><span class="p">:</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">      </span><span class="nt">slow</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+</div>
 <h2 id="range">Ограничение уровня громкости<a class="headerlink" href="#range" title="Permanent link">&para;</a></h2>
 <blockquote>
 <p>Параметр: <code>range</code></p>
@@ -1711,13 +1747,13 @@
 <p>Ограничивает диапазон, в котором может регулироваться громкость устройства.</p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="nt">media_player.receiver</span><span class="p">:</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">      </span><span class="nt">range</span><span class="p">:</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">        </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">95</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">        </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">  </span><span class="c1"># шаг регулировки</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">yandex_smart_home</span><span class="p">:</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">entity_config</span><span class="p">:</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="nt">media_player.receiver</span><span class="p">:</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">      </span><span class="nt">range</span><span class="p">:</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">        </span><span class="nt">max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">95</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">        </span><span class="nt">min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">        </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span><span class="w">  </span><span class="c1"># шаг регулировки</span>
 </code></pre></div>
 </div>
 
