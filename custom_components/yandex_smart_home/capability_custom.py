@@ -191,7 +191,7 @@ class CustomModeCapability(CustomCapability, ModeCapability):
             service_config,
             validate_config=False,
             variables={"mode": self.get_ha_mode_by_yandex_mode(state.value)},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -237,7 +237,7 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
             self._hass,
             service_config,
             validate_config=False,
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -289,7 +289,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
             service_config,
             validate_config=False,
             variables={"value": value},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -375,7 +375,7 @@ class CustomColorSceneCapability(CustomCapability, ColorSceneCapability):
             service_config,
             validate_config=False,
             variables={"mode": self.get_ha_scene_by_yandex_scene(state.value)},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 

@@ -321,7 +321,7 @@ class ThermostatCapability(StateModeCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_HVAC_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -360,7 +360,7 @@ class SwingCapability(StateModeCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_SWING_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -424,7 +424,7 @@ class ProgramCapabilityClimate(ProgramCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -499,7 +499,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 humidifier.ATTR_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -567,7 +567,7 @@ class ProgramCapabilityFan(ProgramCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -612,7 +612,7 @@ class InputSourceCapability(StateModeCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 media_player.ATTR_INPUT_SOURCE: self.get_ha_mode_by_yandex_mode(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -698,7 +698,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 climate.ATTR_FAN_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -778,7 +778,7 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 fan.ATTR_PRESET_MODE: self.get_ha_mode_by_yandex_mode(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -847,7 +847,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
             fan.DOMAIN,
             fan.SERVICE_SET_PERCENTAGE,
             {ATTR_ENTITY_ID: self.state.entity_id, fan.ATTR_PERCENTAGE: ha_mode},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -944,7 +944,7 @@ class CleanupModeCapability(StateModeCapability):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 vacuum.ATTR_FAN_SPEED: self.get_ha_mode_by_yandex_mode(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 

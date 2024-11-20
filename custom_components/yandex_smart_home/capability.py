@@ -10,6 +10,7 @@ from homeassistant.const import ATTR_SUPPORTED_FEATURES
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers.typing import ConfigType
 
+from .const import CONF_SLOW
 from .helpers import CacheStore, ListRegistry
 from .schema import (
     CapabilityDescription,
@@ -109,6 +110,14 @@ class Capability(Protocol[CapabilityInstanceActionState]):
     def _entity_config(self) -> ConfigType:
         """Return additional configuration for the device."""
         return self._entry_data.get_entity_config(self.device_id)
+
+    @property
+    def _wait_for_service_call(self) -> bool:
+        """Check if service should be run in blocking mode."""
+        if self._entity_config.get(CONF_SLOW) is True:
+            return False
+
+        return True
 
     def __str__(self) -> str:
         """Return string representation."""

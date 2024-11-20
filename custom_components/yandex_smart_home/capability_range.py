@@ -192,7 +192,7 @@ class CoverPositionCapability(StateRangeCapability):
             cover.DOMAIN,
             SERVICE_SET_COVER_POSITION,
             {ATTR_ENTITY_ID: self.state.entity_id, cover.ATTR_POSITION: self._get_service_call_value(state)},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -228,7 +228,7 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
             water_heater.DOMAIN,
             water_heater.SERVICE_SET_TEMPERATURE,
             {ATTR_ENTITY_ID: self.state.entity_id, ATTR_TEMPERATURE: self._get_service_call_value(state)},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -262,7 +262,7 @@ class TemperatureCapabilityClimate(TemperatureCapability):
             climate.DOMAIN,
             climate.SERVICE_SET_TEMPERATURE,
             {ATTR_ENTITY_ID: self.state.entity_id, ATTR_TEMPERATURE: self._get_service_call_value(state)},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -305,7 +305,7 @@ class HumidityCapabilityHumidifier(HumidityCapability):
             humidifier.DOMAIN,
             humidifier.SERVICE_SET_HUMIDITY,
             {ATTR_ENTITY_ID: self.state.entity_id, humidifier.ATTR_HUMIDITY: self._get_service_call_value(state)},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -342,7 +342,7 @@ class HumidityCapabilityXiaomiFan(HumidityCapability):
             DOMAIN_XIAOMI_AIRPURIFIER,
             SERVICE_FAN_SET_TARGET_HUMIDITY,
             {ATTR_ENTITY_ID: self.state.entity_id, humidifier.ATTR_HUMIDITY: self._get_service_call_value(state)},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -379,7 +379,7 @@ class BrightnessCapability(StateRangeCapability):
             light.DOMAIN,
             SERVICE_TURN_ON,
             {ATTR_ENTITY_ID: self.state.entity_id, attribute: state.value},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -435,7 +435,7 @@ class WhiteLightBrightnessCapability(StateRangeCapability, LightState):
             service_data[light.ATTR_RGBW_COLOR] = color + (brightness,)
 
         await self._hass.services.async_call(
-            light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=True, context=context
+            light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=self._wait_for_service_call, context=context
         )
 
     def _get_value(self) -> float | None:
@@ -478,7 +478,7 @@ class WarmWhiteLightBrightnessCapability(StateRangeCapability, LightState):
                 ATTR_ENTITY_ID: self.state.entity_id,
                 light.ATTR_RGBWW_COLOR: color + (self._white_brightness or 0, round(255 * brightness_pct / 100)),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -536,7 +536,7 @@ class VolumeCapability(StateRangeCapability):
                     ATTR_ENTITY_ID: self.state.entity_id,
                     media_player.ATTR_MEDIA_VOLUME_LEVEL: self._get_service_call_value(state) / 100,
                 },
-                blocking=True,
+                blocking=self._wait_for_service_call,
                 context=context,
             )
             return
@@ -559,7 +559,7 @@ class VolumeCapability(StateRangeCapability):
                 media_player.DOMAIN,
                 service,
                 {ATTR_ENTITY_ID: self.state.entity_id},
-                blocking=True,
+                blocking=self._wait_for_service_call,
                 context=context,
             )
 
@@ -648,7 +648,7 @@ class ChannelCapability(StateRangeCapability):
                     media_player.DOMAIN,
                     service,
                     {ATTR_ENTITY_ID: self.state.entity_id},
-                    blocking=True,
+                    blocking=self._wait_for_service_call,
                     context=context,
                 )
                 return
@@ -720,7 +720,7 @@ class ValvePositionCapability(StateRangeCapability):
             valve.DOMAIN,
             SERVICE_SET_VALVE_POSITION,
             {ATTR_ENTITY_ID: self.state.entity_id, valve.ATTR_POSITION: self._get_service_call_value(state)},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 

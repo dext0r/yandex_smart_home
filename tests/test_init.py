@@ -61,6 +61,7 @@ async def test_valid_config(hass: HomeAssistant) -> None:
 
     assert entity_config["switch.kitchen"] == {
         "name": "Выключатель",
+        "slow": True,
     }
     assert entity_config["light.living_room"] == {
         "name": "Люстра",

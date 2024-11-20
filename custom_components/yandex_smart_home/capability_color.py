@@ -171,7 +171,7 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState], LightState):
             service_data[ATTR_RGB_COLOR] = tuple(color)
 
         await self._hass.services.async_call(
-            light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=True, context=context
+            light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=self._wait_for_service_call, context=context
         )
 
     @cached_property
@@ -281,7 +281,7 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
             service_data[ATTR_RGB_COLOR] = (255, 255, 255)
 
         await self._hass.services.async_call(
-            light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=True, context=context
+            light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=self._wait_for_service_call, context=context
         )
 
     @cached_property
@@ -437,7 +437,7 @@ class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInsta
                 ATTR_ENTITY_ID: self.state.entity_id,
                 ATTR_EFFECT: self.get_ha_scene_by_yandex_scene(state.value),
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 

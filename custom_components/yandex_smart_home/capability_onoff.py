@@ -107,7 +107,9 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
                 if self._entity_config[key] is False:
                     raise ActionNotAllowed
 
-                await async_call_from_config(self._hass, self._entity_config[key], blocking=True, context=context)
+                await async_call_from_config(
+                    self._hass, self._entity_config[key], blocking=self._wait_for_service_call, context=context
+                )
                 return
 
         await self._set_instance_state(context, state)
@@ -148,7 +150,7 @@ class OnOffCapabilityBasic(OnOffCapability):
             self.state.domain,
             self._get_service(state),
             {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -171,7 +173,7 @@ class OnOffCapabilityAutomation(OnOffCapability):
             automation.DOMAIN,
             self._get_service(state),
             {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -190,7 +192,7 @@ class OnOffCapabilityGroup(OnOffCapability):
             HA_DOMAIN,
             self._get_service(state),
             {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -203,13 +205,21 @@ class OnOffCapabilityScript(OnlyOnCapability):
         """Test if the capability is supported."""
         return self.state.domain in (scene.DOMAIN, script.DOMAIN)
 
+    @property
+    def _wait_for_service_call(self) -> bool:
+        """Check if service should be run in blocking mode."""
+        if self.state.domain == script.DOMAIN:
+            return False
+
+        return super()._wait_for_service_call
+
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
             self.state.domain,
             SERVICE_TURN_ON,
             {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=self.state.domain != script.DOMAIN,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -228,7 +238,7 @@ class OnOffCapabilityButton(OnlyOnCapability):
             self.state.domain,
             button.SERVICE_PRESS,
             {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -247,7 +257,7 @@ class OnOffCapabilityInputButton(OnlyOnCapability):
             self.state.domain,
             input_button.SERVICE_PRESS,
             {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -275,7 +285,11 @@ class OnOffCapabilityLock(OnOffCapability):
             service = SERVICE_LOCK
 
         await self._hass.services.async_call(
-            lock.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
+            lock.DOMAIN,
+            service,
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=self._wait_for_service_call,
+            context=context,
         )
 
 
@@ -299,7 +313,11 @@ class OnOffCapabilityCover(OnOffCapability):
             service = SERVICE_CLOSE_COVER
 
         await self._hass.services.async_call(
-            cover.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
+            cover.DOMAIN,
+            service,
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=self._wait_for_service_call,
+            context=context,
         )
 
 
@@ -353,7 +371,7 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
             media_player.DOMAIN,
             self._get_service(state),
             {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -402,7 +420,11 @@ class OnOffCapabilityVacuum(OnOffCapability):
                 service = vacuum.SERVICE_STOP
 
         await self._hass.services.async_call(
-            vacuum.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
+            vacuum.DOMAIN,
+            service,
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=self._wait_for_service_call,
+            context=context,
         )
 
 
@@ -436,7 +458,9 @@ class OnOffCapabilityClimate(OnOffCapability):
         else:
             service = SERVICE_TURN_OFF
 
-        await self._hass.services.async_call(climate.DOMAIN, service, service_data, blocking=True, context=context)
+        await self._hass.services.async_call(
+            climate.DOMAIN, service, service_data, blocking=self._wait_for_service_call, context=context
+        )
 
 
 class OnOffCapabilityWaterHeater(OnOffCapability):
@@ -470,7 +494,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
             },
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -493,7 +517,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
             water_heater.DOMAIN,
             water_heater.SERVICE_SET_OPERATION_MODE,
             {ATTR_ENTITY_ID: self.state.entity_id, water_heater.ATTR_OPERATION_MODE: mode},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -525,7 +549,11 @@ class OnOffCapabilityValve(OnOffCapability):
             service = SERVICE_CLOSE_VALVE
 
         await self._hass.services.async_call(
-            valve.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
+            valve.DOMAIN,
+            service,
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=self._wait_for_service_call,
+            context=context,
         )
 
 

@@ -78,7 +78,7 @@ class BacklightCapability(StateToggleCapability):
             self.state.domain,
             service,
             {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -115,7 +115,7 @@ class MuteCapability(StateToggleCapability):
             media_player.DOMAIN,
             SERVICE_VOLUME_MUTE,
             {ATTR_ENTITY_ID: self.state.entity_id, media_player.ATTR_MEDIA_VOLUME_MUTED: state.value},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -152,7 +152,11 @@ class PauseCapabilityMediaPlayer(StateToggleCapability):
             service = SERVICE_MEDIA_PLAY
 
         await self._hass.services.async_call(
-            media_player.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
+            media_player.DOMAIN,
+            service,
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=self._wait_for_service_call,
+            context=context,
         )
 
 
@@ -172,7 +176,7 @@ class PauseCapabilityCover(ActionOnlyCapabilityMixin, StateToggleCapability):
             cover.DOMAIN,
             SERVICE_STOP_COVER,
             {ATTR_ENTITY_ID: self.state.entity_id},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -193,7 +197,7 @@ class PauseCapabilityLight(ActionOnlyCapabilityMixin, StateToggleCapability, Lig
             light.DOMAIN,
             SERVICE_TURN_ON,
             {ATTR_ENTITY_ID: self.state.entity_id, light.ATTR_EFFECT: SOLID_LIGHT_EFFECT},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 
@@ -220,7 +224,11 @@ class PauseCapabilityVacuum(StateToggleCapability):
             service = vacuum.SERVICE_START
 
         await self._hass.services.async_call(
-            vacuum.DOMAIN, service, {ATTR_ENTITY_ID: self.state.entity_id}, blocking=True, context=context
+            vacuum.DOMAIN,
+            service,
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=self._wait_for_service_call,
+            context=context,
         )
 
 
@@ -244,7 +252,7 @@ class OscillationCapability(StateToggleCapability):
             fan.DOMAIN,
             fan.SERVICE_OSCILLATE,
             {ATTR_ENTITY_ID: self.state.entity_id, fan.ATTR_OSCILLATING: state.value},
-            blocking=True,
+            blocking=self._wait_for_service_call,
             context=context,
         )
 

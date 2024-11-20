@@ -1,16 +1,23 @@
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 from homeassistant import core
 from homeassistant.components import demo
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, State
+from homeassistant.const import STATE_ON, Platform
+from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
 from custom_components.yandex_smart_home.capability import STATE_CAPABILITIES_REGISTRY, StateCapability
+from custom_components.yandex_smart_home.capability_custom import OnOffCapability
+from custom_components.yandex_smart_home.const import CONF_SLOW
 from custom_components.yandex_smart_home.device import Device
 from custom_components.yandex_smart_home.entry_data import ConfigEntryData
-from custom_components.yandex_smart_home.schema import CapabilityInstance, CapabilityType
+from custom_components.yandex_smart_home.schema import (
+    CapabilityInstance,
+    CapabilityType,
+    OnOffCapabilityInstance,
+    OnOffCapabilityInstanceActionState,
+)
 from tests import MockConfigEntryData
 
 
@@ -483,3 +490,43 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert device.type is None
     capabilities = list((c.type, c.instance) for c in device.get_capabilities())
     assert capabilities == []
+
+
+async def test_capability_service_call(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state_normal = State("switch.normal", STATE_ON)
+    state_slow_true = State("switch.slow_true", STATE_ON)
+    state_slow_false = State("switch.slow_false", STATE_ON)
+
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={
+            state_slow_false.entity_id: {
+                CONF_SLOW: False,
+            },
+            state_slow_true.entity_id: {
+                CONF_SLOW: True,
+            },
+        },
+    )
+
+    cap_normal = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, entry_data, state_normal, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    cap_slow_false = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, entry_data, state_slow_false, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    cap_slow_true = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, entry_data, state_slow_true, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+
+    with patch("homeassistant.core.ServiceRegistry.async_call") as mock:
+        for cap in (cap_normal, cap_slow_false, cap_slow_true):
+            await cap.set_instance_state(
+                Context(), OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=True)
+            )
+    assert mock.call_args_list[0].kwargs["blocking"] is True
+    assert mock.call_args_list[1].kwargs["blocking"] is True
+    assert mock.call_args_list[2].kwargs["blocking"] is False

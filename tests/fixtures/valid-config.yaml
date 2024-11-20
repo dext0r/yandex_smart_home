@@ -28,6 +28,7 @@ yandex_smart_home:
   entity_config:
     switch.kitchen:
       name: Выключатель
+      slow: true
     light.living_room:
       name: Люстра
       modes:
