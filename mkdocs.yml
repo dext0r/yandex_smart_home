@@ -77,6 +77,8 @@ extra_css:
   - assets/extra.css
 
 plugins:
+  - glightbox:
+      background: none
   - search:
       lang:
         - en
