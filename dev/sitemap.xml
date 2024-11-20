@@ -17,10 +17,6 @@
          <lastmod>2024-11-20</lastmod>
     </url>
     <url>
-         <loc>https://docs.yaha-cloud.ru/dev/recipes/</loc>
-         <lastmod>2024-11-20</lastmod>
-    </url>
-    <url>
          <loc>https://docs.yaha-cloud.ru/dev/supported-devices/</loc>
          <lastmod>2024-11-20</lastmod>
     </url>
@@ -130,6 +126,34 @@
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/dev/platforms/yandex/</loc>
+         <lastmod>2024-11-20</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/recipes/about/</loc>
+         <lastmod>2024-11-20</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/recipes/dishwasher/</loc>
+         <lastmod>2024-11-20</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/recipes/heater/</loc>
+         <lastmod>2024-11-20</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/recipes/humidifier/</loc>
+         <lastmod>2024-11-20</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/recipes/kettle/</loc>
+         <lastmod>2024-11-20</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/recipes/other/</loc>
+         <lastmod>2024-11-20</lastmod>
+    </url>
+    <url>
+         <loc>https://docs.yaha-cloud.ru/dev/recipes/tv/</loc>
          <lastmod>2024-11-20</lastmod>
     </url>
 </urlset>
