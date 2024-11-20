@@ -116,6 +116,7 @@ yandex_smart_home:
     switch.r4s1_kettle_boil:
       name: Чайник
       room: Кухня
+      backlight_entity_id: light.r4s1_kettle_light
       error_code_template: |
         {% if capability.type == 'devices.capabilities.on_off' and capability.state.instance == 'on' and capability.state.value %}
           {% if states('sensor.r4s1_kettle_water_level')|int(0) < 10 %}

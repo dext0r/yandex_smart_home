@@ -12,8 +12,10 @@ from homeassistant.const import (
     SERVICE_MEDIA_PAUSE,
     SERVICE_MEDIA_PLAY,
     SERVICE_STOP_COVER,
+    SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
+    STATE_ON,
     STATE_PAUSED,
     STATE_PLAYING,
 )
@@ -49,6 +51,36 @@ class StateToggleCapability(ToggleCapability, StateCapability[ToggleCapabilityIn
     """Base class for a toggle capability based on the state."""
 
     pass
+
+
+class BacklightCapability(StateToggleCapability):
+    """Capability to represent state as backlight toggle."""
+
+    instance = ToggleCapabilityInstance.BACKLIGHT
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        return True
+
+    def get_value(self) -> bool:
+        """Return the current capability value."""
+        return self.state.state == STATE_ON
+
+    async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        if state.value:
+            service = SERVICE_TURN_ON
+        else:
+            service = SERVICE_TURN_OFF
+
+        await self._hass.services.async_call(
+            self.state.domain,
+            service,
+            {ATTR_ENTITY_ID: self.state.entity_id},
+            blocking=True,
+            context=context,
+        )
 
 
 class MuteCapability(StateToggleCapability):

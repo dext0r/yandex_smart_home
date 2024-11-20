@@ -8,6 +8,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.yandex_smart_home import DOMAIN, YandexSmartHome
+from custom_components.yandex_smart_home.capability_toggle import BacklightCapability
 from custom_components.yandex_smart_home.config_flow import ConfigFlowHandler
 from custom_components.yandex_smart_home.const import (
     CONF_CONNECTION_TYPE,
@@ -27,7 +28,12 @@ from custom_components.yandex_smart_home.property_custom import (
     MotionEventPlatformCustomProperty,
 )
 from custom_components.yandex_smart_home.schema import ResponseCode
-from tests.test_device import CONF_ENTITY_PROPERTIES, CONF_ENTITY_PROPERTY_ENTITY, CONF_ENTITY_PROPERTY_TYPE
+from tests.test_device import (
+    CONF_BACKLIGHT_ENTITY_ID,
+    CONF_ENTITY_PROPERTIES,
+    CONF_ENTITY_PROPERTY_ENTITY,
+    CONF_ENTITY_PROPERTY_TYPE,
+)
 
 from . import MockConfigEntryData, generate_entity_filter
 
@@ -114,13 +120,18 @@ def test_entry_data_trackable_entity_states(hass: HomeAssistant) -> None:
                     {CONF_ENTITY_PROPERTY_TYPE: "button", CONF_ENTITY_PROPERTY_ENTITY: "event.button"},
                 ],
             },
+            "water_heater.kettle": {
+                CONF_BACKLIGHT_ENTITY_ID: "light.kettle_backlight",
+            },
             "switch.not_exposed": {
                 CONF_ENTITY_PROPERTIES: [
                     {CONF_ENTITY_PROPERTY_TYPE: "button", CONF_ENTITY_PROPERTY_ENTITY: "event.button"},
                 ],
             },
         },
-        entity_filter=generate_entity_filter(include_entity_globs=["*"], exclude_entities=["switch.not_exposed"]),
+        entity_filter=generate_entity_filter(
+            include_entity_globs=["*"], exclude_entities=["switch.not_exposed", "light.kettle_backlight"]
+        ),
     )
 
     assert entry_data._get_trackable_entity_states() == {
@@ -138,6 +149,12 @@ def test_entry_data_trackable_entity_states(hass: HomeAssistant) -> None:
             (
                 "sensor.bar",
                 MotionEventPlatformCustomProperty,
+            ),
+        ],
+        "light.kettle_backlight": [
+            (
+                "water_heater.kettle",
+                BacklightCapability,
             ),
         ],
     }

@@ -11,6 +11,7 @@ from homeassistant.const import (
     SERVICE_MEDIA_PAUSE,
     SERVICE_MEDIA_PLAY,
     SERVICE_STOP_COVER,
+    SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     SERVICE_VOLUME_MUTE,
     STATE_CLOSED,
@@ -32,6 +33,7 @@ from custom_components.yandex_smart_home.schema import (
     ToggleCapabilityInstanceActionState,
 )
 from tests.test_capability_color import LightEntityFeature
+from tests.test_device import BacklightCapability
 
 from . import MockConfigEntryData
 from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
@@ -43,6 +45,24 @@ def _action_state_on(instance: ToggleCapabilityInstance) -> ToggleCapabilityInst
 
 def _action_state_off(instance: ToggleCapabilityInstance) -> ToggleCapabilityInstanceActionState:
     return ToggleCapabilityInstanceActionState(instance=instance, value=False)
+
+
+async def test_capability_backlight(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state = State("light.foo", STATE_ON)
+    cap = BacklightCapability(hass, entry_data, "foo", state)
+    assert cap.retrievable is True
+    assert cap.parameters.dict() == {"instance": "backlight"}
+    assert cap.get_value() is True
+
+    on_calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
+    await cap.set_instance_state(Context(), _action_state_on(ToggleCapabilityInstance.BACKLIGHT))
+    assert len(on_calls) == 1
+    assert on_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
+
+    off_calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_OFF)
+    await cap.set_instance_state(Context(), _action_state_off(ToggleCapabilityInstance.BACKLIGHT))
+    assert len(off_calls) == 1
+    assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
 
 async def test_capability_mute(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:

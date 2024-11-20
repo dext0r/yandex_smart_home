@@ -65,11 +65,11 @@ class MockModeCapabilityAShortIndexFallback(MockModeCapabilityA):
 
 async def test_capability_mode_unsupported(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("switch.test", STATE_OFF)
-    cap = MockModeCapabilityA(hass, entry_data, state)
+    cap = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
     assert cap.supported is False
 
     state = State("switch.test", STATE_OFF, {"modes_list": ["foo", "bar"]})
-    cap = MockModeCapabilityA(hass, entry_data, state)
+    cap = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
     assert cap.supported is True
 
 
@@ -77,7 +77,7 @@ async def test_capability_mode_auto_mapping(
     hass: HomeAssistant, entry_data: MockConfigEntryData, caplog: pytest.LogCaptureFixture
 ) -> None:
     state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3", "mode_4", "eco", "mode_5"]})
-    cap = MockModeCapabilityAShortIndexFallback(hass, entry_data, state)
+    cap = MockModeCapabilityAShortIndexFallback(hass, entry_data, state.entity_id, state)
 
     assert cap.supported is True
     assert cap.supported_ha_modes == ["mode_1", "mode_3", "mode_4", "eco", "mode_5"]
@@ -148,7 +148,7 @@ async def test_capability_mode_custom_mapping(hass: HomeAssistant) -> None:
             }
         },
     )
-    cap = MockModeCapabilityA(hass, entry_data, state)
+    cap = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
     assert cap.supported is True
     assert cap.supported_ha_modes == ["mode_1", "mode_foo", "mode_bar", "americano"]  # yeap, strange too
     assert cap.supported_yandex_modes == [ModeCapabilityMode.ECO, ModeCapabilityMode.LATTE]
@@ -156,7 +156,7 @@ async def test_capability_mode_custom_mapping(hass: HomeAssistant) -> None:
 
 async def test_capability_mode_fallback_index(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("switch.test", STATE_OFF, {"modes_list": ["some", "mode_1", "foo", "off"]})
-    cap = MockModeCapabilityA(hass, entry_data, state)
+    cap = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
     assert cap.supported is True
     assert cap.supported_ha_modes == ["some", "mode_1", "foo", "off"]
     assert cap.supported_yandex_modes == [
@@ -182,7 +182,7 @@ async def test_capability_mode_fallback_index(hass: HomeAssistant, entry_data: M
             }
         },
     )
-    cap = MockModeCapabilityA(hass, entry_data, state)
+    cap = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
     assert cap.supported is True
     assert cap.supported_yandex_modes == [
         ModeCapabilityMode.FOWL,
@@ -191,7 +191,7 @@ async def test_capability_mode_fallback_index(hass: HomeAssistant, entry_data: M
     ]
 
     state = State("switch.test", STATE_OFF, {"modes_list": [f"mode_{v}" for v in range(0, 11)]})
-    cap = MockModeCapabilityA(hass, entry_data, state)
+    cap = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
     assert cap.supported is True
     assert cap.get_yandex_mode_by_ha_mode("mode_9") == "ten"
     assert cap.get_yandex_mode_by_ha_mode("mode_11") is None
@@ -209,17 +209,17 @@ async def test_capability_mode_fallback_index(hass: HomeAssistant, entry_data: M
             }
         },
     )
-    cap = MockModeCapabilityA(hass, entry_data, state)
+    cap = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
     assert cap.supported is True
     assert cap.supported_yandex_modes == ["americano", "baby_food"]
 
 
 async def test_capability_mode_get_value(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3"], "current_mode": "mode_1"})
-    cap_a = MockModeCapabilityA(hass, entry_data, state)
+    cap_a = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
     assert cap_a.get_value() == ModeCapabilityMode.FOWL
 
-    cap = MockModeCapability(hass, entry_data, state)
+    cap = MockModeCapability(hass, entry_data, state.entity_id, state)
     assert cap.get_value() is None
     cap.state.state = "mode_3"
     assert cap.get_value() == ModeCapabilityMode.PUERH_TEA

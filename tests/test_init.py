@@ -149,6 +149,7 @@ async def test_valid_config(hass: HomeAssistant) -> None:
     assert entity_config["switch.r4s1_kettle_boil"] == {
         "name": "Чайник",
         "room": "Кухня",
+        "backlight_entity_id": "light.r4s1_kettle_light",
         "custom_ranges": {
             "temperature": {
                 "state_attribute": "temperature",

@@ -28,6 +28,7 @@ from .capability_custom import CustomCapability, get_custom_capability
 from .cloud import CloudManager
 from .color import ColorProfiles
 from .const import (
+    CONF_BACKLIGHT_ENTITY_ID,
     CONF_CLOUD_INSTANCE,
     CONF_CLOUD_INSTANCE_CONNECTION_TOKEN,
     CONF_CLOUD_INSTANCE_ID,
@@ -54,7 +55,7 @@ from .const import (
     ConnectionType,
     EntityId,
 )
-from .device import DeviceId
+from .device import BacklightCapability, DeviceId, StateCapability
 from .helpers import APIError, CacheStore, SmartHomePlatform
 from .notifier import CloudNotifier, Notifier, NotifierConfig, YandexDirectNotifier
 from .property import StateProperty
@@ -417,11 +418,13 @@ class ConfigEntryData:
 
         return templates
 
-    def _get_trackable_entity_states(self) -> dict[EntityId, list[tuple[DeviceId, type[StateProperty]]]]:
+    def _get_trackable_entity_states(
+        self,
+    ) -> dict[EntityId, list[tuple[DeviceId, type[StateProperty | StateCapability[Any]]]]]:
         """Return entity capability and property class types to track state changes."""
-        states: dict[EntityId, list[tuple[DeviceId, type[StateProperty]]]] = {}
+        states: dict[EntityId, list[tuple[DeviceId, type[StateProperty | StateCapability[Any]]]]] = {}
 
-        def _states_append(_entity_id: str, _device_id: str, t: type[StateProperty]) -> None:
+        def _states_append(_entity_id: str, _device_id: str, t: type[StateProperty | StateCapability[Any]]) -> None:
             states.setdefault(_entity_id, [])
             states[_entity_id].append((_device_id, t))
 
@@ -433,5 +436,8 @@ class ConfigEntryData:
                 if event_platform_property := get_event_platform_custom_property_type(property_config):
                     entity_id: str = property_config[CONF_ENTITY_PROPERTY_ENTITY]
                     _states_append(entity_id, device_id, event_platform_property)
+
+            if backlight_entity_id := entity_config.get(CONF_BACKLIGHT_ENTITY_ID):
+                _states_append(backlight_entity_id, device_id, BacklightCapability)
 
         return states

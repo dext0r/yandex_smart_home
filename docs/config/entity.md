@@ -169,6 +169,24 @@
             entity_id: switch.camera_aquarium
     ```
 
+## Подсветка { id=backlight }
+
+> Параметр: `backlight_entity_id`
+
+Позволяет подключить к устройству осветительный прибор (например подсветка чайника). Все функции осветительного прибора (яркость, цвет, температура) будут так же добавлены к устройству.
+
+В качестве подсветки могут выступать не только осветительные приборы (`light.*`), но и любые другие объекты, поддерживающие действия `turn_on` и `turn_off`.
+
+!!! example "Пример"
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        water_heater.kettle:
+          backlight_entity_id: light.kettle_backlight
+        climate.ac:
+          backlight_entity_id: switch.ac_backlight
+    ```
+
 ## Ограничение уровня громкости { id=range }
 
 > Параметр: `range`

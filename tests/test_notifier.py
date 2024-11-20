@@ -1231,8 +1231,12 @@ async def test_notifier_report_states(
     assert aioclient_mock.call_count == 0
     assert notifier._unsub_report_states is None
 
-    await notifier._pending.async_add([OnOffCapabilityBasic(hass, entry_data, State("switch.on", "on"))], [])
-    await notifier._pending.async_add([MockCapabilityFail(hass, entry_data, State("switch.fail", "on"))], [])
+    await notifier._pending.async_add(
+        [OnOffCapabilityBasic(hass, entry_data, "switch.on", State("switch.on", "on"))], []
+    )
+    await notifier._pending.async_add(
+        [MockCapabilityFail(hass, entry_data, "switch.fail", State("switch.fail", "on"))], []
+    )
     await notifier._pending.async_add(
         [TemperatureSensor(hass, entry_data, "sensor.temperature", State("sensor.temperature", "5"))], []
     )
@@ -1274,7 +1278,9 @@ async def test_notifier_report_states(
     }
 
     with patch.object(notifier._pending, "async_get_all", return_value=notifier._pending._device_states):
-        await notifier._pending.async_add([OnOffCapabilityBasic(hass, entry_data, State("switch.on", "on"))], [])
+        await notifier._pending.async_add(
+            [OnOffCapabilityBasic(hass, entry_data, "switch.on", State("switch.on", "on"))], []
+        )
         await notifier._async_report_states()
         await hass.async_block_till_done()
         assert notifier._pending.empty is False
@@ -1283,9 +1289,9 @@ async def test_notifier_report_states(
 
 async def test_notifier_pending_states(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     ps = PendingStates()
-    await ps.async_add([OnOffCapabilityBasic(hass, entry_data, State("switch.test", "on"))], [])
+    await ps.async_add([OnOffCapabilityBasic(hass, entry_data, "switch.test", State("switch.test", "on"))], [])
     assert ps._device_states["switch.test"][0].get_value() is True
-    await ps.async_add([OnOffCapabilityBasic(hass, entry_data, State("switch.test", "off"))], [])
+    await ps.async_add([OnOffCapabilityBasic(hass, entry_data, "switch.test", State("switch.test", "off"))], [])
     assert ps._device_states["switch.test"][0].get_value() is False
 
 

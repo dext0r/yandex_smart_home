@@ -60,12 +60,12 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
     type: CapabilityType = CapabilityType.COLOR_SETTING
     instance: CapabilityInstance = ColorSettingCapabilityInstance.BASE
 
-    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, state: State):
+    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, device_id: str, state: State):
         """Initialize a capability for the state."""
-        super().__init__(hass, entry_data, state)
+        super().__init__(hass, entry_data, device_id, state)
 
-        self._color = RGBColorCapability(hass, entry_data, state)
-        self._temperature = ColorTemperatureCapability(hass, entry_data, state)
+        self._color = RGBColorCapability(hass, entry_data, device_id, state)
+        self._temperature = ColorTemperatureCapability(hass, entry_data, device_id, state)
         self._scene = self._get_scene_capability()
 
     @property
@@ -105,7 +105,7 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
             )
             return cast(ColorSceneCapability, custom_capability)
 
-        return ColorSceneStateCapability(self._hass, self._entry_data, self.state)
+        return ColorSceneStateCapability(self._hass, self._entry_data, self.device_id, self.state)
 
     @property
     def _capabilities(self) -> list[Capability[Any]]:

@@ -58,6 +58,7 @@ from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
 from homeassistant.helpers.template import Template
 
 from custom_components.yandex_smart_home.const import (
+    CONF_BACKLIGHT_ENTITY_ID,
     CONF_ENTITY_CUSTOM_MODES,
     CONF_ENTITY_CUSTOM_RANGES,
     CONF_ENTITY_CUSTOM_TOGGLES,
@@ -79,6 +80,7 @@ from . import (  # noqa: F401
 )
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, DummyCapability, StateCapability
 from .capability_custom import get_custom_capability
+from .capability_toggle import BacklightCapability
 from .helpers import ActionNotAllowed, APIError
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .property_custom import get_custom_property, get_event_platform_custom_property_type
@@ -192,6 +194,10 @@ class Device:
         capabilities: list[Capability[Any]] = []
         disabled_capabilities: list[Capability[Any]] = []
 
+        def _append_capabilities(_capability: Capability[Any]) -> None:
+            if _capability.supported and _capability not in capabilities and _capability not in disabled_capabilities:
+                capabilities.append(_capability)
+
         if (state_template := self._config.get(CONF_STATE_TEMPLATE)) is not None:
             capabilities.append(
                 get_custom_capability(
@@ -227,17 +233,22 @@ class Device:
                                 self.id,
                             )
 
-                            if custom_capability.supported and custom_capability not in capabilities:
-                                capabilities.append(custom_capability)
+                            _append_capabilities(custom_capability)
 
         for CapabilityT in STATE_CAPABILITIES_REGISTRY:
-            state_capability = CapabilityT(self._hass, self._entry_data, self._state)
-            if (
-                state_capability.supported
-                and state_capability not in capabilities
-                and state_capability not in disabled_capabilities
-            ):
-                capabilities.append(state_capability)
+            state_capability = CapabilityT(self._hass, self._entry_data, self.id, self._state)
+            _append_capabilities(state_capability)
+
+        if backlight_entity_id := self._config.get(CONF_BACKLIGHT_ENTITY_ID):
+            backlight_state = self._hass.states.get(backlight_entity_id)
+            if backlight_state and backlight_entity_id != self.id:
+                backlight_device = Device(self._hass, self._entry_data, backlight_state.entity_id, backlight_state)
+                for capability in backlight_device.get_capabilities():
+                    if capability.type != CapabilityType.ON_OFF:
+                        _append_capabilities(capability)
+
+                backlight_capability = BacklightCapability(self._hass, self._entry_data, self.id, backlight_state)
+                _append_capabilities(backlight_capability)
 
         return capabilities
 

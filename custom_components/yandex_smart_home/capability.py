@@ -202,12 +202,12 @@ class StateCapability(Capability[CapabilityInstanceActionState], Protocol):
     _hass: HomeAssistant
     _entry_data: ConfigEntryData
 
-    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, state: State):
+    def __init__(self, hass: HomeAssistant, entry_data: ConfigEntryData, device_id: str, state: State):
         """Initialize a capability for the state."""
         self._hass = hass
         self._entry_data = entry_data
 
-        self.device_id = state.entity_id
+        self.device_id = device_id
         self.state = state
 
     @property

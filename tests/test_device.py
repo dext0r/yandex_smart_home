@@ -1,10 +1,11 @@
 from typing import Any
 from unittest.mock import PropertyMock, patch
 
-from homeassistant.components import media_player
+from homeassistant.components import light, media_player
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.cover import CoverDeviceClass
 from homeassistant.components.demo.light import DemoLight
+from homeassistant.components.light import ColorMode, LightEntityFeature
 from homeassistant.components.media_player import MediaPlayerDeviceClass, MediaPlayerEntityFeature
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.components.switch import SwitchDeviceClass
@@ -31,6 +32,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_mock_service
 
 from custom_components.yandex_smart_home.capability_color import (
+    ColorSceneStateCapability,
     ColorSettingCapability,
     ColorTemperatureCapability,
     RGBColorCapability,
@@ -50,6 +52,7 @@ from custom_components.yandex_smart_home.capability_onoff import (
 from custom_components.yandex_smart_home.capability_range import BrightnessCapability, VolumeCapability
 from custom_components.yandex_smart_home.capability_toggle import MuteCapability, StateToggleCapability
 from custom_components.yandex_smart_home.const import (
+    CONF_BACKLIGHT_ENTITY_ID,
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
     CONF_ENTITY_CUSTOM_MODE_SET_MODE,
     CONF_ENTITY_CUSTOM_MODES,
@@ -66,7 +69,7 @@ from custom_components.yandex_smart_home.const import (
     CONF_ENTRY_ALIASES,
     DOMAIN,
 )
-from custom_components.yandex_smart_home.device import Device
+from custom_components.yandex_smart_home.device import BacklightCapability, Device
 from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.property_custom import (
     ButtonPressCustomEventProperty,
@@ -181,6 +184,68 @@ async def test_device_capabilities(hass: HomeAssistant) -> None:
 
     device_switch = Device(hass, entry_data, state_switch.entity_id, state_switch)
     assert [type(c) for c in device_switch.get_capabilities()] == [CustomOnOffCapability]
+
+
+async def test_device_capabilities_with_backlight_entity(hass: HomeAssistant) -> None:
+    state_light = State(
+        "light.backlight",
+        STATE_ON,
+        {
+            ATTR_SUPPORTED_FEATURES: LightEntityFeature.EFFECT,
+            light.ATTR_SUPPORTED_COLOR_MODES: [ColorMode.BRIGHTNESS, ColorMode.COLOR_TEMP, ColorMode.RGB],
+            light.ATTR_EFFECT_LIST: ["alarm"],
+        },
+    )
+    state_switch = State("switch.test", "off")
+    hass.states.async_set(state_light.entity_id, state_light.state, state_light.attributes)
+    hass.states.async_set(state_switch.entity_id, state_switch.state, state_switch.attributes)
+
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={
+            state_switch.entity_id: {CONF_BACKLIGHT_ENTITY_ID: "light.foo"},
+        },
+        entity_filter=generate_entity_filter(include_entity_globs=[state_switch.entity_id]),
+    )
+    device = Device(hass, entry_data, state_switch.entity_id, state_switch)
+    assert [type(c) for c in device.get_capabilities()] == [OnOffCapabilityBasic]
+
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={
+            state_switch.entity_id: {CONF_BACKLIGHT_ENTITY_ID: state_light.entity_id},
+        },
+        entity_filter=generate_entity_filter(include_entity_globs=[state_switch.entity_id]),
+    )
+    device = Device(hass, entry_data, state_switch.entity_id, state_switch)
+    assert [type(c) for c in device.get_capabilities()] == [
+        OnOffCapabilityBasic,
+        ColorSettingCapability,
+        RGBColorCapability,
+        ColorTemperatureCapability,
+        ColorSceneStateCapability,
+        BrightnessCapability,
+        BacklightCapability,
+    ]
+    backlight_capability = [c for c in device.get_capabilities() if isinstance(c, BacklightCapability)][0]
+    assert backlight_capability.get_value() is True
+
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={
+            state_light.entity_id: {CONF_BACKLIGHT_ENTITY_ID: state_light.entity_id},
+        },
+        entity_filter=generate_entity_filter(include_entity_globs=["*"]),
+    )
+    device = Device(hass, entry_data, state_light.entity_id, state_light)
+    assert [type(c) for c in device.get_capabilities()] == [
+        ColorSettingCapability,
+        RGBColorCapability,
+        ColorTemperatureCapability,
+        ColorSceneStateCapability,
+        OnOffCapabilityBasic,
+        BrightnessCapability,
+    ]
 
 
 async def test_device_disabled_capabilities(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -623,9 +688,9 @@ async def test_device_query(hass: HomeAssistant, entry_data: MockConfigEntryData
 
     state = State("switch.test", STATE_ON)
     state_pause = State("input_boolean.pause", STATE_OFF)
-    cap_onoff = OnOffCapabilityBasic(hass, entry_data, state)
-    cap_button = OnOffCapabilityButton(hass, entry_data, state)
-    cap_pause = PauseCapability(hass, entry_data, state_pause)
+    cap_onoff = OnOffCapabilityBasic(hass, entry_data, state.entity_id, state)
+    cap_button = OnOffCapabilityButton(hass, entry_data, state.entity_id, state)
+    cap_pause = PauseCapability(hass, entry_data, state_pause.entity_id, state_pause)
 
     state_temp = State(
         "sensor.temp",

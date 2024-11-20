@@ -15,6 +15,7 @@ import voluptuous as vol
 
 from .color import ColorName, rgb_to_int
 from .const import (
+    CONF_BACKLIGHT_ENTITY_ID,
     CONF_BETA,
     CONF_CLOUD_STREAM,
     CONF_COLOR_PROFILE,
@@ -420,6 +421,7 @@ ENTITY_SCHEMA = vol.All(
             vol.Optional(CONF_ENTITY_PROPERTIES): [ENTITY_PROPERTY_SCHEMA],
             vol.Optional(CONF_SUPPORT_SET_CHANNEL): cv.boolean,
             vol.Optional(CONF_STATE_UNKNOWN): cv.boolean,
+            vol.Optional(CONF_BACKLIGHT_ENTITY_ID): cv.entity_id,
             vol.Optional(CONF_COLOR_PROFILE): cv.string,
             vol.Optional(CONF_ERROR_CODE_TEMPLATE): cv.template,
             vol.Optional(CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,

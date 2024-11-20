@@ -88,11 +88,11 @@ async def test_capability_range(
         def support_random_access(self) -> bool:
             return True
 
-    cap = MockCapability(hass, entry_data, State("switch.test", STATE_ON))
+    cap = MockCapability(hass, entry_data, "switch.test", State("switch.test", STATE_ON))
     assert cap.retrievable is False
     assert cap.parameters == RangeCapabilityParameters(instance=RangeCapabilityInstance.VOLUME, random_access=False)
 
-    cap = MockCapabilityRandomAccess(hass, entry_data, State("switch.test", STATE_ON))
+    cap = MockCapabilityRandomAccess(hass, entry_data, "switch.test", State("switch.test", STATE_ON))
     assert cap.retrievable
     assert cap.support_random_access
     assert cap._range == RangeCapabilityRange(min=0.0, max=100.0, precision=1.0)
@@ -1112,8 +1112,8 @@ async def test_capability_range_relative_only_parameters(
         def support_random_access(self) -> bool:
             return False
 
-    cap_random = MockCapabilityRandom(hass, entry_data, State("switch.foo", STATE_OFF))
-    cap_relative = MockCapabilityRelative(hass, entry_data, State("switch.foo", STATE_OFF))
+    cap_random = MockCapabilityRandom(hass, entry_data, "switch.foo", State("switch.foo", STATE_OFF))
+    cap_relative = MockCapabilityRelative(hass, entry_data, "switch.foo", State("switch.foo", STATE_OFF))
     cap_random.instance = cap_relative.instance = instance
 
     assert cap_random.parameters.range is not None

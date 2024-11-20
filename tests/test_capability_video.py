@@ -119,7 +119,7 @@ async def test_capability_video_stream_supported(hass: HomeAssistant, entry_data
 
 async def test_capability_video_stream_request_stream(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
-    cap = VideoStreamCapability(hass, entry_data, state)
+    cap = VideoStreamCapability(hass, entry_data, state.entity_id, state)
 
     with patch(
         "custom_components.yandex_smart_home.capability_video.get_camera_from_entity_id",

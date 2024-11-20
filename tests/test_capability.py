@@ -24,7 +24,7 @@ def get_capabilities(
     caps = []
 
     for CapabilityT in STATE_CAPABILITIES_REGISTRY:
-        capability = CapabilityT(hass, entry_data, state)
+        capability = CapabilityT(hass, entry_data, state.entity_id, state)
 
         if capability.type != capability_type or capability.instance != instance:
             continue
