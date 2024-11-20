@@ -6,7 +6,7 @@ repo_url: https://github.com/dext0r/yandex_smart_home
 nav:
   - О компоненте: index.md
   - Особенности интеграции и УДЯ : quirks.md
-  - Установка компонента: install/component.md
+  - Установка и обновление компонента: install/component.md
   - Добавление интеграции: install/integration.md
   - Настройка интеграции:
       - Способы настройки: config/getting-started.md
