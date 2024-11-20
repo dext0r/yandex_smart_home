@@ -3,7 +3,7 @@ from unittest.mock import patch
 from homeassistant.auth.models import User
 from homeassistant.const import CONF_PLATFORM
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers import entity_registry as er, issue_registry as ir
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -14,12 +14,15 @@ from custom_components.yandex_smart_home.const import (
     CONF_CONNECTION_TYPE,
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
     CONF_ENTITY_CUSTOM_TOGGLES,
+    CONF_FILTER_SOURCE,
+    CONF_LABEL,
     CONF_LINKED_PLATFORMS,
     CONF_NOTIFIER,
     CONF_PRESSURE_UNIT,
     CONF_SETTINGS,
     CONF_USER_ID,
     ConnectionType,
+    EntityFilterSource,
 )
 from custom_components.yandex_smart_home.entry_data import ConfigEntryData
 from custom_components.yandex_smart_home.helpers import APIError, SmartHomePlatform
@@ -186,6 +189,28 @@ async def test_entry_data_unsupported_linked_platform(hass: HomeAssistant, caplo
     )
     assert entry_data.linked_platforms == set()
     assert caplog.messages == ["Unsupported platform: foo"]
+
+
+async def test_entry_data_should_expose_labels(hass: HomeAssistant, entity_registry: er.EntityRegistry) -> None:
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT},
+        options={CONF_FILTER_SOURCE: EntityFilterSource.LABEL, CONF_LABEL: "foo"},
+    )
+    entry_data = MockConfigEntryData(hass, entry=entry)
+    await entry_data.async_setup()
+
+    assert entry_data.should_expose("sensor.test_1") is False
+
+    e = entity_registry.async_get_or_create("sensor", "test", "1")
+    assert entry_data.should_expose("sensor.test_1") is False
+
+    entity_registry.async_update_entity(e.entity_id, labels={"bar"})
+    assert entry_data.should_expose("sensor.test_1") is False
+
+    entity_registry.async_update_entity(e.entity_id, labels={"bar", "foo"})
+    assert entry_data.should_expose("sensor.test_1") is True
 
 
 async def test_deprecated_pressure_unit(

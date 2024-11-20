@@ -17,7 +17,7 @@ from homeassistant.const import (
     EVENT_HOMEASSISTANT_STOP,
 )
 from homeassistant.core import CoreState, HomeAssistant
-from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers import entity_registry as er, issue_registry as ir
 from homeassistant.helpers.entityfilter import EntityFilter
 from homeassistant.helpers.template import Template
 from homeassistant.helpers.typing import ConfigType
@@ -41,6 +41,8 @@ from .const import (
     CONF_ENTITY_PROPERTIES,
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTRY_ALIASES,
+    CONF_FILTER_SOURCE,
+    CONF_LABEL,
     CONF_LINKED_PLATFORMS,
     CONF_NOTIFIER,
     CONF_PRESSURE_UNIT,
@@ -53,6 +55,7 @@ from .const import (
     ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS,
     ISSUE_ID_MISSING_SKILL_DATA,
     ConnectionType,
+    EntityFilterSource,
     EntityId,
 )
 from .device import BacklightCapability, DeviceId, StateCapability
@@ -79,6 +82,8 @@ class ConfigEntryData:
 
     cache: CacheStore
 
+    _entity_registry: er.EntityRegistry
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -104,6 +109,8 @@ class ConfigEntryData:
 
         self.cache = CacheStore(self._hass)
         await self.cache.async_load()
+
+        self._entity_registry = er.async_get(self._hass)
 
         if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             await self._async_setup_cloud_connection()
@@ -240,6 +247,13 @@ class ConfigEntryData:
 
     def should_expose(self, entity_id: str) -> bool:
         """Test if the entity should be exposed."""
+        if self.entry.options.get(CONF_FILTER_SOURCE) == EntityFilterSource.LABEL:
+            entity_entry = self._entity_registry.async_get(entity_id)
+            if not entity_entry:
+                return False
+
+            return self.entry.options[CONF_LABEL] in entity_entry.labels
+
         if self._entity_filter and not self._entity_filter.empty_filter:
             return self._entity_filter(entity_id)
 

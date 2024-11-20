@@ -21,6 +21,7 @@ CONF_ENTITY_CONFIG = "entity_config"
 CONF_FILTER = "filter"
 CONF_FILTER_SOURCE = "filter_source"
 CONF_ENTRY_ALIASES = "entry_aliases"
+CONF_LABEL = "label"
 CONF_LINKED_PLATFORMS = "linked_platforms"
 CONF_TURN_ON = "turn_on"
 CONF_TURN_OFF = "turn_off"
@@ -121,6 +122,7 @@ class EntityFilterSource(StrEnum):
     CONFIG_ENTRY = "config_entry"
     GET_FROM_CONFIG_ENTRY = "get_from_config_entry"
     YAML = "yaml"
+    LABEL = "label"
 
 
 class MediaPlayerFeature(StrEnum):

@@ -27,6 +27,7 @@ from custom_components.yandex_smart_home.const import (
     CONF_ENTRY_ALIASES,
     CONF_FILTER,
     CONF_FILTER_SOURCE,
+    CONF_LABEL,
     CONF_LINKED_PLATFORMS,
     CONF_SKILL,
     CONF_USER_ID,
@@ -650,6 +651,32 @@ async def test_config_flow_direct_vk(
             "id": "478278354",
             "user_id": hass_admin_user.id,
         },
+    }
+
+    component: YandexSmartHome = hass.data[DOMAIN]
+    assert len(component._entry_datas) == 1
+
+
+async def test_config_flow_direct_filter_source_label(hass: HomeAssistant, hass_admin_user: User) -> None:
+    result = await hass.config_entries.flow.async_configure(
+        (await _async_forward_to_step_expose_settings(hass, hass_admin_user, SmartHomePlatform.YANDEX))["flow_id"],
+        {CONF_FILTER_SOURCE: EntityFilterSource.LABEL},
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "choose_label"
+
+    result2 = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_LABEL: "foo"})
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    assert result2["title"] == "Yandex Smart Home: Direct (Mock User / foo)"
+    assert result2["data"] == {"connection_type": "direct", "platform": "yandex"}
+    assert result2["options"] == {
+        "entry_aliases": True,
+        "filter_source": "label",
+        "label": "foo",
+        "skill": {"id": "foo", "token": "foo", "user_id": hass_admin_user.id},
     }
 
     component: YandexSmartHome = hass.data[DOMAIN]

@@ -16,6 +16,8 @@ from homeassistant.helpers import network, selector
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES, FILTER_SCHEMA, EntityFilter
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    LabelSelector,
+    LabelSelectorConfig,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
@@ -40,6 +42,7 @@ from .const import (
     CONF_ENTRY_ALIASES,
     CONF_FILTER,
     CONF_FILTER_SOURCE,
+    CONF_LABEL,
     CONF_LINKED_PLATFORMS,
     CONF_SKILL,
     CONF_USER_ID,
@@ -94,6 +97,7 @@ FILTER_SOURCE_SELECTOR = SelectSelector(
             SelectOptionDict(
                 value=EntityFilterSource.GET_FROM_CONFIG_ENTRY, label=EntityFilterSource.GET_FROM_CONFIG_ENTRY
             ),
+            SelectOptionDict(value=EntityFilterSource.LABEL, label=EntityFilterSource.LABEL),
             SelectOptionDict(value=EntityFilterSource.YAML, label=EntityFilterSource.YAML),
         ],
     ),
@@ -254,6 +258,8 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
                     return await self.async_step_include_entities()
                 case EntityFilterSource.GET_FROM_CONFIG_ENTRY:
                     return await self.async_step_update_filter()
+                case EntityFilterSource.LABEL:
+                    return await self.async_step_choose_label()
 
             return await self.async_step_done()
 
@@ -341,6 +347,23 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
                 }
             ),
             errors=errors,
+        )
+
+    async def async_step_choose_label(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
+        """Choose a label that should be used as filter for entities."""
+        if user_input is not None:
+            self._options.update(user_input)
+            return await self.async_step_done()
+
+        return self.async_show_form(
+            step_id="choose_label",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_LABEL, default=self._options.get(CONF_LABEL, "")): LabelSelector(
+                        LabelSelectorConfig(multiple=False),
+                    )
+                }
+            ),
         )
 
     async def async_step_done(self, _: ConfigType | None = None) -> ConfigFlowResult:
