@@ -383,7 +383,7 @@ async def test_device_info(
     )
     entity_registry.async_get_or_create("switch", "test", "1", device_id=device_entry.id)
     device = Device(hass, entry_data, state.entity_id, state)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.id == "switch.test_1"
     assert d.device_info
@@ -404,7 +404,7 @@ async def test_device_info(
         device_id=device_entry.id,
     )
     device = Device(hass, entry_data, state.entity_id, state)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.id == "switch.test_2"
     assert d.device_info
@@ -435,24 +435,24 @@ async def test_device_name_room(
     )
     entry = entity_registry.async_get_or_create("switch", "test", "1", device_id=dev_entry.id)
     device = Device(hass, entry_data, state.entity_id, state)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.id == "switch.test_1"
     assert d.name == "test 1"
     assert d.room is None
 
     device_registry.async_update_device(dev_entry.id, area_id=area_room.id)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.room == "Room"
 
     device_registry.async_update_device(dev_entry.id, area_id=bathroom_room.id)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.room == "Bathroom"
 
     entity_registry.async_update_entity(entry.entity_id, area_id=area_kitchen.id)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.name == "test 1"
     assert d.room == "Кухне"
@@ -460,14 +460,14 @@ async def test_device_name_room(
     entity_registry.async_update_entity(
         entry.entity_id, area_id=area_closet.id, aliases={"foo", "Устройство 2", "апельсин"}
     )
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.name == "Устройство 2"
     assert d.room == "Кладовка"
 
     entry_data = MockConfigEntryData(hass, entity_config={"switch.test_1": {CONF_NAME: "Имя", CONF_ROOM: "Комната"}})
     device = Device(hass, entry_data, state.entity_id, state)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.name == "Имя"
     assert d.room == "Комната"
@@ -496,25 +496,25 @@ async def test_device_name_room_ignore_aliases(
     )
     entry = entity_registry.async_get_or_create("switch", "test", "1", device_id=dev_entry.id)
     device = Device(hass, entry_data, state.entity_id, state)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.id == "switch.test_1"
     assert d.name == "test 1"
     assert d.room is None
 
     device_registry.async_update_device(dev_entry.id, area_id=area_room.id)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.room == "Room"
 
     entity_registry.async_update_entity(entry.entity_id, area_id=area_kitchen.id)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.name == "test 1"
     assert d.room == "Балкон"
 
     entity_registry.async_update_entity(entry.entity_id, area_id=area_closet.id, aliases={"Устройство"})
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.name == "test 1"
     assert d.room == "Closet"
@@ -522,14 +522,14 @@ async def test_device_name_room_ignore_aliases(
     entity_registry.async_update_entity(
         entry.entity_id, area_id=area_closet.id, aliases={"2", "foo", "Устройство", "апельсин", "Алиса: Устройство"}
     )
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.name == "Устройство"
     assert d.room == "Closet"
 
     entry_data = MockConfigEntryData(hass, entity_config={"switch.test_1": {CONF_NAME: "Имя", CONF_ROOM: "Комната"}})
     device = Device(hass, entry_data, state.entity_id, state)
-    d = await device.describe(entity_registry, device_registry, area_registry)
+    d = await device.describe()
     assert d
     assert d.name == "Имя"
     assert d.room == "Комната"

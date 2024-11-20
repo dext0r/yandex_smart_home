@@ -51,10 +51,8 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 from homeassistant.core import Context, HomeAssistant, State, callback
-from homeassistant.helpers import area_registry, device_registry, entity_registry
-from homeassistant.helpers.area_registry import AreaEntry, AreaRegistry
-from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
-from homeassistant.helpers.entity_registry import EntityRegistry, RegistryEntry
+from homeassistant.helpers.area_registry import AreaEntry
+from homeassistant.helpers.entity_registry import RegistryEntry
 from homeassistant.helpers.template import Template
 
 from custom_components.yandex_smart_home.const import (
@@ -81,7 +79,7 @@ from . import (  # noqa: F401
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, DummyCapability, StateCapability
 from .capability_custom import get_custom_capability
 from .capability_toggle import BacklightCapability
-from .helpers import ActionNotAllowed, APIError
+from .helpers import ActionNotAllowed, APIError, _get_registry_entries
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .property_custom import get_custom_property, get_event_platform_custom_property_type
 from .schema import (
@@ -327,9 +325,7 @@ class Device:
 
         return _DEVICE_CLASS_TO_DEVICE_TYPES.get((domain, device_class), _DOMAIN_TO_DEVICE_TYPES.get(domain))
 
-    async def describe(
-        self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry, area_reg: AreaRegistry
-    ) -> DeviceDescription | None:
+    async def describe(self) -> DeviceDescription | None:
         """Return description of the device."""
         capabilities: list[CapabilityDescription] = []
         for c in self.get_capabilities():
@@ -344,7 +340,7 @@ class Device:
         if not capabilities and not properties:
             return None
 
-        entity_entry, device_entry = await self._get_entity_and_device(ent_reg, dev_reg)
+        entity_entry, device_entry, area_entry = _get_registry_entries(self._hass, self.id)
         device_info = DeviceInfo(model=self.id)
         if device_entry is not None:
             if device_entry.model:
@@ -358,7 +354,7 @@ class Device:
                 sw_version=device_entry.sw_version,
             )
 
-        if (room := self._get_room(entity_entry, device_entry, area_reg)) is not None:
+        if (room := self._get_room(area_entry)) is not None:
             room = room.strip()
 
         assert self.type
@@ -446,20 +442,6 @@ class Device:
         except Exception as e:
             raise APIError(ResponseCode.INTERNAL_ERROR, f"Failed to execute action for {target_capability}: {e!r}")
 
-    async def _get_entity_and_device(
-        self, ent_reg: EntityRegistry, dev_reg: DeviceRegistry
-    ) -> tuple[RegistryEntry | None, DeviceEntry | None]:
-        """Fetch the entity and device entries."""
-        entity_entry = ent_reg.async_get(self.id)
-        if not entity_entry:
-            return None, None
-
-        if entity_entry.device_id:
-            device_entry = dev_reg.devices.get(entity_entry.device_id)
-            return entity_entry, device_entry
-
-        return None, None  # pragma: nocover
-
     def _get_name(self, entity_entry: RegistryEntry | None) -> str:
         """Return the device name."""
         if name := self._config.get(CONF_NAME):
@@ -471,14 +453,11 @@ class Device:
 
         return self._state.name or self.id
 
-    def _get_room(
-        self, entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None, area_reg: AreaRegistry
-    ) -> str | None:
+    def _get_room(self, area: AreaEntry | None) -> str | None:
         """Return room of the device."""
         if room := self._config.get(CONF_ROOM):
             return str(room)
 
-        area = self._get_area(entity_entry, device_entry, area_reg)
         if area:
             if alias := self._get_entry_alias(area.aliases):
                 return alias
@@ -500,20 +479,6 @@ class Device:
             return None
 
         return sorted(filtered_aliases)[0]
-
-    @staticmethod
-    def _get_area(
-        entity_entry: RegistryEntry | None, device_entry: DeviceEntry | None, area_reg: AreaRegistry
-    ) -> AreaEntry | None:
-        """Calculate the area for an entity."""
-        if entity_entry and entity_entry.area_id:
-            area_id = entity_entry.area_id
-        elif device_entry and device_entry.area_id:
-            area_id = device_entry.area_id
-        else:
-            return None
-
-        return area_reg.areas.get(area_id)
 
     @property
     def _error_code_template(self) -> Template | None:
@@ -541,11 +506,7 @@ async def async_get_devices(hass: HomeAssistant, entry_data: ConfigEntryData) ->
 
 async def async_get_device_description(hass: HomeAssistant, device: Device) -> DeviceDescription | None:
     """Return description for a user device."""
-    ent_reg = entity_registry.async_get(hass)
-    dev_reg = device_registry.async_get(hass)
-    area_reg = area_registry.async_get(hass)
-
-    if (description := await device.describe(ent_reg, dev_reg, area_reg)) is not None:
+    if (description := await device.describe()) is not None:
         return description
 
     _LOGGER.debug(f"Missing capabilities and properties for {device.id}")
