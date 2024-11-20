@@ -101,7 +101,7 @@ async def test_capability_mode_auto_mapping(
         assert record.message == (
             "Failed to get Yandex mode for mode 'mode_5' for instance swing of mode "
             "capability of switch.test. It may cause inconsistencies between Yandex and "
-            "HA. See https://docs.yaha-cloud.ru/dev/config/modes/"
+            "HA. See https://docs.yaha-cloud.ru/v1.0.x/config/modes/"
         )
     caplog.clear()
 
@@ -125,7 +125,7 @@ async def test_capability_mode_auto_mapping(
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
         "Unsupported mode 'deep_fryer' for instance swing of mode capability of switch.test, "
-        "see https://docs.yaha-cloud.ru/dev/config/modes/"
+        "see https://docs.yaha-cloud.ru/v1.0.x/config/modes/"
     )
 
     assert cap.get_ha_mode_by_yandex_mode(ModeCapabilityMode.FOWL) == "mode_1"
@@ -755,7 +755,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass: HomeAss
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
         "Unsupported mode 'low' for instance fan_speed of mode capability of "
-        "fan.test, see https://docs.yaha-cloud.ru/dev/config/modes/"
+        "fan.test, see https://docs.yaha-cloud.ru/v1.0.x/config/modes/"
     )
 
     entry_data = MockConfigEntryData(

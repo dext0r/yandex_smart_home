@@ -23,8 +23,8 @@ yandex_smart_home:
 
     assert (
         "Property type 'invalid' is not supported, see valid types at "
-        "https://docs.yaha-cloud.ru/dev/devices/sensor/event/#type and "
-        "https://docs.yaha-cloud.ru/dev/devices/sensor/float/#type" in caplog.messages[-1]
+        "https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/event/#type and "
+        "https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/float/#type" in caplog.messages[-1]
     )
 
 
@@ -44,7 +44,7 @@ yandex_smart_home:
 
     assert (
         "Event property type 'invalid' is not supported, see valid event types at "
-        "https://docs.yaha-cloud.ru/dev/devices/sensor/event/#type"
+        "https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/event/#type"
     ) in caplog.messages[-1]
 
 
@@ -64,7 +64,7 @@ yandex_smart_home:
 
     assert (
         "Float property type 'invalid' is not supported, see valid float types at "
-        "https://docs.yaha-cloud.ru/dev/devices/sensor/float/#type"
+        "https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/float/#type"
     ) in caplog.messages[-1]
 
 
@@ -87,7 +87,7 @@ yandex_smart_home:
 
     assert (
         "Target unit of measurement 'foo' is not supported for battery_level property, see valid values at "
-        "https://docs.yaha-cloud.ru/dev/devices/sensor/float/#property-target-unit-of-measurement"
+        "https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/float/#property-target-unit-of-measurement"
     ) in caplog.messages[-1]
 
     for type_prefix in ["", "float."]:
@@ -108,7 +108,7 @@ yandex_smart_home:
         assert (
             f"Target unit of measurement '°F' is not supported for {type_prefix}temperature property, "
             f"see valid values "
-            f"at https://docs.yaha-cloud.ru/dev/devices/sensor/float/#property-target-unit-of-measurement"
+            f"at https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/float/#property-target-unit-of-measurement"
         ) in caplog.messages[-1]
 
         files = {
@@ -128,7 +128,7 @@ yandex_smart_home:
         assert (
             f"Target unit of measurement 'psi' is not supported for {type_prefix}pressure property, "
             f"see valid values "
-            f"at https://docs.yaha-cloud.ru/dev/devices/sensor/float/#property-target-unit-of-measurement"
+            f"at https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/float/#property-target-unit-of-measurement"
         ) in caplog.messages[-1]
 
 
@@ -198,7 +198,7 @@ yandex_smart_home:
     assert (
         "Mode 'invalid' is not supported, see valid modes at "
         "https://yandex.ru/dev/dialogs/smart-home/doc/concepts/mode-instance-modes.html and "
-        "https://docs.yaha-cloud.ru/dev/devices/light/#scene-list" in caplog.messages[-2]
+        "https://docs.yaha-cloud.ru/v1.0.x/devices/light/#scene-list" in caplog.messages[-2]
     )
 
 
@@ -216,7 +216,7 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert (
         "Mode instance 'invalid' is not supported, see valid modes at "
-        "https://docs.yaha-cloud.ru/dev/advanced/capabilities/mode/#instance"
+        "https://docs.yaha-cloud.ru/v1.0.x/advanced/capabilities/mode/#instance"
     ) in caplog.messages[-2]
 
 
@@ -234,7 +234,7 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert (
         "Event instance 'invalid' is not supported, see valid "
-        "event types at https://docs.yaha-cloud.ru/dev/devices/sensor/event/#event-types" in caplog.messages[-2]
+        "event types at https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/event/#event-types" in caplog.messages[-2]
     )
 
 
@@ -255,7 +255,7 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert (
         "Event 'foo' is not supported for 'button' event instance, see valid "
-        "event types at https://docs.yaha-cloud.ru/dev/devices/sensor/event/#event-types" in caplog.messages[-2]
+        "event types at https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/event/#event-types" in caplog.messages[-2]
     )
 
 
@@ -273,7 +273,7 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert (
         "Toggle instance 'invalid' is not supported, see valid values at "
-        "https://docs.yaha-cloud.ru/dev/advanced/capabilities/toggle/#instance"
+        "https://docs.yaha-cloud.ru/v1.0.x/advanced/capabilities/toggle/#instance"
     ) in caplog.messages[-2]
 
 
@@ -291,7 +291,7 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert (
         "Range instance 'invalid' is not supported, see valid values at "
-        "https://docs.yaha-cloud.ru/dev/advanced/capabilities/range/#instance"
+        "https://docs.yaha-cloud.ru/v1.0.x/advanced/capabilities/range/#instance"
     ) in caplog.messages[-2]
 
 
@@ -337,7 +337,7 @@ yandex_smart_home:
         assert await async_integration_yaml_config(hass, DOMAIN) is None
     assert (
         "Color name 'invalid' is not supported, see valid values at "
-        "https://docs.yaha-cloud.ru/dev/devices/light/#color-profile-config" in caplog.messages[-2]
+        "https://docs.yaha-cloud.ru/v1.0.x/devices/light/#color-profile-config" in caplog.messages[-2]
     )
 
 

@@ -919,5 +919,5 @@ async def test_capability_color_setting_scene(hass: HomeAssistant, entry_data: M
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert (
         e.value.message == "Unsupported scene 'sunset' for instance scene of color_setting capability of light.test, "
-        "see https://docs.yaha-cloud.ru/dev/config/modes/"
+        "see https://docs.yaha-cloud.ru/v1.0.x/config/modes/"
     )

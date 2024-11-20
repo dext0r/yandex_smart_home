@@ -53,4 +53,6 @@ jobs:
 
       - name: Deploy docs
         run: |
-          poetry run mike deploy --push --branch gh-pages ${GITHUB_REF_NAME}
+          VERSION="${GITHUB_REF_NAME}"
+          [ "${GITHUB_REF_NAME}" == "dev" ] && VERSION="v1.0.x"
+          poetry run mike deploy --push --branch gh-pages "${VERSION}"
