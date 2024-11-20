@@ -3,8 +3,9 @@
 
 ## Через интерфейс Home Assistant { id=gui }
 
-На странице `Настройки` --> `Устройства и службы` --> [`Интеграции`](https://my.home-assistant.io/redirect/integrations/) найдите
-интеграцию Yandex Smart Home и нажмите кнопку `Настроить`:
+* На странице `Настройки` --> `Устройства и службы` --> [`Интеграции`](https://my.home-assistant.io/redirect/integrations/) найдите
+и выберите интеграцию Yandex Smart Home
+* Нажмите `Настроить` на нужной записи интеграции
 
 ![](../assets/images/config/gui-1.png){ width=750 }
 ![](../assets/images/config/gui-2.png){ width=750 }
