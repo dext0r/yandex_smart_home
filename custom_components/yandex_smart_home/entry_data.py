@@ -112,6 +112,10 @@ class ConfigEntryData:
 
         self._entity_registry = er.async_get(self._hass)
 
+        with suppress(KeyError):
+            integration = (await async_get_custom_components(self._hass))[DOMAIN]
+            self.component_version = str(integration.version)
+
         if self.connection_type in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             await self._async_setup_cloud_connection()
 
@@ -147,10 +151,6 @@ class ConfigEntryData:
         else:
             ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_DEPRECATED_YAML_NOTIFIER)
             ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_DEPRECATED_YAML_SEVERAL_NOTIFIERS)
-
-        with suppress(KeyError):
-            integration = (await async_get_custom_components(self._hass))[DOMAIN]
-            self.component_version = str(integration.version)
 
         return self
 
