@@ -18,7 +18,7 @@
     },
     "step": {
       "user" : {
-        "description": "Добро пожаловать в мастер добавления интеграции Yandex Smart Home!\n\nПосле добавления интеграции вы можете изменить любые её параметры в [настройках](https://docs.yaha-cloud.ru/v1.0.x/config/getting-started/#gui), удалять интеграцию и настраивать заново не требуется.\n\nПолезные ссылки:\n* Документация: https://docs.yaha-cloud.ru/dev\n* Чат в Телеграм: https://t.me/yandex_smart_home"
+        "description": "Добро пожаловать в мастер добавления интеграции Yandex Smart Home!\n\nПосле добавления интеграции вы можете изменить любые её параметры в [настройках](https://docs.yaha-cloud.ru/v1.0.x/config/getting-started/#gui), удалять интеграцию и настраивать заново не требуется.\n\nПолезные ссылки:\n* Документация: https://docs.yaha-cloud.ru/v1.0.x/\n* Чат в Телеграм: https://t.me/yandex_smart_home"
       },
       "connection_type": {
         "title": "Выберите тип подключения",
