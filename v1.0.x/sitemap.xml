@@ -2,158 +2,158 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/breaking-changes/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/faq/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/quirks/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/supported-devices/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/troubleshoot/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/advanced/error-codes/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/advanced/events/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/advanced/capabilities/about/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/advanced/capabilities/mode/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/advanced/capabilities/range/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/advanced/capabilities/toggle/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/advanced/direct-connection/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/advanced/direct-connection/vk/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/advanced/direct-connection/yandex/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/config/connection-type/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/config/entity/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/config/filter/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/config/getting-started/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/config/modes/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/config/multi-ha/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/devices/button/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/devices/camera/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/devices/climate/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/devices/light/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/about/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/event/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/devices/sensor/float/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/install/component/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/install/integration/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/platforms/vk/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/platforms/yandex/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/recipes/about/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/recipes/dishwasher/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/recipes/heater/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/recipes/humidifier/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/recipes/kettle/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/recipes/other/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
     <url>
          <loc>https://docs.yaha-cloud.ru/v1.0.x/recipes/tv/</loc>
-         <lastmod>2024-11-21</lastmod>
+         <lastmod>2024-11-29</lastmod>
     </url>
 </urlset>
