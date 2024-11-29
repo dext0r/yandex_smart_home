@@ -272,7 +272,7 @@ class OnOffCapabilityLock(OnOffCapability):
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
-        if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
+        if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2024, 10):
             return bool(self.state.state == lock.LockState.UNLOCKED)
         else:
             return bool(self.state.state == lock.STATE_UNLOCKED)  # pyright: ignore[reportAttributeAccessIssue]

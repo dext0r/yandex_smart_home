@@ -335,7 +335,7 @@ async def test_capability_onoff_media_player(hass: HomeAssistant, entry_data: Mo
 
 
 async def test_capability_onoff_lock(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
-    if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
+    if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2024, 10):
         state = State("lock.test", lock.LockState.UNLOCKED)
     else:
         state = State("lock.test", lock.STATE_UNLOCKED)  # pyright: ignore[reportAttributeAccessIssue]
@@ -358,7 +358,7 @@ async def test_capability_onoff_lock(hass: HomeAssistant, entry_data: MockConfig
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
-    if (MAJOR_VERSION == 2024 and MINOR_VERSION >= 10) or MAJOR_VERSION >= 2025:
+    if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2024, 10):
         states = [lock.LockState.UNLOCKING, lock.LockState.LOCKING]
         locked_state = lock.LockState.LOCKED
     else:
