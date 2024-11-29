@@ -132,6 +132,7 @@ base_python = ["py312"]
 commands = [
     ["pytest", "--cov", "--cov-report=xml:{env_dir}/coverage.xml", "-n=auto"],
 ]
+allowlist_externals = ["python"]
 
 [tool.tox.env_run_base.setenv]
 PATH = "{env_dir}/bin:/usr/bin:/bin"
