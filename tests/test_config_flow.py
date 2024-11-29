@@ -177,7 +177,13 @@ async def test_config_flow_empty_entities(
 
 async def test_config_flow_update_filter(hass: HomeAssistant, hass_admin_user: User) -> None:
     result = await _async_forward_to_step_update_filter(hass, hass_admin_user, SmartHomePlatform.YANDEX)
+    assert result["data_schema"] is not None
+    assert list(result["data_schema"].schema.keys()) == ["filter_source"]
     assert result["errors"] == {"base": "missing_config_entry"}
+
+    result2 = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_FILTER_SOURCE: True})
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["step_id"] == "expose_settings"
 
     entry1 = MockConfigEntry(
         domain=DOMAIN,
@@ -959,6 +965,7 @@ async def test_options_flow_update_filter(hass: HomeAssistant, connection_type: 
     )
     assert result3["type"] == FlowResultType.FORM
     assert result3["step_id"] == "update_filter"
+    assert result3["data_schema"] is None
     assert result3["errors"] == {"base": "missing_config_entry"}
 
     entry1 = MockConfigEntry(domain=DOMAIN, title="Mock Entry 1", data={}, options={}, source=SOURCE_IGNORE)

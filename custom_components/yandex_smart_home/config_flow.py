@@ -282,6 +282,9 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
     async def async_step_update_filter(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose a config entry from which the filter will be copied."""
         if user_input is not None:
+            if user_input.get(CONF_FILTER_SOURCE) is True:
+                return await self.async_step_expose_settings()
+
             if entry := self.hass.config_entries.async_get_entry(user_input.get(CONF_ID, "")):
                 self._options.update(
                     {
@@ -298,7 +301,15 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
             if CONF_FILTER in entry.options and (not self._entry or self._entry.entry_id != entry.entry_id)
         ]
         if not config_entries:
-            return self.async_show_form(step_id="update_filter", errors={"base": "missing_config_entry"})
+            data_schema = None
+            if not self._entry:
+                data_schema = vol.Schema({vol.Optional(CONF_FILTER_SOURCE): BooleanSelector()})
+
+            return self.async_show_form(
+                step_id="update_filter",
+                data_schema=data_schema,
+                errors={"base": "missing_config_entry"},
+            )
 
         return self.async_show_form(
             step_id="update_filter",
