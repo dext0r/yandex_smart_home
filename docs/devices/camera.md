@@ -20,7 +20,7 @@
 Сделать это можно несколькими способами:
 
 * На странице `Настройки` --> `Система` --> `Сеть` --> `URL-адрес сервера` --> `Интернет` (включите `Расширенный режим` в профиле пользователя)
-* Через параметр [`external_url`](https://www.home-assistant.io/docs/configuration/basic/#external_url) в `configuration.yaml`
+* Через параметр [`external_url`](https://www.home-assistant.io/integrations/homeassistant/#external_url) в `configuration.yaml`
 
 ## Известные проблемы { id=known-bugs }
 

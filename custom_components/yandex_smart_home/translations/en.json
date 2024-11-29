@@ -1,7 +1,7 @@
 {
   "config": {
     "abort": {
-      "missing_external_url": "**Использование прямого подключения невозможно**: не задан внешний URL-адрес сервера Home Assistant.\n\nДля исправления:\n* Включите расширенный режим в [настройках профиля](https://my.home-assistant.io/redirect/profile/)\n* Задайте URL-адрес сервера в Настройки > Система > [Сеть](https://my.home-assistant.io/redirect/network/)\n* Повторно добавьте интеграцию"
+      "missing_external_url": "**Использование прямого подключения невозможно**: не задан внешний URL-адрес сервера Home Assistant.\n\nДля исправления:\n* Включите расширенный режим в [настройках профиля](https://my.home-assistant.io/redirect/profile/)\n* Задайте URL-адрес сервера в Настройки > Система > [Сеть](https://my.home-assistant.io/redirect/network/) или в параметре [`external_url`](https://www.home-assistant.io/integrations/homeassistant/#external_url) в `configuration.yaml`\n* Повторно добавьте интеграцию"
     },
     "error": {
       "cannot_connect": "Не удалось подключиться, проверьте журнал сервера",
@@ -128,7 +128,7 @@
   },
   "options": {
     "abort": {
-      "missing_external_url": "**Ошибка**\n\n**Использование прямого подключение невозможно**: не задан внешний URL-адрес сервера Home Assistant.\n\nДля исправления:\n* Включите расширенный режим в [настройках профиля](https://my.home-assistant.io/redirect/profile/)\n* Задайте URL-адрес сервера в Настройки > Система > [Сеть](https://my.home-assistant.io/redirect/network/)\n* Повторно откройте настройки интеграции"
+      "missing_external_url": "**Ошибка**\n\n**Использование прямого подключение невозможно**: не задан внешний URL-адрес сервера Home Assistant.\n\nДля исправления:\n* Включите расширенный режим в [настройках профиля](https://my.home-assistant.io/redirect/profile/)\n* Задайте URL-адрес сервера в Настройки > Система > [Сеть](https://my.home-assistant.io/redirect/network/) или в параметре [`external_url`](https://www.home-assistant.io/integrations/homeassistant/#external_url) в `configuration.yaml\n* Повторно откройте настройки интеграции"
     },
     "error": {
       "unknown": "{error}",
