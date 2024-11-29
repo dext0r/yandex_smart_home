@@ -20,7 +20,15 @@ from homeassistant.components.light import (
     ColorMode,
     LightEntityFeature,
 )
-from homeassistant.const import ATTR_ENTITY_ID, ATTR_SUPPORTED_FEATURES, SERVICE_TURN_ON, STATE_OFF, STATE_ON
+from homeassistant.const import (
+    ATTR_ENTITY_ID,
+    ATTR_SUPPORTED_FEATURES,
+    MAJOR_VERSION,
+    MINOR_VERSION,
+    SERVICE_TURN_ON,
+    STATE_OFF,
+    STATE_ON,
+)
 from homeassistant.core import Context, HomeAssistant, State
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util.color import RGBColor
@@ -220,7 +228,11 @@ async def test_capability_color_setting_rgb(
         ),
     )
     if ColorMode.HS in color_modes:
-        assert cap_rgb.get_value() == 6336767
+        if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2024, 12):
+            # https://github.com/home-assistant/core/pull/130880
+            assert cap_rgb.get_value() == 6402559
+        else:
+            assert cap_rgb.get_value() == 6336767
     elif ColorMode.XY in color_modes:
         assert cap_rgb.get_value() == 6927615
     else:

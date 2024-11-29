@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - uses: pre-commit/action@v3.0.1
 
@@ -34,9 +34,11 @@ jobs:
             python-version: '3.12'
           - tox-env: 2024_10
             python-version: '3.12'
-
           - tox-env: 2024_11
             python-version: '3.12'
+
+          - tox-env: 2024_12
+            python-version: '3.13'
             latest: true
     steps:
       - uses: actions/checkout@v4
