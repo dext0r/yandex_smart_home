@@ -1,13 +1,21 @@
 # pyright: reportTypedDictNotRequiredAccess=false
 from http import HTTPStatus
+from unittest.mock import patch
 
+from homeassistant import core
 from homeassistant.auth.models import User
-from homeassistant.components import http
+from homeassistant.components import demo, http
 from homeassistant.config_entries import SOURCE_IGNORE, SOURCE_USER, ConfigEntry, ConfigFlowResult
-from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_NAME, CONF_PLATFORM, CONF_TOKEN
+from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_NAME, CONF_PLATFORM, CONF_TOKEN, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entityfilter import (
+    CONF_EXCLUDE_ENTITIES,
+    CONF_INCLUDE_DOMAINS,
+    CONF_INCLUDE_ENTITIES,
+    CONF_INCLUDE_ENTITY_GLOBS,
+)
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.setup import async_setup_component
 import pytest
@@ -160,6 +168,39 @@ async def _async_forward_to_step_maintenance(hass: HomeAssistant, config_entry: 
     assert result2["type"] == FlowResultType.FORM
     assert result2["step_id"] == "maintenance"
     return result2
+
+
+async def _async_forward_to_step_transfer_entity_filter_from_yaml(
+    hass: HomeAssistant, config_entry: MockConfigEntry
+) -> ConfigFlowResult:
+    config_entry.add_to_hass(hass)
+
+    await async_setup_component(
+        hass,
+        DOMAIN,
+        {
+            DOMAIN: {
+                CONF_FILTER: {
+                    CONF_INCLUDE_ENTITY_GLOBS: ["light.*"],
+                    CONF_INCLUDE_DOMAINS: ["lock"],
+                    CONF_EXCLUDE_ENTITIES: ["lock.front_door", "light.living_room_rgbww_lights"],
+                }
+            }
+        },
+    )
+    with patch(
+        "homeassistant.components.demo.COMPONENTS_WITH_CONFIG_ENTRY_DEMO_PLATFORM", [Platform.LIGHT, Platform.LOCK]
+    ):
+        await async_setup_component(hass, core.DOMAIN, {})
+        await async_setup_component(hass, demo.DOMAIN, {})
+
+    await hass.async_block_till_done()
+
+    result = await _async_forward_to_step_maintenance(hass, config_entry)
+    assert result["data_schema"] is not None
+    assert "transfer_entity_filter_from_yaml" in result["data_schema"].schema.keys()
+
+    return result
 
 
 @pytest.mark.parametrize("platform", [SmartHomePlatform.YANDEX, SmartHomePlatform.VK])
@@ -1356,6 +1397,8 @@ async def test_options_flow_maintenance_direct(hass: HomeAssistant) -> None:
         hass, data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_LINKED_PLATFORMS: ["foo"]}
     )
     config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
 
     result = await _async_forward_to_step_maintenance(hass, config_entry)
     assert result["data_schema"] is not None
@@ -1383,6 +1426,9 @@ async def test_options_flow_maintenance_cloud(hass: HomeAssistant, connection_ty
         hass, data={CONF_CONNECTION_TYPE: connection_type, CONF_LINKED_PLATFORMS: ["foo"]}
     )
     config_entry.add_to_hass(hass)
+    with patch("custom_components.yandex_smart_home.entry_data.ConfigEntryData._async_setup_cloud_connection"):
+        await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
 
     result = await _async_forward_to_step_maintenance(hass, config_entry)
     assert result["data_schema"] is not None
@@ -1393,9 +1439,10 @@ async def test_options_flow_maintenance_cloud(hass: HomeAssistant, connection_ty
     ]
 
     assert config_entry.data[CONF_LINKED_PLATFORMS] == ["foo"]
-    result_uap = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input={"unlink_all_platforms": True}
-    )
+    with patch("custom_components.yandex_smart_home.entry_data.ConfigEntryData._async_setup_cloud_connection"):
+        result_uap = await hass.config_entries.options.async_configure(
+            result["flow_id"], user_input={"unlink_all_platforms": True}
+        )
     assert result_uap["type"] == FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
     assert config_entry.data[CONF_LINKED_PLATFORMS] == []
@@ -1406,6 +1453,8 @@ async def test_options_flow_maintenance_cloud_revoke_tokens(
 ) -> None:
     config_entry = await _async_mock_config_entry(hass, data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
     config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
 
     result = await _async_forward_to_step_maintenance(hass, config_entry)
 
@@ -1431,6 +1480,8 @@ async def test_options_flow_maintenance_cloud_reset_token(
 ) -> None:
     config_entry = await _async_mock_config_entry(hass, data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD})
     config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
 
     assert config_entry.data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_CONNECTION_TOKEN] == "foo"
 
@@ -1462,6 +1513,90 @@ async def test_options_flow_maintenance_cloud_reset_token(
         CONF_CLOUD_INSTANCE_PASSWORD: "secret",
         CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: "bar",
     }
+
+
+async def test_options_flow_maintenance_transfer_entity_filter_to_config_entry(hass: HomeAssistant) -> None:
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.YANDEX},
+        options={
+            CONF_FILTER_SOURCE: EntityFilterSource.CONFIG_ENTRY,
+            CONF_FILTER: {CONF_INCLUDE_ENTITIES: ["sensor.foo"]},
+        },
+    )
+    result = await _async_forward_to_step_transfer_entity_filter_from_yaml(hass, config_entry)
+
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"transfer_entity_filter_from_yaml": True}
+    )
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+
+    await hass.async_block_till_done()
+    assert config_entry.options == {
+        "filter": {
+            "include_entities": [
+                "light.bed_light",
+                "light.ceiling_lights",
+                "light.entrance_color_white_lights",
+                "light.kitchen_lights",
+                "light.office_rgbw_lights",
+                "lock.kitchen_door",
+                "lock.openable_lock",
+                "lock.poorly_installed_door",
+                "sensor.foo",
+            ],
+        },
+        "filter_source": "config_entry",
+    }
+
+
+async def test_options_flow_maintenance_transfer_entity_filter_to_labels(
+    hass: HomeAssistant,
+    entity_registry: er.EntityRegistry,
+) -> None:
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=ConfigFlowHandler.VERSION,
+        data={CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.YANDEX},
+        options={
+            CONF_FILTER_SOURCE: EntityFilterSource.LABEL,
+            CONF_LABEL: "foo",
+        },
+    )
+    result = await _async_forward_to_step_transfer_entity_filter_from_yaml(hass, config_entry)
+
+    light1_entity = entity_registry.async_get("light.bed_light")
+    assert light1_entity
+    assert light1_entity.name is None
+    assert light1_entity.area_id is None
+    assert len(light1_entity.labels) == 0
+    entity_registry.async_update_entity(light1_entity.entity_id, labels=set(["a", "b", "c"]))
+
+    light2_entity = entity_registry.async_get("light.office_rgbw_lights")
+    assert light2_entity
+    assert len(light2_entity.labels) == 0
+
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"transfer_entity_filter_from_yaml": True}
+    )
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+
+    await hass.async_block_till_done()
+    assert config_entry.options == {
+        "filter_source": "label",
+        "label": "foo",
+    }
+
+    light1_entity = entity_registry.async_get("light.bed_light")
+    assert light1_entity
+    assert light1_entity.name is None
+    assert light1_entity.area_id is None
+    assert light1_entity.labels == {"a", "b", "c", "foo"}
+
+    light2_entity = entity_registry.async_get("light.office_rgbw_lights")
+    assert light2_entity
+    assert light2_entity.labels == {"foo"}
 
 
 async def test_config_entry_title_default(hass: HomeAssistant, hass_admin_user: User) -> None:

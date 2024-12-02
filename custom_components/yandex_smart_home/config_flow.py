@@ -12,7 +12,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResu
 from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_NAME, CONF_PLATFORM, CONF_TOKEN
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import AbortFlow, FlowHandler
-from homeassistant.helpers import network, selector
+from homeassistant.helpers import entity_registry as er, network, selector
 from homeassistant.helpers.entityfilter import CONF_INCLUDE_ENTITIES, FILTER_SCHEMA, EntityFilter
 from homeassistant.helpers.selector import (
     BooleanSelector,
@@ -53,6 +53,8 @@ from .const import (
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigFlowContext  # noqa: F401
 
+    from . import YandexSmartHome
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,6 +67,7 @@ class MaintenanceAction(StrEnum):
     REVOKE_OAUTH_TOKENS = "revoke_oauth_tokens"
     UNLINK_ALL_PLATFORMS = "unlink_all_platforms"
     RESET_CLOUD_INSTANCE_CONNECTION_TOKEN = "reset_cloud_instance_connection_token"
+    TRANSFER_ENTITY_FILTER_FROM_YAML = "transfer_entity_filter_from_yaml"
 
 
 CONNECTION_TYPE_SELECTOR = SelectSelector(
@@ -616,6 +619,9 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
         errors: dict[str, str] = {}
         description_placeholders = {}
 
+        component: YandexSmartHome = self.hass.data[DOMAIN]
+        entity_filter = component.get_entity_filter_from_yaml()
+
         if user_input is not None:
             if user_input.get(MaintenanceAction.REVOKE_OAUTH_TOKENS):
                 match self._data[CONF_CONNECTION_TYPE]:
@@ -654,12 +660,40 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
                     errors[MaintenanceAction.RESET_CLOUD_INSTANCE_CONNECTION_TOKEN] = "unknown"
                     description_placeholders["error"] = str(e)
 
+            if user_input.get(MaintenanceAction.TRANSFER_ENTITY_FILTER_FROM_YAML):
+                entity_ids: set[str] = set()
+
+                if entity_filter:
+                    for state in self.hass.states.async_all():
+                        if entity_filter(state.entity_id):
+                            entity_ids.add(state.entity_id)
+
+                match self._options[CONF_FILTER_SOURCE]:
+                    case EntityFilterSource.CONFIG_ENTRY:
+                        entity_ids.update(self._options[CONF_FILTER][CONF_INCLUDE_ENTITIES])
+                        self._options[CONF_FILTER] = {CONF_INCLUDE_ENTITIES: sorted(entity_ids)}
+
+                    case EntityFilterSource.LABEL:
+                        for entity_id in entity_ids:
+                            registry = er.async_get(self.hass)
+                            if entity := registry.async_get(entity_id):
+                                registry.async_update_entity(
+                                    entity.entity_id,
+                                    labels=entity.labels | {self._options[CONF_LABEL]},
+                                )
+
             if not errors:
                 return await self.async_step_done()
 
         actions = [MaintenanceAction.REVOKE_OAUTH_TOKENS, MaintenanceAction.UNLINK_ALL_PLATFORMS]
         if self._data[CONF_CONNECTION_TYPE] in (ConnectionType.CLOUD, ConnectionType.CLOUD_PLUS):
             actions += [MaintenanceAction.RESET_CLOUD_INSTANCE_CONNECTION_TOKEN]
+
+        if entity_filter and self._options[CONF_FILTER_SOURCE] in [
+            EntityFilterSource.CONFIG_ENTRY,
+            EntityFilterSource.LABEL,
+        ]:
+            actions += [MaintenanceAction.TRANSFER_ENTITY_FILTER_FROM_YAML]
 
         return self.async_show_form(
             step_id="maintenance",

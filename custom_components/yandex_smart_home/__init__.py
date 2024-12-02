@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_TOKEN, SERVICE_RELOAD
@@ -96,14 +96,20 @@ class YandexSmartHome:
 
         return {"yaml_config": async_redact_data(self._yaml_config, [CONF_NOTIFIER])}
 
+    def get_entity_filter_from_yaml(self) -> EntityFilter | None:
+        """Return entity filter from yaml configuration."""
+        if entity_filter_config := self._yaml_config.get(CONF_FILTER):
+            return cast(EntityFilter, FILTER_SCHEMA(entity_filter_config))
+
+        return None
+
     async def async_setup_entry(self, entry: ConfigEntry) -> bool:
         """Set up a config entry."""
         entity_config = self._yaml_config.get(CONF_ENTITY_CONFIG)
 
         entity_filter: EntityFilter | None = None
         if entry.options.get(CONF_FILTER_SOURCE) == EntityFilterSource.YAML:
-            if entity_filter_config := self._yaml_config.get(CONF_FILTER):
-                entity_filter = FILTER_SCHEMA(entity_filter_config)
+            entity_filter = self.get_entity_filter_from_yaml()
         else:
             entity_filter = FILTER_SCHEMA(entry.options.get(CONF_FILTER, {}))
 
