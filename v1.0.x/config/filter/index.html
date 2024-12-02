@@ -475,6 +475,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#migration-from-yaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      Миграция с YAML конфигурации
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1589,6 +1598,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#migration-from-yaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      Миграция с YAML конфигурации
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1676,6 +1694,21 @@
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">include_entity_globs</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;*&quot;</span>
 </code></pre></div>
 </div>
+<h2 id="migration-from-yaml">Миграция с YAML конфигурации<a class="headerlink" href="#migration-from-yaml" title="Permanent link">&para;</a></h2>
+<p>Если вы выбираете объекты для передачи через YAML конфигурацию и хотите перейти на другой способ выбора - это можно сделать средствами интеграции, а не переносить объекты вручную.</p>
+<p>Для этого:</p>
+<ol>
+<li>В <a href="../getting-started/#gui">настройках интеграции</a> измените способ выбора объектов для передачи на новый способ: <code>Через интерфейс</code> или <code>Через ярлыки на объектах</code>. При способе <code>Через интерфейс</code> выберите один любой, который уже передаётся в УДЯ.</li>
+<li>В настройках интеграции откройте <code>Сервисное меню</code> и отметьте <code>Перенести фильтр объектов из YAML</code> &rarr; <code>Подтвердить</code></li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">В переносе будут задействованы только объекты, которые попадают под фильтр и <strong>существуют</strong> в Home Assistant на момент выполнения действия.</p>
+</div>
+<p>Поведение для разных способов выбора объектов:</p>
+<ul>
+<li>Через интерфейс: объекты, попавшие под фильтр, будут <strong>добавлены</strong> к объектам, которые уже выбраны через интерфейс.</li>
+<li>Через ярлык на объектах: к объектам, попавшим под фильтр, будет <strong>добавлена</strong> та метка, по которой отбираются объекты для передачи в УДЯ.</li>
+</ul>
 
 
 
