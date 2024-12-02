@@ -1674,20 +1674,23 @@
 
 
 <h1 id="_1">Трансляция видеопотока с камеры<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<div class="admonition bug">
-<p class="admonition-title">Функциональность находится в режиме бета-тестирования!</p>
-</div>
-<div class="admonition missing">
-<p class="admonition-title">MJPEG камеры не поддерживаются</p>
-</div>
 <h2 id="requirements">Предварительные требования<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Камера должна быть добавлена в Home Assistant в виде устройства в домене <code>camera</code> и поддерживать трансляцию в формате <code>hls</code>
-(атрибуты <code>frontend_stream_type: hls</code> и <code>supported_features: 2 или 3</code> в панели разработчика)</li>
+<li>Камера должна быть добавлена в Home Assistant в виде устройства в домене <code>camera</code> и поддерживать стриминг
+(атрибут <code>supported_features: 2 или 3</code> в панели разработчика)</li>
 <li>Должна быть включена интеграция <a href="https://www.home-assistant.io/integrations/stream/">Stream</a>.
 Для включения добавьте <code>stream:</code> в <code>configuration.yaml</code> если не используете <code>default_config:</code></li>
 <li>Видеопоток должен отображаться по нажатию на иконку (I) в Панели разработчика</li>
 </ol>
+<div class="admonition warning">
+<p class="admonition-title">Ограничения</p>
+<ul>
+<li>Поддерживаемые кодеки видео: <strong>H264</strong>.</li>
+<li>Максимальное разрешение видео: 1920 × 1080.</li>
+<li>Поддерживаемые кодеки аудио: AAC.</li>
+</ul>
+<p>Если ваша камера использует другие кодеки - измените её настройки или воспользуйтесь <a href="https://github.com/AlexxIT/go2rtc">go2rtc</a> для транскодинга.</p>
+</div>
 <h3 id="direct-connection">Прямое подключение<a class="headerlink" href="#direct-connection" title="Permanent link">&para;</a></h3>
 <p>Необходимо задать в настройках внешний адрес Home Assistant (например <code>https://myha.dyndns.com</code>),
 по этому адресу Home Assistant должен быть доступ как из домашней сети, так и через интернет.</p>
