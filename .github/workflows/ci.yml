@@ -28,7 +28,7 @@ jobs:
       matrix:
         include:
           - tox-env: type
-            python-version: '3.12'
+            python-version: '3.13'
 
           - tox-env: 2024_9
             python-version: '3.12'
