@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.local
-          key: dotlocal-${{ hashFiles('.github/workflows/ci.yml') }}
+          key: dotlocal-${{ hashFiles('.github/workflows/ci.yml') }}-${{ matrix.python-version }}
 
       - name: Load virtual environment cache
         uses: actions/cache@v4
