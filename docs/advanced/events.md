@@ -12,6 +12,8 @@
 
 ## Примеры событий
 
+<!-- cSpell:disable -->
+
 ```yaml
 event_type: yandex_smart_home_device_action
 data:
