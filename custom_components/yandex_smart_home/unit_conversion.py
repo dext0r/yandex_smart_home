@@ -19,6 +19,9 @@ from homeassistant.util.unit_conversion import (
 
 from .schema import PressureUnit, TemperatureUnit
 
+# EFEKTA iAQ3 (#570)
+UNIT_OF_MEASUREMENT_VOC_INDEX_POINT = "VOC Index points"
+
 
 class TVOCConcentrationConverter(BaseUnitConverter):
     """Utility to convert TVOC concentration values."""
@@ -31,6 +34,7 @@ class TVOCConcentrationConverter(BaseUnitConverter):
         CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
         CONCENTRATION_PARTS_PER_MILLION,
         CONCENTRATION_PARTS_PER_BILLION,
+        UNIT_OF_MEASUREMENT_VOC_INDEX_POINT,
     }
 
     # average molecular weight of tVOC = 110 g/mol
@@ -40,6 +44,7 @@ class TVOCConcentrationConverter(BaseUnitConverter):
         CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER: 1 / 1000,
         CONCENTRATION_PARTS_PER_MILLION: 1 / 4496.29381184,
         CONCENTRATION_PARTS_PER_BILLION: 1 / 4.49629381184,
+        UNIT_OF_MEASUREMENT_VOC_INDEX_POINT: 1,
     }
 
 

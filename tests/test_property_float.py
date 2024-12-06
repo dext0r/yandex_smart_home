@@ -515,6 +515,7 @@ async def test_property_float_pm_density(
         ("µg/m³", "30", 30),
         ("mg/m³", "30", 30000),
         ("μg/ft³", "30", 1059.44),
+        ("VOC Index points", "30", 30),
         (None, "30", 30),
         (None, "-5", 0),
         (None, "None", None),
