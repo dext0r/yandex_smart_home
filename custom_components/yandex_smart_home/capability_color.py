@@ -18,7 +18,6 @@ from homeassistant.components.light import (
     ATTR_RGBW_COLOR,
     ATTR_RGBWW_COLOR,
     ATTR_WHITE,
-    COLOR_MODE_COLOR_TEMP,
     ColorMode,
     LightEntityFeature,
     color_temp_supported,
@@ -144,7 +143,7 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState], LightState):
 
     def get_value(self) -> int | None:
         """Return the current capability value."""
-        if self.state.attributes.get(ATTR_COLOR_MODE) == COLOR_MODE_COLOR_TEMP:
+        if self.state.attributes.get(ATTR_COLOR_MODE) == ColorMode.COLOR_TEMP:
             return None
 
         if self._rgb_color:
