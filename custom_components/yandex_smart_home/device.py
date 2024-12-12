@@ -483,11 +483,7 @@ class Device:
     @property
     def _error_code_template(self) -> Template | None:
         """Prepare template for error code."""
-        template: Template | None = self._config.get(CONF_ERROR_CODE_TEMPLATE)
-        if template is not None:
-            template.hass = self._hass
-
-        return template
+        return self._config.get(CONF_ERROR_CODE_TEMPLATE)
 
 
 async def async_get_devices(hass: HomeAssistant, entry_data: ConfigEntryData) -> list[Device]:

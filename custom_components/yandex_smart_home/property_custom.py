@@ -94,7 +94,6 @@ class CustomProperty(Property, Protocol):
         self._entry_data = entry_data
         self._config = config
         self._value_template = value_template
-        self._value_template.hass = hass
 
         self.device_id = device_id
 
