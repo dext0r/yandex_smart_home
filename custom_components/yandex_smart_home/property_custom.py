@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import cached_property
 import logging
 from typing import TYPE_CHECKING, Any, Protocol, Self, cast
 
@@ -10,7 +11,7 @@ from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import HomeAssistant, split_entity_id
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.template import Template
-from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers.typing import UNDEFINED, ConfigType, UndefinedType
 
 from .const import (
     CONF_ENTITY_PROPERTY_ATTRIBUTE,
@@ -80,6 +81,7 @@ class CustomProperty(Property, Protocol):
     _entry_data: ConfigEntryData
     _config: ConfigType
     _value_template: Template
+    _value: Any | UndefinedType
 
     def __init__(
         self,
@@ -88,12 +90,14 @@ class CustomProperty(Property, Protocol):
         config: ConfigType,
         device_id: str,
         value_template: Template,
+        value: Any | UndefinedType = UNDEFINED,
     ):
         """Initialize a custom property."""
         self._hass = hass
         self._entry_data = entry_data
         self._config = config
         self._value_template = value_template
+        self._value = value
 
         self.device_id = device_id
 
@@ -104,14 +108,24 @@ class CustomProperty(Property, Protocol):
 
     def _get_native_value(self) -> str:
         """Return the current property value without conversion."""
+        if self._value is not UNDEFINED:
+            return str(self._value).strip()
+
         try:
             return str(self._value_template.async_render()).strip()
         except TemplateError as exc:
             raise APIError(ResponseCode.INVALID_VALUE, f"Failed to get current value for {self}: {exc!r}")
 
-    def new_with_value_template(self, value_template: Template) -> Self:
-        """Return copy of the property with new value template."""
-        return self.__class__(self._hass, self._entry_data, self._config, self.device_id, value_template)
+    def new_with_value(self, value: Any) -> Self:
+        """Return copy of the state with new value."""
+        return self.__class__(
+            self._hass,
+            self._entry_data,
+            self._config,
+            self.device_id,
+            self._value_template,
+            value,
+        )
 
     def __repr__(self) -> str:
         """Return the representation."""
@@ -120,6 +134,7 @@ class CustomProperty(Property, Protocol):
             f" device_id={self.device_id }"
             f" instance={self.instance}"
             f" value_template={self._value_template}"
+            f" value={self._value}"
             f">"
         )
 
@@ -250,7 +265,7 @@ class CustomFloatProperty(CustomProperty, FloatProperty, Protocol):
         """Return the current property value without conversion."""
         return super()._get_native_value()
 
-    @property
+    @cached_property
     def _native_unit_of_measurement(self) -> str | None:
         """Return the unit the native value is expressed in."""
         if unit := self._config.get(CONF_ENTITY_PROPERTY_UNIT_OF_MEASUREMENT):

@@ -1,4 +1,3 @@
-import logging
 from typing import Any, cast
 
 from homeassistant.const import (
@@ -352,8 +351,8 @@ async def test_capability_custom_mode(hass: HomeAssistant, entry_data: MockConfi
     assert len(calls) == 1
     assert calls[0].data == {"service_mode": "mode: mode_1", ATTR_ENTITY_ID: ["switch.test"]}
 
-    for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
-        assert cap.new_with_value_template(Template(t, hass)).get_value() is None
+    for v in ("", STATE_UNKNOWN, None, STATE_UNAVAILABLE):
+        assert cap.new_with_value(v).get_value() is None
 
 
 @pytest.mark.parametrize("domain", ["switch", "light"])
@@ -441,11 +440,11 @@ async def test_capability_custom_mode_scene(hass: HomeAssistant, domain: str) ->
     assert len(calls) == 1
     assert calls[0].data == {"service_mode": "mode: bar", ATTR_ENTITY_ID: [state.entity_id]}
 
-    for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
-        assert scene_cap.new_with_value_template(Template(t, hass)).get_value() is None
+    for v in ("", STATE_UNKNOWN, None, STATE_UNAVAILABLE):
+        assert scene_cap.new_with_value(v).get_value() is None
 
-
-_LOGGER = logging.getLogger(__name__)
+    scene_cap._value_template = Template("None", hass)
+    assert scene_cap.get_value() is None
 
 
 async def test_capability_custom_toggle(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -533,14 +532,14 @@ async def test_capability_custom_toggle(hass: HomeAssistant, entry_data: MockCon
     assert len(calls_off) == 1
     assert calls_off[0].data == {ATTR_ENTITY_ID: ["switch.test2"]}
 
-    for t in ("", STATE_UNKNOWN, "None", STATE_UNAVAILABLE):
-        assert cap.new_with_value_template(Template(t, hass)).get_value() is None
+    for v in ("", STATE_UNKNOWN, None, STATE_UNAVAILABLE):
+        assert cap.new_with_value(v).get_value() is None
 
-    for t in ("True", "on", "1"):
-        assert cap.new_with_value_template(Template(t, hass)).get_value() is True
+    for v2 in (True, "on", "1"):
+        assert cap.new_with_value(v2).get_value() is True
 
-    for t in ("False", "off", "0"):
-        assert cap.new_with_value_template(Template(t, hass)).get_value() is False
+    for v3 in (False, "off", "0"):
+        assert cap.new_with_value(v3).get_value() is False
 
 
 async def test_capability_custom_range_random_access(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -600,8 +599,8 @@ async def test_capability_custom_range_random_access(hass: HomeAssistant, entry_
     assert calls[3].data["value"] == "value: 27"
     assert calls[4].data["value"] == "value: 10"
 
-    for t in ("False", "None", STATE_UNKNOWN, STATE_UNAVAILABLE):
-        assert cap.new_with_value_template(Template(t, hass)).get_value() is None
+    for v2 in (False, None, STATE_UNKNOWN, STATE_UNAVAILABLE):
+        assert cap.new_with_value(v2).get_value() is None
 
     hass.states.async_set(state.entity_id, STATE_UNKNOWN)
     with pytest.raises(APIError) as e:

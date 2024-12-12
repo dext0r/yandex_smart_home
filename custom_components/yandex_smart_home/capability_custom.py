@@ -12,7 +12,7 @@ from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.service import async_call_from_config
 from homeassistant.helpers.template import Template, forgiving_boolean
-from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers.typing import UNDEFINED, ConfigType, UndefinedType
 
 from .capability import Capability
 from .capability_color import ColorSceneCapability
@@ -71,6 +71,7 @@ class CustomCapability(Capability[Any], Protocol):
     _entry_data: ConfigEntryData
     _config: ConfigType
     _value_template: Template | None
+    _value: Any | UndefinedType
 
     def __init__(
         self,
@@ -80,12 +81,14 @@ class CustomCapability(Capability[Any], Protocol):
         instance: CapabilityInstance,
         device_id: str,
         value_template: Template | None,
+        value: Any | UndefinedType = UNDEFINED,
     ):
         """Initialize a custom capability."""
         self._hass = hass
         self._entry_data = entry_data
         self._config = config
         self._value_template = value_template
+        self._value = value
 
         self.device_id = device_id
         self.instance = instance
@@ -104,15 +107,26 @@ class CustomCapability(Capability[Any], Protocol):
 
         return super().reportable
 
-    def new_with_value_template(self, value_template: Template) -> Self:
-        """Return copy of the capability with new value template."""
-        return self.__class__(self._hass, self._entry_data, self._config, self.instance, self.device_id, value_template)
+    def new_with_value(self, value: Any) -> Self:
+        """Return copy of the state with new value."""
+        return self.__class__(
+            self._hass,
+            self._entry_data,
+            self._config,
+            self.instance,
+            self.device_id,
+            self._value_template,
+            value,
+        )
 
     @callback
     def _get_source_value(self) -> Any:
         """Return the current capability value (unprocessed)."""
         if self._value_template is None:
             return None
+
+        if self._value is not UNDEFINED:
+            return self._value
 
         try:
             return self._value_template.async_render()
@@ -126,6 +140,7 @@ class CustomCapability(Capability[Any], Protocol):
             f" device_id={self.device_id }"
             f" instance={self.instance}"
             f" value_template={self._value_template}"
+            f" value={self._value}"
             f">"
         )
 

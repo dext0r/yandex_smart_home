@@ -110,7 +110,7 @@
             'type': 'devices.types.light',
           }),
           'properties': list([
-            "<TemperatureCustomFloatProperty device_id=light.kitchen instance=temperature value_template=Template<template=({{ states('sensor.invalid') }}) renders=2>>",
+            "<TemperatureCustomFloatProperty device_id=light.kitchen instance=temperature value_template=Template<template=({{ states('sensor.invalid') }}) renders=2> value=UndefinedType._singleton>",
           ]),
           'state': dict({
             'capabilities': list([

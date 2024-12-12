@@ -20,6 +20,7 @@ from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
+    UnitOfPressure,
 )
 from homeassistant.core import CoreState, HomeAssistant, State
 from homeassistant.helpers import issue_registry as ir
@@ -75,6 +76,7 @@ from custom_components.yandex_smart_home.schema import (
     RangeCapabilityInstance,
     ResponseCode,
 )
+from tests.test_device import ATTR_UNIT_OF_MEASUREMENT
 
 from . import REQ_ID, MockConfigEntryData, generate_entity_filter, test_cloud
 
@@ -444,7 +446,7 @@ async def test_notifier_track_templates(
                     },
                     {
                         CONF_ENTITY_PROPERTY_TYPE: "pressure",
-                        CONF_ENTITY_PROPERTY_ENTITY: "sensor.float",
+                        CONF_ENTITY_PROPERTY_ENTITY: "sensor.pressure",
                     },
                 ]
             },
@@ -483,6 +485,7 @@ async def test_notifier_track_templates(
 
     hass.states.async_set("sensor.button", "click")
     hass.states.async_set("sensor.float", "10")
+    hass.states.async_set("sensor.pressure", "1000", {ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.HPA})
     caplog.clear()
     notifier = YandexDirectNotifier(
         hass_platform,
@@ -516,13 +519,14 @@ async def test_notifier_track_templates(
     # float
     mock_call_later.reset_mock()
     await _async_set_state(hass, "sensor.float", "50")
+    await _async_set_state(hass, "sensor.pressure", "1200", {ATTR_UNIT_OF_MEASUREMENT: UnitOfPressure.HPA})
     pending = await notifier._pending.async_get_all()
     assert list(pending.keys()) == ["light.kitchen", "sensor.outside_temp"]
     assert isinstance(pending["light.kitchen"][0], HumidityCustomFloatProperty)
     assert pending["light.kitchen"][0].get_value() == 50
     assert pending["light.kitchen"][0].instance == "humidity"
     assert isinstance(pending["light.kitchen"][1], PressureCustomFloatProperty)
-    assert pending["light.kitchen"][1].get_value() == 50
+    assert pending["light.kitchen"][1].get_value() == 900.07
     assert pending["light.kitchen"][1].instance == "pressure"
     print(pending["sensor.outside_temp"][0])
     assert isinstance(pending["sensor.outside_temp"][0], CO2LevelCustomFloatProperty)
@@ -561,7 +565,7 @@ async def test_notifier_track_templates(
     assert (
         caplog.messages[-1]
         == "State report with value 'fowl' scheduled for <CustomModeCapability device_id=sensor.outside_temp "
-        "instance=dishwashing value_template=Template<template=(one) renders=2>>"
+        "instance=dishwashing value_template=Template<template=({{ states('sensor.dishwashing') }}) renders=0> value=one>"
     )
     await _async_set_state(hass, "sensor.dishwashing", "unavailable")
     assert notifier._pending.empty is True
@@ -1307,29 +1311,11 @@ async def test_notifier_capability_check_value_change(hass: HomeAssistant, entry
         RangeCapabilityInstance.OPEN,
         "foo",
     )
-    await _assert_not_empty_list(ps.async_add([cap.new_with_value_template(Template("5", hass))], []))
-    await _assert_empty_list(
-        ps.async_add(
-            [cap.new_with_value_template(Template("5", hass))], [cap.new_with_value_template(Template("5", hass))]
-        )
-    )
-    await _assert_not_empty_list(
-        ps.async_add(
-            [cap.new_with_value_template(Template("5", hass))], [cap.new_with_value_template(Template("6", hass))]
-        )
-    )
-    await _assert_not_empty_list(
-        ps.async_add(
-            [cap.new_with_value_template(Template("5", hass))],
-            [cap.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
-        )
-    )
-    await _assert_empty_list(
-        ps.async_add(
-            [cap.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
-            [cap.new_with_value_template(Template("5", hass))],
-        )
-    )
+    await _assert_not_empty_list(ps.async_add([cap.new_with_value("5")], []))
+    await _assert_empty_list(ps.async_add([cap.new_with_value("5")], [cap.new_with_value("5")]))
+    await _assert_not_empty_list(ps.async_add([cap.new_with_value("5")], [cap.new_with_value("6")]))
+    await _assert_not_empty_list(ps.async_add([cap.new_with_value("5")], [cap.new_with_value(STATE_UNAVAILABLE)]))
+    await _assert_empty_list(ps.async_add([cap.new_with_value(STATE_UNAVAILABLE)], [cap.new_with_value("5")]))
 
 
 @pytest.mark.parametrize("instance", FloatPropertyInstance.__members__.values())
@@ -1339,29 +1325,11 @@ async def test_notifier_float_property_check_value_change(
     ps = PendingStates()
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "sensor.foo")
     assert prop
-    await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template("5", hass))], []))
-    await _assert_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(Template("5", hass))], [prop.new_with_value_template(Template("5", hass))]
-        )
-    )
-    await _assert_not_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(Template("5", hass))], [prop.new_with_value_template(Template("6", hass))]
-        )
-    )
-    await _assert_not_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(Template("5", hass))],
-            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
-        )
-    )
-    await _assert_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
-            [prop.new_with_value_template(Template("5", hass))],
-        )
-    )
+    await _assert_not_empty_list(ps.async_add([prop.new_with_value("5")], []))
+    await _assert_empty_list(ps.async_add([prop.new_with_value("5")], [prop.new_with_value("5")]))
+    await _assert_not_empty_list(ps.async_add([prop.new_with_value("5")], [prop.new_with_value("6")]))
+    await _assert_not_empty_list(ps.async_add([prop.new_with_value("5")], [prop.new_with_value(STATE_UNAVAILABLE)]))
+    await _assert_empty_list(ps.async_add([prop.new_with_value(STATE_UNAVAILABLE)], [prop.new_with_value("5")]))
 
 
 @pytest.mark.parametrize("instance", EventPropertyInstance.__members__.values())
@@ -1371,30 +1339,18 @@ async def test_notifier_binary_event_property_check_value_change(
     if instance in [EventPropertyInstance.BUTTON, EventPropertyInstance.VIBRATION]:
         return
 
-    a_value, b_value = Template("on", hass), Template("off", hass)
+    a_value, b_value = "on", "off"
     if instance == EventPropertyInstance.FOOD_LEVEL:
-        a_value, b_value = Template("normal", hass), Template("low", hass)
+        a_value, b_value = "normal", "low"
 
     ps = PendingStates()
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
     assert prop
-    await _assert_empty_list(ps.async_add([prop.new_with_value_template(a_value)], []))
-    await _assert_empty_list(
-        ps.async_add([prop.new_with_value_template(a_value)], [prop.new_with_value_template(a_value)])
-    )
-    await _assert_not_empty_list(
-        ps.async_add([prop.new_with_value_template(a_value)], [prop.new_with_value_template(b_value)])
-    )
-    await _assert_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(a_value)], [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))]
-        )
-    )
-    await _assert_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))], [prop.new_with_value_template(a_value)]
-        )
-    )
+    await _assert_empty_list(ps.async_add([prop.new_with_value(a_value)], []))
+    await _assert_empty_list(ps.async_add([prop.new_with_value(a_value)], [prop.new_with_value(a_value)]))
+    await _assert_not_empty_list(ps.async_add([prop.new_with_value(a_value)], [prop.new_with_value(b_value)]))
+    await _assert_empty_list(ps.async_add([prop.new_with_value(a_value)], [prop.new_with_value(STATE_UNAVAILABLE)]))
+    await _assert_empty_list(ps.async_add([prop.new_with_value(STATE_UNAVAILABLE)], [prop.new_with_value(a_value)]))
 
 
 @pytest.mark.parametrize(
@@ -1406,30 +1362,12 @@ async def test_notifier_reactive_event_property_check_value_change(
     ps = PendingStates()
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, "binary_sensor.foo")
     assert prop
-    await _assert_not_empty_list(ps.async_add([prop.new_with_value_template(Template(v, hass))], []))
-    await _assert_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(Template(v, hass))], [prop.new_with_value_template(Template(v, hass))]
-        )
-    )
-    await _assert_empty_list(ps.async_add([prop.new_with_value_template(Template("foo", hass))], []))
-    await _assert_not_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(Template(v, hass))], [prop.new_with_value_template(Template("off", hass))]
-        )
-    )
-    await _assert_not_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(Template(v, hass))],
-            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
-        )
-    )
-    await _assert_empty_list(
-        ps.async_add(
-            [prop.new_with_value_template(Template(STATE_UNAVAILABLE, hass))],
-            [prop.new_with_value_template(Template(v, hass))],
-        )
-    )
+    await _assert_not_empty_list(ps.async_add([prop.new_with_value(v)], []))
+    await _assert_empty_list(ps.async_add([prop.new_with_value(v)], [prop.new_with_value(v)]))
+    await _assert_empty_list(ps.async_add([prop.new_with_value("foo")], []))
+    await _assert_not_empty_list(ps.async_add([prop.new_with_value(v)], [prop.new_with_value("off")]))
+    await _assert_not_empty_list(ps.async_add([prop.new_with_value(v)], [prop.new_with_value(STATE_UNAVAILABLE)]))
+    await _assert_empty_list(ps.async_add([prop.new_with_value(STATE_UNAVAILABLE)], [prop.new_with_value(v)]))
 
 
 async def test_notifier_event_platform_property_check_value_change(

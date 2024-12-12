@@ -107,8 +107,8 @@ class ReportableTemplateDeviceState(ReportableDeviceState, Protocol):
     """Protocol type for custom properties and capabilities."""
 
     @abstractmethod
-    def new_with_value_template(self, value_template: Template) -> Self:
-        """Return copy of the state with new value template."""
+    def new_with_value(self, value: Any) -> Self:
+        """Return copy of the state with new value."""
         ...
 
 
@@ -379,12 +379,9 @@ class Notifier(ABC):
             if isinstance(result.last_result, TemplateError):
                 result.last_result = None
 
-            old_value_template = Template(str(result.last_result), self._hass)
-            new_value_template = Template(str(result.result), self._hass)
-
             for state in self._track_templates[result.template]:
-                old_state = state.new_with_value_template(old_value_template)
-                new_state = state.new_with_value_template(new_value_template)
+                old_state = state.new_with_value(result.last_result)
+                new_state = state.new_with_value(result.result)
 
                 for pending_state in await self._pending.async_add([new_state], [old_state]):
                     self._debug_log(

@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from contextlib import suppress
+from functools import cached_property
 from typing import Protocol, Self
 
 from homeassistant.components import air_quality, climate, fan, humidifier, light, sensor, switch, water_heater
@@ -158,7 +159,7 @@ class FloatProperty(Property, Protocol):
         """Return the current property value without conversion."""
         ...
 
-    @property
+    @cached_property
     def _native_unit_of_measurement(self) -> str | None:
         """Return the unit the native value is expressed in."""
         return None
