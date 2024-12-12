@@ -10,5 +10,5 @@
   "type": "service",
   "dependencies": ["http"],
   "codeowners": ["@dext0r"],
-  "version": "1.0.0b2"
+  "version": "1.0.0b3"
 }
