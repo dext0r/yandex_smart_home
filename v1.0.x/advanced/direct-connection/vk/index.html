@@ -1747,14 +1747,16 @@
 <li>
 <p>Если сертификат настраивался вручную: убедитесь, что используется fullchain сертификат
    (в случае штатного аддона Let's Encrypt он в файле fullchain.cer):</p>
-</li>
-</ol>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">http</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">ssl_certificate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/config/acme.sh/YOUR_HA_DOMAIN/fullchain.cer</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">ssl_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/config/acme.sh/YOUR_HA_DOMAIN/YOUR_HA_DOMAIN.key</span>
 </code></pre></div>
-<p>Корректность установки сертификата можно проверить через <a href="https://www.sslshopper.com/ssl-checker.html">этот</a> сервис.
-3. Если DNS запись добавлялась вручную: убедитесь, что у используемого домена нет AAAA записи (должна быть только A).</p>
+<p>Корректность установки сертификата можно проверить через <a href="https://www.sslshopper.com/ssl-checker.html">этот</a> сервис.</p>
+</li>
+<li>
+<p>Если DNS запись добавлялась вручную: убедитесь, что у используемого домена нет AAAA записи (должна быть только A).</p>
+</li>
+</ol>
 
 
 
