@@ -242,7 +242,6 @@ class BatteryLevelEventProperty(EventProperty[BatteryLevelInstanceEvent], Protoc
     _event_map_default: EventMapT[BatteryLevelInstanceEvent] = {
         BatteryLevelInstanceEvent.LOW: _BOOLEAN_TRUE + ["low"],
         BatteryLevelInstanceEvent.NORMAL: _BOOLEAN_FALSE + ["normal"],
-        BatteryLevelInstanceEvent.HIGH: ["high"],
     }
 
     @property
