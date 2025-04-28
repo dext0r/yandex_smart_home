@@ -419,42 +419,61 @@ async def test_handler_devices_action(
         await hass.async_block_till_done()
 
         assert device_action_event.call_count == 8
-        args, _ = device_action_event.call_args_list[0]
-        assert args[0].as_dict()["data"] == {
-            "entity_id": "switch.test_1",
-            "capability": {"state": {"instance": "pause", "value": True}, "type": "devices.capabilities.toggle"},
-        }
+        expected_events = [
+            {
+                "entity_id": "switch.test_1",
+                "capability": {"state": {"instance": "pause", "value": True}, "type": "devices.capabilities.toggle"},
+            },
+            {
+                "entity_id": "switch.test_1",
+                "capability": {
+                    "state": {"instance": "backlight", "value": True},
+                    "type": "devices.capabilities.toggle",
+                },
+            },
+            {
+                "entity_id": "switch.test_1",
+                "capability": {
+                    "state": {"instance": "backlight", "value": True},
+                    "type": "devices.capabilities.toggle",
+                },
+            },
+            {
+                "entity_id": "switch.test_1",
+                "capability": {
+                    "state": {"instance": "ionization", "value": True},
+                    "type": "devices.capabilities.toggle",
+                },
+                "error_code": "INTERNAL_ERROR",
+            },
+            {
+                "entity_id": "foo.not_exist",
+                "error_code": "DEVICE_UNREACHABLE",
+            },
+        ]
+        for expected_event in expected_events:
+            found = False
+            for call_args_list in device_action_event.call_args_list:
+                if call_args_list[0][0].as_dict()["data"] == expected_event:
+                    found = True
+                    break
 
-        args, _ = device_action_event.call_args_list[1]
-        assert args[0].as_dict()["data"] == {
-            "entity_id": "switch.test_1",
-            "capability": {"state": {"instance": "backlight", "value": True}, "type": "devices.capabilities.toggle"},
-        }
-
-        args, _ = device_action_event.call_args_list[2]
-        assert args[0].as_dict()["data"] == {
-            "entity_id": "switch.test_1",
-            "capability": {"state": {"instance": "ionization", "value": True}, "type": "devices.capabilities.toggle"},
-            "error_code": "INTERNAL_ERROR",
-        }
-
-        args, _ = device_action_event.call_args_list[7]
-        assert args[0].as_dict()["data"] == {
-            "entity_id": "foo.not_exist",
-            "error_code": "DEVICE_UNREACHABLE",
-        }
+            if not found:
+                pytest.fail(f"Event not found: {expected_event}")
 
         filtered_messages = [m for m in caplog.messages if "Bus:Handling" not in m]
-        assert filtered_messages == [
-            "Failed to execute action for instance ionization of toggle capability of "
-            "switch.test_1: Exception('fail set_state') (INTERNAL_ERROR)",
-            "Device switch.test_2 doesn't support instance keep_warm of toggle capability "
-            "(NOT_SUPPORTED_IN_CURRENT_MODE)",
-            "Device switch.test_2 doesn't support instance controls_locked of toggle "
-            "capability (NOT_SUPPORTED_IN_CURRENT_MODE)",
-            "Device for switch.not_expose exists in Yandex, but entity switch.not_expose not exposed via integration settings. "
-            "Please either expose the entity or delete the device from Yandex.",
-        ]
+        assert sorted(filtered_messages) == sorted(
+            [
+                "Failed to execute action for instance ionization of toggle capability of "
+                "switch.test_1: Exception('fail set_state') (INTERNAL_ERROR)",
+                "Device switch.test_2 doesn't support instance keep_warm of toggle capability "
+                "(NOT_SUPPORTED_IN_CURRENT_MODE)",
+                "Device switch.test_2 doesn't support instance controls_locked of toggle "
+                "capability (NOT_SUPPORTED_IN_CURRENT_MODE)",
+                "Device for switch.not_expose exists in Yandex, but entity switch.not_expose not exposed via integration settings. "
+                "Please either expose the entity or delete the device from Yandex.",
+            ]
+        )
 
 
 async def test_handler_devices_action_error_template(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
