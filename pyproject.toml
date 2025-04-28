@@ -204,6 +204,7 @@ deps = [
     "pymicro-vad==1.0.2",
     "pyspeex_noise==1.0.2",
 ]
+pip_pre = true
 
 [tool.tox.env.2025_2]
 base_python = ["py313"]
