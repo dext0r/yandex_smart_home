@@ -154,6 +154,7 @@ deps = [
     "ha-ffmpeg==3.2.0",
     "pymicro-vad==1.0.2",
     "pyspeex_noise==1.0.2",
+    "josepy<2.0.0",
 ]
 
 [tool.tox.env.2024_10]
@@ -165,6 +166,7 @@ deps = [
     "ha-ffmpeg==3.2.0",
     "pymicro-vad==1.0.2",
     "pyspeex_noise==1.0.2",
+    "josepy<2.0.0",
 ]
 
 [tool.tox.env.2024_11]
@@ -176,6 +178,7 @@ deps = [
     "ha-ffmpeg==3.2.0",
     "pymicro-vad==1.0.2",
     "pyspeex_noise==1.0.2",
+    "josepy<2.0.0",
 ]
 
 [tool.tox.env.2024_12]
