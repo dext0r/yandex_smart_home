@@ -79,7 +79,7 @@ async def test_diagnostics(
     for k in ("integration_manifest", "custom_components", "home_assistant", "minor_version", "setup_times"):
         diagnostics.pop(k, None)
 
-    for k in ("minor_version", "created_at", "discovery_keys", "modified_at"):
+    for k in ("minor_version", "created_at", "discovery_keys", "modified_at", "subentries"):
         diagnostics["data"]["entry"].pop(k, None)
 
     assert diagnostics == snapshot
