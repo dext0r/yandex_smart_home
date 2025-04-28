@@ -199,7 +199,7 @@ async def test_state_property_event_battery(
 
     assert prop.retrievable is True
     assert prop.parameters == {
-        "events": [{"value": "low"}, {"value": "normal"}, {"value": "high"}],
+        "events": [{"value": "low"}, {"value": "normal"}],
         "instance": "battery_level",
     }
     assert prop.get_value() == "low"
