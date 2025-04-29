@@ -443,7 +443,7 @@ class OnOffCapabilityClimate(OnOffCapability):
         if state.value:
             service = SERVICE_TURN_ON
 
-            hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES, [])
+            hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES) or []
             for mode in (HVACMode.HEAT_COOL, HVACMode.AUTO):
                 if mode not in hvac_modes:
                     continue
@@ -495,7 +495,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
         )
 
     async def _set_state_operation_mode(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
-        operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST, [])
+        operation_list = self.state.attributes.get(water_heater.ATTR_OPERATION_LIST) or []
 
         if state.value:
             mode = self._get_water_heater_operation(STATE_ON, operation_list)

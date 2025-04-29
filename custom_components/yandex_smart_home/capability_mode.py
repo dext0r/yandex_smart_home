@@ -329,7 +329,7 @@ class ThermostatCapability(StateModeCapability):
     @property
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        return self.state.attributes.get(climate.ATTR_HVAC_MODES, []) or []
+        return self.state.attributes.get(climate.ATTR_HVAC_MODES) or []
 
 
 class SwingCapability(StateModeCapability):
@@ -368,7 +368,7 @@ class SwingCapability(StateModeCapability):
     @property
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        return self.state.attributes.get(climate.ATTR_SWING_MODES, []) or []
+        return self.state.attributes.get(climate.ATTR_SWING_MODES) or []
 
     @property
     def _ha_value(self) -> Any:
@@ -432,7 +432,7 @@ class ProgramCapabilityClimate(ProgramCapability):
     @property
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        return self.state.attributes.get(climate.ATTR_PRESET_MODES, []) or []
+        return self.state.attributes.get(climate.ATTR_PRESET_MODES) or []
 
     @property
     def _ha_value(self) -> Any:
@@ -507,7 +507,7 @@ class ProgramCapabilityHumidifier(ProgramCapability):
     @property
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        return self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES, []) or []
+        return self.state.attributes.get(humidifier.ATTR_AVAILABLE_MODES) or []
 
     @property
     def _ha_value(self) -> Any:
@@ -576,7 +576,7 @@ class ProgramCapabilityFan(ProgramCapability):
     @property
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        return self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or []
+        return self.state.attributes.get(fan.ATTR_PRESET_MODES) or []
 
     @property
     def _ha_value(self) -> Any:
@@ -621,7 +621,7 @@ class InputSourceCapability(StateModeCapability):
     @property
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        modes = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST, []) or []
+        modes = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST) or []
         filtered_modes = list(filter(lambda m: m not in ["Live TV"], modes))  # #418
         if filtered_modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
             self._cache.save_attr_value(self.state.entity_id, media_player.ATTR_INPUT_SOURCE_LIST, modes)
@@ -707,7 +707,7 @@ class FanSpeedCapabilityClimate(FanSpeedCapability):
     @property
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        modes = self.state.attributes.get(climate.ATTR_FAN_MODES, []) or []
+        modes = self.state.attributes.get(climate.ATTR_FAN_MODES) or []
 
         # esphome default state for some devices
         if self._ha_value == climate.FAN_ON and climate.FAN_ON not in modes:
@@ -788,7 +788,7 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
     @property
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        return self.state.attributes.get(fan.ATTR_PRESET_MODES, []) or []
+        return self.state.attributes.get(fan.ATTR_PRESET_MODES) or []
 
     @property
     def _ha_value(self) -> Any:
@@ -860,7 +860,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
         if self.modes_map:
             return self.modes_map.keys()
 
-        percentage_step = self.state.attributes.get(fan.ATTR_PERCENTAGE_STEP, 100)
+        percentage_step = self._attribute_as_float(fan.ATTR_PERCENTAGE_STEP, 100)
         speed_count = math.ceil(100 / percentage_step)
         if speed_count == 1:
             return []
@@ -954,7 +954,7 @@ class CleanupModeCapability(StateModeCapability):
     @property
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        return self.state.attributes.get(vacuum.ATTR_FAN_SPEED_LIST, []) or []
+        return self.state.attributes.get(vacuum.ATTR_FAN_SPEED_LIST) or []
 
     @property
     def _ha_value(self) -> Any:

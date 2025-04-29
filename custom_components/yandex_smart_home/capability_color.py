@@ -417,7 +417,7 @@ class ColorSceneStateCapability(ColorSceneCapability, StateCapability[SceneInsta
     @property
     def supported_ha_scenes(self) -> list[str]:
         """Returns a list of supported Yandex scenes."""
-        return list(map(str, self.state.attributes.get(ATTR_EFFECT_LIST, []) or []))
+        return list(map(str, self.state.attributes.get(ATTR_EFFECT_LIST) or []))
 
     def get_value(self) -> ColorScene | None:
         """Return the current capability value."""

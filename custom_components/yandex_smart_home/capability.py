@@ -224,6 +224,14 @@ class StateCapability(Capability[CapabilityInstanceActionState], Protocol):
         """Return supported features for the state."""
         return int(self.state.attributes.get(ATTR_SUPPORTED_FEATURES, 0))
 
+    def _attribute_as_float(self, attr: str, default: float) -> float:
+        """Return attribute value as a float, fallback to default value if none."""
+        value: float | None
+        if (value := self.state.attributes.get(attr)) is None:
+            value = default
+
+        return value
+
     @property
     def _cache(self) -> CacheStore:
         """Return cache storage."""

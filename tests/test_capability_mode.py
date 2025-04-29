@@ -42,7 +42,7 @@ class MockModeCapability(StateModeCapability):
 
     @property
     def _ha_modes(self) -> list[str]:
-        return self.state.attributes.get("modes_list", []) or []
+        return self.state.attributes.get("modes_list") or []
 
     async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
         pass

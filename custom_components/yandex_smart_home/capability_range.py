@@ -240,8 +240,8 @@ class TemperatureCapabilityWaterHeater(TemperatureCapability):
     def _range(self) -> RangeCapabilityRange:
         """Return supporting value range."""
         return RangeCapabilityRange(
-            min=self.state.attributes.get(water_heater.ATTR_MIN_TEMP, 0),
-            max=self.state.attributes.get(water_heater.ATTR_MAX_TEMP, 100),
+            min=self._attribute_as_float(water_heater.ATTR_MIN_TEMP, 0),
+            max=self._attribute_as_float(water_heater.ATTR_MAX_TEMP, 100),
             precision=0.5,
         )
 
@@ -274,9 +274,9 @@ class TemperatureCapabilityClimate(TemperatureCapability):
     def _range(self) -> RangeCapabilityRange:
         """Return supporting value range."""
         return RangeCapabilityRange(
-            min=self.state.attributes.get(climate.ATTR_MIN_TEMP, 0),
-            max=self.state.attributes.get(climate.ATTR_MAX_TEMP, 100),
-            precision=self.state.attributes.get(climate.ATTR_TARGET_TEMP_STEP, 0.5),
+            min=self._attribute_as_float(climate.ATTR_MIN_TEMP, 0),
+            max=self._attribute_as_float(climate.ATTR_MAX_TEMP, 100),
+            precision=self._attribute_as_float(climate.ATTR_TARGET_TEMP_STEP, 0.5),
         )
 
 
@@ -317,8 +317,8 @@ class HumidityCapabilityHumidifier(HumidityCapability):
     def _range(self) -> RangeCapabilityRange:
         """Return supporting value range."""
         return RangeCapabilityRange(
-            min=self.state.attributes.get(humidifier.ATTR_MIN_HUMIDITY, 0),
-            max=self.state.attributes.get(humidifier.ATTR_MAX_HUMIDITY, 100),
+            min=self._attribute_as_float(humidifier.ATTR_MIN_HUMIDITY, 0),
+            max=self._attribute_as_float(humidifier.ATTR_MAX_HUMIDITY, 100),
             precision=1,
         )
 
