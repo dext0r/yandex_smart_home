@@ -28,60 +28,37 @@ jobs:
       matrix:
         include:
           - tox-env: type
-            python-version: '3.13'
-
           - tox-env: 2024_9
-            python-version: '3.12'
           - tox-env: 2024_10
-            python-version: '3.12'
           - tox-env: 2024_11
-            python-version: '3.12'
           - tox-env: 2024_12
-            python-version: '3.13'
           - tox-env: 2025_1
-            python-version: '3.13'
           - tox-env: 2025_2
-            python-version: '3.13'
-          - tox-env: 2025_2
-            python-version: '3.13'
 
           - tox-env: 2025_4
-            python-version: '3.13'
             latest: true
     steps:
       - uses: actions/checkout@v4
 
+      - uses: astral-sh/setup-uv@v6
+
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.13'
 
-      - name: Load ~/.local cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.local
-          key: dotlocal-${{ hashFiles('.github/workflows/ci.yml') }}-${{ matrix.python-version }}
-
-      - name: Load virtual environment cache
+      - name: Load tox cache
         uses: actions/cache@v4
         with:
           path: |
             .venv
             .tox
-          key: venv-${{ hashFiles('pyproject.toml', 'poetry.lock') }}-${{ matrix.tox-env }}
-
-      - name: Install poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: '2.0.0'
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
+          key: env-${{ hashFiles(format('tests/env/{0}/uv.lock', matrix.tox-env )) }}-${{ matrix.tox-env }}
 
       - name: Install dependencies
-        run: poetry install --only tox
+        run: uv sync --only-group tox
 
       - name: Run tests
-        run: poetry run tox -e ${{ matrix.tox-env }}
+        run: uv run tox -e ${{ matrix.tox-env }}
 
       - name: Upload coverage report
         if: ${{ matrix.latest == true }}
