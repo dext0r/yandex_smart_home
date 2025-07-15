@@ -3,7 +3,7 @@ name = "yandex_smart_home"
 version = "1.0.2dev"
 requires-python = "~=3.13.2"
 dependencies = [
-    "pycares==4.8.0", # https://github.com/home-assistant/core/pull/146728
+    "pycares==4.9.0", # https://github.com/home-assistant/core/pull/146728
 ]
 
 [dependency-groups]
