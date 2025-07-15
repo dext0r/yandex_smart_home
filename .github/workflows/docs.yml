@@ -20,30 +20,12 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
-      - name: Load ~/.local cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.local
-          key: dotlocal-${{ hashFiles('.github/workflows/docs.yml') }}
-
-      - name: Load virtual environment cache
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ hashFiles('pyproject.toml', 'poetry.lock') }}-docs
-
-      - name: Install poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: '2.0.0'
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
+      - uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
-        run: poetry install --only docs
+        run: uv sync --only-group docs
 
       - name: Prepare environment
         run: |
@@ -55,4 +37,4 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME}"
           [ "${GITHUB_REF_NAME}" == "dev" ] && VERSION="v1.0.x"
-          poetry run mike deploy --push --branch gh-pages "${VERSION}"
+          uv run mike deploy --push --branch gh-pages "${VERSION}"

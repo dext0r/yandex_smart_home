@@ -1,0 +1,13 @@
+[project]
+name = "yandex_smart_home_test_env"
+version = "2024.11"
+requires-python = "~=3.12.0"
+dependencies = [
+    "pytest-homeassistant-custom-component==0.13.181",
+    "home_assistant_intents==2024.4.24",
+    "hassil==1.7.0",
+    "mutagen==1.47.0",
+    "ha-ffmpeg==3.2.0",
+    "pymicro-vad==1.0.2",
+    "pyspeex_noise==1.0.2",
+]
