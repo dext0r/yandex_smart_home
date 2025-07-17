@@ -268,10 +268,6 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
     @property
     def support_random_access(self) -> bool:
         """Test if the capability accept arbitrary values to be set."""
-        for key in [CONF_ENTITY_RANGE_MIN, CONF_ENTITY_RANGE_MAX]:
-            if key not in self._config.get(CONF_ENTITY_RANGE, {}):
-                return False
-
         return self._set_value_service_config is not None
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
@@ -329,17 +325,27 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
 
             raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Missing current value for {self}")
 
+        if not self._range:
+            return value + relative_value
+
         return max(min(value + relative_value, self._range.max), self._range.min)
 
     @cached_property
-    def _range(self) -> RangeCapabilityRange:
+    def _range(self) -> RangeCapabilityRange | None:
         """Return supporting value range."""
+        instance_default_range = super()._range
+        range_config = self._config.get(CONF_ENTITY_RANGE, {})
+
+        if not range_config:
+            if instance_default_range:
+                return instance_default_range
+
+            return None
+
         return RangeCapabilityRange(
-            min=self._config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MIN, super()._range.min),
-            max=self._config.get(CONF_ENTITY_RANGE, {}).get(CONF_ENTITY_RANGE_MAX, super()._range.max),
-            precision=self._config.get(CONF_ENTITY_RANGE, {}).get(
-                CONF_ENTITY_RANGE_PRECISION, super()._range.precision
-            ),
+            min=range_config.get(CONF_ENTITY_RANGE_MIN, 0),
+            max=range_config.get(CONF_ENTITY_RANGE_MAX, 100),
+            precision=range_config.get(CONF_ENTITY_RANGE_PRECISION, 1),
         )
 
     @property

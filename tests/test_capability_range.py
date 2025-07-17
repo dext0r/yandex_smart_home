@@ -54,7 +54,6 @@ from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
-    RangeCapabilityParameters,
     RangeCapabilityRange,
     ResponseCode,
 )
@@ -63,15 +62,15 @@ from . import MockConfigEntryData
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
 
-async def test_capability_range(
+async def test_capability_range_random_access_with_range(
     hass: HomeAssistant, entry_data: MockConfigEntryData, caplog: pytest.LogCaptureFixture
 ) -> None:
     class MockCapability(StateRangeCapability):
-        instance = RangeCapabilityInstance.VOLUME
+        instance = RangeCapabilityInstance.OPEN
 
         @property
         def support_random_access(self) -> bool:
-            return False
+            return True
 
         @property
         def supported(self) -> bool:
@@ -83,18 +82,8 @@ async def test_capability_range(
         def _get_value(self) -> float | None:
             return None
 
-    class MockCapabilityRandomAccess(MockCapability):
-        @property
-        def support_random_access(self) -> bool:
-            return True
-
     cap = MockCapability(hass, entry_data, "switch.test", State("switch.test", STATE_ON))
-    assert cap.retrievable is False
-    assert cap.parameters == RangeCapabilityParameters(instance=RangeCapabilityInstance.VOLUME, random_access=False)
-
-    cap = MockCapabilityRandomAccess(hass, entry_data, "switch.test", State("switch.test", STATE_ON))
     assert cap.retrievable
-    assert cap.support_random_access
     assert cap._range == RangeCapabilityRange(min=0.0, max=100.0, precision=1.0)
 
     for v in [STATE_UNAVAILABLE, STATE_UNKNOWN, "None"]:
@@ -118,20 +107,56 @@ async def test_capability_range(
             assert cap.get_value() is None
 
     assert caplog.messages == [
-        "Value -1 is not in range [0.0, 100.0] for instance volume of switch.test",
-        "Value 101 is not in range [0.0, 100.0] for instance volume of switch.test",
+        "Value -1 is not in range [0.0, 100.0] for instance open of switch.test",
+        "Value 101 is not in range [0.0, 100.0] for instance open of switch.test",
     ]
 
     with pytest.raises(APIError) as e:
         cap._get_absolute_value(0)
     assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
-    assert e.value.message == "Missing current value for instance volume of range capability of switch.test"
+    assert e.value.message == "Missing current value for instance open of range capability of switch.test"
 
     cap.state.state = STATE_OFF
     with pytest.raises(APIError) as e:
         cap._get_absolute_value(0)
     assert e.value.code == ResponseCode.DEVICE_OFF
     assert e.value.message == "Device switch.test probably turned off"
+
+
+async def test_capability_range_random_access_no_range(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, caplog: pytest.LogCaptureFixture
+) -> None:
+    class MockCapability(StateRangeCapability):
+        instance = RangeCapabilityInstance.VOLUME
+
+        @property
+        def support_random_access(self) -> bool:
+            return True
+
+        @property
+        def supported(self) -> bool:
+            return True
+
+        async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
+            pass
+
+        def _get_value(self) -> float | None:
+            return None
+
+    cap = MockCapability(hass, entry_data, "switch.test", State("switch.test", STATE_ON))
+    assert cap.retrievable
+    assert cap.support_random_access
+    assert cap._range is None
+
+    with patch.object(MockCapability, "_get_value", return_value=20):
+        assert cap._get_absolute_value(10) == 30
+        assert cap._get_absolute_value(-5) == 15
+        assert cap._get_absolute_value(99) == 119
+        assert cap._get_absolute_value(-50) == -30
+
+    for v2 in [-1, 101]:
+        with patch.object(MockCapability, "_get_value", return_value=v2):
+            assert cap.get_value() == v2
 
 
 @pytest.mark.parametrize(
@@ -158,7 +183,7 @@ async def test_capability_range_open(
     )
     assert cap.retrievable is True
     assert cap.support_random_access is True
-    assert cap.parameters.dict() == {
+    assert cap.parameters.as_dict() == {
         "instance": "open",
         "random_access": True,
         "range": {"max": 100, "min": 0, "precision": 1},
@@ -440,6 +465,13 @@ async def test_capability_range_brightness(
         RangeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.BRIGHTNESS),
     )
+    assert cap.support_random_access is True
+    assert cap.parameters.as_dict() == {
+        "instance": "brightness",
+        "random_access": True,
+        "range": {"max": 100, "min": 1, "precision": 1},
+        "unit": "unit.percent",
+    }
     assert cap.get_value() == 50
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -484,6 +516,12 @@ async def test_capability_range_white_light_brightness(
         RangeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
+    assert cap.support_random_access is True
+    assert cap.parameters.as_dict() == {
+        "instance": "volume",
+        "random_access": True,
+        "range": {"max": 100, "min": 0, "precision": 1},
+    }
     assert cap.get_value() == 75
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -548,6 +586,13 @@ async def test_capability_range_warm_white_light_brightness(
         RangeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.OPEN),
     )
+    assert cap.support_random_access is True
+    assert cap.parameters.as_dict() == {
+        "instance": "open",
+        "random_access": True,
+        "range": {"max": 100, "min": 0, "precision": 1},
+        "unit": "unit.percent",
+    }
     assert cap.get_value() == 75
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -593,6 +638,11 @@ async def test_capability_range_volume(hass: HomeAssistant) -> None:
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.support_random_access is True
+    assert cap.parameters.as_dict() == {
+        "instance": "volume",
+        "random_access": True,
+        "range": {"max": 100, "min": 0, "precision": 1},
+    }
 
 
 @pytest.mark.parametrize(
@@ -719,7 +769,10 @@ async def test_capability_range_volume_only_relative(
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
     )
     assert cap.support_random_access is False
-
+    assert cap.parameters.as_dict() == {
+        "instance": "volume",
+        "random_access": False,
+    }
     entity_config = {}
     if precision:
         entity_config = {CONF_ENTITY_RANGE: {CONF_ENTITY_RANGE_PRECISION: precision}}
@@ -1055,7 +1108,10 @@ async def test_capability_range_channel_set_relative(
     else:
         assert cap.retrievable is False
         assert cap.support_random_access is False
-        assert cap.parameters.as_dict() == {"instance": "channel", "random_access": False}
+        assert cap.parameters.as_dict() == {
+            "instance": "channel",
+            "random_access": False,
+        }
         assert cap.get_value() is None
 
     calls_up = async_mock_service(hass, media_player.DOMAIN, SERVICE_MEDIA_NEXT_TRACK)
@@ -1076,7 +1132,7 @@ async def test_capability_range_channel_set_relative(
 
 
 @pytest.mark.parametrize(
-    "instance,range_required",
+    "instance,range_expected",
     [
         (RangeCapabilityInstance.BRIGHTNESS, True),
         (RangeCapabilityInstance.CHANNEL, False),
@@ -1087,13 +1143,18 @@ async def test_capability_range_channel_set_relative(
     ],
 )
 async def test_capability_range_relative_only_parameters(
-    hass: HomeAssistant, entry_data: MockConfigEntryData, instance: RangeCapabilityInstance, range_required: bool
+    hass: HomeAssistant, entry_data: MockConfigEntryData, instance: RangeCapabilityInstance, range_expected: bool
 ) -> None:
+
     class MockCapability(StateRangeCapability, ABC):
-        instance = RangeCapabilityInstance.BRIGHTNESS
+        instance = RangeCapabilityInstance.BRIGHTNESS  # will be changed later
 
         @property
         def supported(self) -> bool:
+            return True
+
+        @property
+        def support_random_access(self) -> bool:
             return True
 
         async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
@@ -1102,22 +1163,10 @@ async def test_capability_range_relative_only_parameters(
         def _get_value(self) -> float | None:
             return None
 
-    class MockCapabilityRandom(MockCapability):
-        @property
-        def support_random_access(self) -> bool:
-            return True
+    cap = MockCapability(hass, entry_data, "switch.foo", State("switch.foo", STATE_OFF))
+    cap.instance = instance
 
-    class MockCapabilityRelative(MockCapability):
-        @property
-        def support_random_access(self) -> bool:
-            return False
-
-    cap_random = MockCapabilityRandom(hass, entry_data, "switch.foo", State("switch.foo", STATE_OFF))
-    cap_relative = MockCapabilityRelative(hass, entry_data, "switch.foo", State("switch.foo", STATE_OFF))
-    cap_random.instance = cap_relative.instance = instance
-
-    assert cap_random.parameters.range is not None
-    if range_required:
-        assert cap_relative.parameters.range is not None
+    if range_expected:
+        assert cap.parameters.range is not None
     else:
-        assert cap_relative.parameters.range is None
+        assert cap.parameters.range is None

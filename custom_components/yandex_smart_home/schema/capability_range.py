@@ -70,15 +70,25 @@ class RangeCapabilityParameters(APIModel):
     def validate_range(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Force range boundaries for a capability instance."""
 
-        r: RangeCapabilityRange | None
-        if r := values.get("range"):
-            match values.get("instance"):
+        instance: RangeCapabilityInstance | None = values.get("instance")
+        r: RangeCapabilityRange | None = values.get("range")
+
+        if r:
+            match instance:
                 case RangeCapabilityInstance.HUMIDITY | RangeCapabilityInstance.OPEN:
                     r.min, r.max = max([0.0, r.min]), min([100.0, r.max])
                 case RangeCapabilityInstance.BRIGHTNESS:
                     r.min = max(min(r.min, 1.0), 0.0)
                     r.max = 100.0
                     r.precision = 1.0
+        else:
+            if instance in (
+                RangeCapabilityInstance.BRIGHTNESS,
+                RangeCapabilityInstance.HUMIDITY,
+                RangeCapabilityInstance.OPEN,
+                RangeCapabilityInstance.TEMPERATURE,
+            ):
+                raise ValueError(f"range field required for {instance}")
 
         return values
 

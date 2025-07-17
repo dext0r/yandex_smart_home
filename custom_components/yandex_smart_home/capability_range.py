@@ -90,26 +90,23 @@ class RangeCapability(Capability[RangeCapabilityInstanceActionState], Protocol):
     @property
     def parameters(self) -> RangeCapabilityParameters:
         """Return parameters for a devices list request."""
-        if self.support_random_access:
-            return RangeCapabilityParameters(instance=self.instance, random_access=True, range=self._range)
-
-        if self.instance in [
+        if self.instance in (
             RangeCapabilityInstance.BRIGHTNESS,
             RangeCapabilityInstance.HUMIDITY,
             RangeCapabilityInstance.OPEN,
             RangeCapabilityInstance.TEMPERATURE,
-        ]:
+        ) or (self._range and self.support_random_access):
             return RangeCapabilityParameters(
                 instance=self.instance, random_access=self.support_random_access, range=self._range
             )
 
-        return RangeCapabilityParameters(instance=self.instance, random_access=False)
+        return RangeCapabilityParameters(instance=self.instance, random_access=self.support_random_access)
 
     def get_value(self) -> float | None:
         """Return the current capability value."""
         value = self._get_value()
 
-        if self.support_random_access and value is not None:
+        if self.support_random_access and value is not None and self._range:
             if not (self._range.min <= value <= self._range.max):
                 _LOGGER.debug(
                     f"Value {value} is not in range {self._range} for instance {self.instance.value} "
@@ -137,9 +134,15 @@ class RangeCapability(Capability[RangeCapabilityInstanceActionState], Protocol):
         return state.value
 
     @cached_property
-    def _range(self) -> RangeCapabilityRange:
+    def _range(self) -> RangeCapabilityRange | None:
         """Return supporting value range."""
-        return RangeCapabilityRange(min=0, max=100, precision=1)
+        match self.instance:
+            case RangeCapabilityInstance.HUMIDITY | RangeCapabilityInstance.OPEN | RangeCapabilityInstance.TEMPERATURE:
+                return RangeCapabilityRange(min=0, max=100, precision=1)
+            case RangeCapabilityInstance.BRIGHTNESS:
+                return RangeCapabilityRange(min=1, max=100, precision=1)
+
+        return None
 
     def _convert_to_float(self, value: Any, strict: bool = True) -> float | None:
         """Return float of a value, ignore some states, catch errors."""
@@ -167,6 +170,9 @@ class StateRangeCapability(RangeCapability, StateCapability[RangeCapabilityInsta
                 raise APIError(ResponseCode.DEVICE_OFF, f"Device {self.state.entity_id} probably turned off")
 
             raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Missing current value for {self}")
+
+        if not self._range:
+            return value + relative_value
 
         return max(min(value + relative_value, self._range.max), self._range.min)
 
@@ -389,11 +395,6 @@ class BrightnessCapability(StateRangeCapability):
             return int(100 * (brightness / 255))
 
         return None
-
-    @cached_property
-    def _range(self) -> RangeCapabilityRange:
-        """Return supporting value range."""
-        return RangeCapabilityRange(min=1, max=100, precision=1)
 
 
 class WhiteLightBrightnessCapability(StateRangeCapability, LightState):
@@ -692,11 +693,7 @@ class ChannelCapability(StateRangeCapability):
     @cached_property
     def _range(self) -> RangeCapabilityRange:
         """Return supporting value range."""
-        return RangeCapabilityRange(
-            min=0,
-            max=999,
-            precision=1,
-        )
+        return RangeCapabilityRange(min=0, max=999, precision=1)
 
 
 class ValvePositionCapability(StateRangeCapability):

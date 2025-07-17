@@ -1,3 +1,4 @@
+import pytest
 from pytest_homeassistant_custom_component.common import load_fixture
 
 from custom_components.yandex_smart_home.schema import ActionRequest, GetStreamInstanceActionStateValue
@@ -58,3 +59,10 @@ def test_devices_action_request_vk() -> None:
     assert request.payload.devices[0].capabilities[0] == RangeCapabilityInstanceAction(
         state=RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=54.0, relative=False),
     )
+
+
+def test_range_capability_parameters() -> None:
+    with pytest.raises(ValueError):
+        RangeCapabilityParameters(instance=RangeCapabilityInstance.BRIGHTNESS, random_access=False)
+
+    RangeCapabilityParameters(instance=RangeCapabilityInstance.CHANNEL, random_access=False)
