@@ -36,5 +36,5 @@ jobs:
       - name: Deploy docs
         run: |
           VERSION="${GITHUB_REF_NAME}"
-          [ "${GITHUB_REF_NAME}" == "dev" ] && VERSION="v1.0.x"
+          [ "${GITHUB_REF_NAME}" == "dev" ] && VERSION="v1.1.x"
           uv run mike deploy --push --branch gh-pages "${VERSION}"
