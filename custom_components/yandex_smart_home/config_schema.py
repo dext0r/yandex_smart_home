@@ -345,9 +345,9 @@ ENTITY_EVENT_MAP_SCHEMA = vol.Schema(
 
 ENTITY_RANGE_SCHEMA = vol.Schema(
     {
-        vol.Optional(CONF_ENTITY_RANGE_MAX): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
-        vol.Optional(CONF_ENTITY_RANGE_MIN): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
-        vol.Optional(CONF_ENTITY_RANGE_PRECISION): vol.All(vol.Coerce(float), vol.Range(min=-100.0, max=1000.0)),
+        vol.Optional(CONF_ENTITY_RANGE_MAX): vol.All(vol.Coerce(float)),
+        vol.Optional(CONF_ENTITY_RANGE_MIN): vol.All(vol.Coerce(float)),
+        vol.Optional(CONF_ENTITY_RANGE_PRECISION): vol.All(vol.Coerce(float)),
     },
 )
 
