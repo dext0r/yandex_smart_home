@@ -34,8 +34,10 @@ jobs:
           - tox-env: 2024_12
           - tox-env: 2025_1
           - tox-env: 2025_2
-
           - tox-env: 2025_4
+          - tox-env: 2025_5
+          - tox-env: 2025_6
+          - tox-env: 2025_7
             latest: true
     steps:
       - uses: actions/checkout@v4

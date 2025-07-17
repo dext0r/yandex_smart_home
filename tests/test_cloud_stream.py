@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aiohttp import ClientConnectionError, ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
 from aiohttp.web import Response
 from homeassistant.components.camera import DynamicStreamSettings
-from homeassistant.components.stream import OUTPUT_IDLE_TIMEOUT, Stream, StreamSettings
+from homeassistant.components.stream import Stream, StreamSettings
 from homeassistant.components.stream.hls import HlsMasterPlaylistView
 from homeassistant.core import HomeAssistant
 import pytest
@@ -79,7 +79,7 @@ class MockStream(Stream):
     def endpoint_url(self, fmt: str) -> str:
         return "/foo"
 
-    def add_provider(self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT) -> MockStreamOutput:
+    def add_provider(self, fmt: str, timeout: int | None = None) -> MockStreamOutput:
         return MockStreamOutput()
 
 

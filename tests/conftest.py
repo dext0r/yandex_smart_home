@@ -176,10 +176,9 @@ def hass_platform(hass: HomeAssistant) -> HomeAssistant:
 
 
 @pytest.fixture
-def hass_platform_direct(
-    hass_platform: HomeAssistant, event_loop: asyncio.AbstractEventLoop, config_entry_direct: MockConfigEntry
-) -> HomeAssistant:
+def hass_platform_direct(hass_platform: HomeAssistant, config_entry_direct: MockConfigEntry) -> HomeAssistant:
     config_entry_direct.add_to_hass(hass_platform)
+    event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(hass_platform.config_entries.async_setup(config_entry_direct.entry_id))
     event_loop.run_until_complete(hass_platform.async_block_till_done())
 

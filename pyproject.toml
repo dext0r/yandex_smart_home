@@ -2,18 +2,24 @@
 name = "yandex_smart_home"
 version = "1.0.2dev"
 requires-python = "~=3.13.2"
-dependencies = [
-    "pycares==4.8.0", # https://github.com/home-assistant/core/pull/146728
-]
 
 [dependency-groups]
 test = [
-    "pytest-homeassistant-custom-component==0.13.236",
-    "mypy-dev==1.16.0a7",
+    "pytest-homeassistant-custom-component==0.13.262",
+    "mypy-dev==1.16.0a9",
 ]
 homeassistant = [
-    "homeassistant==2025.4.4",
+    "homeassistant==2025.7.2",
     "colorlog>=6.9.0",
+]
+homeassistant-components = [
+    "ha-ffmpeg>=3.2.2",
+    "hassil>=3.0.1",
+    "home-assistant-intents>=2025.6.23",
+    "mutagen>=1.47.0",
+    "pymicro-vad>=1.0.2",
+    "pyspeex-noise>=1.0.2",
+    "pyturbojpeg>=1.8.2",
 ]
 lint = [
     "pre-commit==4.0.1",
@@ -126,6 +132,9 @@ env_list = [
     "2025_1",
     "2025_2",
     "2025_4",
+    "2025_5",
+    "2025_6",
+    "2025_7",
 ]
 
 [tool.tox.env_run_base]
@@ -163,6 +172,15 @@ uv_sync_flags = ["--directory=tests/env/2025_2"]
 
 [tool.tox.env.2025_4]
 uv_sync_flags = ["--directory=tests/env/2025_4"]
+
+[tool.tox.env.2025_5]
+uv_sync_flags = ["--directory=tests/env/2025_5"]
+
+[tool.tox.env.2025_6]
+uv_sync_flags = ["--directory=tests/env/2025_6"]
+
+[tool.tox.env.2025_7]
+uv_sync_flags = ["--directory=tests/env/2025_7"]
 
 [tool.tox.env.type]
 description = "Run type checks under {env_python}"

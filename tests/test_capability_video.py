@@ -3,7 +3,7 @@ from typing import cast
 from unittest.mock import patch
 
 from homeassistant.components.camera import Camera, CameraEntityFeature, DynamicStreamSettings
-from homeassistant.components.stream import OUTPUT_IDLE_TIMEOUT, Stream, StreamOutput, StreamSettings
+from homeassistant.components.stream import Stream, StreamOutput, StreamSettings
 from homeassistant.const import ATTR_SUPPORTED_FEATURES, STATE_IDLE
 from homeassistant.core import Context, HomeAssistant, State
 import pytest
@@ -66,7 +66,7 @@ class MockStream(Stream):
     def endpoint_url(self, fmt: str) -> str:
         return "/foo"
 
-    def add_provider(self, fmt: str, timeout: int = OUTPUT_IDLE_TIMEOUT) -> StreamOutput:
+    def add_provider(self, fmt: str, timeout: int | None = None) -> StreamOutput:
         return MockStreamOutput()
 
     async def start(self) -> None:
