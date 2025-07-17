@@ -1769,7 +1769,7 @@
 <h2 id="settings">Параметры<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
 <ul>
 <li>
-<p><code>set_value</code>: Действие выполняемое при установке абсолютного значения функции. В переменной <code>value</code> абсолютное или относительное значение (в зависимости от настроек <code>range</code> и наличия <code>increase_value</code> и <code>decrease_value</code>).
+<p><code>set_value</code>: Действие, выполняемое при установке абсолютного значения функции ("Алиса, температура Х").
 Если не задано - установка абсолютного значения поддерживаться не будет.</p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>
@@ -1785,8 +1785,8 @@
 <p><code>increase_value</code> и <code>decrease_value</code>: Действия, вызываемые при относительной регулировке (кнопки <code>+</code> и <code>-</code> и "Алиса, убавь температуру"). Если не заданы - будет вызываться действие <code>set_value</code>.</p>
 </li>
 <li>
-<p><code>range</code>: Граничные значения диапазона. Для <code>humidity</code>, <code>open</code>, <code>brightness</code> есть ограничение: минимум <code>0</code>, максимум <code>100</code>.
-  Если не задать <code>min</code> и <code>max</code> регулировка будет только относительная (в переменной <code>value</code> - <code>1</code> или <code>-1</code>).</p>
+<p><code>range</code>: Допустимый диапазон, в котором может лежать значение функции. Для <code>humidity</code>, <code>open</code>, <code>brightness</code> есть ограничение: минимум <code>0</code>, максимум <code>100</code>.
+  Параметр является необязательным, его наличие влияет на визуальный стиль элемента управления в приложении и поведение команд убавь/прибавь.</p>
 <div class="admonition example">
 <p class="admonition-title">Пример</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">range</span><span class="p">:</span>
