@@ -1,12 +1,14 @@
 from datetime import datetime
 from http import HTTPStatus
+from typing import Any, cast
 from unittest import mock
 
-from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_TOKEN
+from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_TOKEN, MAJOR_VERSION, MINOR_VERSION
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entityfilter, issue_registry
 from homeassistant.helpers.issue_registry import IssueSeverity
 from homeassistant.setup import async_setup_component
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry, MockUser
 from pytest_homeassistant_custom_component.typing import ClientSessionGenerator
 from syrupy import SnapshotAssertion
@@ -27,12 +29,12 @@ from custom_components.yandex_smart_home.const import (
 from custom_components.yandex_smart_home.helpers import SmartHomePlatform
 
 
-async def test_diagnostics(
+@pytest.fixture
+async def diagnostics(
     hass_platform: HomeAssistant,
     hass_client: ClientSessionGenerator,
     hass_admin_user: MockUser,
-    snapshot: SnapshotAssertion,
-) -> None:
+) -> dict[Any, Any]:
     hass = hass_platform
     yaml_config = {
         "filter": {"include_domains": ["light", "sensor", "binary_sensor"]},
@@ -75,11 +77,27 @@ async def test_diagnostics(
     client = await hass_client()
     response = await client.get(f"/api/diagnostics/config_entry/{config_entry.entry_id}")
     assert response.status == HTTPStatus.OK
-    diagnostics = await response.json()
+    diagnostics = cast(dict[Any, Any], await response.json())
     for k in ("integration_manifest", "custom_components", "home_assistant", "minor_version", "setup_times"):
         diagnostics.pop(k, None)
 
     for k in ("minor_version", "created_at", "discovery_keys", "modified_at", "subentries"):
         diagnostics["data"]["entry"].pop(k, None)
 
+    return diagnostics
+
+
+@pytest.mark.skipif((int(MAJOR_VERSION), int(MINOR_VERSION)) < (2025, 8), reason="HA 2025.8+")
+async def test_diagnostics(
+    diagnostics: dict[Any, Any],
+    snapshot: SnapshotAssertion,
+) -> None:
+    assert diagnostics == snapshot
+
+
+@pytest.mark.skipif((int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2025, 8), reason="HA 2025.8+")
+async def test_diagnostics_pre_2025_8(
+    diagnostics: dict[Any, Any],
+    snapshot: SnapshotAssertion,
+) -> None:
     assert diagnostics == snapshot
