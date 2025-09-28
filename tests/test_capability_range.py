@@ -38,7 +38,13 @@ from homeassistant.core import Context, HomeAssistant, State
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
-from custom_components.yandex_smart_home.capability_range import RangeCapability, StateRangeCapability
+from custom_components.yandex_smart_home.capability_range import (
+    ClimateTargetTemperatureCapability,
+    ClimateTargetTemperatureHighCapability,
+    ClimateTargetTemperatureLowCapability,
+    RangeCapability,
+    StateRangeCapability,
+)
 from custom_components.yandex_smart_home.const import (
     ATTR_TARGET_HUMIDITY,
     CONF_ENTITY_RANGE,
@@ -222,9 +228,25 @@ async def test_capability_range_open(
     assert calls[3].data[cover.ATTR_POSITION] == 0
 
 
-async def test_capability_range_temperature_climate(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+async def test_capability_range_climate_target_temperature(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
     state = State("climate.test", STATE_OFF)
     assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
+
+    state = State(
+        "climate.test",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.TARGET_TEMPERATURE
+            | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE,
+        },
+    )
+    cap = cast(
+        RangeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
+    )
+    assert isinstance(cap, ClimateTargetTemperatureCapability)
 
     state = State(
         "climate.test",
@@ -240,6 +262,7 @@ async def test_capability_range_temperature_climate(hass: HomeAssistant, entry_d
         RangeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
     )
+    assert isinstance(cap, ClimateTargetTemperatureCapability)
     assert cap.retrievable is True
     assert cap.support_random_access is True
     assert cap.parameters.as_dict() == {
@@ -264,6 +287,7 @@ async def test_capability_range_temperature_climate(hass: HomeAssistant, entry_d
         RangeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
     )
+    assert isinstance(cap, ClimateTargetTemperatureCapability)
     assert cap.retrievable is True
     assert cap.support_random_access is True
     assert cap.parameters.as_dict() == {
@@ -294,7 +318,75 @@ async def test_capability_range_temperature_climate(hass: HomeAssistant, entry_d
     assert calls[4].data[ATTR_TEMPERATURE] == 20.5
 
 
-async def test_capability_range_temperature_water_heater(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+async def test_capability_range_climate_dual_target_temperature(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
+    state = State(
+        "climate.test",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.TARGET_TEMPERATURE_RANGE,
+            climate.ATTR_TARGET_TEMP_LOW: 23.5,
+            climate.ATTR_TARGET_TEMP_HIGH: 25,
+            climate.ATTR_MIN_TEMP: 12,
+            climate.ATTR_MAX_TEMP: 27,
+        },
+    )
+    cap_low = cast(
+        RangeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.VOLUME),
+    )
+    assert isinstance(cap_low, ClimateTargetTemperatureLowCapability)
+    assert cap_low.retrievable is True
+    assert cap_low.support_random_access is True
+    assert cap_low.parameters.as_dict() == {
+        "instance": "volume",
+        "random_access": True,
+        "range": {"max": 27, "min": 12, "precision": 0.5},
+    }
+    assert cap_low.get_value() == 23.5
+
+    cap_high = cast(
+        RangeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE),
+    )
+    assert isinstance(cap_high, ClimateTargetTemperatureHighCapability)
+    assert cap_high.retrievable is True
+    assert cap_high.support_random_access is True
+    assert cap_high.parameters.as_dict() == {
+        "instance": "temperature",
+        "random_access": True,
+        "range": {"max": 27, "min": 12, "precision": 0.5},
+        "unit": "unit.temperature.celsius",
+    }
+    assert cap_high.get_value() == 25
+
+    calls = async_mock_service(hass, climate.DOMAIN, climate.SERVICE_SET_TEMPERATURE)
+    await cap_low.set_instance_state(
+        Context(),
+        RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=20, relative=False),
+    )
+    await cap_high.set_instance_state(
+        Context(),
+        RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.TEMPERATURE, value=24, relative=False),
+    )
+
+    assert len(calls) == 2
+    assert calls[0].data == {
+        ATTR_ENTITY_ID: state.entity_id,
+        climate.ATTR_TARGET_TEMP_LOW: 20,
+        climate.ATTR_TARGET_TEMP_HIGH: 25,
+    }
+    assert calls[1].data == {
+        ATTR_ENTITY_ID: state.entity_id,
+        climate.ATTR_TARGET_TEMP_LOW: 23.5,
+        climate.ATTR_TARGET_TEMP_HIGH: 24,
+    }
+
+
+async def test_capability_range_water_heater_target_temperature(
+    hass: HomeAssistant, entry_data: MockConfigEntryData
+) -> None:
     state = State("water_heater.test", STATE_OFF)
     assert_no_capabilities(hass, entry_data, state, CapabilityType.RANGE, RangeCapabilityInstance.TEMPERATURE)
 

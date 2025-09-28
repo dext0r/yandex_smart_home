@@ -126,6 +126,8 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
         ("devices.capabilities.mode", "program"),
         ("devices.capabilities.mode", "fan_speed"),
         ("devices.capabilities.on_off", "on"),
+        ("devices.capabilities.range", "volume"),
+        ("devices.capabilities.range", "temperature"),
     ]
 
     state = hass.states.get("climate.heatpump")
