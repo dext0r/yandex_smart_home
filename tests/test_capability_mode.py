@@ -15,8 +15,10 @@ from custom_components.yandex_smart_home.capability import STATE_CAPABILITIES_RE
 from custom_components.yandex_smart_home.capability_mode import (
     FanSpeedCapabilityFanViaPercentage,
     FanSpeedCapabilityFanViaPreset,
+    HVSwingCapability,
     ModeCapability,
     StateModeCapability,
+    SwingCapability,
 )
 from custom_components.yandex_smart_home.const import CONF_ENTITY_MODE_MAP
 from custom_components.yandex_smart_home.helpers import APIError
@@ -29,7 +31,12 @@ from custom_components.yandex_smart_home.schema import (
 )
 
 from . import MockConfigEntryData
-from .test_capability import assert_exact_one_capability, assert_no_capabilities, get_exact_one_capability
+from .test_capability import (
+    assert_exact_one_capability,
+    assert_no_capabilities,
+    get_capabilities,
+    get_exact_one_capability,
+)
 
 
 class MockModeCapability(StateModeCapability):
@@ -260,6 +267,109 @@ async def test_capability_mode_thermostat(hass: HomeAssistant, entry_data: MockC
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_HVAC_MODE: "heat_cool"}
 
 
+@pytest.mark.parametrize(
+    "swing_mode,horizontal_swing_mode,value",
+    [
+        ["off", "off", "stationary"],
+        ["on", "off", "vertical"],
+        ["off", "on", "horizontal"],
+        ["on", "on", "turbo"],
+    ],
+)
+async def test_capability_mode_hv_swing_value(
+    hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
+    swing_mode: str,
+    horizontal_swing_mode: str,
+    value: str,
+) -> None:
+    state = State(
+        "climate.test",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.SWING_HORIZONTAL_MODE,
+            climate.ATTR_SWING_MODES: ["off", "on"],
+            climate.ATTR_SWING_HORIZONTAL_MODES: ["on", "off"],
+            climate.ATTR_SWING_MODE: swing_mode,
+            climate.ATTR_SWING_HORIZONTAL_MODE: horizontal_swing_mode,
+        },
+    )
+    caps = get_capabilities(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.SWING)
+    assert len(caps) == 2
+    cap = cast(ModeCapability, caps[0])
+    assert isinstance(cap, HVSwingCapability)
+
+    assert cap.get_value() == value
+
+
+async def test_capability_mode_hv_swing_action(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state = State(
+        "climate.test",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.SWING_HORIZONTAL_MODE,
+            climate.ATTR_SWING_MODES: ["lr", "ud"],
+            climate.ATTR_SWING_HORIZONTAL_MODES: ["on", "off"],
+        },
+    )
+    cap = cast(
+        ModeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.SWING),
+    )
+    assert isinstance(cap, SwingCapability)
+
+    state = State(
+        "climate.test",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.SWING_HORIZONTAL_MODE,
+            climate.ATTR_SWING_MODES: ["off", "on"],
+            climate.ATTR_SWING_HORIZONTAL_MODES: ["on", "off"],
+            climate.ATTR_SWING_MODE: "off",
+            climate.ATTR_SWING_HORIZONTAL_MODE: "off",
+        },
+    )
+    caps = get_capabilities(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.SWING)
+    assert len(caps) == 2
+    cap = cast(ModeCapability, caps[0])
+    assert isinstance(cap, HVSwingCapability)
+
+    assert cap.retrievable is True
+    assert cap.parameters.dict() == {
+        "instance": "swing",
+        "modes": [
+            {"value": "horizontal"},
+            {"value": "stationary"},
+            {"value": "turbo"},
+            {"value": "vertical"},
+        ],
+    }
+
+    calls_v = async_mock_service(hass, climate.DOMAIN, climate.SERVICE_SET_SWING_MODE)
+    calls_h = async_mock_service(hass, climate.DOMAIN, climate.SERVICE_SET_SWING_HORIZONTAL_MODE)
+    for mode in (
+        ModeCapabilityMode.VERTICAL,
+        ModeCapabilityMode.HORIZONTAL,
+        ModeCapabilityMode.TURBO,
+        ModeCapabilityMode.STATIONARY,
+    ):
+        await cap.set_instance_state(
+            Context(),
+            ModeCapabilityInstanceActionState(instance=ModeCapabilityInstance.SWING, value=mode),
+        )
+
+    assert len(calls_v) == 4
+    assert len(calls_h) == 4
+    assert calls_v[0].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_MODE: "on"}
+    assert calls_h[0].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_HORIZONTAL_MODE: "off"}
+    assert calls_v[1].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_MODE: "off"}
+    assert calls_h[1].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_HORIZONTAL_MODE: "on"}
+    assert calls_v[2].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_MODE: "on"}
+    assert calls_h[2].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_HORIZONTAL_MODE: "on"}
+    assert calls_v[3].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_MODE: "off"}
+    assert calls_h[3].data == {ATTR_ENTITY_ID: state.entity_id, climate.ATTR_SWING_HORIZONTAL_MODE: "off"}
+
+
 async def test_capability_mode_swing(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("climate.test", STATE_OFF)
     assert_no_capabilities(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.SWING)
@@ -273,6 +383,7 @@ async def test_capability_mode_swing(hass: HomeAssistant, entry_data: MockConfig
         ModeCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.SWING),
     )
+    assert isinstance(cap, SwingCapability)
     assert cap.retrievable is True
     assert cap.parameters.dict() == {"instance": "swing", "modes": [{"value": "horizontal"}, {"value": "vertical"}]}
     assert cap.get_value() is None

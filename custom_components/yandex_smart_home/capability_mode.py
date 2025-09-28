@@ -270,10 +270,9 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
         ...
 
     @property
-    @abstractmethod
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
-        ...
+        return []  # pragma: nocover
 
 
 class StateModeCapability(ModeCapability, StateCapability[ModeCapabilityInstanceActionState], Protocol):
@@ -330,6 +329,88 @@ class ThermostatCapability(StateModeCapability):
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
         return self.state.attributes.get(climate.ATTR_HVAC_MODES) or []
+
+
+class HVSwingCapability(StateModeCapability):
+    """Capability to control swing mode of a climate device.
+
+    Used for device that support both vertical and horizontal swing with only on and off modes.
+    """
+
+    instance = ModeCapabilityInstance.SWING
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        if self.state.domain != climate.DOMAIN:
+            return False
+
+        if (
+            self._state_features & ClimateEntityFeature.SWING_MODE
+            and self._state_features & ClimateEntityFeature.SWING_HORIZONTAL_MODE
+        ):
+            swing_modes = self.state.attributes.get(climate.ATTR_SWING_MODES) or []
+            horizontal_swing_modes = self.state.attributes.get(climate.ATTR_SWING_HORIZONTAL_MODES) or []
+            on_off_modes = sorted([climate.SWING_ON, climate.SWING_OFF])
+            return sorted(swing_modes) == on_off_modes and sorted(horizontal_swing_modes) == on_off_modes
+
+        return False
+
+    @property
+    def supported_yandex_modes(self) -> list[ModeCapabilityMode]:
+        """Returns a list of supported Yandex modes."""
+        return sorted(
+            [
+                ModeCapabilityMode.VERTICAL,
+                ModeCapabilityMode.HORIZONTAL,
+                ModeCapabilityMode.TURBO,
+                ModeCapabilityMode.STATIONARY,
+            ]
+        )
+
+    def get_value(self) -> ModeCapabilityMode | None:
+        """Return the current capability value."""
+        vertical_swing = self.state.attributes.get(climate.ATTR_SWING_MODE) == climate.SWING_ON
+        horizontal_swing = self.state.attributes.get(climate.ATTR_SWING_HORIZONTAL_MODE) == climate.SWING_ON
+
+        if vertical_swing and horizontal_swing:
+            return ModeCapabilityMode.TURBO
+        elif vertical_swing:
+            return ModeCapabilityMode.VERTICAL
+        elif horizontal_swing:
+            return ModeCapabilityMode.HORIZONTAL
+
+        return ModeCapabilityMode.STATIONARY
+
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        vertical_swing_mode = horizontal_swing_mode = climate.SWING_OFF
+        if state.value in (ModeCapabilityMode.TURBO, ModeCapabilityMode.VERTICAL):
+            vertical_swing_mode = climate.SWING_ON
+        if state.value in (ModeCapabilityMode.TURBO, ModeCapabilityMode.HORIZONTAL):
+            horizontal_swing_mode = climate.SWING_ON
+
+        await self._hass.services.async_call(
+            climate.DOMAIN,
+            climate.SERVICE_SET_SWING_MODE,
+            {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                climate.ATTR_SWING_MODE: vertical_swing_mode,
+            },
+            blocking=self._wait_for_service_call,
+            context=context,
+        )
+
+        await self._hass.services.async_call(
+            climate.DOMAIN,
+            climate.SERVICE_SET_SWING_HORIZONTAL_MODE,
+            {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                climate.ATTR_SWING_HORIZONTAL_MODE: horizontal_swing_mode,
+            },
+            blocking=self._wait_for_service_call,
+            context=context,
+        )
 
 
 class SwingCapability(StateModeCapability):
@@ -963,6 +1044,7 @@ class CleanupModeCapability(StateModeCapability):
 
 
 STATE_CAPABILITIES_REGISTRY.register(ThermostatCapability)
+STATE_CAPABILITIES_REGISTRY.register(HVSwingCapability)
 STATE_CAPABILITIES_REGISTRY.register(SwingCapability)
 STATE_CAPABILITIES_REGISTRY.register(ProgramCapabilityClimate)
 STATE_CAPABILITIES_REGISTRY.register(ProgramCapabilityHumidifier)
