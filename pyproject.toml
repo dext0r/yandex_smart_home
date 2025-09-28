@@ -125,9 +125,6 @@ disallow_any_generics = false
 [tool.tox]
 env_list = [
     "type",
-    "2024_9",
-    "2024_10",
-    "2024_11",
     "2024_12",
     "2025_1",
     "2025_2",
@@ -148,18 +145,6 @@ commands = [
 [tool.tox.env_run_base.setenv]
 PYTHONDONTWRITEBYTECODE = "1"
 MYPY_CACHE_DIR = "{env_dir}/.cache/mypy"
-
-[tool.tox.env.2024_9]
-base_python = ["py312"]
-uv_sync_flags = ["--directory=tests/env/2024_9"]
-
-[tool.tox.env.2024_10]
-base_python = ["py312"]
-uv_sync_flags = ["--directory=tests/env/2024_10"]
-
-[tool.tox.env.2024_11]
-base_python = ["py312"]
-uv_sync_flags = ["--directory=tests/env/2024_11"]
 
 [tool.tox.env.2024_12]
 uv_sync_flags = ["--directory=tests/env/2024_12"]

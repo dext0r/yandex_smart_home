@@ -1,6 +1,6 @@
 {
   "name": "Yandex Smart Home",
-  "homeassistant": "2024.9",
+  "homeassistant": "2024.12",
   "country": ["RU", "BY"],
   "render_readme": true,
   "zip_release": true,
