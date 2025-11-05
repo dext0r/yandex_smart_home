@@ -135,6 +135,7 @@ env_list = [
     "2025_8",
     "2025_9",
     "2025_10",
+    "2025_11",
 ]
 
 [tool.tox.env_run_base]
@@ -178,6 +179,9 @@ uv_sync_flags = ["--directory=tests/env/2025_9"]
 
 [tool.tox.env.2025_10]
 uv_sync_flags = ["--directory=tests/env/2025_10"]
+
+[tool.tox.env.2025_11]
+uv_sync_flags = ["--directory=tests/env/2025_11"]
 
 [tool.tox.env.type]
 description = "Run type checks under {env_python}"
