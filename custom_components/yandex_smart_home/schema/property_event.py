@@ -4,11 +4,11 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event.html
 """
 
 from enum import StrEnum
-from typing import Any, Generic, Literal, TypeVar
+from typing import Generic, Literal, Self, TypeVar, cast
 
-from pydantic.v1 import validator
+from pydantic import model_validator
 
-from .base import GenericAPIModel
+from .base import APIModel
 
 
 class EventPropertyInstance(StrEnum):
@@ -135,20 +135,20 @@ def get_supported_events_for_instance(instance: EventPropertyInstance) -> list[E
     return list(get_event_class_for_instance(instance).__members__.values())
 
 
-class EventPropertyParameters(GenericAPIModel, Generic[EventInstanceEventT]):
+class EventPropertyParameters(APIModel, Generic[EventInstanceEventT]):
     """Parameters of an event property."""
 
     instance: EventPropertyInstance
     events: list[dict[Literal["value"], EventInstanceEventT]] = []
 
-    @validator("events", pre=True, always=True)
-    def set_events(cls, v: Any) -> Any:
+    @model_validator(mode="after")
+    def set_events(self) -> Self:
         """Update events list value."""
-        if not v:
-            instance_event: type[EventInstanceEventT] = cls.__fields__["events"].type_.__args__[1]
-            return [{"value": m} for m in instance_event.__members__.values()]
+        if not self.events:
+            instance_event = cast(type[EventInstanceEventT], get_event_class_for_instance(self.instance))
+            self.events = [{"value": m} for m in instance_event.__members__.values()]
 
-        return v  # pragma: nocover
+        return self
 
 
 class VibrationEventPropertyParameters(EventPropertyParameters[VibrationInstanceEvent]):

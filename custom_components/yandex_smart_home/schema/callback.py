@@ -6,7 +6,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/reference-alerts/resources-alerts.h
 from enum import StrEnum
 import time
 
-from pydantic.v1 import Field
+from pydantic import Field
 
 from .base import APIModel
 from .device import DeviceState
@@ -50,8 +50,8 @@ class CallbackResponse(APIModel):
     """Response on a callback request."""
 
     status: CallbackResponseStatus
-    error_code: str | None
-    error_message: str | None
+    error_code: str | None = None
+    error_message: str | None = None
 
 
 CallbackRequest = CallbackDiscoveryRequest | CallbackStatesRequest

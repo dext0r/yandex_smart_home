@@ -4,9 +4,9 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html
 """
 
 from enum import StrEnum
-from typing import Annotated, Any, Literal, Self, Union
+from typing import Annotated, Literal, Self, Union
 
-from pydantic.v1 import Field, root_validator
+from pydantic import Field, model_validator
 
 from .base import APIModel
 
@@ -75,12 +75,12 @@ class ColorSettingCapabilityParameters(APIModel):
     temperature_k: CapabilityParameterTemperatureK | None = None
     color_scene: CapabilityParameterColorScene | None = None
 
-    @root_validator
-    def any_of(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if not any(values.values()):
+    @model_validator(mode="after")
+    def any_of(self) -> Self:
+        if not any(self.__dict__.values()):
             raise ValueError("one of color_model, temperature_k or color_scene must have a value")
 
-        return values
+        return self
 
 
 class RGBInstanceActionState(APIModel):

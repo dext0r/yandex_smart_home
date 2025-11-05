@@ -16,7 +16,7 @@ async def test_property_event_custom_mapping(hass: HomeAssistant, entry_data: Mo
     state = State("sensor.button", "click", {ATTR_DEVICE_CLASS: "button"})
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
     assert not prop.retrievable
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
         "instance": "button",
     }
@@ -38,7 +38,7 @@ async def test_property_event_custom_mapping(hass: HomeAssistant, entry_data: Mo
     )
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
     assert not prop.retrievable
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
         "instance": "button",
     }
@@ -66,7 +66,7 @@ async def test_state_property_event_open(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {"events": [{"value": "opened"}, {"value": "closed"}], "instance": "open"}
+    assert prop.parameters.model_dump() == {"events": [{"value": "opened"}, {"value": "closed"}], "instance": "open"}
     assert prop.get_value() == "opened"
     prop.state.state = STATE_OFF
     assert prop.get_value() == "closed"
@@ -92,7 +92,10 @@ async def test_state_property_event_motion_sensor(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {"events": [{"value": "detected"}, {"value": "not_detected"}], "instance": "motion"}
+    assert prop.parameters.model_dump() == {
+        "events": [{"value": "detected"}, {"value": "not_detected"}],
+        "instance": "motion",
+    }
     assert prop.get_value() == "detected"
     prop.state.state = STATE_OFF
     assert prop.get_value() == "not_detected"
@@ -116,7 +119,7 @@ async def test_state_property_event_motion_event(
         return
 
     assert prop.retrievable is False
-    assert prop.parameters == {"events": [{"value": "detected"}], "instance": "motion"}
+    assert prop.parameters.model_dump() == {"events": [{"value": "detected"}], "instance": "motion"}
     assert prop.get_value() is None
     prop.state = State("event.test", STATE_UNKNOWN, {ATTR_DEVICE_CLASS: device_class, ATTR_EVENT_TYPE: "motion"})
     assert prop.get_value() == "detected"
@@ -140,7 +143,7 @@ async def test_state_property_event_gas(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "detected"}, {"value": "not_detected"}, {"value": "high"}],
         "instance": "gas",
     }
@@ -169,7 +172,7 @@ async def test_state_property_event_smoke(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "detected"}, {"value": "not_detected"}, {"value": "high"}],
         "instance": "smoke",
     }
@@ -198,7 +201,7 @@ async def test_state_property_event_battery(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "low"}, {"value": "normal"}],
         "instance": "battery_level",
     }
@@ -225,7 +228,7 @@ async def test_state_property_event_water_leak(
         return
 
     assert prop.retrievable
-    assert prop.parameters == {"events": [{"value": "dry"}, {"value": "leak"}], "instance": "water_leak"}
+    assert prop.parameters.model_dump() == {"events": [{"value": "dry"}, {"value": "leak"}], "instance": "water_leak"}
     assert prop.get_value() == "leak"
     prop.state.state = STATE_OFF
     assert prop.get_value() == "dry"
@@ -262,7 +265,7 @@ async def test_state_property_event_button_sensor(
         return
 
     assert not prop.retrievable
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
         "instance": "button",
     }
@@ -291,7 +294,7 @@ async def test_state_property_event_button_gw3(hass: HomeAssistant, entry_data: 
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.BUTTON)
 
     assert not prop.retrievable
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
         "instance": "button",
     }
@@ -330,7 +333,7 @@ async def test_state_property_event_button_event(
         return
 
     assert prop.retrievable is False
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "click"}, {"value": "double_click"}, {"value": "long_press"}],
         "instance": "button",
     }
@@ -347,7 +350,7 @@ async def test_state_property_event_vibration(hass: HomeAssistant, entry_data: M
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
 
     assert not prop.retrievable
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "tilt"}, {"value": "fall"}, {"value": "vibration"}],
         "instance": "vibration",
     }
@@ -368,7 +371,7 @@ async def test_state_property_event_vibration_gw3(hass: HomeAssistant, entry_dat
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.EVENT, EventPropertyInstance.VIBRATION)
 
     assert not prop.retrievable
-    assert prop.parameters == {
+    assert prop.parameters.model_dump() == {
         "events": [{"value": "tilt"}, {"value": "fall"}, {"value": "vibration"}],
         "instance": "vibration",
     }

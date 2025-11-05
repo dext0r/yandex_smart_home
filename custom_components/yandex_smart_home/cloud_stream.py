@@ -28,7 +28,7 @@ from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.http import KEY_HASS
 from multidict import MultiDictProxy
-from pydantic.v1 import BaseModel
+from pydantic import BaseModel
 import yarl
 
 from .const import CLOUD_STREAM_BASE_URL
@@ -45,7 +45,7 @@ class Request(BaseModel):
     view: str
     sequence: str = ""
     part_num: str = ""
-    url_query: str | None
+    url_query: str | None = None
 
 
 class ResponseMeta(BaseModel):
@@ -163,7 +163,7 @@ class CloudStreamManager:
         """Handle incoming request from the cloud."""
         _LOGGER.debug(f"Request: {message.data}")
 
-        request = Request.parse_raw(message.data)
+        request = Request.model_validate_json(message.data)
         request_url = yarl.URL.build(path=f"{request.view}", query=request.url_query)
         web_request = cast(AIOWebRequest, WebRequest(self._hass, request_url))
 
@@ -185,7 +185,7 @@ class CloudStreamManager:
         body = r.body if r.body is not None else b""
         assert isinstance(body, bytes)
         meta = ResponseMeta(status_code=r.status, headers=dict(r.headers))
-        response = bytes(meta.json(), "utf-8") + b"\r\n" + body
+        response = bytes(meta.model_dump_json(), "utf-8") + b"\r\n" + body
         return await self._ws.send_bytes(response, compress=False)
 
     def _try_reconnect(self) -> None:

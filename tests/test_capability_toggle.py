@@ -51,7 +51,7 @@ async def test_capability_backlight(hass: HomeAssistant, entry_data: MockConfigE
     state = State("light.foo", STATE_ON)
     cap = BacklightCapability(hass, entry_data, "foo", state)
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "backlight"}
+    assert cap.parameters.as_dict() == {"instance": "backlight"}
     assert cap.get_value() is True
 
     on_calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -80,7 +80,7 @@ async def test_capability_mute(hass: HomeAssistant, entry_data: MockConfigEntryD
     )
 
     assert cap.retrievable is False
-    assert cap.parameters.dict() == {"instance": "mute"}
+    assert cap.parameters.as_dict() == {"instance": "mute"}
     assert cap.get_value() is False
 
     calls = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_MUTE)
@@ -136,7 +136,7 @@ async def test_capability_pause_media_player(hass: HomeAssistant, entry_data: Mo
             get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
         )
         assert cap.retrievable is True
-        assert cap.parameters.dict() == {"instance": "pause"}
+        assert cap.parameters.as_dict() == {"instance": "pause"}
         assert cap.get_value() is True
 
     state = State(
@@ -173,7 +173,7 @@ async def test_capability_pause_cover(hass: HomeAssistant, entry_data: MockConfi
         )
         assert cap.retrievable is False
         assert cap.reportable is False
-        assert cap.parameters.dict() == {"instance": "pause"}
+        assert cap.parameters.as_dict() == {"instance": "pause"}
         assert cap.get_value() is None
 
     state = State("cover.test", STATE_CLOSED, {ATTR_SUPPORTED_FEATURES: CoverEntityFeature.STOP})
@@ -218,7 +218,7 @@ async def test_capability_pause_light(hass: HomeAssistant, entry_data: MockConfi
         )
         assert cap.retrievable is False
         assert cap.reportable is False
-        assert cap.parameters.dict() == {"instance": "pause"}
+        assert cap.parameters.as_dict() == {"instance": "pause"}
         assert cap.get_value() is None
 
     state = State(
@@ -254,7 +254,7 @@ async def test_capability_pause_vacuum(hass: HomeAssistant, entry_data: MockConf
             get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.PAUSE),
         )
         assert cap.retrievable is True
-        assert cap.parameters.dict() == {"instance": "pause"}
+        assert cap.parameters.as_dict() == {"instance": "pause"}
         assert cap.get_value() is (s == VacuumActivity.PAUSED)
 
     state = State("vacuum.test", VacuumActivity.PAUSED, {ATTR_SUPPORTED_FEATURES: VacuumEntityFeature.PAUSE})
@@ -285,7 +285,7 @@ async def test_capability_oscillation(hass: HomeAssistant, entry_data: MockConfi
         get_exact_one_capability(hass, entry_data, state, CapabilityType.TOGGLE, ToggleCapabilityInstance.OSCILLATION),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "oscillation"}
+    assert cap.parameters.as_dict() == {"instance": "oscillation"}
     assert cap.get_value() is False
 
     state = State(

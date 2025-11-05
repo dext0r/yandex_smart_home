@@ -53,7 +53,7 @@ async def test_property_float_unsupported_unit_of_measurement(
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.celsius"}
+    assert prop.parameters.model_dump() == {"instance": "temperature", "unit": "unit.temperature.celsius"}
     assert prop.get_value() == 34.76
 
     assert len(caplog.records) == 1
@@ -106,7 +106,7 @@ async def test_property_float_humidity(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "humidity", "unit": "unit.percent"}
+    assert prop.parameters.model_dump() == {"instance": "humidity", "unit": "unit.percent"}
     assert prop.get_value() == 69
 
     if attribute is None:
@@ -176,7 +176,7 @@ async def test_property_float_temperature(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.celsius"}
+    assert prop.parameters.model_dump() == {"instance": "temperature", "unit": "unit.temperature.celsius"}
     assert prop.get_value() == 34
 
     if attribute is None:
@@ -206,7 +206,7 @@ async def test_property_float_temperature_convertion(hass: HomeAssistant, entry_
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.celsius"}
+    assert prop.parameters.model_dump() == {"instance": "temperature", "unit": "unit.temperature.celsius"}
     assert prop.get_value() == 34.76
 
     state = State(
@@ -220,7 +220,7 @@ async def test_property_float_temperature_convertion(hass: HomeAssistant, entry_
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.kelvin"}
+    assert prop.parameters.model_dump() == {"instance": "temperature", "unit": "unit.temperature.kelvin"}
     assert prop.get_value() == 34.76
 
     state = State(
@@ -234,7 +234,7 @@ async def test_property_float_temperature_convertion(hass: HomeAssistant, entry_
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.TEMPERATURE)
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "temperature", "unit": "unit.temperature.celsius"}
+    assert prop.parameters.model_dump() == {"instance": "temperature", "unit": "unit.temperature.celsius"}
     assert prop.get_value() == 10.06
 
 
@@ -266,7 +266,7 @@ def test_property_float_pressure(
     state = State("sensor.test", str(value), attributes)
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.PRESSURE)
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "pressure", "unit": property_unit}
+    assert prop.parameters.model_dump() == {"instance": "pressure", "unit": property_unit}
 
     if assert_value:
         assert prop.get_value() == assert_value
@@ -316,7 +316,7 @@ async def test_property_float_illumination(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "illumination", "unit": "unit.illumination.lux"}
+    assert prop.parameters.model_dump() == {"instance": "illumination", "unit": "unit.illumination.lux"}
     assert prop.get_value() == 48
 
     if attribute is None:
@@ -353,7 +353,7 @@ async def test_property_float_water_level(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "water_level", "unit": "unit.percent"}
+    assert prop.parameters.model_dump() == {"instance": "water_level", "unit": "unit.percent"}
     assert prop.get_value() == 90
 
     for a, b in ((-5, 0), (200, 100)):
@@ -402,7 +402,7 @@ async def test_property_float_co2_level(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "co2_level", "unit": "unit.ppm"}
+    assert prop.parameters.model_dump() == {"instance": "co2_level", "unit": "unit.ppm"}
     assert prop.get_value() == 643
 
     if attribute is None:
@@ -452,7 +452,7 @@ def test_property_float_meter(
     state = State("sensor.test", str(value), attributes)
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance(instance))
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": instance, "unit": unit}
+    assert prop.parameters.model_dump() == {"instance": instance, "unit": unit}
 
     if assert_value:
         assert prop.get_value() == assert_value
@@ -499,7 +499,7 @@ async def test_property_float_pm_density(
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance(instance))
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": instance, "unit": "unit.density.mcg_m3"}
+    assert prop.parameters.model_dump() == {"instance": instance, "unit": "unit.density.mcg_m3"}
     assert prop.get_value() == assert_v
 
 
@@ -551,7 +551,7 @@ async def test_property_float_tvoc_concentration(
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "tvoc", "unit": "unit.density.mcg_m3"}
+    assert prop.parameters.model_dump() == {"instance": "tvoc", "unit": "unit.density.mcg_m3"}
     if attribute and unit_of_measurement:
         assert prop.get_value() == float(v)
     else:
@@ -564,7 +564,7 @@ async def test_property_float_tvoc_concentration_voc(hass: HomeAssistant, entry_
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.TVOC)
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "tvoc", "unit": "unit.density.mcg_m3"}
+    assert prop.parameters.model_dump() == {"instance": "tvoc", "unit": "unit.density.mcg_m3"}
     assert prop.get_value() == 30
 
     prop.state = State("sensor.test", "-5", attributes)
@@ -610,7 +610,7 @@ async def test_property_electricity_sensor(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": instance, "unit": unit}
+    assert prop.parameters.model_dump() == {"instance": instance, "unit": unit}
     assert prop.get_value() == v
 
     prop.state = State(f"{domain}.test", "-5", attributes)
@@ -669,7 +669,7 @@ async def test_property_electricity_attributes(
         return
 
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": instance, "unit": unit}
+    assert prop.parameters.model_dump() == {"instance": instance, "unit": unit}
     assert prop.get_value() == 220
 
     if value_attribute:
@@ -699,7 +699,7 @@ async def test_property_float_battery_class(hass: HomeAssistant, entry_data: Moc
     )
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.BATTERY_LEVEL)
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "battery_level", "unit": "unit.percent"}
+    assert prop.parameters.model_dump() == {"instance": "battery_level", "unit": "unit.percent"}
     assert prop.get_value() == 50
 
     prop.state = State(
@@ -727,7 +727,7 @@ async def test_property_float_battery_attr(hass: HomeAssistant, entry_data: Mock
     assert_no_properties(hass, entry_data, state, PropertyType.EVENT, FloatPropertyInstance.BATTERY_LEVEL)
     prop = get_exact_one_property(hass, entry_data, state, PropertyType.FLOAT, FloatPropertyInstance.BATTERY_LEVEL)
     assert prop.retrievable is True
-    assert prop.parameters == {"instance": "battery_level", "unit": "unit.percent"}
+    assert prop.parameters.model_dump() == {"instance": "battery_level", "unit": "unit.percent"}
     assert prop.get_value() == 50
 
     prop.state = State(f"{domain}.test", STATE_ON, {ATTR_BATTERY_LEVEL: None})

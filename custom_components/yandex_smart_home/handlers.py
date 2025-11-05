@@ -80,7 +80,7 @@ async def async_devices_query(hass: HomeAssistant, data: RequestData, payload: s
 
     https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-devices-query.html
     """
-    request = StatesRequest.parse_raw(payload)
+    request = StatesRequest.model_validate_json(payload)
     states = await async_get_device_states(hass, data.entry_data, [rd.id for rd in request.devices])
     return DeviceStates(devices=states)
 
@@ -91,7 +91,7 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
 
     https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-action.html
     """
-    request = ActionRequest.parse_raw(payload)
+    request = ActionRequest.model_validate_json(payload)
     results: list[ActionResultDevice] = []
 
     for device_id, actions in [(rd.id, rd.capabilities) for rd in request.payload.devices]:

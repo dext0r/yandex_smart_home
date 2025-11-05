@@ -94,7 +94,7 @@ async def test_capability_mode_auto_mapping(
         ModeCapabilityMode.PUERH_TEA,
         ModeCapabilityMode.THREE,
     ]
-    assert cap.parameters.dict() == {
+    assert cap.parameters.model_dump() == {
         "instance": "swing",
         "modes": [{"value": "eco"}, {"value": "fowl"}, {"value": "puerh_tea"}, {"value": "three"}],
     }
@@ -249,7 +249,7 @@ async def test_capability_mode_thermostat(hass: HomeAssistant, entry_data: MockC
         get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.THERMOSTAT),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {
+    assert cap.parameters.model_dump() == {
         "instance": "thermostat",
         "modes": [{"value": "auto"}, {"value": "fan_only"}],
     }
@@ -335,7 +335,7 @@ async def test_capability_mode_hv_swing_action(hass: HomeAssistant, entry_data: 
     assert isinstance(cap, HVSwingCapability)
 
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {
+    assert cap.parameters.model_dump() == {
         "instance": "swing",
         "modes": [
             {"value": "horizontal"},
@@ -385,7 +385,10 @@ async def test_capability_mode_swing(hass: HomeAssistant, entry_data: MockConfig
     )
     assert isinstance(cap, SwingCapability)
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "swing", "modes": [{"value": "horizontal"}, {"value": "vertical"}]}
+    assert cap.parameters.model_dump() == {
+        "instance": "swing",
+        "modes": [{"value": "horizontal"}, {"value": "vertical"}],
+    }
     assert cap.get_value() is None
 
     state = State(
@@ -428,7 +431,7 @@ async def test_capability_mode_program_climate(hass: HomeAssistant, entry_data: 
         get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {
+    assert cap.parameters.model_dump() == {
         "instance": "program",
         "modes": [{"value": "auto"}, {"value": "eco"}, {"value": "turbo"}],
     }
@@ -473,7 +476,7 @@ async def test_capability_mode_program_humidifier(hass: HomeAssistant, entry_dat
         get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "program", "modes": [{"value": "eco"}, {"value": "medium"}]}
+    assert cap.parameters.model_dump() == {"instance": "program", "modes": [{"value": "eco"}, {"value": "medium"}]}
     assert cap.get_value() is None
 
     state = State(
@@ -528,7 +531,7 @@ async def test_capability_mode_program_fan(hass: HomeAssistant, entry_data: Mock
         get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.PROGRAM),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "program", "modes": [{"value": "normal"}, {"value": "quiet"}]}
+    assert cap.parameters.model_dump() == {"instance": "program", "modes": [{"value": "normal"}, {"value": "quiet"}]}
     assert cap.get_value() is None
 
     state = State(
@@ -596,7 +599,7 @@ async def test_capability_mode_input_source(
         get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.INPUT_SOURCE),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {
+    assert cap.parameters.model_dump() == {
         "instance": "input_source",
         "modes": [{"value": "one"}, {"value": "three"}, {"value": "two"}],
     }
@@ -740,7 +743,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage(
 
     assert isinstance(cap, FanSpeedCapabilityFanViaPercentage)
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {
+    assert cap.parameters.model_dump() == {
         "instance": "fan_speed",
         "modes": [{"value": "low"}, {"value": "normal"}, {"value": "medium"}, {"value": "high"}],
     }
@@ -826,7 +829,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass: HomeAss
 
     assert isinstance(cap_mode, FanSpeedCapabilityFanViaPercentage)
     assert cap_mode.retrievable is True
-    assert cap_mode.parameters.dict() == {
+    assert cap_mode.parameters.model_dump() == {
         "instance": "fan_speed",
         "modes": [{"value": "fowl"}, {"value": "horizontal"}],
     }
@@ -914,7 +917,10 @@ async def test_capability_mode_fan_speed_fan_via_preset(
     )
     assert isinstance(cap_mode, FanSpeedCapabilityFanViaPreset)
     assert cap_mode.retrievable is True
-    assert cap_mode.parameters.dict() == {"instance": "fan_speed", "modes": [{"value": "high"}, {"value": "turbo"}]}
+    assert cap_mode.parameters.model_dump() == {
+        "instance": "fan_speed",
+        "modes": [{"value": "high"}, {"value": "turbo"}],
+    }
     assert cap_mode.get_value() is None
 
     state = State(
@@ -960,7 +966,7 @@ async def test_capability_mode_fan_speed_climate(
         get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.FAN_SPEED),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {
+    assert cap.parameters.model_dump() == {
         "instance": "fan_speed",
         "modes": [
             {"value": "low"},
@@ -1028,7 +1034,7 @@ async def test_capability_mode_cleanup_mode(hass: HomeAssistant, entry_data: Moc
         get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.CLEANUP_MODE),
     )
     assert cap.retrievable is True
-    assert cap.parameters.dict() == {"instance": "cleanup_mode", "modes": [{"value": "low"}, {"value": "turbo"}]}
+    assert cap.parameters.model_dump() == {"instance": "cleanup_mode", "modes": [{"value": "low"}, {"value": "turbo"}]}
     assert cap.get_value() is None
 
     state = State(

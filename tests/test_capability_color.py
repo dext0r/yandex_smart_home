@@ -457,7 +457,7 @@ async def test_capability_color_setting_temperature_k(
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
     cap_temp = _get_temperature_capability(hass, entry_data, state)
     assert cap_cs.retrievable is True
-    assert cap_cs.parameters.dict()["temperature_k"] == {"min": temp_range[0], "max": temp_range[1]}
+    assert cap_cs.parameters.model_dump()["temperature_k"] == {"min": temp_range[0], "max": temp_range[1]}
     assert cap_temp.get_value() is None
     assert cap_temp.get_description() is None
 
@@ -485,7 +485,7 @@ async def test_capability_color_setting_temprature_k_extend(
         },
     )
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
-    assert cap_cs.parameters.dict()["temperature_k"] == {"min": 2700, "max": 6500}
+    assert cap_cs.parameters.model_dump()["temperature_k"] == {"min": 2700, "max": 6500}
 
     # beyond range
     state = State(
@@ -498,7 +498,7 @@ async def test_capability_color_setting_temprature_k_extend(
         },
     )
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
-    assert cap_cs.parameters.dict()["temperature_k"] == {"min": 1500, "max": 9000}
+    assert cap_cs.parameters.model_dump()["temperature_k"] == {"min": 1500, "max": 9000}
 
     # no extend
     state = State(
@@ -511,7 +511,7 @@ async def test_capability_color_setting_temprature_k_extend(
         },
     )
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
-    assert cap_cs.parameters.dict()["temperature_k"] == {"min": 2700, "max": 6500}
+    assert cap_cs.parameters.model_dump()["temperature_k"] == {"min": 2700, "max": 6500}
 
     # narrow range
     state = State(
@@ -526,7 +526,7 @@ async def test_capability_color_setting_temprature_k_extend(
     )
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
     cap_temp = _get_temperature_capability(hass, entry_data, state)
-    assert cap_cs.parameters.dict()["temperature_k"] == {"min": 4500, "max": 4500}
+    assert cap_cs.parameters.model_dump()["temperature_k"] == {"min": 4500, "max": 4500}
     assert cap_temp.get_value() == 4500
 
     calls = async_mock_service(hass, light.DOMAIN, SERVICE_TURN_ON)
@@ -542,7 +542,7 @@ async def test_capability_color_setting_temprature_k_extend(
     }
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
-    assert cap_cs.parameters.dict()["temperature_k"] == {"min": 1500, "max": 7500}
+    assert cap_cs.parameters.model_dump()["temperature_k"] == {"min": 1500, "max": 7500}
 
     state = State("light.test", STATE_OFF, dict({ATTR_COLOR_TEMP_KELVIN: 2300}, **attributes))
     cap_temp = _get_temperature_capability(hass, entry_data, state)
@@ -595,7 +595,7 @@ async def test_capability_color_setting_temperature_k_with_profile(
     cap_cs = _get_color_setting_capability(hass, config, state)
     cap_temp = _get_temperature_capability(hass, config, state)
     assert cap_cs.retrievable is True
-    assert cap_cs.parameters.dict()["temperature_k"] == {
+    assert cap_cs.parameters.model_dump()["temperature_k"] == {
         "min": 1500,
         "max": 6500,
     }

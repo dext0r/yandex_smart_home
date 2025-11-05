@@ -120,7 +120,7 @@ async def test_capability_onoff_simple(
     )
     assert cap.retrievable is False
     assert cap.parameters
-    assert cap.parameters.dict() == {"split": True}
+    assert cap.parameters.model_dump() == {"split": True}
 
 
 @pytest.mark.parametrize(
@@ -205,7 +205,7 @@ async def test_capability_onoff_cover(hass: HomeAssistant, entry_data: MockConfi
     )
     assert cap_binary.retrievable is False
     assert cap_binary.parameters
-    assert cap_binary.parameters.dict() == {"split": True}
+    assert cap_binary.parameters.model_dump() == {"split": True}
 
 
 async def test_capability_onoff_valve(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -300,7 +300,7 @@ async def test_capability_onoff_media_player(hass: HomeAssistant, entry_data: Mo
 
     assert cap_binary.retrievable is False
     assert cap_binary.parameters
-    assert cap_binary.parameters.dict() == {"split": True}
+    assert cap_binary.parameters.model_dump() == {"split": True}
 
     state = State(
         "media_player.test",
@@ -382,7 +382,7 @@ async def test_capability_onoff_lock(hass: HomeAssistant, entry_data: MockConfig
     )
     assert cap.retrievable is False
     assert cap.parameters
-    assert cap.parameters.dict() == {"split": True}
+    assert cap.parameters.model_dump() == {"split": True}
 
 
 async def test_capability_onoff_vacuum(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -427,7 +427,7 @@ async def test_capability_onoff_vacuum(hass: HomeAssistant, entry_data: MockConf
     )
     assert cap.retrievable is False
     assert cap.parameters
-    assert cap.parameters.dict() == {"split": True}
+    assert cap.parameters.model_dump() == {"split": True}
 
 
 @pytest.mark.parametrize(
@@ -538,7 +538,7 @@ async def test_capability_onoff_climate(hass: HomeAssistant, entry_data: MockCon
     )
     assert cap.retrievable is False
     assert cap.parameters
-    assert cap.parameters.dict() == {"split": True}
+    assert cap.parameters.model_dump() == {"split": True}
 
 
 @pytest.mark.parametrize(
@@ -728,7 +728,7 @@ async def test_capability_onoff_water_heater(hass: HomeAssistant, entry_data: Mo
     )
     assert cap.retrievable is False
     assert cap.parameters
-    assert cap.parameters.dict() == {"split": True}
+    assert cap.parameters.model_dump() == {"split": True}
 
 
 @pytest.mark.parametrize("op_on", ["on", "On", "ON", "electric", "Boil"])

@@ -93,16 +93,16 @@ async def test_property_custom_short(
         else:
             assert prop.type == PropertyType.FLOAT
 
-    assert prop.parameters.dict()["instance"] == instance
+    assert prop.parameters.model_dump()["instance"] == instance
 
     if prop.type == PropertyType.FLOAT:
         if prop.instance == FloatPropertyInstance.METER:
-            assert prop.parameters.dict()["unit"] is None
+            assert prop.parameters.model_dump()["unit"] is None
         else:
-            assert prop.parameters.dict()["unit"] is not None
+            assert prop.parameters.model_dump()["unit"] is not None
 
     if prop.type == PropertyType.EVENT:
-        assert len(prop.parameters.dict()["events"]) != 0
+        assert len(prop.parameters.model_dump()["events"]) != 0
 
     if instance in ["button", "vibration"]:
         assert prop.retrievable is False
@@ -118,7 +118,7 @@ async def test_property_custom_event(
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: f"event.{instance}"}, f"{domain}.test")
     assert prop
     assert prop.type == PropertyType.EVENT
-    assert prop.parameters.dict()["instance"] == instance
+    assert prop.parameters.model_dump()["instance"] == instance
 
 
 @pytest.mark.parametrize("instance", EventPropertyInstance.__members__.values())
@@ -136,7 +136,7 @@ async def test_property_custom_event_platform(
     )
     assert prop
     assert prop.type == PropertyType.EVENT
-    assert prop.parameters.dict()["instance"] == instance
+    assert prop.parameters.model_dump()["instance"] == instance
     assert len(caplog.records) == 1
     assert caplog.messages[-1] == "Entity event.foo is not supported in value_template, use state_entity instead"
 
@@ -170,7 +170,7 @@ async def test_property_custom_float(
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: f"float.{instance}"}, f"{domain}.test")
     assert prop
     assert prop.type == PropertyType.FLOAT
-    assert prop.parameters.dict()["instance"] == instance
+    assert prop.parameters.model_dump()["instance"] == instance
 
 
 async def test_property_custom_get_value_button_event(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -405,7 +405,7 @@ async def test_property_custom_get_value_float_conversion(
         state.entity_id,
     )
     assert prop
-    assert prop.parameters.dict()["unit"] == unit
+    assert prop.parameters.model_dump()["unit"] == unit
     assert prop.get_value() == (value if assert_value is None else assert_value)
 
     hass.states.async_set(state.entity_id, STATE_UNAVAILABLE)
@@ -415,7 +415,7 @@ async def test_property_custom_get_value_float_conversion(
     hass.states.async_set(state.entity_id, state.state, state.attributes)
     prop = get_custom_property(hass, entry_data, {CONF_ENTITY_PROPERTY_TYPE: instance}, state.entity_id)
     assert prop
-    assert prop.parameters.dict()["unit"] == unit
+    assert prop.parameters.model_dump()["unit"] == unit
     assert prop.get_value() == (value if assert_value is None else assert_value)
 
     # ignore unit_of_measurement when use attribute
@@ -430,7 +430,7 @@ async def test_property_custom_get_value_float_conversion(
         state.entity_id,
     )
     assert prop
-    assert prop.parameters.dict()["unit"] == (unit if fallback_unit is None else fallback_unit)
+    assert prop.parameters.model_dump()["unit"] == (unit if fallback_unit is None else fallback_unit)
     assert prop.get_value() == value
 
     # override unit_of_measurement when use attribute
@@ -446,7 +446,7 @@ async def test_property_custom_get_value_float_conversion(
         state.entity_id,
     )
     assert prop
-    assert prop.parameters.dict()["unit"] == unit
+    assert prop.parameters.model_dump()["unit"] == unit
     assert prop.get_value() == (value if assert_value is None else assert_value)
 
 
@@ -487,5 +487,5 @@ async def test_property_custom_get_value_float_conversion_override_target_unit(
     )
 
     assert prop
-    assert prop.parameters.dict()["unit"] == target_unit
+    assert prop.parameters.model_dump()["unit"] == target_unit
     assert prop.get_value() == assert_value

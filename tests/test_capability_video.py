@@ -106,7 +106,7 @@ async def test_capability_video_stream_supported(hass: HomeAssistant, entry_data
             hass, entry_data, state, CapabilityType.VIDEO_STREAM, VideoStreamCapabilityInstance.GET_STREAM
         ),
     )
-    assert cap.parameters.dict() == {"protocols": ["hls"]}
+    assert cap.parameters.model_dump() == {"protocols": ["hls"]}
     assert cap.get_value() is None
     assert cap.retrievable is False
     assert cap.reportable is False
@@ -164,7 +164,7 @@ async def test_capability_video_stream_direct(
     await async_process_ha_core_config(hass, {"external_url": "https://example.com"})
 
     with patch.object(cap, "_async_request_stream", return_value=stream):
-        assert (await cap.set_instance_state(Context(), ACTION_STATE)).dict() == {
+        assert (await cap.set_instance_state(Context(), ACTION_STATE)).model_dump() == {
             "protocol": "hls",
             "stream_url": "https://example.com/foo",
         }
@@ -205,7 +205,7 @@ async def test_capability_video_stream_cloud(
         assert len(component.cloud_streams) == 1
         cloud_stream = component.cloud_streams[state.entity_id]
         cloud_stream._running_stream_id = "foo"
-        assert (await cap.set_instance_state(Context(), ACTION_STATE)).dict() == {
+        assert (await cap.set_instance_state(Context(), ACTION_STATE)).as_dict() == {
             "protocol": "hls",
             "stream_url": "https://stream.yaha-cloud.ru/foo/master_playlist.m3u8",
         }

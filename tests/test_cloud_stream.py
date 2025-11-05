@@ -203,7 +203,7 @@ async def test_cloud_stream_handle_requests(hass: HomeAssistant, aioclient_mock:
         await cloud_stream._async_connect()
 
     assert session.ws
-    assert session.ws.send_queue == [b'{"status_code": 200, "headers": {}}\r\nmaster']
+    assert session.ws.send_queue == [b'{"status_code":200,"headers":{}}\r\nmaster']
 
 
 async def test_cloud_stream_web_request(hass: HomeAssistant) -> None:

@@ -1,14 +1,20 @@
 import pytest
 from pytest_homeassistant_custom_component.common import load_fixture
 
-from custom_components.yandex_smart_home.schema import ActionRequest, GetStreamInstanceActionStateValue
+from custom_components.yandex_smart_home.schema import (
+    ActionRequest,
+    EventPropertyInstance,
+    EventPropertyParameters,
+    GasInstanceEvent,
+    GetStreamInstanceActionStateValue,
+)
 from custom_components.yandex_smart_home.schema.capability import *
 from custom_components.yandex_smart_home.schema.capability_color import *
 from custom_components.yandex_smart_home.schema.capability_mode import *
 
 
 def test_devices_action_request() -> None:
-    request = ActionRequest.parse_raw(load_fixture("devices_action.json"))
+    request = ActionRequest.model_validate_json(load_fixture("devices_action.json"))
     assert len(request.payload.devices) == 1
     assert len(request.payload.devices[0].capabilities) == 10
 
@@ -52,7 +58,7 @@ def test_devices_action_request() -> None:
 
 
 def test_devices_action_request_vk() -> None:
-    request = ActionRequest.parse_raw(load_fixture("devices_action_vk.json"))
+    request = ActionRequest.model_validate_json(load_fixture("devices_action_vk.json"))
     assert len(request.payload.devices) == 1
     assert len(request.payload.devices[0].capabilities) == 1
 
@@ -66,3 +72,22 @@ def test_range_capability_parameters() -> None:
         RangeCapabilityParameters(instance=RangeCapabilityInstance.BRIGHTNESS, random_access=False)
 
     RangeCapabilityParameters(instance=RangeCapabilityInstance.CHANNEL, random_access=False)
+
+
+def test_color_capability_parameters() -> None:
+    with pytest.raises(ValueError):
+        ColorSettingCapabilityParameters()
+
+    ColorSettingCapabilityParameters(color_model=CapabilityParameterColorModel.RGB)
+    ColorSettingCapabilityParameters(temperature_k=CapabilityParameterTemperatureK(min=0, max=0))
+    ColorSettingCapabilityParameters(color_scene=CapabilityParameterColorScene(scenes=[{"id": ColorScene.ALARM}]))
+
+
+def test_event_property_parameters() -> None:
+    p = EventPropertyParameters[GasInstanceEvent](instance=EventPropertyInstance.GAS)
+    assert p.events == [{"value": "detected"}, {"value": "not_detected"}, {"value": "high"}]
+
+    p = EventPropertyParameters[GasInstanceEvent](
+        instance=EventPropertyInstance.GAS, events=[{"value": GasInstanceEvent.DETECTED}]
+    )
+    assert p.events == [{"value": "detected"}]

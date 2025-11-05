@@ -13,7 +13,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import SERVER_SOFTWARE, async_create_clientsession, async_get_clientsession
 from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt
-from pydantic.v1 import BaseModel
+from pydantic import BaseModel
 
 from . import handlers
 from .const import CLOUD_BASE_URL, DOMAIN, ISSUE_ID_RECONNECTING_TOO_FAST
@@ -120,7 +120,7 @@ class CloudManager:
 
     async def _on_message(self, message: WSMessage) -> None:
         """Handle incoming request from the cloud."""
-        request = CloudRequest.parse_raw(message.data)
+        request = CloudRequest.model_validate_json(message.data)
         _LOGGER.debug("Request: %s (message: %s)" % (request.action, request.message))
 
         data = RequestData(
@@ -180,7 +180,7 @@ async def register_instance(hass: HomeAssistant, platform: SmartHomePlatform | N
 
     response.raise_for_status()
 
-    return CloudInstanceData.parse_raw(await response.text())
+    return CloudInstanceData.model_validate_json(await response.text())
 
 
 async def get_instance_otp(hass: HomeAssistant, instance_id: str, token: str) -> str:
@@ -193,7 +193,7 @@ async def get_instance_otp(hass: HomeAssistant, instance_id: str, token: str) ->
     )
     response.raise_for_status()
 
-    return CloudInstanceOTP.parse_raw(await response.text()).code
+    return CloudInstanceOTP.model_validate_json(await response.text()).code
 
 
 async def reset_connection_token(hass: HomeAssistant, instance_id: str, token: str) -> CloudInstanceData:
@@ -206,7 +206,7 @@ async def reset_connection_token(hass: HomeAssistant, instance_id: str, token: s
     )
     response.raise_for_status()
 
-    return CloudInstanceData.parse_raw(await response.text())
+    return CloudInstanceData.model_validate_json(await response.text())
 
 
 async def revoke_oauth_tokens(hass: HomeAssistant, instance_id: str, token: str) -> None:

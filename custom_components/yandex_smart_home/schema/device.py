@@ -8,6 +8,8 @@ https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-action.html
 from enum import StrEnum
 from typing import Any, Literal
 
+from pydantic import BaseModel
+
 from .base import APIModel
 from .capability import (
     CapabilityDescription,
@@ -184,7 +186,7 @@ class ActionResultCapability(APIModel):
     state: ActionResultCapabilityState
 
 
-class ActionResultDevice(APIModel):
+class ActionResultDevice(BaseModel):
     """Device for a state change response."""
 
     id: str
