@@ -32,6 +32,8 @@ class DeviceType(StrEnum):
     LIGHT_CEILING = "devices.types.light.ceiling"
     LIGHT_LAMP = "devices.types.light.lamp"
     LIGHT_GARLAND = "devices.types.light.garland"
+    LIGHT_SCONCE = "devices.types.light.sconce"
+    LIGHT_TORCHERE = "devices.types.light.torchere"
     SOCKET = "devices.types.socket"
     SWITCH = "devices.types.switch"
     SWITCH_RELAY = "devices.types.switch.relay"
