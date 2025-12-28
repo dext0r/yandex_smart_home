@@ -143,6 +143,8 @@ _DEVICE_CLASS_TO_DEVICE_TYPES: dict[tuple[str, str], DeviceType] = {
     (binary_sensor.DOMAIN, BinarySensorDeviceClass.VIBRATION): DeviceType.SENSOR_VIBRATION,
     (binary_sensor.DOMAIN, BinarySensorDeviceClass.WINDOW): DeviceType.SENSOR_OPEN,
     (cover.DOMAIN, CoverDeviceClass.CURTAIN): DeviceType.OPENABLE_CURTAIN,
+    (cover.DOMAIN, CoverDeviceClass.BLIND): DeviceType.OPENABLE_CURTAIN,
+    (cover.DOMAIN, CoverDeviceClass.SHUTTER): DeviceType.OPENABLE_CURTAIN,
     (media_player.DOMAIN, MediaPlayerDeviceClass.RECEIVER): DeviceType.MEDIA_DEVICE_RECIEVER,
     (media_player.DOMAIN, MediaPlayerDeviceClass.TV): DeviceType.MEDIA_DEVICE_TV,
     (sensor.DOMAIN, EventDeviceClass.BUTTON): DeviceType.SENSOR_BUTTON,
