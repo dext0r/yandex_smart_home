@@ -1,20 +1,21 @@
 """Schema for float property.
-
 https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float.html
 """
 
+from __future__ import annotations
+
 from enum import StrEnum
-from typing import Literal
+from typing import Literal, Optional
+
+from pydantic import BaseModel, Field
 
 from .base import APIModel
 
 
 class FloatPropertyInstance(StrEnum):
-    """Instance of an event property.
-
+    """Instance of a float property.
     https://yandex.ru/dev/dialogs/smart-home/doc/concepts/float-instance.html
     """
-
     AMPERAGE = "amperage"
     BATTERY_LEVEL = "battery_level"
     CO2_LEVEL = "co2_level"
@@ -72,7 +73,7 @@ class FloatPropertyParameters(APIModel):
     """Parameters of a float property."""
 
     instance: FloatPropertyInstance
-    unit: FloatUnit | PressureUnit | TemperatureUnit | None
+    unit: FloatUnit | PressureUnit | TemperatureUnit | None = None
 
     @property
     def range(self) -> tuple[int | None, int | None]:
@@ -146,7 +147,7 @@ class IlluminationFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatProp
 
 class MeterFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatPropertyParameters):
     instance: Literal[FloatPropertyInstance.METER] = FloatPropertyInstance.METER
-    unit: None = None
+    unit: None = Field(default=None)
 
 
 class PM1DensityFloatPropertyParameters(DensityFloatPropertyParameters):

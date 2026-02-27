@@ -4,11 +4,11 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/video_stream.html
 """
 
 from enum import StrEnum
-from typing import Literal
+from typing import Literal, List
 
 from .base import APIModel
 
-StreamProtocols = list[Literal["hls"]]
+StreamProtocols = List[Literal["hls"]]
 
 
 class VideoStreamCapabilityInstance(StrEnum):

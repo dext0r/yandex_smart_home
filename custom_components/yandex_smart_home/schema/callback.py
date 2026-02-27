@@ -1,12 +1,14 @@
 """Schema for event notification service.
-
 https://yandex.ru/dev/dialogs/smart-home/doc/reference-alerts/resources-alerts.html
 """
 
+from __future__ import annotations
+
 from enum import StrEnum
 import time
+from typing import Union
 
-from pydantic.v1 import Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .base import APIModel
 from .device import DeviceState
@@ -22,7 +24,7 @@ class CallbackStatesRequestPayload(APIModel):
 class CallbackStatesRequest(APIModel):
     """Request body for notification about device state change."""
 
-    ts: float = Field(default_factory=lambda: time.time())
+    ts: float = Field(default_factory=time.time)
     payload: CallbackStatesRequestPayload
 
 
@@ -35,7 +37,7 @@ class CallbackDiscoveryRequestPayload(APIModel):
 class CallbackDiscoveryRequest(APIModel):
     """Request body for notification about change of devices' parameters."""
 
-    ts: float = Field(default_factory=lambda: time.time())
+    ts: float = Field(default_factory=time.time)
     payload: CallbackDiscoveryRequestPayload
 
 
@@ -50,8 +52,8 @@ class CallbackResponse(APIModel):
     """Response on a callback request."""
 
     status: CallbackResponseStatus
-    error_code: str | None
-    error_message: str | None
+    error_code: str | None = None
+    error_message: str | None = None
 
 
-CallbackRequest = CallbackDiscoveryRequest | CallbackStatesRequest
+CallbackRequest: type = Union[CallbackDiscoveryRequest, CallbackStatesRequest]

@@ -1,12 +1,13 @@
 """Schema for range capability.
-
 https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range.html
 """
 
-from enum import StrEnum
-from typing import Any
+from __future__ import annotations
 
-from pydantic.v1 import root_validator, validator
+from enum import StrEnum
+from typing import Any, Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator, computed_field
 
 from .base import APIModel
 
@@ -20,7 +21,6 @@ class RangeCapabilityUnit(StrEnum):
 
 class RangeCapabilityInstance(StrEnum):
     """Instance of a range capability.
-
     https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range-instance.html
     """
 
@@ -47,50 +47,49 @@ class RangeCapabilityParameters(APIModel):
     """Parameters of a range capability."""
 
     instance: RangeCapabilityInstance
-    unit: RangeCapabilityUnit | None = None
+    unit: Optional[RangeCapabilityUnit] = Field(default=None, exclude=True)  # исключаем из сериализации, если нужно
     random_access: bool
-    range: RangeCapabilityRange | None = None
+    range: Optional[RangeCapabilityRange] = Field(default=None)
 
-    @root_validator
-    def compute_unit(cls, values: dict[str, Any]) -> dict[str, Any]:
-        """Return value unit for a capability instance."""
-        match values.get("instance"):
+    @computed_field
+    @property
+    def computed_unit(self) -> RangeCapabilityUnit:
+        """Вычисляемый unit на основе instance."""
+        match self.instance:
             case RangeCapabilityInstance.BRIGHTNESS:
-                values["unit"] = RangeCapabilityUnit.PERCENT
+                return RangeCapabilityUnit.PERCENT
             case RangeCapabilityInstance.HUMIDITY:
-                values["unit"] = RangeCapabilityUnit.PERCENT
+                return RangeCapabilityUnit.PERCENT
             case RangeCapabilityInstance.OPEN:
-                values["unit"] = RangeCapabilityUnit.PERCENT
+                return RangeCapabilityUnit.PERCENT
             case RangeCapabilityInstance.TEMPERATURE:
-                values["unit"] = RangeCapabilityUnit.TEMPERATURE_CELSIUS
+                return RangeCapabilityUnit.TEMPERATURE_CELSIUS
+            case _:
+                return self.unit or RangeCapabilityUnit.PERCENT  # fallback
 
-        return values
-
-    @root_validator
-    def validate_range(cls, values: dict[str, Any]) -> dict[str, Any]:
+    @model_validator(mode='after')
+    def validate_range(self) -> Self:
         """Force range boundaries for a capability instance."""
-
-        instance: RangeCapabilityInstance | None = values.get("instance")
-        r: RangeCapabilityRange | None = values.get("range")
-
+        r = self.range
         if r:
-            match instance:
+            match self.instance:
                 case RangeCapabilityInstance.HUMIDITY | RangeCapabilityInstance.OPEN:
-                    r.min, r.max = max([0.0, r.min]), min([100.0, r.max])
+                    r.min = max(0.0, r.min)
+                    r.max = min(100.0, r.max)
                 case RangeCapabilityInstance.BRIGHTNESS:
-                    r.min = max(min(r.min, 1.0), 0.0)
+                    r.min = max(0.0, min(1.0, r.min))
                     r.max = 100.0
                     r.precision = 1.0
         else:
-            if instance in (
+            if self.instance in (
                 RangeCapabilityInstance.BRIGHTNESS,
                 RangeCapabilityInstance.HUMIDITY,
                 RangeCapabilityInstance.OPEN,
                 RangeCapabilityInstance.TEMPERATURE,
             ):
-                raise ValueError(f"range field required for {instance}")
+                raise ValueError(f"range field required for {self.instance}")
 
-        return values
+        return self
 
 
 class RangeCapabilityInstanceActionState(APIModel):
@@ -100,10 +99,8 @@ class RangeCapabilityInstanceActionState(APIModel):
     value: float
     relative: bool = False
 
-    @validator("relative", pre=True, always=True)
-    def set_relative(cls, v: Any) -> Any:
+    @field_validator("relative", mode="before")
+    @classmethod
+    def set_relative(cls, v: Any) -> bool:
         """Update relative value."""
-        if v is None:  # VK
-            return False
-
-        return v
+        return False if v is None else v

@@ -1,10 +1,8 @@
-"""Schema for an API response.
+"""Schema for an API response for Yandex Smart Home."""
 
-https://yandex.ru/dev/dialogs/smart-home/doc/concepts/response-codes.html
-"""
-
+from __future__ import annotations
 from enum import StrEnum
-
+from typing import Optional, Any, Dict, Literal
 from .base import APIModel
 
 
@@ -40,13 +38,22 @@ class ResponsePayload(APIModel):
 
 class Error(ResponsePayload):
     """Error payload."""
-
     error_code: ResponseCode
-    error_message: str | None = None
+    error_message: Optional[str] = None
+
+
+class SuccessActionResult(APIModel):
+    """Represents a successful action result."""
+    status: Literal["DONE"] = "DONE"
+
+
+class FailedActionResult(APIModel):
+    """Represents a failed action result."""
+    status: Literal["ERROR"] = "ERROR"
+    error_code: ResponseCode
 
 
 class Response(APIModel):
     """Base API response."""
-
-    request_id: str | None = None
-    payload: ResponsePayload | None = None
+    request_id: Optional[str] = None
+    payload: Optional[Dict[str, Any]] = None

@@ -1,12 +1,15 @@
 """Schema for an user device.
-
 https://yandex.ru/dev/dialogs/smart-home/doc/reference/get-devices.html
 https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-devices-query.html
 https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-action.html
 """
 
+from __future__ import annotations
+
 from enum import StrEnum
-from typing import Any, Literal
+from typing import Any, List, Literal, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from .base import APIModel
 from .capability import (
@@ -23,10 +26,8 @@ from .response import ResponseCode, ResponsePayload
 
 class DeviceType(StrEnum):
     """User device type.
-
     https://yandex.ru/dev/dialogs/smart-home/doc/concepts/device-types.html
     """
-
     LIGHT = "devices.types.light"
     LIGHT_STRIP = "devices.types.light.strip"
     LIGHT_CEILING = "devices.types.light.ceiling"
@@ -37,7 +38,6 @@ class DeviceType(StrEnum):
     SWITCH_RELAY = "devices.types.switch.relay"
     THERMOSTAT = "devices.types.thermostat"
     THERMOSTAT_AC = "devices.types.thermostat.ac"
-    THERMOSTAT_HEATER = "devices.types.thermostat.heater"
     MEDIA_DEVICE = "devices.types.media_device"
     MEDIA_DEVICE_TV = "devices.types.media_device.tv"
     MEDIA_DEVICE_TV_BOX = "devices.types.media_device.tv_box"
@@ -82,10 +82,10 @@ class DeviceType(StrEnum):
 class DeviceInfo(APIModel):
     """Extended device info."""
 
-    manufacturer: str | None = None
-    model: str | None = None
-    hw_version: str | None = None
-    sw_version: str | None = None
+    manufacturer: Optional[str] = Field(default=None)
+    model: Optional[str] = Field(default=None)
+    hw_version: Optional[str] = Field(default=None)
+    sw_version: Optional[str] = Field(default=None)
 
 
 class DeviceDescription(APIModel):
@@ -93,61 +93,62 @@ class DeviceDescription(APIModel):
 
     id: str
     name: str
-    description: str | None = None
-    room: str | None = None
+    description: Optional[str] = None
+    room: Optional[str] = None
     type: DeviceType
-    capabilities: list[CapabilityDescription] | None = None
-    properties: list[PropertyDescription] | None = None
-    device_info: DeviceInfo | None = None
+    capabilities: Optional[List[CapabilityDescription]] = None
+    properties: Optional[List[PropertyDescription]] = None
+    device_info: Optional[DeviceInfo] = None
 
 
 class DeviceState(APIModel):
     """Device state for a state query request."""
 
     id: str
-    capabilities: list[CapabilityInstanceState] | None = None
-    properties: list[PropertyInstanceState] | None = None
-    error_code: ResponseCode | None = None
-    error_message: str | None = None
+    capabilities: Optional[List[CapabilityInstanceState]] = None
+    properties: Optional[List[PropertyInstanceState]] = None
+    error_code: Optional[ResponseCode] = None
+    error_message: Optional[str] = None
 
 
 class DeviceList(ResponsePayload):
     """Response payload for a device list request."""
 
     user_id: str
-    devices: list[DeviceDescription]
+    devices: List[DeviceDescription]
 
 
 class DeviceStates(ResponsePayload):
     """Response payload for a state query request."""
 
-    devices: list[DeviceState]
+    devices: List[DeviceState]
 
 
 class StatesRequestDevice(APIModel):
     """Device for a state query request."""
 
     id: str
-    custom_data: dict[str, Any] | None = None
+    custom_data: Optional[dict[str, Any]] = None
 
 
 class StatesRequest(APIModel):
     """Request body for a state query request."""
 
-    devices: list[StatesRequestDevice]
+    devices: List[StatesRequestDevice]
 
 
 class ActionRequestDevice(APIModel):
     """Device for a state change request."""
 
     id: str
-    capabilities: list[CapabilityInstanceAction]
+    capabilities: List[CapabilityInstanceAction]
 
 
 class ActionRequestPayload(APIModel):
     """Request payload for state change request."""
 
-    devices: list[ActionRequestDevice]
+    action_id: Optional[str] = Field(default=None)  # ← добавлено для совместимости с Яндексом
+    devices: List[ActionRequestDevice]
 
 
 class ActionRequest(APIModel):
@@ -173,8 +174,8 @@ class ActionResultCapabilityState(APIModel):
     """Result of capability instance state change."""
 
     instance: CapabilityInstance
-    value: CapabilityInstanceActionResultValue | None = None
-    action_result: SuccessActionResult | FailedActionResult
+    value: Optional[CapabilityInstanceActionResultValue] = None
+    action_result: Union[SuccessActionResult, FailedActionResult]
 
 
 class ActionResultCapability(APIModel):
@@ -188,11 +189,11 @@ class ActionResultDevice(APIModel):
     """Device for a state change response."""
 
     id: str
-    capabilities: list[ActionResultCapability] | None = None
-    action_result: FailedActionResult | SuccessActionResult | None = None
+    capabilities: Optional[List[ActionResultCapability]] = None
+    action_result: Optional[Union[FailedActionResult, SuccessActionResult]] = None
 
 
 class ActionResult(ResponsePayload):
     """Response for a device state change."""
 
-    devices: list[ActionResultDevice]
+    devices: List[ActionResultDevice]

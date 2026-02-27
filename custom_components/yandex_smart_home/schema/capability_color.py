@@ -1,12 +1,13 @@
 """Schema for color_setting capability.
-
 https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html
 """
 
-from enum import StrEnum
-from typing import Annotated, Any, Literal, Self, Union
+from __future__ import annotations
 
-from pydantic.v1 import Field, root_validator
+from enum import StrEnum
+from typing import Annotated, Any, Literal, Optional, Self, Union
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .base import APIModel
 
@@ -71,16 +72,20 @@ class CapabilityParameterColorScene(APIModel):
 class ColorSettingCapabilityParameters(APIModel):
     """Parameters of a color_setting capability."""
 
-    color_model: CapabilityParameterColorModel | None = None
-    temperature_k: CapabilityParameterTemperatureK | None = None
-    color_scene: CapabilityParameterColorScene | None = None
+    color_model: Optional[CapabilityParameterColorModel] = None
+    temperature_k: Optional[CapabilityParameterTemperatureK] = None
+    color_scene: Optional[CapabilityParameterColorScene] = None
 
-    @root_validator
-    def any_of(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if not any(values.values()):
+    @model_validator(mode='after')
+    def any_of(self) -> Self:
+        """Проверяем, что хотя бы одно поле заполнено (после полной валидации)."""
+        if not any([
+            self.color_model is not None,
+            self.temperature_k is not None,
+            self.color_scene is not None,
+        ]):
             raise ValueError("one of color_model, temperature_k or color_scene must have a value")
-
-        return values
+        return self
 
 
 class RGBInstanceActionState(APIModel):

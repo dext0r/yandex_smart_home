@@ -1,4 +1,4 @@
-"""The Yandex Smart Home request handlers."""
+"""Yandex Smart Home request handlers — упрощённая версия без строгой Pydantic-валидации."""
 
 import logging
 from typing import Any, Callable, Coroutine
@@ -12,19 +12,12 @@ from .device import Device, async_get_device_description, async_get_device_state
 from .helpers import ActionNotAllowed, APIError, RequestData
 from .schema import (
     ActionRequest,
-    ActionResult,
-    ActionResultCapability,
-    ActionResultCapabilityState,
-    ActionResultDevice,
     DeviceDescription,
     DeviceList,
     DeviceStates,
-    FailedActionResult,
     Response,
     ResponseCode,
-    ResponsePayload,
     StatesRequest,
-    SuccessActionResult,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,138 +26,148 @@ HANDLERS: Registry[
     str,
     Callable[
         [HomeAssistant, RequestData, str],
-        Coroutine[Any, Any, ResponsePayload | None],
+        Coroutine[Any, Any, dict | None],
     ],
 ] = Registry()
 
 
-async def async_handle_request(hass: HomeAssistant, data: RequestData, action: str, payload: str) -> Response:
-    """Handle incoming API request."""
+async def async_handle_request(
+    hass: HomeAssistant, data: RequestData, action: str, payload: str
+) -> Response:
     handler = HANDLERS.get(action)
-
     if handler is None:
         _LOGGER.error(f"Unexpected action '{action}'")
         return Response(request_id=data.request_id)
 
     try:
-        return Response(request_id=data.request_id, payload=await handler(hass, data, payload))
-    except APIError as err:
-        _LOGGER.error(f"{err.message} ({err.code})")
-        return Response(request_id=data.request_id)
+        result = await handler(hass, data, payload)
+        _LOGGER.debug("Handler result: %s", result)
+
+        # Конвертируем Pydantic-модели в обычные словари
+        if hasattr(result, "model_dump"):
+            result = result.model_dump(exclude_none=True)
+
+        return Response(request_id=data.request_id, payload=result)
     except Exception:
-        # return always 200 due to blocking error on device page
-        _LOGGER.exception("Unexpected exception")
+        _LOGGER.exception("Unexpected exception in handler")
         return Response(request_id=data.request_id)
 
 
 @HANDLERS.register("/user/devices")
-async def async_device_list(hass: HomeAssistant, data: RequestData, _payload: str) -> DeviceList:
-    """Handle request that return information about supported user devices.
-
-    https://yandex.ru/dev/dialogs/smart-home/doc/reference/get-devices.html
-    """
+async def async_device_list(
+    hass: HomeAssistant, data: RequestData, _payload: str
+) -> DeviceList:
     assert data.request_user_id
-
     devices: list[DeviceDescription] = []
     for device in await async_get_devices(hass, data.entry_data):
         if (description := await async_get_device_description(hass, device)) is not None:
             devices.append(description)
-
     data.entry_data.link_platform(data.platform)
     return DeviceList(user_id=data.request_user_id, devices=devices)
 
 
 @HANDLERS.register("/user/devices/query")
-async def async_devices_query(hass: HomeAssistant, data: RequestData, payload: str) -> DeviceStates:
-    """Handle request that return information about the states of user devices.
-
-    https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-devices-query.html
-    """
-    request = StatesRequest.parse_raw(payload)
+async def async_devices_query(
+    hass: HomeAssistant, data: RequestData, payload: str
+) -> DeviceStates:
+    request = StatesRequest.model_validate_json(payload)
     states = await async_get_device_states(hass, data.entry_data, [rd.id for rd in request.devices])
     return DeviceStates(devices=states)
 
 
 @HANDLERS.register("/user/devices/action")
-async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: str) -> ActionResult:
-    """Handle request that changes current state of user devices.
+async def async_devices_action(
+    hass: HomeAssistant, data: RequestData, payload: str
+) -> dict:
+    try:
+        request = ActionRequest.model_validate_json(payload)
+        _LOGGER.debug("Action request: %s", request.model_dump(exclude_none=True))
+    except Exception as e:
+        _LOGGER.error(f"Failed to parse action request: {e}")
+        return {"devices": []}
 
-    https://yandex.ru/dev/dialogs/smart-home/doc/reference/post-action.html
-    """
-    request = ActionRequest.parse_raw(payload)
-    results: list[ActionResultDevice] = []
+    devices_list = []
 
-    for device_id, actions in [(rd.id, rd.capabilities) for rd in request.payload.devices]:
-        state = hass.states.get(device_id)
-        device = Device(hass, data.entry_data, device_id, state)
+    for device_req in request.payload.devices:
+        dev_id = device_req.id
+        caps = device_req.capabilities
 
-        if state and not device.should_expose:
-            data.entry_data.mark_entity_unexposed(state.entity_id)
-
-        if device.unavailable:
-            hass.bus.async_fire(
-                EVENT_DEVICE_ACTION,
-                {ATTR_ENTITY_ID: device_id, ATTR_ERROR_CODE: ResponseCode.DEVICE_UNREACHABLE.value},
-                context=data.context,
-            )
-
-            results.append(
-                ActionResultDevice(
-                    id=device_id, action_result=FailedActionResult(error_code=ResponseCode.DEVICE_UNREACHABLE)
-                )
-            )
+        ha_state = hass.states.get(dev_id)
+        if not ha_state:
+            devices_list.append({
+                "id": dev_id,
+                "action_result": {"status": "ERROR", "error_code": "DEVICE_NOT_FOUND"}
+            })
             continue
 
-        capability_results: list[ActionResultCapability] = []
-        for action in actions:
-            try:
-                value = await device.execute(data.context, action)
-                hass.bus.async_fire(
-                    EVENT_DEVICE_ACTION,
-                    {ATTR_ENTITY_ID: device_id, ATTR_CAPABILITY: action.as_dict()},
-                    context=data.context,
-                )
-            except (APIError, ActionNotAllowed) as err:
-                if isinstance(err, APIError):
-                    _LOGGER.error(f"{err.message} ({err.code.value})")
+        dev = Device(hass, data.entry_data, dev_id, ha_state)
 
-                hass.bus.async_fire(
-                    EVENT_DEVICE_ACTION,
-                    {ATTR_ENTITY_ID: device_id, ATTR_CAPABILITY: action.as_dict(), ATTR_ERROR_CODE: err.code.value},
-                    context=data.context,
-                )
+        if not dev.should_expose:
+            data.entry_data.mark_entity_unexposed(ha_state.entity_id)
 
-                capability_results.append(
-                    ActionResultCapability(
-                        type=action.type,
-                        state=ActionResultCapabilityState(
-                            instance=action.state.instance,
-                            action_result=FailedActionResult(error_code=ResponseCode(err.code)),
-                        ),
-                    )
-                )
-                continue
-
-            capability_results.append(
-                ActionResultCapability(
-                    type=action.type,
-                    state=ActionResultCapabilityState(
-                        instance=action.state.instance,
-                        value=value,
-                        action_result=SuccessActionResult(),
-                    ),
-                )
+        if dev.unavailable:
+            hass.bus.async_fire(
+                EVENT_DEVICE_ACTION,
+                {ATTR_ENTITY_ID: dev_id, ATTR_ERROR_CODE: ResponseCode.DEVICE_UNREACHABLE.value},
+                context=data.context,
             )
+            devices_list.append({
+                "id": dev_id,
+                "action_result": {"status": "ERROR", "error_code": "DEVICE_UNREACHABLE"}
+            })
+            continue
 
-        results.append(ActionResultDevice(id=device_id, capabilities=capability_results))
+        cap_responses = []
+        at_least_one_success = False
 
-    return ActionResult(devices=results)
+        for cap in caps:
+            try:
+                executed_value = await dev.execute(data.context, cap)
+                _LOGGER.debug(f"Executed {cap.type} on {dev_id}: {executed_value}")
+
+                hass.bus.async_fire(
+                    EVENT_DEVICE_ACTION,
+                    {ATTR_ENTITY_ID: dev_id, ATTR_CAPABILITY: cap.model_dump(exclude_none=True)},
+                    context=data.context,
+                )
+
+                # Для on_off всегда value = null в ответе на action
+                cap_responses.append({
+                    "type": str(cap.type),
+                    "state": {
+                        "instance": str(cap.state.instance),
+                        "value": None,
+                        "action_result": {"status": "DONE"}
+                    }
+                })
+                at_least_one_success = True
+
+            except Exception as exc:
+                _LOGGER.exception(f"Error on {cap.type} for {dev_id}")
+                cap_responses.append({
+                    "type": str(cap.type),
+                    "state": {
+                        "instance": str(cap.state.instance),
+                        "value": None,
+                        "action_result": {"status": "ERROR", "error_code": "INTERNAL_ERROR"}
+                    }
+                })
+
+        device_resp = {
+            "id": dev_id,
+            "capabilities": cap_responses,
+            "action_result": {"status": "DONE"} if at_least_one_success else {"status": "ERROR", "error_code": "INTERNAL_ERROR"}
+        }
+
+        devices_list.append(device_resp)
+        _LOGGER.debug(f"Device response: {device_resp}")
+
+    full_payload = {"devices": devices_list}
+    _LOGGER.debug(f"RETURNING PAYLOAD: {full_payload}")
+
+    return full_payload
 
 
 @HANDLERS.register("/user/unlink")
 async def async_user_unlink(_hass: HomeAssistant, data: RequestData, _payload: str) -> None:
-    """Handle request indicates that the user has unlink the account.
-
-    https://yandex.ru/dev/dialogs/smart-home/doc/reference/unlink.html
-    """
     data.entry_data.unlink_platform(data.platform)

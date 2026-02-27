@@ -1,9 +1,11 @@
 """Schema for device capabilities."""
 
+from __future__ import annotations
+
 from enum import StrEnum
 from typing import Annotated, Any, Literal, TypeVar, Union
 
-from pydantic.v1 import Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .base import APIModel
 from .capability_color import (
@@ -27,8 +29,6 @@ from .capability_video import (
 
 
 class CapabilityType(StrEnum):
-    """Capability type."""
-
     ON_OFF = "devices.capabilities.on_off"
     COLOR_SETTING = "devices.capabilities.color_setting"
     MODE = "devices.capabilities.mode"
@@ -38,92 +38,72 @@ class CapabilityType(StrEnum):
 
     @property
     def short(self) -> str:
-        """Return short version of the capability type."""
         return str(self).replace("devices.capabilities.", "")
 
 
-CapabilityParameters = (
-    OnOffCapabilityParameters
-    | ColorSettingCapabilityParameters
-    | ModeCapabilityParameters
-    | RangeCapabilityParameters
-    | ToggleCapabilityParameters
-    | VideoStreamCapabilityParameters
-)
-"""Parameters of a capability for a device list request."""
+CapabilityParameters = Union[
+    OnOffCapabilityParameters,
+    ColorSettingCapabilityParameters,
+    ModeCapabilityParameters,
+    RangeCapabilityParameters,
+    ToggleCapabilityParameters,
+    VideoStreamCapabilityParameters,
+]
 
-CapabilityInstance = (
-    OnOffCapabilityInstance
-    | ColorSettingCapabilityInstance
-    | ModeCapabilityInstance
-    | RangeCapabilityInstance
-    | ToggleCapabilityInstance
-    | VideoStreamCapabilityInstance
-)
-"""All capability instances."""
+
+CapabilityInstance = Union[
+    OnOffCapabilityInstance,
+    ColorSettingCapabilityInstance,
+    ModeCapabilityInstance,
+    RangeCapabilityInstance,
+    ToggleCapabilityInstance,
+    VideoStreamCapabilityInstance,
+]
 
 
 class CapabilityDescription(APIModel):
-    """Description of a capability for a device list request."""
-
     type: CapabilityType
     retrievable: bool
     reportable: bool
-    parameters: CapabilityParameters | None
+    parameters: CapabilityParameters | None = None
 
 
 class CapabilityInstanceStateValue(APIModel):
-    """Capability instance value."""
-
     instance: CapabilityInstance
     value: Any
 
 
 class CapabilityInstanceState(APIModel):
-    """Capability state for state query and callback requests."""
-
     type: CapabilityType
     state: CapabilityInstanceStateValue
 
 
 class OnOffCapabilityInstanceAction(APIModel):
-    """New capability state for a state change request of on_off capability."""
-
     type: Literal[CapabilityType.ON_OFF] = CapabilityType.ON_OFF
     state: OnOffCapabilityInstanceActionState
 
 
 class ColorSettingCapabilityInstanceAction(APIModel):
-    """New capability state for a state change request of color_setting capability."""
-
     type: Literal[CapabilityType.COLOR_SETTING] = CapabilityType.COLOR_SETTING
     state: ColorSettingCapabilityInstanceActionState
 
 
 class ModeCapabilityInstanceAction(APIModel):
-    """New capability state for a state change request of mode capability."""
-
     type: Literal[CapabilityType.MODE] = CapabilityType.MODE
     state: ModeCapabilityInstanceActionState
 
 
 class RangeCapabilityInstanceAction(APIModel):
-    """New capability state for a state change request of range capability."""
-
     type: Literal[CapabilityType.RANGE] = CapabilityType.RANGE
     state: RangeCapabilityInstanceActionState
 
 
 class ToggleCapabilityInstanceAction(APIModel):
-    """New capability state for a state change request of toggle capability."""
-
     type: Literal[CapabilityType.TOGGLE] = CapabilityType.TOGGLE
     state: ToggleCapabilityInstanceActionState
 
 
 class VideoStreamCapabilityInstanceAction(APIModel):
-    """New capability state for a state change request of video_stream capability."""
-
     type: Literal[CapabilityType.VIDEO_STREAM] = CapabilityType.VIDEO_STREAM
     state: GetStreamInstanceActionState
 
@@ -139,7 +119,7 @@ CapabilityInstanceAction = Annotated[
     ],
     Field(discriminator="type"),
 ]
-"""New capability state including type for a state change request."""
+
 
 CapabilityInstanceActionState = TypeVar(
     "CapabilityInstanceActionState",
@@ -154,7 +134,6 @@ CapabilityInstanceActionState = TypeVar(
     GetStreamInstanceActionState,
     contravariant=True,
 )
-"""New capability state for a state change request."""
+
 
 CapabilityInstanceActionResultValue = GetStreamInstanceActionResultValue | None
-"""Result of a capability state change."""

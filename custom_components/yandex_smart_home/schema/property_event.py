@@ -1,19 +1,19 @@
 """Schema for event property.
-
 https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event.html
 """
+
+from __future__ import annotations
 
 from enum import StrEnum
 from typing import Any, Generic, Literal, TypeVar
 
-from pydantic.v1 import validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
-from .base import GenericAPIModel
+from .base import APIModel
 
 
 class EventPropertyInstance(StrEnum):
     """Instance of an event property.
-
     https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event-instance.html
     """
 
@@ -86,6 +86,7 @@ class BatteryLevelInstanceEvent(EventInstanceEvent):
 
     LOW = "low"
     NORMAL = "normal"
+    HIGH = "high"
 
 
 class FoodLevelInstanceEvent(EventInstanceEvent):
@@ -135,20 +136,23 @@ def get_supported_events_for_instance(instance: EventPropertyInstance) -> list[E
     return list(get_event_class_for_instance(instance).__members__.values())
 
 
-class EventPropertyParameters(GenericAPIModel, Generic[EventInstanceEventT]):
+class EventPropertyParameters(APIModel, Generic[EventInstanceEventT]):
     """Parameters of an event property."""
 
     instance: EventPropertyInstance
     events: list[dict[Literal["value"], EventInstanceEventT]] = []
 
-    @validator("events", pre=True, always=True)
-    def set_events(cls, v: Any) -> Any:
+    @field_validator("events", mode="before")
+    @classmethod
+    def set_events(cls, v: Any) -> list[dict[Literal["value"], Any]]:
         """Update events list value."""
         if not v:
-            instance_event: type[EventInstanceEventT] = cls.__fields__["events"].type_.__args__[1]
-            return [{"value": m} for m in instance_event.__members__.values()]
+            # Получаем тип события из generic параметра
+            # В v2 это cls.model_fields["events"].annotation.__args__[1]
+            event_type = cls.model_fields["events"].annotation.__args__[1]
+            return [{"value": m} for m in event_type.__members__.values()]
 
-        return v  # pragma: nocover
+        return v
 
 
 class VibrationEventPropertyParameters(EventPropertyParameters[VibrationInstanceEvent]):
