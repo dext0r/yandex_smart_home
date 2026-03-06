@@ -27,7 +27,7 @@ from homeassistant.helpers.event import (
     async_track_template_result,
 )
 from homeassistant.helpers.template import Template
-from pydantic.v1 import ValidationError
+from pydantic import ValidationError
 
 from . import DOMAIN
 from .capability import Capability
@@ -342,7 +342,7 @@ class Notifier(ABC):
 
             response_body, error_message = await r.read(), ""
             try:
-                response = CallbackResponse.parse_raw(response_body)
+                response = CallbackResponse.model_validate_json(response_body)
                 if response.error_message:
                     error_message = response.error_message
                 elif response.error_code:

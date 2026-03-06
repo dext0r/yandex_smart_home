@@ -6,7 +6,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event.html
 from enum import StrEnum
 from typing import Any, Generic, Literal, TypeVar
 
-from pydantic.v1 import validator
+from pydantic import model_validator
 
 from .base import GenericAPIModel
 
@@ -141,14 +141,22 @@ class EventPropertyParameters(GenericAPIModel, Generic[EventInstanceEventT]):
     instance: EventPropertyInstance
     events: list[dict[Literal["value"], EventInstanceEventT]] = []
 
-    @validator("events", pre=True, always=True)
-    def set_events(cls, v: Any) -> Any:
-        """Update events list value."""
-        if not v:
-            instance_event: type[EventInstanceEventT] = cls.__fields__["events"].type_.__args__[1]
-            return [{"value": m} for m in instance_event.__members__.values()]
-
-        return v  # pragma: nocover
+    @model_validator(mode="before")
+    @classmethod
+    def set_events(cls, data: Any) -> Any:
+        """Populate events list from the instance type when not provided."""
+        if isinstance(data, dict) and not data.get("events"):
+            instance_val = data.get("instance")
+            if instance_val is None:
+                instance_field = cls.model_fields.get("instance")
+                if instance_field is not None:
+                    instance_val = instance_field.default
+            try:
+                event_cls = get_event_class_for_instance(EventPropertyInstance(instance_val))
+                data["events"] = [{"value": m} for m in event_cls.__members__.values()]
+            except (KeyError, ValueError):
+                pass
+        return data
 
 
 class VibrationEventPropertyParameters(EventPropertyParameters[VibrationInstanceEvent]):

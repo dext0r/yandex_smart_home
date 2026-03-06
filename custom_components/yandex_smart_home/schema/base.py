@@ -2,21 +2,26 @@
 
 from typing import Any
 
-from pydantic.v1 import BaseModel
-from pydantic.v1.generics import GenericModel
+from pydantic import BaseModel
 
 
 class APIModel(BaseModel):
     """Base API response model."""
 
+    def __eq__(self, other: object) -> bool:
+        """Compare model with another model or a dict (preserving Pydantic v1 behaviour)."""
+        if isinstance(other, dict):
+            return self.model_dump() == other
+        return super().__eq__(other)
+
     def as_json(self) -> str:
         """Generate a JSON representation of the model."""
-        return super().json(exclude_none=True, ensure_ascii=False)
+        return self.model_dump_json(exclude_none=True, serialize_as_any=True)
 
     def as_dict(self) -> dict[str, Any]:
         """Generate a dictionary representation of the model."""
-        return super().dict(exclude_none=True)
+        return self.model_dump(exclude_none=True, serialize_as_any=True)
 
 
-class GenericAPIModel(GenericModel, APIModel):
+class GenericAPIModel(APIModel):
     """Base generic API response model."""
