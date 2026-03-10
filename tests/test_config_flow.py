@@ -8,6 +8,9 @@ from homeassistant.components import demo, http
 from homeassistant.config_entries import SOURCE_IGNORE, SOURCE_USER, ConfigEntry, ConfigFlowResult
 from homeassistant.const import CONF_ENTITIES, CONF_ID, CONF_NAME, CONF_PLATFORM, CONF_TOKEN, Platform
 from homeassistant.core import HomeAssistant
+
+# try:
+from homeassistant.core_config import async_process_ha_core_config
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entityfilter import (
@@ -47,10 +50,8 @@ from custom_components.yandex_smart_home.http import YandexSmartHomeUnauthorized
 
 from . import test_cloud
 
-try:
-    from homeassistant.core_config import async_process_ha_core_config
-except ImportError:
-    from homeassistant.config import async_process_ha_core_config  # type: ignore[attr-defined, no-redef]
+# except ImportError:
+#     from homeassistant.config import async_process_ha_core_config  # type: ignore[attr-defined, no-redef]
 
 
 async def _async_mock_config_entry(

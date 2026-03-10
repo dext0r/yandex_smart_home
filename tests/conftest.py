@@ -154,19 +154,14 @@ def hass_platform(hass: HomeAssistant) -> HomeAssistant:
     demo_binary_sensor.entity_id = "binary_sensor.front_door"
     demo_binary_sensor._attr_name = "Front Door"  # type: ignore[assignment]
 
-    demo_light = DemoLight(
-        "light_kitchen",
-        "Kitchen Light",
-        available=True,
-        state=True,
-    )
+    demo_light = DemoLight("light_kitchen", "Kitchen Light", state=True)
     demo_light.hass = hass
     demo_light.entity_id = "light.kitchen"
     demo_light._attr_name = "Kitchen Light"  # type: ignore[assignment]
-    if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2025, 1):
-        demo_light._ct = 4200
+    if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2026, 3):
+        demo_light._attr_color_temp_kelvin = 4200
     else:
-        demo_light._ct = 240
+        demo_light._ct = 4200  # type: ignore[attr-defined]
 
     demo_sensor.async_write_ha_state()
     demo_binary_sensor.async_write_ha_state()

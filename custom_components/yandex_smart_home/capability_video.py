@@ -1,13 +1,11 @@
 """Implement the Yandex Smart Home video_stream capabilities."""
 
-# pyright: reportAttributeAccessIssue=information
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from homeassistant.components import camera
-from homeassistant.components.camera import CameraEntityFeature, StreamType
+from homeassistant.components.camera import CameraEntityFeature, StreamType, get_camera_from_entity_id
 from homeassistant.components.stream import Stream
 from homeassistant.core import Context
 from homeassistant.helpers import network
@@ -25,14 +23,6 @@ from .schema import (
     VideoStreamCapabilityInstance,
     VideoStreamCapabilityParameters,
 )
-
-try:
-    from homeassistant.components.camera import get_camera_from_entity_id
-except ImportError:  # pragma: no cover
-    from homeassistant.components.camera import (  # type: ignore[no-redef]
-        _get_camera_from_entity_id as get_camera_from_entity_id,
-    )
-
 
 if TYPE_CHECKING:
     from . import YandexSmartHome

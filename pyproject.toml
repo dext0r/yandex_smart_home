@@ -126,22 +126,15 @@ disallow_any_generics = false
 [tool.tox]
 env_list = [
     "type",
-    "2024_12",
-    "2025_1",
-    "2025_2",
-    "2025_4",
-    "2025_5",
-    "2025_6",
-    "2025_7",
-    "2025_8",
-    "2025_9",
-    "2025_10",
-    "2025_11",
+    "2025_12",
+    "2026_1",
+    "2026_2",
+    "2026_3",
 ]
 
 [tool.tox.env_run_base]
 description = "Run test under {env_python}"
-base_python = ["py313"]
+base_python = ["py314"]
 runner = "uv-venv-lock-runner"
 commands = [
     ["pytest", "--cov", "--cov-report=xml:{env_dir}/coverage.xml", "-n=auto"],
@@ -151,38 +144,20 @@ commands = [
 PYTHONDONTWRITEBYTECODE = "1"
 MYPY_CACHE_DIR = "{env_dir}/.cache/mypy"
 
-[tool.tox.env.2024_12]
-uv_sync_flags = ["--directory=tests/env/2024_12"]
+[tool.tox.env.2025_12]
+base_python = ["py313"]
+uv_sync_flags = ["--directory=tests/env/2025_12"]
 
-[tool.tox.env.2025_1]
-uv_sync_flags = ["--directory=tests/env/2025_1"]
+[tool.tox.env.2026_1]
+base_python = ["py313"]
+uv_sync_flags = ["--directory=tests/env/2026_1"]
 
-[tool.tox.env.2025_2]
-uv_sync_flags = ["--directory=tests/env/2025_2"]
+[tool.tox.env.2026_2]
+base_python = ["py313"]
+uv_sync_flags = ["--directory=tests/env/2026_2"]
 
-[tool.tox.env.2025_4]
-uv_sync_flags = ["--directory=tests/env/2025_4"]
-
-[tool.tox.env.2025_5]
-uv_sync_flags = ["--directory=tests/env/2025_5"]
-
-[tool.tox.env.2025_6]
-uv_sync_flags = ["--directory=tests/env/2025_6"]
-
-[tool.tox.env.2025_7]
-uv_sync_flags = ["--directory=tests/env/2025_7"]
-
-[tool.tox.env.2025_8]
-uv_sync_flags = ["--directory=tests/env/2025_8"]
-
-[tool.tox.env.2025_9]
-uv_sync_flags = ["--directory=tests/env/2025_9"]
-
-[tool.tox.env.2025_10]
-uv_sync_flags = ["--directory=tests/env/2025_10"]
-
-[tool.tox.env.2025_11]
-uv_sync_flags = ["--directory=tests/env/2025_11"]
+[tool.tox.env.2026_3]
+uv_sync_flags = ["--directory=tests/env/2026_3"]
 
 [tool.tox.env.type]
 description = "Run type checks under {env_python}"

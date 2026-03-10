@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from homeassistant import core
 from homeassistant.components import demo
-from homeassistant.const import Platform
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION, Platform
 from homeassistant.core import HomeAssistant, State
 from homeassistant.setup import async_setup_component
 
@@ -255,9 +255,17 @@ async def test_property_demo_platform(hass: HomeAssistant, entry_data: MockConfi
     props = list((p.type, p.instance) for p in device.get_properties())
     assert props == [("devices.properties.event", "motion")]
 
-    state = hass.states.get("event.none_button_press")
-    assert state is not None
-    device = Device(hass, entry_data, state.entity_id, state)
-    assert device.type == "devices.types.sensor.button"
-    props = list((p.type, p.instance) for p in device.get_properties())
-    assert props == [("devices.properties.event", "button")]
+    if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2026, 2):
+        state = hass.states.get("event.button_press")
+        assert state is not None
+        device = Device(hass, entry_data, state.entity_id, state)
+        assert device.type == "devices.types.sensor.button"
+        props = list((p.type, p.instance) for p in device.get_properties())
+        assert props == [("devices.properties.event", "button")]
+    else:
+        state = hass.states.get("event.none_button_press")
+        assert state is not None
+        device = Device(hass, entry_data, state.entity_id, state)
+        assert device.type == "devices.types.sensor.button"
+        props = list((p.type, p.instance) for p in device.get_properties())
+        assert props == [("devices.properties.event", "button")]

@@ -15,9 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.14'
 
       - uses: pre-commit/action@v3.0.1
 
@@ -28,26 +28,28 @@ jobs:
       matrix:
         include:
           - tox-env: type
-          - tox-env: 2024_12
-          - tox-env: 2025_1
-          - tox-env: 2025_2
-          - tox-env: 2025_4
-          - tox-env: 2025_5
-          - tox-env: 2025_6
-          - tox-env: 2025_7
-          - tox-env: 2025_8
-          - tox-env: 2025_9
-          - tox-env: 2025_10
-          - tox-env: 2025_11
+            python: 3.14
+
+          - tox-env: 2025_12
+            python: 3.13
+
+          - tox-env: 2026_1
+            python: 3.13
+
+          - tox-env: 2026_2
+            python: 3.13
+
+          - tox-env: 2026_3
+            python: 3.14
             latest: true
     steps:
       - uses: actions/checkout@v4
 
       - uses: astral-sh/setup-uv@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: ${{ matrix.python }}
 
       - name: Load tox cache
         uses: actions/cache@v4

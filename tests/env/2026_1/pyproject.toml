@@ -1,0 +1,10 @@
+[project]
+name = "ysh-test-2026-1"
+version = "2026.1"
+requires-python = "~=3.13.2"
+dependencies = [
+    "pytest-homeassistant-custom-component==0.13.308",
+    "hassil>=3.5.0",
+    "home-assistant-intents>=2026.3.3",
+    "pyturbojpeg>=1.8.2",
+]

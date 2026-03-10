@@ -3,7 +3,7 @@ from http import HTTPStatus
 from typing import Any, cast
 from unittest import mock
 
-from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_TOKEN, MAJOR_VERSION, MINOR_VERSION
+from homeassistant.const import CONF_ID, CONF_PLATFORM, CONF_TOKEN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entityfilter, issue_registry
 from homeassistant.helpers.issue_registry import IssueSeverity
@@ -87,16 +87,7 @@ async def diagnostics(
     return diagnostics
 
 
-@pytest.mark.skipif((int(MAJOR_VERSION), int(MINOR_VERSION)) < (2025, 8), reason="HA 2025.8+")
 async def test_diagnostics(
-    diagnostics: dict[Any, Any],
-    snapshot: SnapshotAssertion,
-) -> None:
-    assert diagnostics == snapshot
-
-
-@pytest.mark.skipif((int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2025, 8), reason="HA 2025.8+")
-async def test_diagnostics_pre_2025_8(
     diagnostics: dict[Any, Any],
     snapshot: SnapshotAssertion,
 ) -> None:

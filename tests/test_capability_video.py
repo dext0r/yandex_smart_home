@@ -6,6 +6,7 @@ from homeassistant.components.camera import Camera, CameraEntityFeature, Dynamic
 from homeassistant.components.stream import Stream, StreamOutput, StreamSettings
 from homeassistant.const import ATTR_SUPPORTED_FEATURES, STATE_IDLE
 from homeassistant.core import Context, HomeAssistant, State
+from homeassistant.core_config import async_process_ha_core_config
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -30,10 +31,8 @@ from custom_components.yandex_smart_home.schema import (
 from . import MockConfigEntryData
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
-try:
-    from homeassistant.core_config import async_process_ha_core_config
-except ImportError:
-    from homeassistant.config import async_process_ha_core_config  # type: ignore[attr-defined,no-redef]
+# except ImportError:
+#     from homeassistant.config import async_process_ha_core_config  # type: ignore[attr-defined,no-redef]
 
 
 ACTION_STATE = GetStreamInstanceActionState(

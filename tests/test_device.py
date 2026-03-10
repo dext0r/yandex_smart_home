@@ -125,12 +125,7 @@ async def test_device_duplicate_capabilities(hass: HomeAssistant, entry_data: Mo
 
 
 async def test_device_capabilities(hass: HomeAssistant) -> None:
-    light = DemoLight(
-        "test_light",
-        "Light",
-        available=True,
-        state=True,
-    )
+    light = DemoLight("test_light", "Light", state=True)
     light.hass = hass
     light.entity_id = "light.test"
     light._attr_name = "Light"  # type: ignore[assignment]
