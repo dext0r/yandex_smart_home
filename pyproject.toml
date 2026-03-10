@@ -1,25 +1,26 @@
 [project]
 name = "yandex_smart_home"
-version = "1.0.2dev"
-requires-python = "~=3.13.2"
+version = "1.1.0dev"
+requires-python = "~=3.14.2"
 
 [dependency-groups]
 test = [
-    "pytest-homeassistant-custom-component==0.13.281",
-    "mypy-dev==1.18.0a4",
+    "pytest-homeassistant-custom-component==0.13.317",
+    "mypy==1.19.1",
 ]
 homeassistant = [
-    "homeassistant==2025.9.4",
+    "homeassistant==2026.3.1",
     "colorlog>=6.9.0",
 ]
 homeassistant-components = [
-    "ha-ffmpeg>=3.2.2",
-    "hassil>=3.0.1",
-    "home-assistant-intents>=2025.6.23",
-    "mutagen>=1.47.0",
-    "pymicro-vad>=1.0.2",
-    "pyspeex-noise>=1.0.2",
+    "hassil>=3.5.0",
+    "home-assistant-intents>=2026.3.3",
     "pyturbojpeg>=1.8.2",
+
+    # assist_pipeline dependencies
+    "pymicro-vad==1.0.1",
+    "pyspeex-noise==1.0.2",
+    "mutagen>=1.47.0",
 ]
 lint = [
     "pre-commit==4.0.1",
@@ -78,7 +79,7 @@ reportPrivateImportUsage = "none"
 reportIncompatibleVariableOverride = "none"
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 plugins = ["pydantic.mypy"]
 follow_untyped_imports = true
 local_partial_types = true
