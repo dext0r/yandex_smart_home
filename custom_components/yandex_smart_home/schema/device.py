@@ -53,6 +53,7 @@ class DeviceType(StrEnum):
     MULTICOOKER = "devices.types.cooking.multicooker"
     OPENABLE = "devices.types.openable"
     OPENABLE_CURTAIN = "devices.types.openable.curtain"
+    OPENABLE_INTERCOM = "devices.types.openable.intercom"
     OPENABLE_VALVE = "devices.types.openable.valve"
     HUMIDIFIER = "devices.types.humidifier"
     PURIFIER = "devices.types.purifier"
