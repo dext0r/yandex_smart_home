@@ -6,7 +6,7 @@ from homeassistant.components import cover, fan, light, media_player, vacuum
 from homeassistant.components.cover import CoverEntityFeature
 from homeassistant.components.fan import FanEntityFeature
 from homeassistant.components.media_player.const import MediaPlayerEntityFeature
-from homeassistant.components.vacuum import VacuumEntityFeature
+from homeassistant.components.vacuum import VacuumActivity, VacuumEntityFeature
 from homeassistant.const import (
     ATTR_ENTITY_ID,
     SERVICE_MEDIA_PAUSE,
@@ -20,7 +20,6 @@ from homeassistant.const import (
 )
 from homeassistant.core import Context
 
-from .backports import VacuumActivity
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, Capability, StateCapability
 from .color import SOLID_LIGHT_EFFECT, LightState
 from .const import CONF_FEATURES, MediaPlayerFeature

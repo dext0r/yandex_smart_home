@@ -22,8 +22,9 @@ from homeassistant.components import (
 )
 from homeassistant.components.climate import HVACMode
 from homeassistant.components.cover import CoverEntityFeature
+from homeassistant.components.lock import LockState
 from homeassistant.components.media_player import MediaPlayerEntityFeature
-from homeassistant.components.vacuum import VacuumEntityFeature
+from homeassistant.components.vacuum import VacuumActivity, VacuumEntityFeature
 from homeassistant.components.valve import ValveEntityFeature
 from homeassistant.components.water_heater import WaterHeaterEntityFeature
 from homeassistant.const import (
@@ -52,7 +53,6 @@ from homeassistant.core import DOMAIN as HA_DOMAIN, Context, HomeAssistant, Stat
 import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
-from custom_components.yandex_smart_home.backports import LockState, VacuumActivity
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.const import CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON
 from custom_components.yandex_smart_home.helpers import ActionNotAllowed, APIError

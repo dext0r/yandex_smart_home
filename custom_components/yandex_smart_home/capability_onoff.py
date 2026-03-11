@@ -25,8 +25,9 @@ from homeassistant.components import (
     water_heater,
 )
 from homeassistant.components.climate import HVACMode
+from homeassistant.components.lock import LockState
 from homeassistant.components.media_player import MediaPlayerEntityFeature
-from homeassistant.components.vacuum import VacuumEntityFeature
+from homeassistant.components.vacuum import VacuumActivity, VacuumEntityFeature
 from homeassistant.components.water_heater import WaterHeaterEntityFeature
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -47,7 +48,6 @@ from homeassistant.const import (
 from homeassistant.core import DOMAIN as HA_DOMAIN, Context
 from homeassistant.helpers.service import async_call_from_config
 
-from .backports import LockState, VacuumActivity
 from .capability import STATE_CAPABILITIES_REGISTRY, ActionOnlyCapabilityMixin, StateCapability
 from .const import (
     CONF_FEATURES,
