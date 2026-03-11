@@ -41,6 +41,8 @@ from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
     STATE_OPEN,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN, Context
 from homeassistant.helpers.service import async_call_from_config
@@ -97,7 +99,10 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
-        return self.state.state != STATE_OFF
+        if self.state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            return None
+
+        return self._is_on()
 
     async def set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -120,6 +125,10 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
             return SERVICE_TURN_ON
 
         return SERVICE_TURN_OFF
+
+    def _is_on(self) -> bool:
+        """Return true if capability is on."""
+        return self.state.state != STATE_OFF
 
     def __str__(self) -> str:
         """Return string representation."""
@@ -162,8 +171,8 @@ class OnOffCapabilityAutomation(OnOffCapability):
         """Test if the capability is supported."""
         return bool(self.state.domain == automation.DOMAIN)
 
-    def get_value(self) -> bool | None:
-        """Return the current capability value."""
+    def _is_on(self) -> bool:
+        """Return true if capability is on."""
         return self.state.state == STATE_ON
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -269,8 +278,8 @@ class OnOffCapabilityLock(OnOffCapability):
         """Test if the capability is supported."""
         return self.state.domain == lock.DOMAIN
 
-    def get_value(self) -> bool | None:
-        """Return the current capability value."""
+    def _is_on(self) -> bool:
+        """Return true if capability is on."""
         return bool(self.state.state == LockState.UNLOCKED)
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -297,8 +306,8 @@ class OnOffCapabilityCover(OnOffCapability):
         """Test if the capability is supported."""
         return self.state.domain == cover.DOMAIN
 
-    def get_value(self) -> bool | None:
-        """Return the current capability value."""
+    def _is_on(self) -> bool:
+        """Return true if capability is on."""
         return self.state.state == STATE_OPEN
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -396,8 +405,8 @@ class OnOffCapabilityVacuum(OnOffCapability):
 
         return False
 
-    def get_value(self) -> bool | None:
-        """Return the current capability value."""
+    def _is_on(self) -> bool:
+        """Return true if capability is on."""
         return self.state.state in [STATE_ON, VacuumActivity.CLEANING]
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -432,8 +441,8 @@ class OnOffCapabilityClimate(OnOffCapability):
         """Test if the capability is supported."""
         return self.state.domain == climate.DOMAIN
 
-    def get_value(self) -> bool | None:
-        """Return the current capability value."""
+    def _is_on(self) -> bool:
+        """Return true if capability is on."""
         return self.state.state != HVACMode.OFF
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -472,8 +481,8 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
         """Test if the capability is supported."""
         return self.state.domain == water_heater.DOMAIN
 
-    def get_value(self) -> bool | None:
-        """Return the current capability value."""
+    def _is_on(self) -> bool:
+        """Return true if capability is on."""
         return self.state.state.lower() != STATE_OFF
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
@@ -533,8 +542,8 @@ class OnOffCapabilityValve(OnOffCapability):
         """Test if the capability is supported."""
         return bool(self.state.domain == valve.DOMAIN)
 
-    def get_value(self) -> bool | None:
-        """Return the current capability value."""
+    def _is_on(self) -> bool:
+        """Return true if capability is on."""
         return self.state.state == STATE_OPEN
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:

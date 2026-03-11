@@ -45,6 +45,7 @@ from homeassistant.const import (
     STATE_ON,
     STATE_OPEN,
     STATE_OPENING,
+    STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
 from homeassistant.core import DOMAIN as HA_DOMAIN, Context, HomeAssistant, State
@@ -809,3 +810,50 @@ async def test_capability_onoff_water_heater_set_unsupported_op_mode(
 
         assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
         assert "Unable to determine operation mode " in e.value.message
+
+
+@pytest.mark.parametrize(
+    "domain, features",
+    [
+        (automation.DOMAIN, 0),
+        (climate.DOMAIN, 0),
+        (cover.DOMAIN, 0),
+        (fan.DOMAIN, 0),
+        (group.DOMAIN, 0),
+        (input_boolean.DOMAIN, 0),
+        (light.DOMAIN, 0),
+        (lock.DOMAIN, 0),
+        (media_player.DOMAIN, MediaPlayerEntityFeature.TURN_OFF),
+        (switch.DOMAIN, 0),
+        (vacuum.DOMAIN, VacuumEntityFeature.TURN_ON | VacuumEntityFeature.TURN_OFF),
+        (valve.DOMAIN, 0),
+        (water_heater.DOMAIN, 0),
+    ],
+)
+def test_capability_onoff_invalid_state(
+    hass: HomeAssistant, entry_data: MockConfigEntryData, domain: str, features: int
+) -> None:
+    for state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+        cap = cast(
+            OnOffCapability,
+            get_exact_one_capability(
+                hass,
+                entry_data,
+                State(f"{domain}.test", state, {ATTR_SUPPORTED_FEATURES: features}),
+                CapabilityType.ON_OFF,
+                OnOffCapabilityInstance.ON,
+            ),
+        )
+        assert cap.get_value() is None
+
+    cap_off = cast(
+        OnOffCapability,
+        get_exact_one_capability(
+            hass,
+            entry_data,
+            State(f"{domain}.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features}),
+            CapabilityType.ON_OFF,
+            OnOffCapabilityInstance.ON,
+        ),
+    )
+    assert cap_off.get_value() is False
