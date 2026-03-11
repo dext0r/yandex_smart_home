@@ -1,5 +1,5 @@
 .config
-.envrc.local
+.envrc
 site
 
 .vscode/*
