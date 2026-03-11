@@ -343,10 +343,15 @@ class Device:
             else:
                 device_model = self.id
 
+            sw_version: str | None = None
+            if device_entry.sw_version is not None:
+                # some intergrations use int for sw_version (e.g. Xiaomi Gateway 3)
+                sw_version = str(device_entry.sw_version)
+
             device_info = DeviceInfo(
                 manufacturer=device_entry.manufacturer,
                 model=device_model,
-                sw_version=device_entry.sw_version,
+                sw_version=sw_version,
             )
 
         if (room := self._get_room(area_entry)) is not None:

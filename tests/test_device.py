@@ -409,6 +409,31 @@ async def test_device_info(
         "sw_version": "57",
     }
 
+    state = State("switch.test_3", STATE_ON)
+    device_entry = device_registry.async_get_or_create(
+        manufacturer="Xiaomi Gateway 3",
+        model="Ultra Switch",
+        sw_version=57,  # type: ignore[arg-type]
+        identifiers={("test_3", "test_3")},
+        config_entry_id=config_entry.entry_id,
+    )
+    entity_registry.async_get_or_create(
+        "switch",
+        "test",
+        "3",
+        device_id=device_entry.id,
+    )
+    device = Device(hass, entry_data, state.entity_id, state)
+    d = await device.describe()
+    assert d
+    assert d.id == "switch.test_3"
+    assert d.device_info
+    assert d.device_info.as_dict() == {
+        "manufacturer": "Xiaomi Gateway 3",
+        "model": "Ultra Switch | switch.test_3",
+        "sw_version": "57",
+    }
+
 
 async def test_device_name_room(
     hass: HomeAssistant,
