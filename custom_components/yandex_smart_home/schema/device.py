@@ -57,6 +57,7 @@ class DeviceType(StrEnum):
     OPENABLE = "devices.types.openable"
     OPENABLE_BARRIER = "devices.types.openable.barrier"
     OPENABLE_CURTAIN = "devices.types.openable.curtain"
+    OPENABLE_DOOR_LOCK = "devices.types.openable.door_lock"
     OPENABLE_INTERCOM = "devices.types.openable.intercom"
     OPENABLE_VALVE = "devices.types.openable.valve"
     HUMIDIFIER = "devices.types.humidifier"
