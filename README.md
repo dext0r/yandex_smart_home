@@ -20,6 +20,7 @@
 
 ## Ссылки
 
+* [**Документация 1.1.x**](https://docs.yaha-cloud.ru/v1.1.x/)
 * [**Документация 1.0.x**](https://docs.yaha-cloud.ru/v1.0.x/)
 * [**Документация 0.6.x**](https://docs.yaha-cloud.ru/v0.6.x/)
 * [Чат в Телеграме](https://t.me/yandex_smart_home)

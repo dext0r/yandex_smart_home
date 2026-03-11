@@ -364,7 +364,7 @@ class ColorSceneCapability(Capability[SceneInstanceActionState]):
 
         raise APIError(
             ResponseCode.INVALID_VALUE,
-            f"Unsupported scene '{yandex_scene}' for {self}, see https://docs.yaha-cloud.ru/v1.0.x/config/modes/",
+            f"Unsupported scene '{yandex_scene}' for {self}, see https://docs.yaha-cloud.ru/v1.1.x/config/modes/",
         )
 
     def get_description(self) -> None:
