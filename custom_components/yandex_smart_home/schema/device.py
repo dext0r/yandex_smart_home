@@ -53,6 +53,7 @@ class DeviceType(StrEnum):
     KETTLE = "devices.types.cooking.kettle"
     MULTICOOKER = "devices.types.cooking.multicooker"
     REFRIGERATOR = "devices.types.refrigerator"
+    REMOTE_CAR = "devices.types.remote_car"
     OPENABLE = "devices.types.openable"
     OPENABLE_BARRIER = "devices.types.openable.barrier"
     OPENABLE_CURTAIN = "devices.types.openable.curtain"
