@@ -66,6 +66,7 @@
 | `light.sconce`      | Бра          |
 | `light.torchere`    | Торшер       |
 | `refrigerator`      | Холодильник  |
+| `remote_car`        | Автомобиль   |
 | `openable.barrier`  | Шлагбаум     |
 | `openable.intercom` | Интерком     |
 | `thermostat.heater` | Обогреватель |
