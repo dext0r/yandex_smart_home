@@ -26,7 +26,7 @@ lint = [
     "pre-commit==4.0.1",
     "ruff==0.7.0",
     "isort==5.13.2",
-    "black==24.10.0",
+    "black==26.3.1",
 ]
 tox = [
     "tox>=4.23.2",
