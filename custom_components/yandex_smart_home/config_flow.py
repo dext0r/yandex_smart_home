@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from enum import StrEnum
 import logging
+import re
 from typing import TYPE_CHECKING, cast
+from uuid import UUID
 
 from aiohttp import ClientConnectorError, ClientResponseError
 from homeassistant.auth.const import GROUP_ID_READ_ONLY
@@ -136,30 +138,40 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
                 description_placeholders["entry_title"] = existed_entry.title
                 errors["base"] = "already_configured"
             else:
-                self._options[CONF_SKILL] = user_input
+                errors, self._options[CONF_SKILL] = _validate_skill_config(platform, user_input)
 
-                if self._entry:
-                    if user_input[CONF_ID] != entry_skill.get(CONF_ID) or user_input[CONF_USER_ID] != entry_skill.get(
-                        CONF_USER_ID
-                    ):
-                        self._data[CONF_LINKED_PLATFORMS] = []
-                        self.hass.config_entries.async_update_entry(
-                            self._entry,
-                            title=await async_config_entry_title(self.hass, self._data, self._options),
-                            data=self._data,
-                        )
+                if not errors:
+                    if self._entry:
+                        if user_input[CONF_ID] != entry_skill.get(CONF_ID) or user_input[
+                            CONF_USER_ID
+                        ] != entry_skill.get(CONF_USER_ID):
+                            self._data[CONF_LINKED_PLATFORMS] = []
+                            self.hass.config_entries.async_update_entry(
+                                self._entry,
+                                title=await async_config_entry_title(self.hass, self._data, self._options),
+                                data=self._data,
+                            )
 
-                    return await self.async_step_done()
+                        return await self.async_step_done()
 
-                return await self.async_step_expose_settings()
+                    return await self.async_step_expose_settings()
+        else:
+            user_input = {}
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_USER_ID, default=entry_skill.get(CONF_USER_ID)): await _async_get_user_selector(
-                    self.hass, mode=SelectSelectorMode.DROPDOWN, required=True
-                ),
-                vol.Required(CONF_ID, default=entry_skill.get(CONF_ID)): TextSelector(),
-                vol.Required(CONF_TOKEN, default=entry_skill.get(CONF_TOKEN)): TextSelector(),
+                vol.Required(
+                    CONF_USER_ID,
+                    default=user_input.get(CONF_USER_ID, entry_skill.get(CONF_USER_ID)),
+                ): await _async_get_user_selector(self.hass, mode=SelectSelectorMode.DROPDOWN, required=True),
+                vol.Required(
+                    CONF_ID,
+                    default=user_input.get(CONF_ID, entry_skill.get(CONF_ID)),
+                ): TextSelector(),
+                vol.Required(
+                    CONF_TOKEN,
+                    default=user_input.get(CONF_TOKEN, entry_skill.get(CONF_TOKEN)),
+                ): TextSelector(),
             },
         )
 
@@ -200,30 +212,42 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
         entry_skill = self._options.get(CONF_SKILL, {})
 
         if user_input is not None:
-            self._options[CONF_SKILL] = user_input
+            errors, self._options[CONF_SKILL] = _validate_skill_config(platform, user_input)
 
-            if self._entry:
-                if user_input[CONF_ID] != entry_skill.get(CONF_ID):
-                    self._data[CONF_LINKED_PLATFORMS] = []
+            if not errors:
+                if self._entry:
+                    if user_input[CONF_ID] != entry_skill.get(CONF_ID):
+                        self._data[CONF_LINKED_PLATFORMS] = []
 
-                if user_input[CONF_ID] != entry_skill.get(CONF_ID) or user_input[CONF_NAME] != entry_skill.get(
-                    CONF_NAME
-                ):
-                    self.hass.config_entries.async_update_entry(
-                        self._entry,
-                        title=await async_config_entry_title(self.hass, self._data, self._options),
-                        data=self._data,
-                    )
+                    if user_input[CONF_ID] != entry_skill.get(CONF_ID) or user_input[CONF_NAME] != entry_skill.get(
+                        CONF_NAME
+                    ):
+                        self.hass.config_entries.async_update_entry(
+                            self._entry,
+                            title=await async_config_entry_title(self.hass, self._data, self._options),
+                            data=self._data,
+                        )
 
-                return await self.async_step_done()
+                    return await self.async_step_done()
 
-            return await self.async_step_expose_settings()
+                return await self.async_step_expose_settings()
+        else:
+            user_input = {}
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_NAME, default=entry_skill.get(CONF_NAME)): TextSelector(),
-                vol.Required(CONF_ID, default=entry_skill.get(CONF_ID)): TextSelector(),
-                vol.Required(CONF_TOKEN, default=entry_skill.get(CONF_TOKEN)): TextSelector(),
+                vol.Required(
+                    CONF_NAME,
+                    default=user_input.get(CONF_NAME, entry_skill.get(CONF_NAME)),
+                ): TextSelector(),
+                vol.Required(
+                    CONF_ID,
+                    default=user_input.get(CONF_ID, entry_skill.get(CONF_ID)),
+                ): TextSelector(),
+                vol.Required(
+                    CONF_TOKEN,
+                    default=user_input.get(CONF_TOKEN, entry_skill.get(CONF_TOKEN)),
+                ): TextSelector(),
             }
         )
 
@@ -759,3 +783,27 @@ async def async_config_entry_title(hass: HomeAssistant, data: ConfigType, option
             title += f' ({" / ".join(parts)})'
 
     return title
+
+
+def _validate_skill_config(
+    platform: SmartHomePlatform, config: dict[str, str]
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Validate the skill config and return errors and updated config."""
+    errors: dict[str, str] = {}
+    if platform != SmartHomePlatform.YANDEX:
+        return errors, config
+
+    skill_id = config[CONF_ID]
+    dialog_url_re = r"/developer/skills/([0-9a-f-]+)/"
+    match = re.search(dialog_url_re, config[CONF_ID])
+    if match:
+        skill_id = match.group(1)
+
+    try:
+        UUID(skill_id, version=4)
+    except ValueError:
+        errors[CONF_ID] = "invalid_skill_id"
+    else:
+        config[CONF_ID] = skill_id
+
+    return errors, config
