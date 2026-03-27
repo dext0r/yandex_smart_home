@@ -38,12 +38,12 @@ ALL_INSTANCES = set(
 
 
 @pytest.mark.parametrize(
-    "registry,instance",
-    (
+    ("registry", "instance"),
+    [
         (FLOAT_PROPERTIES_REGISTRY, FloatPropertyInstance),
         (EVENT_PROPERTIES_REGISTRY, EventPropertyInstance),
         (EVENT_PLATFORM_PROPERTIES_REGISTRY, EventPropertyInstance),
-    ),
+    ],
 )
 def test_property_custom_registry(registry: DictRegistry[Any], instance: type[StrEnum]) -> None:
     assert set(instance.__members__.values()) == set(registry.keys())
@@ -87,7 +87,7 @@ async def test_property_custom_short(
     assert prop
     if instance in ["vibration", "open", "button", "motion", "smoke", "gas", "water_leak"]:
         assert prop.type == PropertyType.EVENT
-    else:
+    else:  # noqa: PLR5501
         if domain == binary_sensor.DOMAIN and instance in ["food_level", "water_level", "battery_level"]:
             assert prop.type == PropertyType.EVENT
         else:
@@ -150,9 +150,7 @@ async def test_property_custom_event_platform(
     assert len(caplog.records) == 0
 
 
-async def test_property_custom_event_platform_unsupported(
-    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_property_custom_event_platform_unsupported(caplog: pytest.LogCaptureFixture) -> None:
     caplog.clear()
     prop_type = get_event_platform_custom_property_type(
         {CONF_ENTITY_PROPERTY_TYPE: "temperature", CONF_ENTITY_PROPERTY_ENTITY: "event.foo"},
@@ -355,7 +353,7 @@ async def test_property_custom_value_float_limit(hass: HomeAssistant, entry_data
 
 
 @pytest.mark.parametrize(
-    "instance,unit_of_measurement,unit,fallback_unit,assert_value",
+    ("instance", "unit_of_measurement", "unit", "fallback_unit", "assert_value"),
     [
         ("pressure", "bar", "unit.pressure.bar", "unit.pressure.mmhg", None),
         ("pressure", "Pa", "unit.pressure.pascal", "unit.pressure.mmhg", None),
@@ -451,7 +449,7 @@ async def test_property_custom_get_value_float_conversion(
 
 
 @pytest.mark.parametrize(
-    "instance,unit_of_measurement,target_unit_of_measurement,target_unit,assert_value",
+    ("instance", "unit_of_measurement", "target_unit_of_measurement", "target_unit", "assert_value"),
     [
         ("pressure", "bar", "Pa", "unit.pressure.pascal", 10000000.0),
         ("pressure", "bar", "mmHg", "unit.pressure.mmhg", 75006.16),

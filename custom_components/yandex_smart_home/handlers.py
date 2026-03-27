@@ -1,7 +1,8 @@
 """The Yandex Smart Home request handlers."""
 
+from collections.abc import Callable, Coroutine
 import logging
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from homeassistant.const import ATTR_ENTITY_ID
 from homeassistant.core import HomeAssistant
@@ -9,7 +10,7 @@ from homeassistant.util.decorator import Registry
 
 from .const import ATTR_CAPABILITY, ATTR_ERROR_CODE, EVENT_DEVICE_ACTION
 from .device import Device, async_get_device_description, async_get_device_states, async_get_devices
-from .helpers import ActionNotAllowed, APIError, RequestData
+from .helpers import ActionNotAllowedError, APIError, RequestData
 from .schema import (
     ActionRequest,
     ActionResult,
@@ -67,8 +68,8 @@ async def async_device_list(hass: HomeAssistant, data: RequestData, _payload: st
 
     devices: list[DeviceDescription] = []
     for device in await async_get_devices(hass, data.entry_data):
-        if (description := await async_get_device_description(hass, device)) is not None:
-            devices.append(description)
+        if (description := await async_get_device_description(device)) is not None:
+            devices.append(description)  # noqa: PERF401
 
     data.entry_data.link_platform(data.platform)
     return DeviceList(user_id=data.request_user_id, devices=devices)
@@ -124,7 +125,7 @@ async def async_devices_action(hass: HomeAssistant, data: RequestData, payload: 
                     {ATTR_ENTITY_ID: device_id, ATTR_CAPABILITY: action.as_dict()},
                     context=data.context,
                 )
-            except (APIError, ActionNotAllowed) as err:
+            except (APIError, ActionNotAllowedError) as err:
                 if isinstance(err, APIError):
                     _LOGGER.error(f"{err.message} ({err.code.value})")
 

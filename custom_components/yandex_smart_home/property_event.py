@@ -174,8 +174,8 @@ class OpenEventProperty(EventProperty[OpenInstanceEvent], Protocol):
     instance: EventPropertyInstance = EventPropertyInstance.OPEN
 
     _event_map_default: EventMapT[OpenInstanceEvent] = {
-        OpenInstanceEvent.OPENED: _BOOLEAN_TRUE + [STATE_OPEN],
-        OpenInstanceEvent.CLOSED: _BOOLEAN_FALSE + [STATE_CLOSED],
+        OpenInstanceEvent.OPENED: [*_BOOLEAN_TRUE, STATE_OPEN],
+        OpenInstanceEvent.CLOSED: [*_BOOLEAN_FALSE, STATE_CLOSED],
     }
 
     @property
@@ -190,7 +190,7 @@ class MotionEventProperty(EventProperty[MotionInstanceEvent], Protocol):
     instance: EventPropertyInstance = EventPropertyInstance.MOTION
 
     _event_map_default: EventMapT[MotionInstanceEvent] = {
-        MotionInstanceEvent.DETECTED: _BOOLEAN_TRUE + ["motion", "motion_detected"],
+        MotionInstanceEvent.DETECTED: [*_BOOLEAN_TRUE, "motion", "motion_detected"],
         MotionInstanceEvent.NOT_DETECTED: _BOOLEAN_FALSE,
     }
 
@@ -240,8 +240,8 @@ class BatteryLevelEventProperty(EventProperty[BatteryLevelInstanceEvent], Protoc
     instance: EventPropertyInstance = EventPropertyInstance.BATTERY_LEVEL
 
     _event_map_default: EventMapT[BatteryLevelInstanceEvent] = {
-        BatteryLevelInstanceEvent.LOW: _BOOLEAN_TRUE + ["low"],
-        BatteryLevelInstanceEvent.NORMAL: _BOOLEAN_FALSE + ["normal"],
+        BatteryLevelInstanceEvent.LOW: [*_BOOLEAN_TRUE, "low"],
+        BatteryLevelInstanceEvent.NORMAL: [*_BOOLEAN_FALSE, "normal"],
     }
 
     @property
@@ -274,8 +274,8 @@ class WaterLevelEventProperty(EventProperty[WaterLevelInstanceEvent], Protocol):
 
     _event_map_default: EventMapT[WaterLevelInstanceEvent] = {
         WaterLevelInstanceEvent.EMPTY: ["empty"],
-        WaterLevelInstanceEvent.LOW: _BOOLEAN_TRUE + ["low"],
-        WaterLevelInstanceEvent.NORMAL: _BOOLEAN_FALSE + ["normal"],
+        WaterLevelInstanceEvent.LOW: [*_BOOLEAN_TRUE, "low"],
+        WaterLevelInstanceEvent.NORMAL: [*_BOOLEAN_FALSE, "normal"],
     }
 
     @property
@@ -290,8 +290,8 @@ class WaterLeakEventProperty(EventProperty[WaterLeakInstanceEvent], Protocol):
     instance: EventPropertyInstance = EventPropertyInstance.WATER_LEAK
 
     _event_map_default: EventMapT[WaterLeakInstanceEvent] = {
-        WaterLeakInstanceEvent.DRY: _BOOLEAN_FALSE + ["dry"],
-        WaterLeakInstanceEvent.LEAK: _BOOLEAN_TRUE + ["leak"],
+        WaterLeakInstanceEvent.DRY: [*_BOOLEAN_FALSE, "dry"],
+        WaterLeakInstanceEvent.LEAK: [*_BOOLEAN_TRUE, "leak"],
     }
 
     @property
@@ -344,8 +344,8 @@ class VibrationEventProperty(EventProperty[VibrationInstanceEvent], Protocol):
     instance: EventPropertyInstance = EventPropertyInstance.VIBRATION
 
     _event_map_default: EventMapT[VibrationInstanceEvent] = {
-        VibrationInstanceEvent.VIBRATION: _BOOLEAN_TRUE
-        + [
+        VibrationInstanceEvent.VIBRATION: [
+            *_BOOLEAN_TRUE,
             "vibration",
             "vibrate",
             "actively",
@@ -394,10 +394,7 @@ class EventPlatformProperty(StateProperty, EventProperty[Any], Protocol):
         if other is None:
             return True
 
-        if self.state.state == other.state.state:
-            return False
-
-        return True
+        return self.state.state != other.state.state
 
     def _get_native_value(self) -> str | None:
         """Return the current property value without conversion."""
@@ -534,9 +531,8 @@ class VibrationStateEventProperty(StateEventProperty, ReactiveEventProperty, Vib
     @property
     def supported(self) -> bool:
         """Test if the property is supported."""
-        if self.state.domain == binary_sensor.DOMAIN:
-            if self._state_device_class == BinarySensorDeviceClass.VIBRATION:
-                return True
+        if self.state.domain == binary_sensor.DOMAIN and self._state_device_class == BinarySensorDeviceClass.VIBRATION:
+            return True
 
         if self.state.domain == sensor.DOMAIN and self._state_device_class == XGW3DeviceClass.ACTION:
             return self.state.attributes.get("action") in self._supported_native_values

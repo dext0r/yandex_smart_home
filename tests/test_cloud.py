@@ -1,6 +1,6 @@
-from asyncio import TimeoutError
+from collections.abc import Generator
 import json
-from typing import Any, Generator, Self
+from typing import Any, Self
 from unittest.mock import AsyncMock, patch
 
 from aiohttp import WSMessage, WSMsgType
@@ -93,7 +93,7 @@ def _get_manager(hass: HomeAssistant, config_entry: MockConfigEntry) -> CloudMan
 
 
 @pytest.fixture(name="mock_call_later")
-def mock_call_later_fixture() -> Generator[AsyncMock, None, None]:
+def mock_call_later_fixture() -> Generator[AsyncMock]:
     with patch("custom_components.yandex_smart_home.cloud.async_call_later") as mock_call_later:
         yield mock_call_later
 
@@ -230,7 +230,6 @@ async def test_cloud_fast_reconnect(
     hass_platform: HomeAssistant,
     config_entry_cloud: MockConfigEntry,
     aioclient_mock: AiohttpClientMocker,
-    mock_call_later: AsyncMock,
     caplog: pytest.LogCaptureFixture,
     issue_registry: ir.IssueRegistry,
 ) -> None:

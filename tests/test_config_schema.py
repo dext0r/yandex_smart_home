@@ -359,12 +359,12 @@ yandex_smart_home:
         assert config[DOMAIN]["entity_config"]["switch.bar"]["type"] == "devices.types.ventilation.fan"
 
     assert (
-        "Device type 'fan' is deprecated, use 'devices.types.ventilation.fan' or 'ventilation.fan' instead"
-        == caplog.messages[-1]
+        caplog.messages[-1]
+        == "Device type 'fan' is deprecated, use 'devices.types.ventilation.fan' or 'ventilation.fan' instead"
     )
     assert (
-        "Device type 'devices.types.fan' is deprecated, use 'devices.types.ventilation.fan' "
-        "or 'ventilation.fan' instead" == caplog.messages[-2]
+        caplog.messages[-2] == "Device type 'devices.types.fan' is deprecated, use 'devices.types.ventilation.fan' "
+        "or 'ventilation.fan' instead"
     )
 
 
@@ -408,7 +408,7 @@ yandex_smart_home:
 
 
 @pytest.mark.parametrize(
-    "key,instance",
+    ("key", "instance"),
     [
         ("custom_ranges", "volume"),
         ("custom_toggles", "mute"),

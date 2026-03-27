@@ -1,8 +1,9 @@
 """Global fixtures for yandex_smart_home integration."""
 
 import asyncio
+from collections.abc import Generator
 import logging
-from typing import Any, Generator
+from typing import Any
 from unittest.mock import patch
 
 from homeassistant.auth.models import User
@@ -67,7 +68,7 @@ def socket_enabled(socket_enabled: None) -> None:
 
 
 @pytest.fixture
-def aiohttp_client(aiohttp_client: ClientSessionGenerator, socket_enabled: None) -> ClientSessionGenerator:
+def aiohttp_client(aiohttp_client: ClientSessionGenerator, socket_enabled: None) -> ClientSessionGenerator:  # noqa: ARG001
     """Return aiohttp_client and allow opening sockets."""
     return aiohttp_client
 
@@ -96,7 +97,7 @@ def config_entry_direct(hass_admin_user: User) -> MockConfigEntry:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def config_entry_cloud() -> MockConfigEntry:
     return MockConfigEntry(
         domain=DOMAIN,
@@ -115,7 +116,7 @@ def config_entry_cloud() -> MockConfigEntry:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def entry_data(hass: HomeAssistant) -> MockConfigEntryData:
     return MockConfigEntryData(
         hass=hass,

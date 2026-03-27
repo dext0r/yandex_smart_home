@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, override
 
 from homeassistant.components import light
 from homeassistant.components.light import (
@@ -69,11 +69,7 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        for capability in self._capabilities:
-            if capability.supported:
-                return True
-
-        return False
+        return any(capability.supported for capability in self._capabilities)
 
     @property
     def parameters(self) -> ColorSettingCapabilityParameters:
@@ -86,8 +82,8 @@ class ColorSettingCapability(StateCapability[ColorSettingCapabilityInstanceActio
 
     def get_value(self) -> None:
         """Return the current capability value."""
-        return None
 
+    @override
     async def set_instance_state(self, context: Context, state: ColorSettingCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         raise APIError(ResponseCode.INTERNAL_ERROR, "No instance")
@@ -138,7 +134,6 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState], LightState):
 
     def get_description(self) -> None:
         """Return a description for a device list request. Capability with an empty description isn't discoverable."""
-        return None
 
     def get_value(self) -> int | None:
         """Return the current capability value."""
@@ -159,12 +154,13 @@ class RGBColorCapability(StateCapability[RGBInstanceActionState], LightState):
         service_data: dict[str, Any] = {ATTR_ENTITY_ID: self.state.entity_id}
 
         if ColorMode.RGBWW in self._supported_color_modes:
-            service_data[ATTR_RGBWW_COLOR] = tuple(color) + (
+            service_data[ATTR_RGBWW_COLOR] = (
+                *tuple(color),
                 self._white_brightness or 0,
                 self._warm_white_brightness or 0,
             )
         elif ColorMode.RGBW in self._supported_color_modes:
-            service_data[ATTR_RGBW_COLOR] = tuple(color) + (self._white_brightness or 0,)
+            service_data[ATTR_RGBW_COLOR] = (*tuple(color), self._white_brightness or 0)
         else:
             service_data[ATTR_RGB_COLOR] = tuple(color)
 
@@ -229,7 +225,6 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
 
     def get_description(self) -> None:
         """Return a description for a device list request. Capability with an empty description isn't discoverable."""
-        return None
 
     def get_value(self) -> int | None:
         """Return the current capability value."""
@@ -245,7 +240,8 @@ class ColorTemperatureCapability(StateCapability[TemperatureKInstanceActionState
             case ColorMode.RGBW:
                 if self._rgb_color == RGBColor(0, 0, 0) and (self._white_brightness or 0) > 0:
                     return self._default_white_temperature
-                elif self._rgb_color == RGBColor(255, 255, 255):
+
+                if self._rgb_color == RGBColor(255, 255, 255):
                     return self._cold_white_temperature
 
             case _:
@@ -326,7 +322,7 @@ class ColorSceneCapability(Capability[SceneInstanceActionState]):
             if value := self.get_yandex_scene_by_ha_scene(ha_value):
                 scenes.add(value)
 
-        return sorted(list(scenes))
+        return sorted(scenes)
 
     @property
     @abstractmethod
@@ -369,7 +365,6 @@ class ColorSceneCapability(Capability[SceneInstanceActionState]):
 
     def get_description(self) -> None:
         """Return a description for a device list request. Capability with an empty description isn't discoverable."""
-        return None
 
     @abstractmethod
     def get_value(self) -> ColorScene | None:

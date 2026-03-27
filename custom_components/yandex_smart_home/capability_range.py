@@ -106,7 +106,7 @@ class RangeCapability(Capability[RangeCapabilityInstanceActionState], Protocol):
         """Return the current capability value."""
         value = self._get_value()
 
-        if self.support_random_access and value is not None and self._range:
+        if self.support_random_access and value is not None and self._range:  # noqa: SIM102
             if not (self._range.min <= value <= self._range.max):
                 _LOGGER.debug(
                     f"Value {value} is not in range {self._range} for instance {self.instance.value} "
@@ -390,12 +390,11 @@ class HumidityCapabilityXiaomiFan(HumidityCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == fan.DOMAIN:
-            if self.state.attributes.get(ATTR_MODEL, "").startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER):
-                if ATTR_TARGET_HUMIDITY in self.state.attributes:
-                    return True
-
-        return False
+        return (
+            self.state.domain == fan.DOMAIN
+            and self.state.attributes.get(ATTR_MODEL, "").startswith(MODEL_PREFIX_XIAOMI_AIRPURIFIER)
+            and ATTR_TARGET_HUMIDITY in self.state.attributes
+        )
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -486,9 +485,9 @@ class WhiteLightBrightnessCapability(StateRangeCapability, LightState):
         brightness = round(255 * brightness_pct / 100)
 
         if ColorMode.RGBWW in self._supported_color_modes:
-            service_data[light.ATTR_RGBWW_COLOR] = color + (brightness, self._warm_white_brightness or 0)
+            service_data[light.ATTR_RGBWW_COLOR] = (*color, brightness, self._warm_white_brightness or 0)
         else:
-            service_data[light.ATTR_RGBW_COLOR] = color + (brightness,)
+            service_data[light.ATTR_RGBW_COLOR] = (*color, brightness)
 
         await self._hass.services.async_call(
             light.DOMAIN, SERVICE_TURN_ON, service_data, blocking=self._wait_for_service_call, context=context
@@ -532,7 +531,7 @@ class WarmWhiteLightBrightnessCapability(StateRangeCapability, LightState):
             SERVICE_TURN_ON,
             {
                 ATTR_ENTITY_ID: self.state.entity_id,
-                light.ATTR_RGBWW_COLOR: color + (self._white_brightness or 0, round(255 * brightness_pct / 100)),
+                light.ATTR_RGBWW_COLOR: (*color, self._white_brightness or 0, round(255 * brightness_pct / 100)),
             },
             blocking=self._wait_for_service_call,
             context=context,
@@ -619,8 +618,6 @@ class VolumeCapability(StateRangeCapability):
                 context=context,
             )
 
-        return None
-
     def _get_value(self) -> float | None:
         """Return the current capability value (unguarded)."""
         if (
@@ -662,10 +659,7 @@ class ChannelCapability(StateRangeCapability):
                 self._state_features & MediaPlayerEntityFeature.PLAY_MEDIA
                 or MediaPlayerFeature.PLAY_MEDIA in self._entity_config.get(CONF_FEATURES, [])
             ):
-                if self._entity_config.get(CONF_SUPPORT_SET_CHANNEL) is False:
-                    return False
-
-                return True
+                return self._entity_config.get(CONF_SUPPORT_SET_CHANNEL) is not False
 
         return False
 
@@ -677,14 +671,13 @@ class ChannelCapability(StateRangeCapability):
         if self._entity_config.get(CONF_SUPPORT_SET_CHANNEL) is False:
             return False
 
-        if device_class == MediaPlayerDeviceClass.TV:
-            if (
+        return bool(
+            device_class == MediaPlayerDeviceClass.TV
+            and (
                 self._state_features & MediaPlayerEntityFeature.PLAY_MEDIA
                 or MediaPlayerFeature.PLAY_MEDIA in self._entity_config.get(CONF_FEATURES, [])
-            ):
-                return True
-
-        return False
+            )
+        )
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
@@ -711,8 +704,8 @@ class ChannelCapability(StateRangeCapability):
 
             if self.get_value() is None:
                 raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Missing current value for {self}")
-            else:
-                value = self._get_absolute_value(state.value)
+
+            value = self._get_absolute_value(state.value)
 
         try:
             await self._hass.services.async_call(
@@ -733,8 +726,6 @@ class ChannelCapability(StateRangeCapability):
                 f'Please change setting "support_set_channel" to "false" in entity_config '
                 f"if the device does not support channel selection. Error: {e!r}",
             )
-
-        return None
 
     def _get_value(self) -> float | None:
         """Return the current capability value (unguarded)."""

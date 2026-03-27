@@ -1,6 +1,5 @@
 """Yandex Smart Home API schemas."""
 
-# ruff: noqa
 from .callback import *
 from .capability import *
 from .capability_color import *

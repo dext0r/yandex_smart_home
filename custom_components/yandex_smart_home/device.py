@@ -77,7 +77,7 @@ from .const import (
     CONF_ENTITY_PROPERTIES,
     CONF_ERROR_CODE_TEMPLATE,
 )
-from .helpers import ActionNotAllowed, APIError, _get_registry_entries
+from .helpers import ActionNotAllowedError, APIError, _get_registry_entries
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
 from .property_custom import get_custom_property, get_event_platform_custom_property_type
 from .schema import (
@@ -231,7 +231,7 @@ class Device:
 
                             _append_capabilities(custom_capability)
 
-        for CapabilityT in STATE_CAPABILITIES_REGISTRY:
+        for CapabilityT in STATE_CAPABILITIES_REGISTRY:  # noqa: N806
             state_capability = CapabilityT(self._hass, self._entry_data, self.id, self._state)
             _append_capabilities(state_capability)
 
@@ -276,7 +276,7 @@ class Device:
                 if event_platform_property.supported and event_platform_property not in properties:
                     properties.append(event_platform_property)
 
-        for PropertyT in STATE_PROPERTIES_REGISTRY:
+        for PropertyT in STATE_PROPERTIES_REGISTRY:  # noqa: N806
             device_property = PropertyT(self._hass, self._entry_data, self.id, self._state)
             if device_property.supported and device_property not in properties:
                 properties.append(device_property)
@@ -325,12 +325,12 @@ class Device:
         capabilities: list[CapabilityDescription] = []
         for c in self.get_capabilities():
             if c_description := c.get_description():
-                capabilities.append(c_description)
+                capabilities.append(c_description)  # noqa: PERF401
 
         properties: list[PropertyDescription] = []
         for p in self.get_properties():
             if p_description := p.get_description():
-                properties.append(p_description)
+                properties.append(p_description)  # noqa: PERF401
 
         if not capabilities and not properties:
             return None
@@ -424,7 +424,7 @@ class Device:
                 f"Device {self.id} doesn't support instance {action.state.instance} of {action.type.short} capability",
             )
 
-        if error_code_template := self._error_code_template:
+        if error_code_template := self._error_code_template:  # noqa: SIM102
             if error_code := error_code_template.async_render(
                 capability=action.as_dict(), entity_id=self.id, parse_result=False
             ):
@@ -433,13 +433,13 @@ class Device:
                 except ValueError:
                     raise APIError(ResponseCode.INTERNAL_ERROR, f"Error code '{error_code}' is invalid for {self.id}")
 
-                raise ActionNotAllowed(code)
+                raise ActionNotAllowedError(code)
 
         try:
             return await target_capability.set_instance_state(context, action.state)
-        except (APIError, ActionNotAllowed):
+        except (APIError, ActionNotAllowedError):
             raise
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             raise APIError(ResponseCode.INTERNAL_ERROR, f"Failed to execute action for {target_capability}: {e!r}")
 
     def _get_name(self, entity_entry: RegistryEntry | None) -> str:
@@ -448,7 +448,7 @@ class Device:
             return str(name)
 
         if entity_entry:
-            aliases: set[str] = set([alias for alias in (entity_entry.aliases or ()) if isinstance(alias, str)])
+            aliases: set[str] = {alias for alias in (entity_entry.aliases or ()) if isinstance(alias, str)}
             if alias := self._get_entry_alias(aliases):
                 return alias
 
@@ -473,7 +473,7 @@ class Device:
         for alias in aliases:
             if "алиса:" in alias.lower():
                 filtered_aliases.add(alias.split(":", 1)[1].strip())
-            elif self._entry_data.use_entry_aliases and re.search(r"^[а-яё0-9 ]+$", alias, flags=re.IGNORECASE):
+            elif self._entry_data.use_entry_aliases and re.search(r"^[а-яё0-9 ]+$", alias, flags=re.IGNORECASE):  # noqa: RUF001
                 filtered_aliases.add(alias)
 
         if not filtered_aliases:
@@ -499,7 +499,7 @@ async def async_get_devices(hass: HomeAssistant, entry_data: ConfigEntryData) ->
     return devices
 
 
-async def async_get_device_description(hass: HomeAssistant, device: Device) -> DeviceDescription | None:
+async def async_get_device_description(device: Device) -> DeviceDescription | None:
     """Return description for a user device."""
     if (description := await device.describe()) is not None:
         return description

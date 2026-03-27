@@ -197,7 +197,7 @@ async def test_capability_mode_fallback_index(hass: HomeAssistant, entry_data: M
         ModeCapabilityMode.THREE,
     ]
 
-    state = State("switch.test", STATE_OFF, {"modes_list": [f"mode_{v}" for v in range(0, 11)]})
+    state = State("switch.test", STATE_OFF, {"modes_list": [f"mode_{v}" for v in range(11)]})
     cap = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
     assert cap.supported is True
     assert cap.get_yandex_mode_by_ha_mode("mode_9") == "ten"
@@ -268,12 +268,12 @@ async def test_capability_mode_thermostat(hass: HomeAssistant, entry_data: MockC
 
 
 @pytest.mark.parametrize(
-    "swing_mode,horizontal_swing_mode,value",
+    ("swing_mode", "horizontal_swing_mode", "value"),
     [
-        ["off", "off", "stationary"],
-        ["on", "off", "vertical"],
-        ["off", "on", "horizontal"],
-        ["on", "on", "turbo"],
+        ("off", "off", "stationary"),
+        ("on", "off", "vertical"),
+        ("off", "on", "horizontal"),
+        ("on", "on", "turbo"),
     ],
 )
 async def test_capability_mode_hv_swing_value(
@@ -1070,7 +1070,7 @@ async def test_capability_mode_unique_modes() -> None:
         seen: dict[str, ModeCapabilityMode] = {}
         for ya_mode, ha_modes in capability._modes_map_default.items():
             for ha_mode in ha_modes:
-                ha_mode = ha_mode.lower()
+                ha_mode = ha_mode.lower()  # noqa: PLW2901
                 if ha_mode in seen and ha_mode != ya_mode:
                     pytest.fail(f"mode {ya_mode}:{ha_mode} already used for {seen[ha_mode]} of {capability.__name__}")
 

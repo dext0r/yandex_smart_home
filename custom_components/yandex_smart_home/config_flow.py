@@ -370,9 +370,9 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
             if user_input[CONF_ENTITIES]:
                 self._options[CONF_FILTER] = {CONF_INCLUDE_ENTITIES: user_input[CONF_ENTITIES]}
                 return await self.async_step_done()
-            else:
-                errors["base"] = "entities_not_selected"
-                entities.clear()
+
+            errors["base"] = "entities_not_selected"
+            entities.clear()
 
         return self.async_show_form(
             step_id="include_entities",
@@ -414,13 +414,12 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
             if self._entry and self._entry.entry_id == entry.entry_id:
                 continue
 
-            if CONF_SKILL in entry.options:
-                if (
-                    ConnectionType.DIRECT == entry.data[CONF_CONNECTION_TYPE]
-                    and platform == entry.data[CONF_PLATFORM]
-                    and user_id == entry.options[CONF_SKILL][CONF_USER_ID]
-                ):
-                    return entry
+            if CONF_SKILL in entry.options and (
+                entry.data[CONF_CONNECTION_TYPE] == ConnectionType.DIRECT
+                and platform == entry.data[CONF_PLATFORM]
+                and user_id == entry.options[CONF_SKILL][CONF_USER_ID]
+            ):
+                return entry
 
         return None
 
@@ -655,7 +654,7 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
                                 self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
                                 self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_CONNECTION_TOKEN],
                             )
-                        except Exception as e:
+                        except Exception as e:  # noqa: BLE001
                             errors[MaintenanceAction.REVOKE_OAUTH_TOKENS] = "unknown"
                             description_placeholders["error"] = str(e)
 
@@ -679,7 +678,7 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
                         CONF_CLOUD_INSTANCE_CONNECTION_TOKEN: instance.connection_token,
                     }
                     self.hass.config_entries.async_update_entry(self._entry, data=self._data)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     errors[MaintenanceAction.RESET_CLOUD_INSTANCE_CONNECTION_TOKEN] = "unknown"
                     description_placeholders["error"] = str(e)
 
@@ -780,7 +779,7 @@ async def async_config_entry_title(hass: HomeAssistant, data: ConfigType, option
         if skill_id := skill.get(CONF_ID, ""):
             parts.append(skill_id[:8])
         if parts:
-            title += f' ({" / ".join(parts)})'
+            title += f" ({' / '.join(parts)})"
 
     return title
 

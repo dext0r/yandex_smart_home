@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 @runtime_checkable
-class Property(Protocol):
+class Property(Protocol):  # noqa: PLW1641
     """Base class for a device property."""
 
     device_id: str
@@ -95,15 +95,9 @@ class Property(Protocol):
 
     def __repr__(self) -> str:
         """Return the representation."""
-        return (
-            f"<{self.__class__.__name__}"
-            f" device_id={self.device_id }"
-            f" type={self.type}"
-            f" instance={self.instance}"
-            f">"
-        )
+        return f"<{self.__class__.__name__} device_id={self.device_id} type={self.type} instance={self.instance}>"
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compare properties."""
         return bool(
             isinstance(other, Property)

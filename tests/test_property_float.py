@@ -60,12 +60,13 @@ async def test_property_float_unsupported_unit_of_measurement(
     for record in caplog.records:
         assert (
             record.message
-            == "Unsupported unit of measurement 'foo' for instance temperature of float property of sensor.test. Valid units are: K, °C, °F"
+            == "Unsupported unit of measurement 'foo' for instance temperature of float property of sensor.test. "
+            "Valid units are: K, °C, °F"
         )
 
 
 @pytest.mark.parametrize(
-    "domain,device_class,attribute,supported",
+    ("domain", "device_class", "attribute", "supported"),
     [
         (sensor.DOMAIN, SensorDeviceClass.HUMIDITY, None, True),
         (sensor.DOMAIN, SensorDeviceClass.MOISTURE, None, True),
@@ -125,7 +126,7 @@ async def test_property_float_humidity(
 
 
 @pytest.mark.parametrize(
-    "domain,device_class,attribute,unit_of_measurement,supported",
+    ("domain", "device_class", "attribute", "unit_of_measurement", "supported"),
     [
         (sensor.DOMAIN, SensorDeviceClass.TEMPERATURE, None, None, True),
         (sensor.DOMAIN, None, None, UnitOfTemperature.CELSIUS, True),
@@ -240,7 +241,7 @@ async def test_property_float_temperature_convertion(hass: HomeAssistant, entry_
 
 @pytest.mark.parametrize("device_class", [SensorDeviceClass.PRESSURE, SensorDeviceClass.ATMOSPHERIC_PRESSURE])
 @pytest.mark.parametrize(
-    "unit_of_measurement,property_unit,assert_value",
+    ("unit_of_measurement", "property_unit", "assert_value"),
     [
         (None, "unit.pressure.mmhg", None),
         (UnitOfPressure.PA, "unit.pressure.pascal", None),
@@ -278,7 +279,7 @@ def test_property_float_pressure(
 
 
 @pytest.mark.parametrize(
-    "domain,device_class,attribute,supported",
+    ("domain", "device_class", "attribute", "supported"),
     [
         (sensor.DOMAIN, SensorDeviceClass.ILLUMINANCE, None, True),
         (sensor.DOMAIN, None, None, False),
@@ -335,7 +336,7 @@ async def test_property_float_illumination(
 
 
 @pytest.mark.parametrize(
-    "domain,attribute,supported",
+    ("domain", "attribute", "supported"),
     [
         (fan.DOMAIN, "water_level", True),
         (humidifier.DOMAIN, "water_level", True),
@@ -365,7 +366,7 @@ async def test_property_float_water_level(
 
 
 @pytest.mark.parametrize(
-    "domain,device_class,attribute,supported",
+    ("domain", "device_class", "attribute", "supported"),
     [
         (sensor.DOMAIN, SensorDeviceClass.CO2, None, True),
         (sensor.DOMAIN, None, None, False),
@@ -421,7 +422,7 @@ async def test_property_float_co2_level(
 
 
 @pytest.mark.parametrize(
-    "device_class,unit_of_measurement,instance,unit,assert_value",
+    ("device_class", "unit_of_measurement", "instance", "unit", "assert_value"),
     [
         (SensorDeviceClass.ENERGY, None, "electricity_meter", "unit.kilowatt_hour", None),
         (SensorDeviceClass.ENERGY, UnitOfEnergy.WATT_HOUR, "electricity_meter", "unit.kilowatt_hour", 3.42),
@@ -463,9 +464,9 @@ def test_property_float_meter(
     assert prop.get_value() == 0
 
 
-@pytest.mark.parametrize("v,assert_v", [("300", 300), ("-5", 0), ("None", None)])
+@pytest.mark.parametrize(("v", "assert_v"), [("300", 300), ("-5", 0), ("None", None)])
 @pytest.mark.parametrize(
-    "domain,device_class,attribute,instance",
+    ("domain", "device_class", "attribute", "instance"),
     [
         (sensor.DOMAIN, SensorDeviceClass.PM1, None, "pm1_density"),
         (sensor.DOMAIN, SensorDeviceClass.PM25, None, "pm2.5_density"),
@@ -504,7 +505,7 @@ async def test_property_float_pm_density(
 
 
 @pytest.mark.parametrize(
-    "domain,device_class,attribute",
+    ("domain", "device_class", "attribute"),
     [
         (sensor.DOMAIN, SensorDeviceClass.VOLATILE_ORGANIC_COMPOUNDS_PARTS, None),
         (sensor.DOMAIN, "tvoc", None),
@@ -512,7 +513,7 @@ async def test_property_float_pm_density(
     ],
 )
 @pytest.mark.parametrize(
-    "unit_of_measurement,v,assert_v",
+    ("unit_of_measurement", "v", "assert_v"),
     [
         ("ppb", "30", 134.89),
         ("ppm", "30", 134888.81),
@@ -572,7 +573,7 @@ async def test_property_float_tvoc_concentration_voc(hass: HomeAssistant, entry_
 
 
 @pytest.mark.parametrize(
-    "domain,device_class,instance,unit,unit_of_measurement,supported,v",
+    ("domain", "device_class", "instance", "unit", "unit_of_measurement", "supported", "v"),
     [
         (binary_sensor.DOMAIN, SensorDeviceClass.VOLTAGE, "voltage", "unit.volt", None, False, None),
         (sensor.DOMAIN, SensorDeviceClass.VOLTAGE, "voltage", "unit.volt", None, True, 220.57),
@@ -621,7 +622,7 @@ async def test_property_electricity_sensor(
 
 
 @pytest.mark.parametrize(
-    "domain,value_attribute,instance,unit,supported",
+    ("domain", "value_attribute", "instance", "unit", "supported"),
     [
         (sensor.DOMAIN, None, "voltage", "unit.volt", False),
         (switch.DOMAIN, "voltage", "voltage", "unit.volt", True),

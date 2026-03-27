@@ -222,7 +222,7 @@ async def test_device_capabilities_with_backlight_entity(hass: HomeAssistant) ->
         BrightnessCapability,
         BacklightCapability,
     ]
-    backlight_capability = [c for c in device.get_capabilities() if isinstance(c, BacklightCapability)][0]
+    backlight_capability = next(c for c in device.get_capabilities() if isinstance(c, BacklightCapability))
     assert backlight_capability.get_value() is True
 
     entry_data = MockConfigEntryData(
@@ -367,7 +367,6 @@ async def test_device_info(
     entry_data: MockConfigEntryData,
     entity_registry: er.EntityRegistry,
     device_registry: dr.DeviceRegistry,
-    area_registry: ar.AreaRegistry,
 ) -> None:
     config_entry = MockConfigEntry(domain="test", data={})
     config_entry.add_to_hass(hass)
@@ -441,7 +440,7 @@ async def test_device_name_room(
     area_room = area_registry.async_create("Room")
     bathroom_room = area_registry.async_create("Bathroom", aliases={"foo"})
     area_kitchen = area_registry.async_create("Кухня", aliases={"Кухне"})
-    area_closet = area_registry.async_create("Closet", aliases={"Test", "Кладовка", "ббб"})
+    area_closet = area_registry.async_create("Closet", aliases={"Test", "Кладовка", "ююю"})
     config_entry = MockConfigEntry(domain="test", data={})
     config_entry.add_to_hass(hass)
 
@@ -497,7 +496,7 @@ async def test_device_name_room_ignore_aliases(
 ) -> None:
     area_room = area_registry.async_create("Room")
     area_kitchen = area_registry.async_create("Кухня", aliases={"Ананас", "АлисА: Кухня", "Алиса: Балкон "})
-    area_closet = area_registry.async_create("Closet", aliases={"Test", "1", "Кладовка", "ббб"})
+    area_closet = area_registry.async_create("Closet", aliases={"Test", "1", "Кладовка", "ююю"})
     config_entry = MockConfigEntry(domain="test", data={})
     config_entry.add_to_hass(hass)
 
@@ -619,7 +618,7 @@ async def test_device_type(hass: HomeAssistant, entry_data: MockConfigEntryData)
 
 
 @pytest.mark.parametrize(
-    "device_class,device_type",
+    ("device_class", "device_type"),
     [
         (None, DeviceType.OPENABLE),
         (CoverDeviceClass.SHADE, DeviceType.OPENABLE),
@@ -639,7 +638,7 @@ async def test_device_type_cover(
 
 
 @pytest.mark.parametrize(
-    "device_class,device_type",
+    ("device_class", "device_type"),
     [
         (None, DeviceType.MEDIA_DEVICE),
         (MediaPlayerDeviceClass.TV, DeviceType.MEDIA_DEVICE_TV),
@@ -858,14 +857,16 @@ async def test_device_execute_exception(hass: HomeAssistant, entry_data: MockCon
 
     state = State("switch.test", STATE_ON)
     device = Device(hass, entry_data, state.entity_id, state)
-    with patch("custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY", [MockOnOffCapability]):
-        with pytest.raises(APIError) as e:
-            await device.execute(
-                Context(),
-                OnOffCapabilityInstanceAction(
-                    state=OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=True),
-                ),
-            )
+    with (
+        patch("custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY", [MockOnOffCapability]),
+        pytest.raises(APIError) as e,
+    ):
+        await device.execute(
+            Context(),
+            OnOffCapabilityInstanceAction(
+                state=OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=True),
+            ),
+        )
 
     assert e.value.code == ResponseCode.INTERNAL_ERROR
     assert e.value.message == (
@@ -873,14 +874,16 @@ async def test_device_execute_exception(hass: HomeAssistant, entry_data: MockCon
     )
 
     device = Device(hass, entry_data, state.entity_id, state)
-    with patch("custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY", [MockBrightnessCapability]):
-        with pytest.raises(APIError) as e:
-            await device.execute(
-                Context(),
-                RangeCapabilityInstanceAction(
-                    state=RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.BRIGHTNESS, value=50),
-                ),
-            )
+    with (
+        patch("custom_components.yandex_smart_home.device.STATE_CAPABILITIES_REGISTRY", [MockBrightnessCapability]),
+        pytest.raises(APIError) as e,
+    ):
+        await device.execute(
+            Context(),
+            RangeCapabilityInstanceAction(
+                state=RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.BRIGHTNESS, value=50),
+            ),
+        )
 
     assert e.value.code == ResponseCode.INVALID_ACTION
     assert e.value.message == "foo"

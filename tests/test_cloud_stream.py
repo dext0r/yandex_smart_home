@@ -1,6 +1,6 @@
-from asyncio import TimeoutError
+from collections.abc import Generator
 import json
-from typing import Any, Generator, Self, cast
+from typing import Any, Self, cast, override
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aiohttp import ClientConnectionError, ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
@@ -40,6 +40,7 @@ class MockWSConnection(ClientWebSocketResponse):
     async def close(self, *_: Any, **__: Any) -> bool:
         return True
 
+    @override
     async def send_bytes(self, data: Any, compress: int | None = None) -> None:
         self.send_queue.append(data)
 
@@ -76,22 +77,22 @@ class MockStream(Stream):
             DynamicStreamSettings(),
         )
 
+    @override
     def endpoint_url(self, fmt: str) -> str:
         return "/foo"
 
+    @override
     def add_provider(self, fmt: str, timeout: int | None = None) -> MockStreamOutput:
         return MockStreamOutput()
 
 
 @pytest.fixture(autouse=True, name="mock_call_later")
-def mock_call_later_fixture() -> Generator[AsyncMock, None, None]:
+def mock_call_later_fixture() -> Generator[AsyncMock]:
     with patch("custom_components.yandex_smart_home.cloud_stream.async_call_later") as mock_call_later:
         yield mock_call_later
 
 
-async def test_cloud_stream_connect(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, mock_call_later: AsyncMock
-) -> None:
+async def test_cloud_stream_connect(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker) -> None:
     session = MockSession(aioclient_mock)
     stream = MockStream(hass)
     cloud_stream = CloudStreamManager(hass, stream, cast(ClientSession, session))
@@ -109,9 +110,9 @@ async def test_cloud_stream_connect(
     with (
         patch.object(cloud_stream, "_async_connect"),
         patch("custom_components.yandex_smart_home.cloud_stream.WAIT_FOR_CONNECTION_TIMEOUT", 0.1),
+        pytest.raises(TimeoutError),
     ):
-        with pytest.raises(TimeoutError):
-            await cloud_stream.async_start()
+        await cloud_stream.async_start()
 
     with patch("custom_components.yandex_smart_home.cloud_stream.WAIT_FOR_CONNECTION_TIMEOUT", 1):
         await cloud_stream.async_start()

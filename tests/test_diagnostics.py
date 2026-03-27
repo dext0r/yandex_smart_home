@@ -65,7 +65,7 @@ async def diagnostics(
     )
     config_entry.add_to_hass(hass)
 
-    now = datetime(2024, 5, 7, 1, 10, 6)
+    now = datetime(2024, 5, 7, 1, 10, 6)  # noqa: DTZ001
     with mock.patch("homeassistant.helpers.event.dt_util.utcnow", return_value=now):
         await hass.config_entries.async_setup(config_entry.entry_id)
         await hass.async_block_till_done()

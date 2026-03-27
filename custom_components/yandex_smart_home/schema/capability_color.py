@@ -4,7 +4,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/color_setting.html
 """
 
 from enum import StrEnum
-from typing import Annotated, Literal, Self, Union
+from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
@@ -105,7 +105,7 @@ class SceneInstanceActionState(APIModel):
 
 
 ColorSettingCapabilityInstanceActionState = Annotated[
-    Union[RGBInstanceActionState, TemperatureKInstanceActionState, SceneInstanceActionState],
+    RGBInstanceActionState | TemperatureKInstanceActionState | SceneInstanceActionState,
     Field(discriminator="instance"),
 ]
 """New value for an instance of color_setting capability."""

@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, override
 from unittest.mock import Mock, patch
 
 from homeassistant.auth.models import User
@@ -34,7 +34,7 @@ from custom_components.yandex_smart_home.schema import (
 from . import REQ_ID, MockConfigEntryData, generate_entity_filter
 
 
-@pytest.fixture()
+@pytest.fixture
 def request_data(entry_data: MockConfigEntryData) -> RequestData:
     return RequestData(
         entry_data=entry_data,
@@ -168,7 +168,8 @@ async def test_handler_devices_query(hass: HomeAssistant, caplog: pytest.LogCapt
         }
 
     assert caplog.messages[-2:] == [
-        "Device for switch.not_expose exists in Yandex, but entity switch.not_expose not exposed via integration settings. "
+        "Device for switch.not_expose exists in Yandex, but entity "
+        "switch.not_expose not exposed via integration settings. "
         "Please either expose the entity or delete the device from Yandex.",
         "Missing capabilities and properties for sensor.test",
     ]
@@ -225,7 +226,7 @@ async def test_handler_user_unlink(hass_platform_direct: HomeAssistant, hass_adm
         )
         mock_update_entry.assert_called_once()
 
-    for _ in range(0, 2):
+    for _ in range(2):
         await handlers.async_user_unlink(
             hass, RequestData(entry_data, Context(), SmartHomePlatform.YANDEX, "foo", REQ_ID), ""
         )
@@ -255,6 +256,7 @@ async def test_handler_devices_action(
     class MockCapabilityReturnState(MockCapability):
         instance = ToggleCapabilityInstance.BACKLIGHT
 
+        @override
         async def set_instance_state(
             self, context: Context, state: ToggleCapabilityInstanceActionState
         ) -> CapabilityInstanceActionResultValue:
@@ -470,7 +472,8 @@ async def test_handler_devices_action(
                 "(NOT_SUPPORTED_IN_CURRENT_MODE)",
                 "Device switch.test_2 doesn't support instance controls_locked of toggle "
                 "capability (NOT_SUPPORTED_IN_CURRENT_MODE)",
-                "Device for switch.not_expose exists in Yandex, but entity switch.not_expose not exposed via integration settings. "
+                "Device for switch.not_expose exists in Yandex, but entity switch.not_expose "
+                "not exposed via integration settings. "
                 "Please either expose the entity or delete the device from Yandex.",
             ]
         )

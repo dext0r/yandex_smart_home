@@ -1,7 +1,7 @@
 """Schema for device capabilities."""
 
 from enum import StrEnum
-from typing import Annotated, Any, Literal, TypeVar, Union
+from typing import Annotated, Any, Literal, TypeVar
 
 from pydantic import Field
 
@@ -129,14 +129,12 @@ class VideoStreamCapabilityInstanceAction(APIModel):
 
 
 CapabilityInstanceAction = Annotated[
-    Union[
-        OnOffCapabilityInstanceAction,
-        ColorSettingCapabilityInstanceAction,
-        ModeCapabilityInstanceAction,
-        RangeCapabilityInstanceAction,
-        ToggleCapabilityInstanceAction,
-        VideoStreamCapabilityInstanceAction,
-    ],
+    OnOffCapabilityInstanceAction
+    | ColorSettingCapabilityInstanceAction
+    | ModeCapabilityInstanceAction
+    | RangeCapabilityInstanceAction
+    | ToggleCapabilityInstanceAction
+    | VideoStreamCapabilityInstanceAction,
     Field(discriminator="type"),
 ]
 """New capability state including type for a state change request."""

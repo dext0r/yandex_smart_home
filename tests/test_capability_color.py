@@ -429,7 +429,7 @@ async def test_capability_color_setting_rgb_with_internal_profile(
 
 
 @pytest.mark.parametrize(
-    "attributes,temp_range",
+    ("attributes", "temp_range"),
     [
         ({ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP]}, (1500, 6500)),
         ({ATTR_SUPPORTED_COLOR_MODES: [ColorMode.COLOR_TEMP, ColorMode.RGB]}, (1500, 6500)),
@@ -691,7 +691,7 @@ async def test_capability_color_setting_temperature_k_rgb_white(
     hass: HomeAssistant, entry_data: MockConfigEntryData, color_modes: list[ColorMode]
 ) -> None:
     attributes = {ATTR_SUPPORTED_COLOR_MODES: color_modes}
-    attributes = {ATTR_SUPPORTED_COLOR_MODES: color_modes + [ColorMode.WHITE]}
+    attributes = {ATTR_SUPPORTED_COLOR_MODES: [*color_modes, ColorMode.WHITE]}
     state = State("light.test", STATE_OFF, attributes)
     cap_cs = _get_color_setting_capability(hass, entry_data, state)
     cap_temp = _get_temperature_capability(hass, entry_data, state)

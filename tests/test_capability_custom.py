@@ -42,7 +42,7 @@ from custom_components.yandex_smart_home.const import (
     CONF_TURN_ON,
 )
 from custom_components.yandex_smart_home.device import Device
-from custom_components.yandex_smart_home.helpers import ActionNotAllowed, APIError
+from custom_components.yandex_smart_home.helpers import ActionNotAllowedError, APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     ColorScene,
@@ -237,7 +237,7 @@ async def test_capability_custom_onoff(hass: HomeAssistant, entry_data: MockConf
         state.entity_id,
     )
 
-    with pytest.raises(ActionNotAllowed):
+    with pytest.raises(ActionNotAllowedError):
         await cap.set_instance_state(
             Context(), OnOffCapabilityInstanceActionState(instance=OnOffCapabilityInstance.ON, value=False)
         )
@@ -292,7 +292,7 @@ async def test_capability_custom_mode(hass: HomeAssistant, entry_data: MockConfi
     assert cap.reportable is True
     assert cap.get_value() == "one"
 
-    with pytest.raises(ActionNotAllowed):
+    with pytest.raises(ActionNotAllowedError):
         await cap.set_instance_state(
             Context(),
             ModeCapabilityInstanceActionState(
@@ -395,7 +395,7 @@ async def test_capability_custom_mode_scene(hass: HomeAssistant, domain: str) ->
     assert color_setting_cap is not None
     assert color_setting_cap.parameters.as_dict() == {"color_scene": {"scenes": [{"id": "alarm"}, {"id": "fantasy"}]}}
 
-    with pytest.raises(ActionNotAllowed):
+    with pytest.raises(ActionNotAllowedError):
         await scene_cap.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene.FANTASY))
 
     entry_data = MockConfigEntryData(
@@ -475,12 +475,12 @@ async def test_capability_custom_toggle(hass: HomeAssistant, entry_data: MockCon
     assert cap.retrievable is True
     assert cap.reportable is True
     assert cap.get_value() is True
-    with pytest.raises(ActionNotAllowed):
+    with pytest.raises(ActionNotAllowedError):
         await cap.set_instance_state(
             Context(),
             ToggleCapabilityInstanceActionState(instance=ToggleCapabilityInstance.IONIZATION, value=True),
         )
-    with pytest.raises(ActionNotAllowed):
+    with pytest.raises(ActionNotAllowedError):
         await cap.set_instance_state(
             Context(),
             ToggleCapabilityInstanceActionState(instance=ToggleCapabilityInstance.IONIZATION, value=False),
@@ -597,7 +597,7 @@ async def test_capability_custom_range_random_access_with_range(
         )
 
     assert len(calls) == 5
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == ["input_number.test"]
 
     assert calls[0].data["value"] == "value: 40"
@@ -686,7 +686,7 @@ async def test_capability_custom_range_random_access_no_range(
         )
 
     assert len(calls) == 6
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == ["input_number.test"]
 
     assert calls[0].data["value"] == "value: 40"
@@ -747,7 +747,7 @@ async def test_capability_custom_range_random_access_no_state(
         )
 
     assert len(calls) == 2
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == ["input_number.test"]
 
     assert calls[0].data["value"] == "value: 40"
@@ -821,7 +821,7 @@ async def test_capability_custom_range_relative_override_no_state(
         )
 
     assert len(calls) == 2
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == ["input_number.test"]
 
     assert calls[0].data["value"] == "value: 40"
@@ -918,7 +918,7 @@ async def test_capability_custom_range_no_service(hass: HomeAssistant, entry_dat
     assert cap.reportable is False
     assert cap.get_value() is None
 
-    with pytest.raises(ActionNotAllowed):
+    with pytest.raises(ActionNotAllowedError):
         await cap.set_instance_state(
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.OPEN, value=10),
@@ -926,16 +926,16 @@ async def test_capability_custom_range_no_service(hass: HomeAssistant, entry_dat
 
 
 @pytest.mark.parametrize(
-    "instance,config_range,expected_range",
+    ("instance", "config_range", "expected_range"),
     [
-        [RangeCapabilityInstance.BRIGHTNESS, (1, 100), (1, 100)],
-        [RangeCapabilityInstance.BRIGHTNESS, (0, 100), (0, 100)],
-        [RangeCapabilityInstance.BRIGHTNESS, (2, 99), (1, 100)],
-        [RangeCapabilityInstance.BRIGHTNESS, (-10, 150), (0, 100)],
-        [RangeCapabilityInstance.HUMIDITY, (5, 50), (5, 50)],
-        [RangeCapabilityInstance.HUMIDITY, (-10, 150), (0, 100)],
-        [RangeCapabilityInstance.OPEN, (5, 50), (5, 50)],
-        [RangeCapabilityInstance.OPEN, (-10, 150), (0, 100)],
+        (RangeCapabilityInstance.BRIGHTNESS, (1, 100), (1, 100)),
+        (RangeCapabilityInstance.BRIGHTNESS, (0, 100), (0, 100)),
+        (RangeCapabilityInstance.BRIGHTNESS, (2, 99), (1, 100)),
+        (RangeCapabilityInstance.BRIGHTNESS, (-10, 150), (0, 100)),
+        (RangeCapabilityInstance.HUMIDITY, (5, 50), (5, 50)),
+        (RangeCapabilityInstance.HUMIDITY, (-10, 150), (0, 100)),
+        (RangeCapabilityInstance.OPEN, (5, 50), (5, 50)),
+        (RangeCapabilityInstance.OPEN, (-10, 150), (0, 100)),
     ],
 )
 async def test_capability_custom_range_limits(
@@ -968,7 +968,7 @@ async def test_capability_custom_range_limits(
 
 
 @pytest.mark.parametrize(
-    "instance,range_expected",
+    ("instance", "range_expected"),
     [
         (RangeCapabilityInstance.BRIGHTNESS, True),
         (RangeCapabilityInstance.CHANNEL, False),

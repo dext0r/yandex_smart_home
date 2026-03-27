@@ -1,9 +1,10 @@
 """Implement the Yandex Smart Home cloud connection manager for video streaming."""
 
 import asyncio
+from collections.abc import AsyncIterable
 from datetime import timedelta
 import logging
-from typing import Any, AsyncIterable, cast
+from typing import Any, cast
 
 from aiohttp import (
     ClientConnectionError,
@@ -95,7 +96,7 @@ class CloudStreamManager:
     async def async_start(self) -> None:
         """Start connection."""
         if self._ws or not self._stream.access_token:
-            return
+            return None
 
         self._running_stream_id = self._stream.access_token
         self._hass.loop.create_task(self._async_connect())
@@ -132,14 +133,12 @@ class CloudStreamManager:
             _LOGGER.debug(f"Disconnected: {self._ws.close_code}")
             if self._ws.close_code is not None:
                 self._try_reconnect()
-        except (ClientConnectionError, ClientResponseError, asyncio.TimeoutError):
+        except (TimeoutError, ClientConnectionError, ClientResponseError):
             _LOGGER.exception("Failed to connect to Yandex Smart Home cloud")
             self._try_reconnect()
         except Exception:
             _LOGGER.exception("Unexpected exception")
             self._try_reconnect()
-
-        return None
 
     async def _async_disconnect(self, *_: Any) -> None:
         """Disconnect from the cloud."""
@@ -156,8 +155,6 @@ class CloudStreamManager:
 
         self._unsub_connect = None
         self._unsub_keepalive = None
-
-        return None
 
     async def _on_message(self, message: WSMessage) -> None:
         """Handle incoming request from the cloud."""
@@ -193,4 +190,3 @@ class CloudStreamManager:
 
         _LOGGER.debug(f"Trying to reconnect in {RECONNECTION_DELAY} seconds")
         self._unsub_reconnect = async_call_later(self._hass, RECONNECTION_DELAY, HassJob(self._async_connect))
-        return None

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from homeassistant.components import camera
 from homeassistant.components.camera import CameraEntityFeature, StreamType, get_camera_from_entity_id
@@ -44,6 +44,7 @@ class VideoStreamCapability(ActionOnlyCapabilityMixin, StateCapability[GetStream
         """Return parameters for a devices request."""
         return VideoStreamCapabilityParameters(protocols=["hls"])
 
+    @override
     async def set_instance_state(
         self, context: Context, state: GetStreamInstanceActionState
     ) -> GetStreamInstanceActionResultValue:

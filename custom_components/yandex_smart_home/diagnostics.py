@@ -26,7 +26,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, config_entry: 
         diag["devices"][device.id] = {
             "capabilities": [c.__repr__() for c in device.get_capabilities()],
             "properties": [p.__repr__() for p in device.get_properties()],
-            "description": await async_get_device_description(hass, device),
+            "description": await async_get_device_description(device),
             "state": device.query(),
         }
 

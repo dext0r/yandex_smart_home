@@ -78,14 +78,13 @@ class RangeCapabilityParameters(APIModel):
                     self.range.min = max(min(self.range.min, 1.0), 0.0)
                     self.range.max = 100.0
                     self.range.precision = 1.0
-        else:
-            if self.instance in (
-                RangeCapabilityInstance.BRIGHTNESS,
-                RangeCapabilityInstance.HUMIDITY,
-                RangeCapabilityInstance.OPEN,
-                RangeCapabilityInstance.TEMPERATURE,
-            ):
-                raise ValueError(f"range field required for {self.instance}")
+        elif self.instance in (
+            RangeCapabilityInstance.BRIGHTNESS,
+            RangeCapabilityInstance.HUMIDITY,
+            RangeCapabilityInstance.OPEN,
+            RangeCapabilityInstance.TEMPERATURE,
+        ):
+            raise ValueError(f"range field required for {self.instance}")
 
         return self
 
@@ -98,7 +97,7 @@ class RangeCapabilityInstanceActionState(APIModel):
     relative: bool = False
 
     @field_validator("relative", mode="before")
-    def set_relative(cls, v: Any) -> Any:
+    def set_relative(cls, v: Any) -> Any:  # noqa: N805
         """Update relative value."""
         if v is None:  # VK
             return False

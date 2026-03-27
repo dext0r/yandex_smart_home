@@ -554,7 +554,7 @@ async def test_migrate_entity_v3_with_config(hass: HomeAssistant) -> None:
 
 
 @pytest.mark.parametrize(
-    "connection_type,expect_migration",
+    ("connection_type", "expect_migration"),
     [
         ("cloud", False),
         ("direct", True),
@@ -681,7 +681,7 @@ async def test_migrate_entity_v5_notifier_downgrade(hass: HomeAssistant) -> None
 
 
 @pytest.mark.parametrize(
-    "source_title,connection_type,expected_title",
+    ("source_title", "connection_type", "expected_title"),
     [
         ("Yandex Smart Home", "cloud", "Yaha Cloud (12345678)"),
         ("Yandex Smart Home Foo", "cloud", "Yandex Smart Home Foo"),

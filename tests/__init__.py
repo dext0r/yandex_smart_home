@@ -1,6 +1,7 @@
 """Tests for yandex_smart_home integration."""
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any, override
 from unittest.mock import MagicMock
 
 from homeassistant.config_entries import ConfigEntry
@@ -50,13 +51,13 @@ class MockStore(Store[Any]):
     async def async_load(self) -> dict[str, Any]:
         return self._data
 
+    @override
     def async_delay_save(
         self,
         data_func: Callable[[], dict[str, Any]],
         delay: float = 0,
     ) -> None:
         self.saved_mock()
-        return None
 
 
 class MockCacheStore(CacheStore):

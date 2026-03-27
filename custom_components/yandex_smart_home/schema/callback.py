@@ -22,7 +22,7 @@ class CallbackStatesRequestPayload(APIModel):
 class CallbackStatesRequest(APIModel):
     """Request body for notification about device state change."""
 
-    ts: float = Field(default_factory=lambda: time.time())
+    ts: float = Field(default_factory=lambda: time.time())  # noqa: PLW0108
     payload: CallbackStatesRequestPayload
 
 
@@ -35,7 +35,7 @@ class CallbackDiscoveryRequestPayload(APIModel):
 class CallbackDiscoveryRequest(APIModel):
     """Request body for notification about change of devices' parameters."""
 
-    ts: float = Field(default_factory=lambda: time.time())
+    ts: float = Field(default_factory=lambda: time.time())  # noqa: PLW0108
     payload: CallbackDiscoveryRequestPayload
 
 

@@ -1,11 +1,12 @@
 """Implement the Yandex Smart Home mode capabilities."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from contextlib import suppress
 from enum import StrEnum
 import logging
 import math
-from typing import Any, Iterable, Protocol
+from typing import Any, Protocol, override
 
 from homeassistant.components import climate, fan, humidifier, media_player, vacuum
 from homeassistant.components.climate import ClimateEntityFeature, HVACMode
@@ -227,13 +228,11 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                     mode = ModeCapabilityMode(ha_mode.lower())
 
             if mode is None and ha_mode.lower() != STATE_OFF:
-                try:
+                with suppress(IndexError, ValueError, KeyError):
                     mode = self._modes_map_index_fallback[self.supported_ha_modes.index(ha_mode)]
-                except (IndexError, ValueError, KeyError):
-                    pass
 
-        if mode is None and not hide_warnings:
-            if ha_mode.lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):
+        if mode is None and not hide_warnings:  # noqa: SIM102
+            if ha_mode.lower() not in (STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN, STATE_NONE):  # noqa: SIM102
                 if ha_mode.lower() in [m.lower() for m in self.supported_ha_modes]:
                     _LOGGER.warning(
                         f"Failed to get Yandex mode for mode '{ha_mode}' for {self}. "
@@ -375,9 +374,9 @@ class HVSwingCapability(StateModeCapability):
 
         if vertical_swing and horizontal_swing:
             return ModeCapabilityMode.TURBO
-        elif vertical_swing:
+        if vertical_swing:
             return ModeCapabilityMode.VERTICAL
-        elif horizontal_swing:
+        if horizontal_swing:
             return ModeCapabilityMode.HORIZONTAL
 
         return ModeCapabilityMode.STATIONARY
@@ -631,13 +630,14 @@ class ProgramCapabilityFan(ProgramCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == fan.DOMAIN:
-            if self._state_features & FanEntityFeature.PRESET_MODE:
-                if (
-                    self._state_features & FanEntityFeature.SET_SPEED
-                    and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
-                ):
-                    return super().supported
+        if (
+            self.state.domain == fan.DOMAIN
+            and self._state_features & FanEntityFeature.PRESET_MODE
+            and (
+                self._state_features & FanEntityFeature.SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
+            )
+        ):
+            return super().supported
 
         return False
 
@@ -682,6 +682,7 @@ class InputSourceCapability(StateModeCapability):
 
         return False
 
+    @override
     def get_yandex_mode_by_ha_mode(self, ha_mode: str, hide_warnings: bool = False) -> ModeCapabilityMode | None:
         """Return Yandex mode for HA mode."""
         return super().get_yandex_mode_by_ha_mode(ha_mode, hide_warnings=True)
@@ -703,7 +704,7 @@ class InputSourceCapability(StateModeCapability):
     def _ha_modes(self) -> Iterable[Any]:
         """Returns list of HA modes."""
         modes = self.state.attributes.get(media_player.ATTR_INPUT_SOURCE_LIST) or []
-        filtered_modes = list(filter(lambda m: m not in ["Live TV"], modes))  # #418
+        filtered_modes = list(filter(lambda m: m != "Live TV", modes))  # #418
         if filtered_modes or self.state.state not in (STATE_OFF, STATE_UNKNOWN):
             self._cache.save_attr_value(self.state.entity_id, media_player.ATTR_INPUT_SOURCE_LIST, modes)
             return modes
@@ -841,15 +842,11 @@ class FanSpeedCapabilityFanViaPreset(FanSpeedCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == fan.DOMAIN:
-            if self._state_features & FanEntityFeature.PRESET_MODE:
-                if (
-                    self._state_features & FanEntityFeature.SET_SPEED
-                    and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
-                ):
-                    return False
+        if self.state.domain == fan.DOMAIN and self._state_features & FanEntityFeature.PRESET_MODE:
+            if self._state_features & FanEntityFeature.SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes:
+                return False
 
-                return super().supported
+            return super().supported
 
         return False
 
@@ -883,12 +880,10 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        if self.state.domain == fan.DOMAIN:
-            if (
-                self._state_features & fan.FanEntityFeature.SET_SPEED
-                and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
-            ):
-                return super().supported
+        if self.state.domain == fan.DOMAIN and (
+            self._state_features & fan.FanEntityFeature.SET_SPEED and fan.ATTR_PERCENTAGE_STEP in self.state.attributes
+        ):
+            return super().supported
 
         return False
 

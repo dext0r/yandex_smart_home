@@ -1,7 +1,7 @@
 """Implement the Yandex Smart Home on_off capability."""
 
 from abc import ABC, abstractmethod
-from typing import Protocol
+from typing import Protocol, override
 
 from homeassistant.components import (
     automation,
@@ -57,7 +57,7 @@ from .const import (
     SKYKETTLE_MODE_BOIL,
     MediaPlayerFeature,
 )
-from .helpers import ActionNotAllowed, APIError
+from .helpers import ActionNotAllowedError, APIError
 from .schema import (
     CapabilityType,
     OnOffCapabilityInstance,
@@ -84,10 +84,7 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
     @property
     def retrievable(self) -> bool:
         """Test if the capability can return the current value."""
-        if self._entity_config.get(CONF_STATE_UNKNOWN):
-            return False
-
-        return True
+        return not self._entity_config.get(CONF_STATE_UNKNOWN)
 
     @property
     def parameters(self) -> OnOffCapabilityParameters | None:
@@ -109,7 +106,7 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
         for key, call in ((CONF_TURN_ON, state.value), (CONF_TURN_OFF, not state.value)):
             if key in self._entity_config and call:
                 if self._entity_config[key] is False:
-                    raise ActionNotAllowed
+                    raise ActionNotAllowedError
 
                 await async_call_from_config(
                     self._hass, self._entity_config[key], blocking=self._wait_for_service_call, context=context
@@ -221,6 +218,7 @@ class OnOffCapabilityScript(OnlyOnCapability):
 
         return super()._wait_for_service_call
 
+    @override
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -240,6 +238,7 @@ class OnOffCapabilityButton(OnlyOnCapability):
         """Test if the capability is supported."""
         return self.state.domain == button.DOMAIN
 
+    @override
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -259,6 +258,7 @@ class OnOffCapabilityInputButton(OnlyOnCapability):
         """Test if the capability is supported."""
         return self.state.domain == input_button.DOMAIN
 
+    @override
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -396,14 +396,13 @@ class OnOffCapabilityVacuum(OnOffCapability):
         if self._state_features & VacuumEntityFeature.TURN_ON and self._state_features & VacuumEntityFeature.TURN_OFF:
             return True
 
-        if self._state_features & VacuumEntityFeature.START:
-            if (
+        return bool(
+            self._state_features & VacuumEntityFeature.START
+            and (
                 self._state_features & VacuumEntityFeature.RETURN_HOME
                 or self._state_features & VacuumEntityFeature.STOP
-            ):
-                return True
-
-        return False
+            )
+        )
 
     def _is_on(self) -> bool:
         """Return true if capability is on."""

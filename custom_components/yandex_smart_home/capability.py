@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 
 @runtime_checkable
-class Capability(Protocol[CapabilityInstanceActionState]):
+class Capability(Protocol[CapabilityInstanceActionState]):  # noqa: PLW1641
     """Base class for a device capability."""
 
     device_id: str
@@ -101,10 +101,7 @@ class Capability(Protocol[CapabilityInstanceActionState]):
         if value is None:
             return False
 
-        if other_value is None or value != other_value:
-            return True
-
-        return False
+        return bool(other_value is None or value != other_value)
 
     @cached_property
     def _entity_config(self) -> ConfigType:
@@ -114,10 +111,7 @@ class Capability(Protocol[CapabilityInstanceActionState]):
     @property
     def _wait_for_service_call(self) -> bool:
         """Check if service should be run in blocking mode."""
-        if self._entity_config.get(CONF_SLOW) is True:
-            return False
-
-        return True
+        return self._entity_config.get(CONF_SLOW) is not True
 
     def __str__(self) -> str:
         """Return string representation."""
@@ -125,15 +119,9 @@ class Capability(Protocol[CapabilityInstanceActionState]):
 
     def __repr__(self) -> str:
         """Return the representation."""
-        return (
-            f"<{self.__class__.__name__}"
-            f" device_id={self.device_id }"
-            f" type={self.type}"
-            f" instance={self.instance}"
-            f">"
-        )
+        return f"<{self.__class__.__name__} device_id={self.device_id} type={self.type} instance={self.instance}>"
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compare capabilities."""
         return bool(
             isinstance(other, Capability)
@@ -158,7 +146,6 @@ class ActionOnlyCapabilityMixin:
 
     def get_value(self) -> None:
         """Return the current capability value."""
-        return None
 
 
 class DummyCapability(Capability[CapabilityInstanceActionState]):
@@ -168,7 +155,7 @@ class DummyCapability(Capability[CapabilityInstanceActionState]):
         self,
         hass: HomeAssistant,
         entry_data: ConfigEntryData,
-        type: CapabilityType,
+        typ: CapabilityType,
         instance: CapabilityInstance,
         device_id: str,
     ):
@@ -176,7 +163,7 @@ class DummyCapability(Capability[CapabilityInstanceActionState]):
         self._hass = hass
         self._entry_data = entry_data
 
-        self.type = type
+        self.type = typ
         self.instance = instance
         self.device_id = device_id
 

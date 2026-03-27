@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable, Coroutine
 import logging
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Coroutine, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from aiohttp.web import HTTPServiceUnavailable, Request, Response, json_response
 from homeassistant.components.http import KEY_HASS, KEY_HASS_REFRESH_TOKEN_ID, HomeAssistantView
@@ -36,8 +37,8 @@ def async_register_http(hass: HomeAssistant, component: YandexSmartHome) -> None
     return hass.http.register_view(YandexSmartHomeAPIView(component))
 
 
-def async_http_request(
-    func: Callable[[_T, HomeAssistant, Request, RequestData], Awaitable[Response]]
+def async_http_request(  # noqa: UP047
+    func: Callable[[_T, HomeAssistant, Request, RequestData], Awaitable[Response]],
 ) -> Callable[[_T, Request], Coroutine[Any, Any, Response]]:
     """Decorate an async function to handle authorized HTTP requests."""
 
@@ -54,7 +55,7 @@ def async_http_request(
         platform = SmartHomePlatform.from_client_id(refresh_token.client_id or "")
         if not platform:
             _LOGGER.error(f"Request from unsupported platform, client_id: {refresh_token.client_id}")
-            raise HTTPServiceUnavailable()
+            raise HTTPServiceUnavailable
 
         entry_data = self._component.get_direct_connection_entry_data(platform, refresh_token.user.id)
         if not entry_data and len(hass.config_entries.async_entries(DOMAIN)) == 1:
@@ -79,9 +80,9 @@ def async_http_request(
                     "username": refresh_token.user.name or refresh_token.user.id,
                 },
             )
-            raise HTTPServiceUnavailable()
-        else:
-            ir.async_delete_issue(hass, DOMAIN, issue_id)
+            raise HTTPServiceUnavailable
+
+        ir.async_delete_issue(hass, DOMAIN, issue_id)
 
         data = RequestData(
             entry_data=entry_data,

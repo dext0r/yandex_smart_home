@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import TYPE_CHECKING, Any, cast
 
@@ -67,8 +68,6 @@ class YandexSmartHome:
 
         for entry in self._hass.config_entries.async_entries(DOMAIN):
             await _async_entry_update_listener(self._hass, entry)
-
-        return None
 
     def get_entry_data(self, entry: ConfigEntry) -> ConfigEntryData:
         """Return a config entry data for a config entry."""
@@ -137,12 +136,8 @@ class YandexSmartHome:
 
     async def async_remove_entry(self, entry: ConfigEntry) -> None:
         """Remove a config entry."""
-        try:
+        with contextlib.suppress(KeyError):
             del self._entry_datas[entry.entry_id]
-        except KeyError:
-            pass
-
-        return None
 
 
 async def async_setup(hass: HomeAssistant, yaml_config: ConfigType) -> bool:
@@ -254,10 +249,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if component:
         await component.async_remove_entry(entry)
 
-    return None
-
 
 async def _async_entry_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle config entry options update."""
     await hass.config_entries.async_reload(entry.entry_id)
-    return None

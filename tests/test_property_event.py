@@ -46,7 +46,7 @@ async def test_property_event_custom_mapping(hass: HomeAssistant, entry_data: Mo
 
 
 @pytest.mark.parametrize(
-    "device_class,supported",
+    ("device_class", "supported"),
     [
         (BinarySensorDeviceClass.DOOR, True),
         (BinarySensorDeviceClass.GARAGE_DOOR, True),
@@ -73,7 +73,7 @@ async def test_state_property_event_open(
 
 
 @pytest.mark.parametrize(
-    "device_class,supported",
+    ("device_class", "supported"),
     [
         (BinarySensorDeviceClass.MOTION, True),
         (BinarySensorDeviceClass.OCCUPANCY, True),
@@ -102,7 +102,7 @@ async def test_state_property_event_motion_sensor(
 
 
 @pytest.mark.parametrize(
-    "device_class,supported",
+    ("device_class", "supported"),
     [
         (EventDeviceClass.MOTION, True),
         (EventDeviceClass.BUTTON, False),
@@ -126,7 +126,7 @@ async def test_state_property_event_motion_event(
 
 
 @pytest.mark.parametrize(
-    "device_class,supported",
+    ("device_class", "supported"),
     [
         (BinarySensorDeviceClass.GAS, True),
         (BinarySensorDeviceClass.BATTERY, False),
@@ -155,7 +155,7 @@ async def test_state_property_event_gas(
 
 
 @pytest.mark.parametrize(
-    "device_class,supported",
+    ("device_class", "supported"),
     [
         (BinarySensorDeviceClass.SMOKE, True),
         (BinarySensorDeviceClass.BATTERY, False),
@@ -184,7 +184,7 @@ async def test_state_property_event_smoke(
 
 
 @pytest.mark.parametrize(
-    "device_class,supported",
+    ("device_class", "supported"),
     [
         (BinarySensorDeviceClass.BATTERY, True),
         (BinarySensorDeviceClass.SMOKE, False),
@@ -211,7 +211,7 @@ async def test_state_property_event_battery(
 
 
 @pytest.mark.parametrize(
-    "device_class,supported",
+    ("device_class", "supported"),
     [
         (BinarySensorDeviceClass.MOISTURE, True),
         (BinarySensorDeviceClass.SMOKE, False),
@@ -236,7 +236,7 @@ async def test_state_property_event_water_leak(
 
 @pytest.mark.parametrize("domain", [sensor.DOMAIN, input_text.DOMAIN])
 @pytest.mark.parametrize(
-    "device_class,mock_entry_data,supported",
+    ("device_class", "mock_entry_data", "supported"),
     [
         (None, False, False),
         (None, True, True),
@@ -305,7 +305,7 @@ async def test_state_property_event_button_gw3(hass: HomeAssistant, entry_data: 
 
 
 @pytest.mark.parametrize(
-    "device_class,mock_entry_data,supported",
+    ("device_class", "mock_entry_data", "supported"),
     [
         (EventDeviceClass.BUTTON, False, True),
         (EventDeviceClass.DOORBELL, False, True),

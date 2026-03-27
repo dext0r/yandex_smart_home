@@ -1,5 +1,4 @@
-# pyright: reportAttributeAccessIssue=information
-from typing import cast
+from typing import cast, override
 from unittest.mock import patch
 
 from homeassistant.components.camera import Camera, CameraEntityFeature, DynamicStreamSettings
@@ -31,10 +30,6 @@ from custom_components.yandex_smart_home.schema import (
 from . import MockConfigEntryData
 from .test_capability import assert_no_capabilities, get_exact_one_capability
 
-# except ImportError:
-#     from homeassistant.config import async_process_ha_core_config  # type: ignore[attr-defined,no-redef]
-
-
 ACTION_STATE = GetStreamInstanceActionState(
     instance=VideoStreamCapabilityInstance.GET_STREAM,
     value=GetStreamInstanceActionStateValue(protocols=["hls"]),
@@ -62,9 +57,11 @@ class MockStream(Stream):
             DynamicStreamSettings(),
         )
 
+    @override
     def endpoint_url(self, fmt: str) -> str:
         return "/foo"
 
+    @override
     def add_provider(self, fmt: str, timeout: int | None = None) -> StreamOutput:
         return MockStreamOutput()
 

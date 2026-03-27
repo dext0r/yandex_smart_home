@@ -30,7 +30,7 @@ def get_capabilities(
 ) -> list[StateCapability[Any]]:
     caps = []
 
-    for CapabilityT in STATE_CAPABILITIES_REGISTRY:
+    for CapabilityT in STATE_CAPABILITIES_REGISTRY:  # noqa: N806
         capability = CapabilityT(hass, entry_data, state.entity_id, state)
 
         if capability.type != capability_type or capability.instance != instance:
@@ -94,32 +94,34 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
         await async_setup_component(hass, demo.DOMAIN, {})
         await hass.async_block_till_done()
 
-    # for x in sorted(hass.states.async_all(), key=lambda e: e.entity_id):
-    #     d = Device(hass, entry_data, x.entity_id, x)
-    #     l = list((c.type.value, c.instance.value) for c in d.get_capabilities())
-    #     print(f"state = hass.states.get('{x.entity_id}')")
-    #     print(f"assert state")
-    #     print(f"device = Device(hass, entry_data, state.entity_id, state)")
-    #     if d.type is None:
-    #         print(f"assert device.type is None")
-    #     else:
-    #         print(f"assert device.type == '{d.type.value}'")
-    #     print(f"capabilities = list((c.type, c.instance) for c in device.get_capabilities())")
-    #     print(f"assert capabilities == {l}")
-    #     print()
+    """
+    for x in sorted(hass.states.async_all(), key=lambda e: e.entity_id):
+        d = Device(hass, entry_data, x.entity_id, x)
+        l = list((c.type.value, c.instance.value) for c in d.get_capabilities())
+        print(f"state = hass.states.get('{x.entity_id}')")
+        print(f"assert state")
+        print(f"device = Device(hass, entry_data, state.entity_id, state)")
+        if d.type is None:
+            print(f"assert device.type is None")
+        else:
+            print(f"assert device.type == '{d.type.value}'")
+        print(f"capabilities = [(c.type, c.instance) for c in device.get_capabilities()]")
+        print(f"assert capabilities == {l}")
+        print()
+    """
 
     state = hass.states.get("button.push")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.other"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("climate.ecobee")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.thermostat"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.mode", "thermostat"),
         ("devices.capabilities.mode", "swing"),
@@ -134,7 +136,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.thermostat"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.mode", "thermostat"),
         ("devices.capabilities.on_off", "on"),
@@ -145,7 +147,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.thermostat"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.mode", "thermostat"),
         ("devices.capabilities.mode", "swing"),
@@ -158,14 +160,14 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("cover.hall_window")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.on_off", "on"),
         ("devices.capabilities.range", "open"),
@@ -176,14 +178,14 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on"), ("devices.capabilities.toggle", "pause")]
 
     state = hass.states.get("cover.living_room_window")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.on_off", "on"),
         ("devices.capabilities.range", "open"),
@@ -194,21 +196,21 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.ceiling_fan")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.ventilation.fan"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.living_room_fan")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.ventilation.fan"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.mode", "fan_speed"),
         ("devices.capabilities.on_off", "on"),
@@ -219,7 +221,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.ventilation.fan"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.mode", "fan_speed"),
         ("devices.capabilities.on_off", "on"),
@@ -230,35 +232,35 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.ventilation.fan"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("fan.preset_only_limited_fan")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.ventilation.fan"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.mode", "fan_speed"), ("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("humidifier.dehumidifier")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.humidifier"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on"), ("devices.capabilities.range", "humidity")]
 
     state = hass.states.get("humidifier.humidifier")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.humidifier"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on"), ("devices.capabilities.range", "humidity")]
 
     state = hass.states.get("humidifier.hygrostat")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.humidifier"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.mode", "program"),
         ("devices.capabilities.on_off", "on"),
@@ -269,7 +271,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -283,7 +285,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -296,7 +298,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -309,7 +311,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -322,7 +324,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -336,7 +338,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.light"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.color_setting", "base"),
         ("devices.capabilities.color_setting", "rgb"),
@@ -350,35 +352,35 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("lock.kitchen_door")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("lock.openable_lock")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("lock.poorly_installed_door")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.openable"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("media_player.bedroom")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.on_off", "on"),
         ("devices.capabilities.range", "volume"),
@@ -391,14 +393,14 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == []
 
     state = hass.states.get("media_player.group")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.on_off", "on"),
         ("devices.capabilities.range", "volume"),
@@ -411,7 +413,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.on_off", "on"),
         ("devices.capabilities.range", "volume"),
@@ -424,7 +426,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.on_off", "on"),
         ("devices.capabilities.range", "volume"),
@@ -437,7 +439,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.media_device.tv"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.mode", "input_source"),
         ("devices.capabilities.on_off", "on"),
@@ -449,7 +451,7 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.media_device"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [
         ("devices.capabilities.on_off", "on"),
         ("devices.capabilities.range", "volume"),
@@ -462,35 +464,35 @@ async def test_capability_demo_platform(hass: HomeAssistant, entry_data: MockCon
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.switch"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("remote.remote_two")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.switch"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("switch.ac")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.socket"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("switch.decorative_lights")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.switch"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == [("devices.capabilities.on_off", "on")]
 
     state = hass.states.get("zone.home")
     assert state
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.other"
-    capabilities = list((c.type, c.instance) for c in device.get_capabilities())
+    capabilities = [(c.type, c.instance) for c in device.get_capabilities()]
     assert capabilities == []
 
 

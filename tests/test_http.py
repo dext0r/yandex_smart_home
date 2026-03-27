@@ -61,9 +61,8 @@ async def test_http_unauthorized(hass_platform_direct: HomeAssistant, aiohttp_cl
     assert response.status == HTTPStatus.UNAUTHORIZED
 
 
-async def test_http_unknown_platform(
-    hass_platform_direct: HomeAssistant, hass_client: ClientSessionGenerator, caplog: pytest.LogCaptureFixture
-) -> None:
+@pytest.mark.usefixtures("hass_platform_direct")
+async def test_http_unknown_platform(hass_client: ClientSessionGenerator, caplog: pytest.LogCaptureFixture) -> None:
     http_client = await hass_client()
     response = await http_client.post("/api/yandex_smart_home/v1.0/user/devices", headers={"X-Request-Id": REQ_ID})
     assert response.status == HTTPStatus.SERVICE_UNAVAILABLE
@@ -73,7 +72,6 @@ async def test_http_unknown_platform(
 async def test_http_config_entry_selection(
     hass_platform: HomeAssistant,
     hass_client: ClientSessionGenerator,
-    aiohttp_client: ClientSessionGenerator,
     caplog: pytest.LogCaptureFixture,
     issue_registry: ir.IssueRegistry,
 ) -> None:
@@ -160,7 +158,6 @@ async def test_http_config_entry_selection(
 async def test_http_config_entry_selection_multiplatform(
     hass_platform: HomeAssistant,
     hass_client: ClientSessionGenerator,
-    aiohttp_client: ClientSessionGenerator,
     caplog: pytest.LogCaptureFixture,
     issue_registry: ir.IssueRegistry,
 ) -> None:
@@ -243,8 +240,6 @@ async def test_http_config_entry_selection_multiplatform(
 async def test_http_config_entry_no_skill(
     hass_platform: HomeAssistant,
     hass_client: ClientSessionGenerator,
-    aiohttp_client: ClientSessionGenerator,
-    caplog: pytest.LogCaptureFixture,
 ) -> None:
     hass = hass_platform
 
@@ -277,17 +272,16 @@ async def test_http_config_entry_no_skill(
     assert (await response.json())["payload"]["user_id"] == user_bar.id
 
 
-async def test_http_user_unlink(
-    hass_platform_direct: HomeAssistant, hass_client: ClientSessionGenerator, hass_access_token_yandex: str
-) -> None:
+@pytest.mark.usefixtures("hass_platform_direct")
+async def test_http_user_unlink(hass_client: ClientSessionGenerator, hass_access_token_yandex: str) -> None:
     http_client = await hass_client(hass_access_token_yandex)
     response = await http_client.post("/api/yandex_smart_home/v1.0/user/unlink", headers={"X-Request-Id": REQ_ID})
     assert response.status == HTTPStatus.OK
     assert await response.json() == {"request_id": REQ_ID}
 
 
+@pytest.mark.usefixtures("hass_platform_direct")
 async def test_http_user_devices(
-    hass_platform_direct: HomeAssistant,
     hass_client: ClientSessionGenerator,
     hass_access_token_yandex: str,
     hass_admin_user: MockUser,
@@ -369,8 +363,8 @@ async def test_http_user_devices(
     }
 
 
+@pytest.mark.usefixtures("hass_platform_direct")
 async def test_http_user_devices_query(
-    hass_platform_direct: HomeAssistant,
     hass_client: ClientSessionGenerator,
     hass_access_token_yandex: str,
 ) -> None:

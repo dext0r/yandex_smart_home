@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from asyncio import TimeoutError
+from collections.abc import AsyncIterable
 from datetime import datetime, timedelta
 import logging
-from typing import TYPE_CHECKING, Any, AsyncIterable, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from aiohttp import ClientConnectorError, ClientResponseError, ClientWebSocketResponse, WSMessage, WSMsgType, hdrs
 from homeassistant.core import CALLBACK_TYPE, Context, HassJob, HomeAssistant
@@ -104,8 +104,6 @@ class CloudManager:
             _LOGGER.exception("Unexpected exception")
             self._try_reconnect()
 
-        return None
-
     async def async_disconnect(self, *_: Any) -> None:
         """Disconnect from the cloud."""
         self._ws_active = False
@@ -116,12 +114,10 @@ class CloudManager:
             self._unsub_connect()
             self._unsub_connect = None
 
-        return None
-
     async def _on_message(self, message: WSMessage) -> None:
         """Handle incoming request from the cloud."""
         request = CloudRequest.model_validate_json(message.data)
-        _LOGGER.debug("Request: %s (message: %s)" % (request.action, request.message))
+        _LOGGER.debug(f"Request: {request.action} (message: {request.message})")
 
         data = RequestData(
             entry_data=self._entry_data,
@@ -137,12 +133,11 @@ class CloudManager:
 
         assert self._ws is not None
         await self._ws.send_str(response)
-        return None
 
     def _try_reconnect(self) -> None:
         """Schedule reconnection to the cloud."""
         if not self._ws_active:
-            return None
+            return
 
         self._ws_reconnect_delay = min(2 * self._ws_reconnect_delay, MAX_RECONNECTION_DELAY)
 
@@ -166,7 +161,6 @@ class CloudManager:
 
         _LOGGER.debug(f"Trying to reconnect in {self._ws_reconnect_delay} seconds")
         self._unsub_connect = async_call_later(self._hass, self._ws_reconnect_delay, HassJob(self.async_connect))
-        return None
 
 
 async def register_instance(hass: HomeAssistant, platform: SmartHomePlatform | None = None) -> CloudInstanceData:

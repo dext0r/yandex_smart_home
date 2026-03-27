@@ -100,7 +100,7 @@ async def test_capability_range_random_access_with_range(
 
     with pytest.raises(APIError) as e:
         assert cap._convert_to_float("foo")
-        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
 
     with patch.object(MockCapability, "_get_value", return_value=20):
         assert cap._get_absolute_value(10) == 30
@@ -129,9 +129,7 @@ async def test_capability_range_random_access_with_range(
     assert e.value.message == "Device switch.test probably turned off"
 
 
-async def test_capability_range_random_access_no_range(
-    hass: HomeAssistant, entry_data: MockConfigEntryData, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_capability_range_random_access_no_range(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     class MockCapability(StateRangeCapability):
         instance = RangeCapabilityInstance.VOLUME
 
@@ -166,7 +164,7 @@ async def test_capability_range_random_access_no_range(
 
 
 @pytest.mark.parametrize(
-    "domain,set_position_feature,set_position_service",
+    ("domain", "set_position_feature", "set_position_service"),
     [
         (cover.DOMAIN, CoverEntityFeature.SET_POSITION, SERVICE_SET_COVER_POSITION),
         (valve.DOMAIN, ValveEntityFeature.SET_POSITION, SERVICE_SET_VALVE_POSITION),
@@ -219,7 +217,7 @@ async def test_capability_range_open(
         )
 
     assert len(calls) == 4
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     assert calls[0].data[cover.ATTR_POSITION] == 0
@@ -308,7 +306,7 @@ async def test_capability_range_climate_target_temperature(
         )
 
     assert len(calls) == 5
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     assert calls[0].data[ATTR_TEMPERATURE] == 11
@@ -441,7 +439,7 @@ async def test_capability_range_water_heater_target_temperature(
         )
 
     assert len(calls) == 5
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     assert calls[0].data[ATTR_TEMPERATURE] == 20
@@ -495,7 +493,7 @@ async def test_capability_range_humidity_humidifier(hass: HomeAssistant, entry_d
         )
 
     assert len(calls) == 5
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     assert calls[0].data[humidifier.ATTR_HUMIDITY] == 20
@@ -534,7 +532,7 @@ async def test_capability_range_humidity_fan(hass: HomeAssistant, entry_data: Mo
         )
 
     assert len(calls) == 5
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     assert calls[0].data[humidifier.ATTR_HUMIDITY] == 20
@@ -576,7 +574,7 @@ async def test_capability_range_brightness(
         )
 
     assert len(calls) == 5
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     assert calls[0].data[light.ATTR_BRIGHTNESS_PCT] == 0
@@ -624,7 +622,7 @@ async def test_capability_range_white_light_brightness(
         )
 
     assert len(calls) == 5
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     if color_mode == ColorMode.RGBW:
@@ -695,7 +693,7 @@ async def test_capability_range_warm_white_light_brightness(
         )
 
     assert len(calls) == 5
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     assert calls[0].data[light.ATTR_RGBWW_COLOR] == (255, 10, 20, 64, 0)
@@ -787,7 +785,7 @@ async def test_capability_range_volume_support_random(
         )
 
     assert len(calls) == 6
-    for i in range(0, len(calls)):
+    for i in range(len(calls)):
         assert calls[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     assert calls[0].data[media_player.ATTR_MEDIA_VOLUME_LEVEL] == 0
@@ -888,7 +886,7 @@ async def test_capability_range_volume_only_relative(
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=3, relative=True),
     )
     assert len(calls_up) == 3
-    for i in range(0, len(calls_up)):
+    for i in range(len(calls_up)):
         assert calls_up[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     calls_down = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_DOWN)
@@ -897,7 +895,7 @@ async def test_capability_range_volume_only_relative(
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=-2, relative=True),
     )
     assert len(calls_down) == 2
-    for i in range(0, len(calls_down)):
+    for i in range(len(calls_down)):
         assert calls_down[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     calls_one_up = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_UP)
@@ -906,7 +904,7 @@ async def test_capability_range_volume_only_relative(
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=1, relative=True),
     )
     assert len(calls_one_up) == (precision or 1)
-    for i in range(0, precision or 1):
+    for i in range(precision or 1):
         assert calls_one_up[i].data[ATTR_ENTITY_ID] == state.entity_id
 
     calls_one_down = async_mock_service(hass, media_player.DOMAIN, SERVICE_VOLUME_DOWN)
@@ -915,7 +913,7 @@ async def test_capability_range_volume_only_relative(
         RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.VOLUME, value=-1, relative=True),
     )
     assert len(calls_one_down) == (precision or 1)
-    for i in range(0, precision or 1):
+    for i in range(precision or 1):
         assert calls_one_down[i].data[ATTR_ENTITY_ID] == state.entity_id
 
 
@@ -1039,7 +1037,7 @@ async def test_capability_range_channel_set_random(hass: HomeAssistant, entry_da
             Context(),
             RangeCapabilityInstanceActionState(instance=RangeCapabilityInstance.CHANNEL, value=-1, relative=True),
         )
-        assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
+    assert e.value.code == ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE
 
 
 async def test_capability_range_channel_set_not_supported(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
@@ -1224,7 +1222,7 @@ async def test_capability_range_channel_set_relative(
 
 
 @pytest.mark.parametrize(
-    "instance,range_expected",
+    ("instance", "range_expected"),
     [
         (RangeCapabilityInstance.BRIGHTNESS, True),
         (RangeCapabilityInstance.CHANNEL, False),

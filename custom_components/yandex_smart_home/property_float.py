@@ -123,9 +123,10 @@ class FloatProperty(Property, Protocol):
                     float_value, self._native_unit_of_measurement, self.unit_of_measurement
                 )
             else:
+                valid_units_str = ", ".join(sorted(map(str, self._unit_converter.VALID_UNITS)))
                 _LOGGER.warning(
                     f"Unsupported unit of measurement '{self._native_unit_of_measurement}' for {self}. "
-                    f"Valid units are: %s" % ", ".join(sorted(map(str, self._unit_converter.VALID_UNITS)))
+                    f"Valid units are: {valid_units_str}"
                 )
 
         lower_limit, upper_limit = self.parameters.range
@@ -145,10 +146,7 @@ class FloatProperty(Property, Protocol):
         if value is None:
             return False
 
-        if other_value is None or value != other_value:
-            return True
-
-        return False
+        return bool(other_value is None or value != other_value)
 
     @property
     def unit_of_measurement(self) -> str | None:

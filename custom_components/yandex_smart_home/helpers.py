@@ -22,7 +22,9 @@ STORE_CACHE_ATTRS = "attrs"
 
 
 @callback
-def _get_registry_entries(hass: HomeAssistant, entity_id: str) -> tuple[
+def _get_registry_entries(
+    hass: HomeAssistant, entity_id: str
+) -> tuple[
     er.RegistryEntry | None,
     dr.DeviceEntry | None,
     ar.AreaEntry | None,
@@ -63,7 +65,7 @@ class APIError(HomeAssistantError):
         self.message = message
 
 
-class ActionNotAllowed(HomeAssistantError):
+class ActionNotAllowedError(HomeAssistantError):
     """Error producted when change capability state is not allowed, no logging."""
 
     def __init__(self, code: ResponseCode = ResponseCode.REMOTE_CONTROL_DISABLED):
@@ -105,15 +107,11 @@ class CacheStore:
         if has_changed:
             self._store.async_delay_save(lambda: self._data, 5.0)
 
-        return None
-
     async def async_load(self) -> None:
         """Load store data."""
         data = await self._store.async_load()
         if data:
             self._data = data
-
-        return None
 
 
 class SmartHomePlatform(StrEnum):
@@ -128,7 +126,7 @@ class SmartHomePlatform(StrEnum):
         host = urlparse(client_id).netloc
         if "yandex" in host:
             return cls.YANDEX
-        elif host == "vc.go.mail.ru":
+        if host == "vc.go.mail.ru":
             return cls.VK
 
         return None
@@ -163,10 +161,10 @@ class DictRegistry(dict[str, _HasInstanceT]):
         return obj
 
 
-class ListRegistry[_T](list[_T]):
+class ListRegistry[T](list[T]):
     """List Registry of items."""
 
-    def register(self, obj: _T) -> _T:
+    def register(self, obj: T) -> T:
         """Register decorated type."""
         self.append(obj)
         return obj

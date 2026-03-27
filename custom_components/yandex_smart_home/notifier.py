@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import asyncio
+from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import timedelta
 import itertools
 import logging
 from random import randint
-from typing import TYPE_CHECKING, Any, Mapping, Protocol, Self, Sequence
+from typing import TYPE_CHECKING, Any, Protocol, Self
 
 from aiohttp import ClientTimeout, JsonPayload, hdrs
 from aiohttp.client_exceptions import ClientConnectionError
@@ -162,11 +163,7 @@ class PendingStates:
     @property
     def time_sensitive(self) -> bool:
         """Test if pending states should be sent immediately."""
-        for state in itertools.chain(*self._device_states.values()):
-            if state.time_sensitive:
-                return True
-
-        return False
+        return any(state.time_sensitive for state in itertools.chain(*self._device_states.values()))
 
 
 class Notifier(ABC):
@@ -206,7 +203,7 @@ class Notifier(ABC):
         )
         self._unsub_heartbeat_report = async_call_later(
             self._hass,
-            delay=HEARTBEAT_REPORT_INTERVAL + timedelta(minutes=randint(1, 15)),
+            delay=HEARTBEAT_REPORT_INTERVAL + timedelta(minutes=randint(1, 15)),  # noqa: S311
             action=HassJob(self._async_hearbeat_report),
         )
         self._unsub_discovery = async_call_later(
@@ -220,8 +217,6 @@ class Notifier(ABC):
                 self._async_template_result_changed,
             )
             self._template_changes_tracker.async_refresh()
-
-        return None
 
     async def async_unload(self) -> None:
         """Unload the notifier."""
@@ -245,8 +240,6 @@ class Notifier(ABC):
             self._template_changes_tracker.async_remove()
             self._template_changes_tracker = None
 
-        return None
-
     async def async_send_discovery(self, *_: Any) -> None:
         """Send notification about change of devices' parameters."""
         self._debug_log("Sending discovery request")
@@ -257,13 +250,11 @@ class Notifier(ABC):
     @abstractmethod
     def _base_url(self) -> str:
         """Return base URL."""
-        pass
 
     @property
     @abstractmethod
     def _request_headers(self) -> dict[str, str]:
         """Return headers for a request."""
-        pass
 
     def _format_log_message(self, message: str) -> str:
         """Format a message."""
@@ -315,7 +306,7 @@ class Notifier(ABC):
                 payload=CallbackStatesRequestPayload(user_id=self._config.user_id, devices=states)
             )
 
-            asyncio.create_task(self._async_send_request(f"{self._base_url}/state", request))
+            asyncio.create_task(self._async_send_request(f"{self._base_url}/state", request))  # noqa: RUF006
 
         if self._pending.empty:
             self._unsub_report_states = None
@@ -325,8 +316,6 @@ class Notifier(ABC):
                 delay=0 if self._pending.time_sensitive else REPORT_STATE_WINDOW,
                 action=HassJob(self._async_report_states),
             )
-
-        return None
 
     async def _async_send_request(self, url: str, request: CallbackRequest) -> None:
         """Send a request to the url."""
@@ -356,12 +345,10 @@ class Notifier(ABC):
                 )
         except ClientConnectionError as e:
             _LOGGER.warning(self._format_log_message(f"State notification request failed: {e!r}"))
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             self._debug_log(f"State notification request failed: {e!r}")
         except Exception:
             _LOGGER.exception(self._format_log_message("Unexpected exception"))
-
-        return None
 
     async def _async_template_result_changed(
         self,
@@ -451,15 +438,13 @@ class Notifier(ABC):
     def _schedule_report_states(self) -> None:
         """Schedule run report states job if there are pending states."""
         if self._pending.empty or self._unsub_report_states:
-            return None
+            return
 
         self._unsub_report_states = async_call_later(
             self._hass,
             delay=0 if self._pending.time_sensitive else REPORT_STATE_WINDOW,
             action=HassJob(self._async_report_states),
         )
-
-        return None
 
 
 class YandexDirectNotifier(Notifier):

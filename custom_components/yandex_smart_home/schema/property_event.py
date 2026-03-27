@@ -4,7 +4,7 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event.html
 """
 
 from enum import StrEnum
-from typing import Generic, Literal, Self, TypeVar, cast
+from typing import Literal, Self, TypeVar, cast
 
 from pydantic import model_validator
 
@@ -31,8 +31,6 @@ class EventPropertyInstance(StrEnum):
 
 class EventInstanceEvent(StrEnum):
     """Base class for an instance event."""
-
-    ...
 
 
 class VibrationInstanceEvent(EventInstanceEvent):
@@ -135,7 +133,7 @@ def get_supported_events_for_instance(instance: EventPropertyInstance) -> list[E
     return list(get_event_class_for_instance(instance).__members__.values())
 
 
-class EventPropertyParameters(APIModel, Generic[EventInstanceEventT]):
+class EventPropertyParameters[EventInstanceEventT: EventInstanceEvent](APIModel):
     """Parameters of an event property."""
 
     instance: EventPropertyInstance

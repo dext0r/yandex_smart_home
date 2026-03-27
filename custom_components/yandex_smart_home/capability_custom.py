@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from functools import cached_property
 import itertools
 import logging
-from typing import TYPE_CHECKING, Any, Iterable, Protocol, Self, cast
+from typing import TYPE_CHECKING, Any, Protocol, Self, cast, override
 
 from homeassistant.const import CONF_STATE_TEMPLATE, STATE_OFF, STATE_ON, STATE_UNKNOWN
 from homeassistant.core import Context, HomeAssistant, callback
@@ -36,7 +37,7 @@ from .const import (
     CONF_ENTITY_RANGE_PRECISION,
     CONF_STATE_UNKNOWN,
 )
-from .helpers import ActionNotAllowed, APIError
+from .helpers import ActionNotAllowedError, APIError
 from .schema import (
     CapabilityInstance,
     CapabilityType,
@@ -137,7 +138,7 @@ class CustomCapability(Capability[Any], Protocol):
         """Return the representation."""
         return (
             f"<{self.__class__.__name__}"
-            f" device_id={self.device_id }"
+            f" device_id={self.device_id}"
             f" instance={self.instance}"
             f" value_template={self._value_template}"
             f" value={self._value}"
@@ -158,10 +159,7 @@ class CustomOnOffCapability(CustomCapability, OnOffCapability):
     @property
     def retrievable(self) -> bool:
         """Test if the capability can return the current value."""
-        if self._entity_config.get(CONF_STATE_UNKNOWN):
-            return False
-
-        return True
+        return not self._entity_config.get(CONF_STATE_UNKNOWN)
 
     def get_value(self) -> bool | None:
         """Return the current capability value."""
@@ -173,9 +171,10 @@ class CustomOnOffCapability(CustomCapability, OnOffCapability):
 
         return False
 
+    @override
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state (if wasn't overriden by the user)."""
-        raise ActionNotAllowed
+        raise ActionNotAllowedError
 
 
 class CustomModeCapability(CustomCapability, ModeCapability):
@@ -197,7 +196,7 @@ class CustomModeCapability(CustomCapability, ModeCapability):
         """Change the capability state."""
         service_config = self._config.get(CONF_ENTITY_CUSTOM_MODE_SET_MODE)
         if not service_config:
-            raise ActionNotAllowed
+            raise ActionNotAllowedError
 
         await async_call_from_config(
             self._hass,
@@ -244,7 +243,7 @@ class CustomToggleCapability(CustomCapability, ToggleCapability):
             service_config = self._config.get(CONF_ENTITY_CUSTOM_TOGGLE_TURN_OFF)
 
         if not service_config:
-            raise ActionNotAllowed
+            raise ActionNotAllowedError
 
         await async_call_from_config(
             self._hass,
@@ -291,7 +290,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                 value = self._get_absolute_value(state.value)
 
         if not service_config:
-            raise ActionNotAllowed
+            raise ActionNotAllowedError
 
         await async_call_from_config(
             self._hass,
@@ -320,7 +319,7 @@ class CustomRangeCapability(CustomCapability, RangeCapability):
                     state = self._hass.states.get(entity_id)
                     if state is None:
                         raise APIError(ResponseCode.DEVICE_OFF, f"Entity {entity_id} not found")
-                    elif state.state in (STATE_OFF, STATE_UNKNOWN):
+                    if state.state in (STATE_OFF, STATE_UNKNOWN):
                         raise APIError(ResponseCode.DEVICE_OFF, f"Device {entity_id} probably turned off")
 
             raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Missing current value for {self}")
@@ -387,7 +386,7 @@ class CustomColorSceneCapability(CustomCapability, ColorSceneCapability):
         """Change the capability state."""
         service_config = self._config.get(CONF_ENTITY_CUSTOM_MODE_SET_MODE)
         if not service_config:
-            raise ActionNotAllowed
+            raise ActionNotAllowedError
 
         await async_call_from_config(
             self._hass,
@@ -446,8 +445,8 @@ def get_value_template(hass: HomeAssistant, device_id: str, capability_config: C
     attribute = capability_config.get(CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ATTRIBUTE)
 
     if attribute:
-        return Template("{{ state_attr('%s', '%s') }}" % (entity_id or device_id, attribute), hass)
-    elif entity_id:
-        return Template("{{ states('%s') }}" % entity_id, hass)
+        return Template("{{ state_attr('%s', '%s') }}" % (entity_id or device_id, attribute), hass)  # noqa: UP031
+    if entity_id:
+        return Template("{{ states('%s') }}" % entity_id, hass)  # noqa: UP031
 
     return None

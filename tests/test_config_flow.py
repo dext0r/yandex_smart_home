@@ -197,7 +197,7 @@ async def _async_forward_to_step_transfer_entity_filter_from_yaml(
 
     result = await _async_forward_to_step_maintenance(hass, config_entry)
     assert result["data_schema"] is not None
-    assert "transfer_entity_filter_from_yaml" in result["data_schema"].schema.keys()
+    assert "transfer_entity_filter_from_yaml" in result["data_schema"].schema
 
     return result
 
@@ -998,7 +998,7 @@ async def test_options_step_contex_user_clear(hass: HomeAssistant, hass_admin_us
 async def test_options_flow_expose_settings(hass: HomeAssistant, connection_type: ConnectionType) -> None:
     config_entry = await _async_mock_config_entry(
         hass,
-        data={CONF_CONNECTION_TYPE: ConnectionType.CLOUD},
+        data={CONF_CONNECTION_TYPE: connection_type},
         options={CONF_ENTRY_ALIASES: False},
     )
     config_entry.add_to_hass(hass)
@@ -1187,7 +1187,7 @@ async def test_options_flow_skill_missing_external_url(hass: HomeAssistant, plat
 
 
 @pytest.mark.parametrize(
-    "attr_to_change,expect_unlink",
+    ("attr_to_change", "expect_unlink"),
     [
         (CONF_ID, True),
         (CONF_TOKEN, False),
@@ -1272,7 +1272,7 @@ async def test_options_flow_skill_yandex_direct(
 
 
 @pytest.mark.parametrize(
-    "attr_to_change,expect_unlink",
+    ("attr_to_change", "expect_unlink"),
     [
         (CONF_ID, True),
         (CONF_USER_ID, True),
@@ -1328,7 +1328,7 @@ async def test_options_flow_skill_vk_direct(
     else:
         skill[attr_to_change] += "bar"
 
-    if attr_to_change in (CONF_ID,):
+    if attr_to_change == CONF_ID:
         result3x = await hass.config_entries.options.async_configure(result2["flow_id"], user_input=skill)
         assert result3x["type"] == FlowResultType.FORM
         assert result3x["step_id"] == "skill_vk_direct"
@@ -1350,7 +1350,7 @@ async def test_options_flow_skill_vk_direct(
 
 
 @pytest.mark.parametrize(
-    "attr_to_change,expect_unlink",
+    ("attr_to_change", "expect_unlink"),
     [
         (CONF_ID, True),
         (CONF_TOKEN, False),
@@ -1406,7 +1406,7 @@ async def test_options_flow_skill_yandex_cloud_plus(
 
 
 @pytest.mark.parametrize(
-    "attr_to_change,expect_unlink",
+    ("attr_to_change", "expect_unlink"),
     [
         (CONF_ID, True),
         (CONF_NAME, False),
@@ -1630,7 +1630,7 @@ async def test_options_flow_maintenance_transfer_entity_filter_to_labels(
     assert light1_entity.name is None
     assert light1_entity.area_id is None
     assert len(light1_entity.labels) == 0
-    entity_registry.async_update_entity(light1_entity.entity_id, labels=set(["a", "b", "c"]))
+    entity_registry.async_update_entity(light1_entity.entity_id, labels={"a", "b", "c"})
 
     light2_entity = entity_registry.async_get("light.office_rgbw_lights")
     assert light2_entity

@@ -188,11 +188,11 @@ class ColorTemperatureConverter:
             self._map_values(yandex_value, ha_value)
 
         if self._ha_mapping and self._yandex_mapping:
-            if min_color_temp + range_extend_threshold < min(self._ha_mapping):
+            if min_color_temp + range_extend_threshold < min(self._ha_mapping):  # noqa: SIM102
                 if yandex_color_temp := self._first_available_temperature_step:
                     self._map_values(yandex_color_temp, min_color_temp)
 
-            if max_color_temp - range_extend_threshold > max(self._ha_mapping):
+            if max_color_temp - range_extend_threshold > max(self._ha_mapping):  # noqa: SIM102
                 if yandex_color_temp := self._last_available_temperature_step:
                     self._map_values(yandex_color_temp, max_color_temp)
         else:
@@ -244,7 +244,6 @@ class ColorTemperatureConverter:
         """Add mapping between yandex values and HA."""
         self._yandex_mapping[yandex_value] = ha_value
         self._ha_mapping[ha_value] = yandex_value
-        return None
 
 
 class LightState(Protocol):

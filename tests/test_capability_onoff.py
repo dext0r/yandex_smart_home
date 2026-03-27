@@ -55,7 +55,7 @@ from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
 from custom_components.yandex_smart_home.const import CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON
-from custom_components.yandex_smart_home.helpers import ActionNotAllowed, APIError
+from custom_components.yandex_smart_home.helpers import ActionNotAllowedError, APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
     OnOffCapabilityInstance,
@@ -76,7 +76,7 @@ ACTION_STATE_OFF = OnOffCapabilityInstanceActionState(instance=OnOffCapabilityIn
 
 
 @pytest.mark.parametrize(
-    "state_domain,service_domain",
+    ("state_domain", "service_domain"),
     [
         (automation.DOMAIN, automation.DOMAIN),
         (input_boolean.DOMAIN, input_boolean.DOMAIN),
@@ -125,7 +125,7 @@ async def test_capability_onoff_simple(
 
 
 @pytest.mark.parametrize(
-    "domain,initial_state,service",
+    ("domain", "initial_state", "service"),
     [
         (script.DOMAIN, STATE_OFF, SERVICE_TURN_ON),
         (scene.DOMAIN, STATE_UNKNOWN, SERVICE_TURN_ON),
@@ -401,7 +401,7 @@ async def test_capability_onoff_vacuum(hass: HomeAssistant, entry_data: MockConf
         assert cap.retrievable is True
         assert cap.parameters is None
 
-    for s in list(VacuumActivity) + [STATE_OFF]:
+    for s in [*list(VacuumActivity), STATE_OFF]:
         if s == VacuumActivity.CLEANING:
             continue
         state = State(
@@ -432,7 +432,7 @@ async def test_capability_onoff_vacuum(hass: HomeAssistant, entry_data: MockConf
 
 
 @pytest.mark.parametrize(
-    "features,supported",
+    ("features", "supported"),
     [
         (0, False),
         (VacuumEntityFeature.START, False),
@@ -452,7 +452,7 @@ async def test_capability_onoff_vacuum_supported(
 
 
 @pytest.mark.parametrize(
-    "features,service",
+    ("features", "service"),
     [
         (VacuumEntityFeature.START | VacuumEntityFeature.RETURN_HOME, vacuum.SERVICE_START),
         (
@@ -479,7 +479,7 @@ async def test_capability_onoff_vacuum_turn_on(
 
 
 @pytest.mark.parametrize(
-    "features,service",
+    ("features", "service"),
     [
         (VacuumEntityFeature.START | VacuumEntityFeature.RETURN_HOME, vacuum.SERVICE_RETURN_TO_BASE),
         (
@@ -543,7 +543,7 @@ async def test_capability_onoff_climate(hass: HomeAssistant, entry_data: MockCon
 
 
 @pytest.mark.parametrize(
-    "hvac_modes,service,service_hvac_mode",
+    ("hvac_modes", "service", "service_hvac_mode"),
     [
         ([], SERVICE_TURN_ON, None),
         ([HVACMode.COOL], SERVICE_TURN_ON, None),
@@ -681,13 +681,13 @@ async def test_capability_onoff_custom_service(hass: HomeAssistant, entry_data: 
     assert off_calls[1].data == {ATTR_ENTITY_ID: [turn_on_off_entity_id]}
 
     lock_off_calls = async_mock_service(hass, "lock", "lock")
-    with pytest.raises(ActionNotAllowed):
+    with pytest.raises(ActionNotAllowedError):
         await cap_lock.set_instance_state(Context(), ACTION_STATE_ON)
     await cap_lock.set_instance_state(Context(), ACTION_STATE_OFF)
     assert len(lock_off_calls) == 1
 
     water_heater_on_calls = async_mock_service(hass, "water_heater", "turn_on")
-    with pytest.raises(ActionNotAllowed):
+    with pytest.raises(ActionNotAllowedError):
         await cap_water_heater.set_instance_state(Context(), ACTION_STATE_OFF)
     await cap_water_heater.set_instance_state(Context(), ACTION_STATE_ON)
     assert len(water_heater_on_calls) == 1
@@ -813,7 +813,7 @@ async def test_capability_onoff_water_heater_set_unsupported_op_mode(
 
 
 @pytest.mark.parametrize(
-    "domain, features",
+    ("domain", "features"),
     [
         (automation.DOMAIN, 0),
         (climate.DOMAIN, 0),

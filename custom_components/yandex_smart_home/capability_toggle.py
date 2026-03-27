@@ -1,6 +1,6 @@
 """Implement the Yandex Smart Home toggle capabilities."""
 
-from typing import Protocol
+from typing import Protocol, override
 
 from homeassistant.components import cover, fan, light, media_player, vacuum
 from homeassistant.components.cover import CoverEntityFeature
@@ -48,8 +48,6 @@ class ToggleCapability(Capability[ToggleCapabilityInstanceActionState], Protocol
 
 class StateToggleCapability(ToggleCapability, StateCapability[ToggleCapabilityInstanceActionState], Protocol):
     """Base class for a toggle capability based on the state."""
-
-    pass
 
 
 class BacklightCapability(StateToggleCapability):
@@ -169,6 +167,7 @@ class PauseCapabilityCover(ActionOnlyCapabilityMixin, StateToggleCapability):
         """Test if the capability is supported."""
         return self.state.domain == cover.DOMAIN and bool(self._state_features & CoverEntityFeature.STOP)
 
+    @override
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(
@@ -190,6 +189,7 @@ class PauseCapabilityLight(ActionOnlyCapabilityMixin, StateToggleCapability, Lig
         """Test if the capability is supported."""
         return self.state.domain == light.DOMAIN and self._solid_effect_supported
 
+    @override
     async def set_instance_state(self, context: Context, state: ToggleCapabilityInstanceActionState) -> None:
         """Change the capability state."""
         await self._hass.services.async_call(

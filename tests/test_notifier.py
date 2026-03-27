@@ -1,9 +1,9 @@
-import asyncio
+from collections.abc import Coroutine, Generator
 from datetime import timedelta
 import json
 import logging
 import time
-from typing import Any, Coroutine, Generator, cast
+from typing import Any, cast
 from unittest.mock import AsyncMock, patch
 
 from aiohttp.client_exceptions import ClientConnectionError
@@ -84,7 +84,7 @@ BASIC_CONFIG = NotifierConfig(user_id="bread", token="xyz", skill_id="a-b-c")
 
 
 @pytest.fixture(name="mock_call_later")
-def mock_call_later_fixture() -> Generator[AsyncMock, None, None]:
+def mock_call_later_fixture() -> Generator[AsyncMock]:
     with patch("custom_components.yandex_smart_home.notifier.async_call_later") as mock_call_later:
         yield mock_call_later
 
@@ -214,7 +214,7 @@ async def test_notifier_setup_no_linked_platforms(
     ],
 )
 async def test_notifier_lifecycle_link_platform_cloud(
-    hass: HomeAssistant, hass_admin_user: User, platforms: list[SmartHomePlatform], aioclient_mock: AiohttpClientMocker
+    hass: HomeAssistant, platforms: list[SmartHomePlatform], aioclient_mock: AiohttpClientMocker
 ) -> None:
     test_cloud.mock_client_session(hass, test_cloud.MockSession(aioclient_mock))
 
@@ -256,7 +256,7 @@ async def test_notifier_lifecycle_link_platform_cloud(
 
 
 @pytest.mark.parametrize(
-    "platform,supported",
+    ("platform", "supported"),
     [
         (SmartHomePlatform.YANDEX, True),
         (SmartHomePlatform.VK, False),
@@ -368,9 +368,7 @@ async def test_notifier_missing_skill_data_yandex(
     await hass.config_entries.async_unload(config_entry.entry_id)
 
 
-async def test_notifier_missing_skill_data_vk(
-    hass: HomeAssistant, hass_admin_user: User, issue_registry: ir.IssueRegistry
-) -> None:
+async def test_notifier_missing_skill_data_vk(hass: HomeAssistant, issue_registry: ir.IssueRegistry) -> None:
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         version=ConfigFlowHandler.VERSION,
@@ -528,7 +526,6 @@ async def test_notifier_track_templates(
     assert isinstance(pending["light.kitchen"][1], PressureCustomFloatProperty)
     assert pending["light.kitchen"][1].get_value() == 900.07
     assert pending["light.kitchen"][1].instance == "pressure"
-    print(pending["sensor.outside_temp"][0])
     assert isinstance(pending["sensor.outside_temp"][0], CO2LevelCustomFloatProperty)
     assert pending["sensor.outside_temp"][0].get_value() == 50
     assert pending["sensor.outside_temp"][0].instance == "co2_level"
@@ -565,7 +562,8 @@ async def test_notifier_track_templates(
     assert (
         caplog.messages[-1]
         == "State report with value 'fowl' scheduled for <CustomModeCapability device_id=sensor.outside_temp "
-        "instance=dishwashing value_template=Template<template=({{ states('sensor.dishwashing') }}) renders=0> value=one>"
+        "instance=dishwashing value_template=Template<template=({{ states('sensor.dishwashing') }}) "
+        "renders=0> value=one>"
     )
     await _async_set_state(hass, "sensor.dishwashing", "unavailable")
     assert notifier._pending.empty is True
@@ -599,7 +597,7 @@ async def test_notifier_track_templates(
 
 
 async def test_notifier_track_templates_exception(
-    hass_platform: HomeAssistant, mock_call_later: AsyncMock, caplog: pytest.LogCaptureFixture
+    hass_platform: HomeAssistant, caplog: pytest.LogCaptureFixture
 ) -> None:
     hass = hass_platform
     entry_data = MockConfigEntryData(
@@ -784,9 +782,7 @@ async def test_notifier_state_changed(
 
 
 @pytest.mark.parametrize("use_custom", [True, False])
-async def test_notifier_track_templates_over_states(
-    hass_platform: HomeAssistant, mock_call_later: AsyncMock, use_custom: bool
-) -> None:
+async def test_notifier_track_templates_over_states(hass_platform: HomeAssistant, use_custom: bool) -> None:
     hass = hass_platform
     test_light = cast(State, hass.states.get("light.kitchen"))
     test_sensor = cast(State, hass.states.get("sensor.outside_temp"))
@@ -907,9 +903,7 @@ async def test_notifier_initial_report(
     assert caplog.messages[-1:] == ["Unsupported entity binary_sensor.foo for temperature property of light.kitchen"]
 
 
-async def test_notifier_heartbeat_report(
-    hass_platform: HomeAssistant, mock_call_later: AsyncMock, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_notifier_heartbeat_report(hass_platform: HomeAssistant, mock_call_later: AsyncMock) -> None:
     entry_data = MockConfigEntryData(
         hass=hass_platform,
         entity_config={
@@ -977,10 +971,10 @@ async def test_notifier_send_callback_exception(
         caplog.clear()
         await notifier.async_send_discovery()
         assert caplog.records[-1].message == "State notification request failed: ClientConnectionError()"
-        assert caplog.records[-1].levelno == logging.WARN
+        assert caplog.records[-1].levelno == logging.WARNING
         caplog.clear()
 
-    with patch.object(notifier._session, "post", side_effect=asyncio.TimeoutError()):
+    with patch.object(notifier._session, "post", side_effect=TimeoutError()):
         await notifier.async_send_discovery()
         assert caplog.records[-1].message == "State notification request failed: TimeoutError()"
         assert caplog.records[-1].levelno == logging.DEBUG
@@ -1089,7 +1083,7 @@ async def test_notifier_send_direct(
 
 
 @pytest.mark.parametrize(
-    "platform,config",
+    ("platform", "config"),
     [
         (SmartHomePlatform.YANDEX, NotifierConfig(user_id="bread", token="xyz", platform=SmartHomePlatform.YANDEX)),
         (SmartHomePlatform.VK, NotifierConfig(user_id="bread", token="xyz", platform=SmartHomePlatform.VK)),
@@ -1204,7 +1198,6 @@ async def test_notifier_send_cloud(
 async def test_notifier_report_states(
     hass: HomeAssistant,
     entry_data: MockConfigEntryData,
-    mock_call_later: AsyncMock,
     aioclient_mock: AiohttpClientMocker,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -1354,7 +1347,7 @@ async def test_notifier_binary_event_property_check_value_change(
 
 
 @pytest.mark.parametrize(
-    "instance,v", [(EventPropertyInstance.BUTTON, "click"), (EventPropertyInstance.VIBRATION, "on")]
+    ("instance", "v"), [(EventPropertyInstance.BUTTON, "click"), (EventPropertyInstance.VIBRATION, "on")]
 )
 async def test_notifier_reactive_event_property_check_value_change(
     hass: HomeAssistant, entry_data: MockConfigEntryData, instance: str, v: str

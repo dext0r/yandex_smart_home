@@ -131,7 +131,7 @@ class CustomProperty(Property, Protocol):
         """Return the representation."""
         return (
             f"<{self.__class__.__name__}"
-            f" device_id={self.device_id }"
+            f" device_id={self.device_id}"
             f" instance={self.instance}"
             f" value_template={self._value_template}"
             f" value={self._value}"
@@ -407,7 +407,7 @@ def get_custom_property(
     if _is_event_platform_entity(config.get(CONF_ENTITY_PROPERTY_ENTITY)):
         return None
 
-    cls: type[CustomEventProperty] | type[CustomFloatProperty]
+    cls: type[CustomEventProperty | CustomFloatProperty]
     property_type: str = config[CONF_ENTITY_PROPERTY_TYPE]
     value_template = get_value_template(hass, device_id, config)
     vault_template_info = value_template.async_render_to_info()
@@ -475,9 +475,9 @@ def get_value_template(hass: HomeAssistant, device_id: str, property_config: Con
     attribute = property_config.get(CONF_ENTITY_PROPERTY_ATTRIBUTE)
 
     if attribute:
-        return Template("{{ state_attr('%s', '%s') }}" % (entity_id, attribute), hass)
+        return Template("{{ state_attr('%s', '%s') }}" % (entity_id, attribute), hass)  # noqa: UP031
 
-    return Template("{{ states('%s') }}" % entity_id, hass)
+    return Template("{{ states('%s') }}" % entity_id, hass)  # noqa: UP031
 
 
 def _is_event_platform_entity(entity_id: str | None) -> bool:

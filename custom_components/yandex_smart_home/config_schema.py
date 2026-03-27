@@ -83,23 +83,25 @@ def property_type(value: str) -> str:
         instance = value.split(".", 1)[1]
         try:
             EventPropertyInstance(instance)
-            return value
         except ValueError:
             raise vol.Invalid(
                 f"Event property type '{instance}' is not supported, "
                 f"see valid event types at https://docs.yaha-cloud.ru/v1.1.x/devices/sensor/event/#type"
             )
+        else:
+            return value
 
     if value.startswith(f"{PropertyInstanceType.FLOAT}."):
         instance = value.split(".", 1)[1]
         try:
             FloatPropertyInstance(instance)
-            return value
         except ValueError:
             raise vol.Invalid(
                 f"Float property type '{instance}' is not supported, "
                 f"see valid float types at https://docs.yaha-cloud.ru/v1.1.x/devices/sensor/float/#type"
             )
+        else:
+            return value
 
     for enum in [FloatPropertyInstance, EventPropertyInstance]:
         with suppress(ValueError):
@@ -181,9 +183,10 @@ def mode(value: str) -> str:
     for enum in [ModeCapabilityMode, ColorScene]:
         try:
             enum(value)
-            return value
         except ValueError:
             pass
+        else:
+            return value
 
     _LOGGER.error(
         f"Mode '{value}' is not supported, "

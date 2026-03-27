@@ -54,7 +54,6 @@ async def _process_repair_fix_flow(
 
 async def test_unexposed_entity_found_issue(
     hass: HomeAssistant,
-    config_entry_direct: MockConfigEntry,
     issue_registry: ir.IssueRegistry,
 ) -> None:
     entry_data = {CONF_CONNECTION_TYPE: ConnectionType.DIRECT, CONF_PLATFORM: SmartHomePlatform.YANDEX}
@@ -302,7 +301,7 @@ async def test_unexposed_entity_found_repair_label(
     assert light1_entity.name is None
     assert light1_entity.area_id is None
     assert len(light1_entity.labels) == 0
-    entity_registry.async_update_entity(light1_entity.entity_id, labels=set(["a", "b", "c"]))
+    entity_registry.async_update_entity(light1_entity.entity_id, labels={"a", "b", "c"})
 
     light2_entity = entity_registry.async_get("light.office_rgbw_lights")
     assert light2_entity

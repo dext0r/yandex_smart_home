@@ -166,11 +166,9 @@ class ConfigEntryData:
         if tasks:
             await asyncio.wait(tasks)
 
-        return None
-
     async def async_get_context_user_id(self) -> str | None:
         """Return user id for service calls (cloud connection only)."""
-        if user_id := self.entry.options.get(CONF_USER_ID):
+        if user_id := self.entry.options.get(CONF_USER_ID):  # noqa: SIM102
             if user := await self._hass.auth.async_get_user(user_id):
                 return user.id
 
@@ -280,7 +278,7 @@ class ConfigEntryData:
             return
 
         data = self.entry.data.copy()
-        data[CONF_LINKED_PLATFORMS] = data.get(CONF_LINKED_PLATFORMS, []) + [platform]
+        data[CONF_LINKED_PLATFORMS] = [*data.get(CONF_LINKED_PLATFORMS, []), platform]
 
         self._hass.config_entries.async_update_entry(self.entry, data=data)
 
@@ -302,11 +300,11 @@ class ConfigEntryData:
         issue_id = ISSUE_ID_PREFIX_UNEXPOSED_ENTITY_FOUND + self.entry.options[CONF_FILTER_SOURCE]
 
         formatted_entities: list[str] = []
-        for entity_id in sorted(self.unexposed_entities):
+        for unexposed_entity_id in sorted(self.unexposed_entities):
             if self.entry.options[CONF_FILTER_SOURCE] == EntityFilterSource.YAML:
-                formatted_entities.append(f"* `- {entity_id}`")
+                formatted_entities.append(f"* `- {unexposed_entity_id}`")
             else:
-                state = self._hass.states.get(entity_id) or State(entity_id, STATE_UNKNOWN)
+                state = self._hass.states.get(unexposed_entity_id) or State(unexposed_entity_id, STATE_UNKNOWN)
                 formatted_entities.append(f"* `{state.entity_id}` ({state.name})")
 
         ir.async_create_issue(
@@ -387,8 +385,6 @@ class ConfigEntryData:
 
         if self._notifiers:
             await asyncio.wait([asyncio.create_task(n.async_setup()) for n in self._notifiers])
-
-        return None
 
     async def _async_setup_cloud_connection(self) -> None:
         """Set up the cloud connection."""
