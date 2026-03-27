@@ -31,6 +31,6 @@
 
 !!! example "[Пример](https://github.com/dext0r/yandex_smart_home/blob/dev/tests/fixtures/valid-config.yaml) большого configuration.yaml"
 
-После изменений в `configuration.yaml` перезагрузите YAML конфигурацию Yandex Smart Home через `Панель разработчика` --> `YAML` --> `Перезагрузка конфигурации YAML`:
+После изменений в `configuration.yaml` перезагрузите YAML конфигурацию Yandex Smart Home через `Настройки` --> `Инструменты разработчика` --> `YAML` --> `Перезагрузка конфигурации YAML`:
 
 ![](../assets/images/config/reload-yaml.png){ width=750 }
