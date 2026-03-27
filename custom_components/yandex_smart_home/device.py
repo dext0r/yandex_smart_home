@@ -448,7 +448,8 @@ class Device:
             return str(name)
 
         if entity_entry:
-            if alias := self._get_entry_alias(entity_entry.aliases):
+            aliases: set[str] = set([alias for alias in (entity_entry.aliases or ()) if isinstance(alias, str)])
+            if alias := self._get_entry_alias(aliases):
                 return alias
 
         return self._state.name or self.id
@@ -466,10 +467,10 @@ class Device:
 
         return None
 
-    def _get_entry_alias(self, aliases: set[str] | None) -> str | None:
+    def _get_entry_alias(self, aliases: set[str]) -> str | None:
         """Return best matched entry alias."""
         filtered_aliases: set[str] = set()
-        for alias in aliases or []:
+        for alias in aliases:
             if "алиса:" in alias.lower():
                 filtered_aliases.add(alias.split(":", 1)[1].strip())
             elif self._entry_data.use_entry_aliases and re.search(r"^[а-яё0-9 ]+$", alias, flags=re.IGNORECASE):
