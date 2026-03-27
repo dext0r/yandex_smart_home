@@ -372,11 +372,13 @@ async def test_device_info(
     config_entry = MockConfigEntry(domain="test", data={})
     config_entry.add_to_hass(hass)
 
-    state = State("switch.test_1", STATE_ON)
     device_entry = device_registry.async_get_or_create(
-        manufacturer="Acme Inc.", identifiers={("test_1", "test_1")}, config_entry_id=config_entry.entry_id
+        manufacturer="Acme Inc.", identifiers={("switch", "test_1")}, config_entry_id=config_entry.entry_id
     )
-    entity_registry.async_get_or_create("switch", "test", "1", device_id=device_entry.id)
+    entity_test_1 = entity_registry.async_get_or_create(
+        "switch", "test", "test_1", device_id=device_entry.id, suggested_object_id="test_1"
+    )
+    state = State(entity_test_1.entity_id, STATE_ON)
     device = Device(hass, entry_data, state.entity_id, state)
     d = await device.describe()
     assert d
@@ -384,20 +386,17 @@ async def test_device_info(
     assert d.device_info
     assert d.device_info.as_dict() == {"model": "switch.test_1", "manufacturer": "Acme Inc."}
 
-    state = State("switch.test_2", STATE_ON)
     device_entry = device_registry.async_get_or_create(
         manufacturer="Acme Inc.",
         model="Ultra Switch",
         sw_version="57",
-        identifiers={("test_2", "test_2")},
+        identifiers={("switch", "test_2")},
         config_entry_id=config_entry.entry_id,
     )
-    entity_registry.async_get_or_create(
-        "switch",
-        "test",
-        "2",
-        device_id=device_entry.id,
+    entity_test_2 = entity_registry.async_get_or_create(
+        "switch", "test", "test_2", device_id=device_entry.id, suggested_object_id="test_2"
     )
+    state = State(entity_test_2.entity_id, STATE_ON)
     device = Device(hass, entry_data, state.entity_id, state)
     d = await device.describe()
     assert d
@@ -409,7 +408,6 @@ async def test_device_info(
         "sw_version": "57",
     }
 
-    state = State("switch.test_3", STATE_ON)
     device_entry = device_registry.async_get_or_create(
         manufacturer="Xiaomi Gateway 3",
         model="Ultra Switch",
@@ -417,12 +415,10 @@ async def test_device_info(
         identifiers={("test_3", "test_3")},
         config_entry_id=config_entry.entry_id,
     )
-    entity_registry.async_get_or_create(
-        "switch",
-        "test",
-        "3",
-        device_id=device_entry.id,
+    entity_test_3 = entity_registry.async_get_or_create(
+        "switch", "test", "test_3", device_id=device_entry.id, suggested_object_id="test_3"
     )
+    state = State(entity_test_3.entity_id, STATE_ON)
     device = Device(hass, entry_data, state.entity_id, state)
     d = await device.describe()
     assert d
