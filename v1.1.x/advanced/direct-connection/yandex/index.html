@@ -1856,7 +1856,7 @@
 <div class="admonition danger">
 <p class="admonition-title">Только для продвинутых пользователей!</p>
 </div>
-<p>Для использования прямого подключения вы самостоятельно создаёте приватный навык в Яндекс.Диалогах,
+<p>Для использования прямого подключения вы самостоятельно создаёте приватный навык в Яндекс Диалогах,
 который будет напрямую подключаться к вашему Home Assistant (не используя навык Yaha Cloud).</p>
 <h2 id="requirements">Предварительные требования<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ul>
@@ -1864,20 +1864,20 @@
   сторонние сервисы: <a href="https://github.com/AlexxIT/Dataplicity">Dataplicity</a>, <a href="https://keenetic.link">KeenDNS</a>. По этому же доменному имени Home Assistant должен быть доступен и из локальной сети.</li>
 <li>Настроенный HTTPS сертификат. При наличии белого IP адреса можно воспользоваться официальным аддоном Let's Encrypt.
   При использовании Dataplicity или KeenDNS HTTPS настраивается автоматически. Самоподписанные сертификаты работать не будут.</li>
-<li>Прописанный адрес Home Assistant в разделе <code>Настройки</code> &rarr; <code>Система</code> &rarr; <code>Сеть</code> &rarr; <code>URL-адрес сервера</code> &rarr; <code>Интернет</code> (для видимости раздела включите <code>Расширенный режим</code> в профиле пользователя) или в параметре <a href="https://www.home-assistant.io/integrations/homeassistant/#external_url"><code>external_url</code></a> в <code>configuration.yaml</code>.</li>
+<li>Прописанный адрес Home Assistant в разделе <code>Настройки</code> &rarr; <code>Система</code> &rarr; <code>Сеть</code> &rarr; <code>URL-адрес сервера</code> или в параметре <a href="https://www.home-assistant.io/integrations/homeassistant/#external_url"><code>external_url</code></a> в <code>configuration.yaml</code>.</li>
 <li>Перед добавлением интеграции обязательно <a href="#no-connection">проверьте доступность HA из интернета</a>.</li>
 </ul>
 <h2 id="config">Настройка<a class="headerlink" href="#config" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Установите <a href="../../../install/component/">компонент</a> и добавьте <a href="../../../install/integration/">интеграцию</a> используя прямой тип подключения</li>
 <li>
-<p>Зайдите на <a href="https://dialogs.yandex.ru/developer">dialogs.yandex.ru</a> и создайте диалог (навык) с типом "Умный дом".
+<p>Зайдите на <a href="https://dialogs.yandex.ru/developer/smart-home">dialogs.yandex.ru</a> и создайте навык Умного дома.
   Желательно это делать из под аккаунта, который планируется использовать для управления умным домом.
-  При необходимости доступ к навыку можно предоставить другим пользователям Яндекса (вкладка Доступ).</p>
-<p><a class="glightbox" href="../../../assets/images/direct-connection/dialog.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="" src="../../../assets/images/direct-connection/dialog.png" width="750" /></a></p>
+  При необходимости доступ к навыку можно предоставить другим пользователям Яндекса (раздел Доступ).</p>
+<p><a class="glightbox" href="../../../assets/images/direct-connection/skill.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="" src="../../../assets/images/direct-connection/skill.png" width="750" /></a></p>
 </li>
 <li>
-<p>Заполните параметры (вкладка <code>Настройки</code>):</p>
+<p>Заполните параметры (раздел <code>Основная информация</code>):</p>
 </li>
 </ul>
 <table>
@@ -1898,6 +1898,10 @@
 </tr>
 <tr>
 <td>Подключение устройств</td>
+<td>Любой текст</td>
+</tr>
+<tr>
+<td>Список поддерживаемых устройств</td>
 <td>Любой текст</td>
 </tr>
 <tr>
@@ -1923,7 +1927,8 @@
 </tbody>
 </table>
 <ul>
-<li>Заполните параметры (вкладка <code>Связка аккаунтов</code>):</li>
+<li>Нажмите кнопку <code>Сохранить</code> в начале страницы</li>
+<li>Заполните параметры (раздел <code>Связка аккаунтов</code>):</li>
 </ul>
 <table>
 <thead>
@@ -1956,7 +1961,8 @@
 </tbody>
 </table>
 <ul>
-<li>На вкладке <code>Настройки</code> <strong>обязательно нажмите</strong> <code>Опубликовать</code> (для приватных навыков публикация автоматическая и моментальная).
+<li>Нажмите кнопку <code>Сохранить</code> в начале страницы</li>
+<li>Перейдите в раздел <code>Основная информация</code> и <strong>нажмите</strong> <code>Опубликовать</code> (для приватных навыков публикация автоматическая и моментальная).
 В этот момент УДЯ попробует подключиться к вашему Home Assistant, и если у него не получится - появятся <a href="#validation-errors">ошибки валидации</a>.</li>
 </ul>
 <div class="admonition info">
@@ -1971,7 +1977,7 @@
 <ul>
 <li>Откройте приложение <a href="https://ya.cc/iot_app">Дом с Алисой</a></li>
 <li>Нажмите иконку <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32v144H48c-17.7 0-32 14.3-32 32s14.3 32 32 32h144v144c0 17.7 14.3 32 32 32s32-14.3 32-32V288h144c17.7 0 32-14.3 32-32s-14.3-32-32-32H256z"/></svg></span> в правом верхнем углу &rarr; <code>Устройство умного дома</code></li>
-<li>Найдите в списке и выберите производителя (ищите по названию <b>диалога (навыка)</b>, который создали ранее)<br>
+<li>Найдите в списке и выберите производителя (ищите по названию <b>навыка</b>, который создали ранее)<br>
   <a class="glightbox" href="../../../assets/images/direct-connection/add_dialog_home_assistant.jpg" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="" src="../../../assets/images/direct-connection/add_dialog_home_assistant.jpg" width="750" /></a></li>
 <li>Нажмите кнопку <code>Привязать к Яндексу</code>, откроется страница авторизации Home Assistant. Рекомендуется создать отдельного пользователя
   специально для УДЯ и авторизоваться под ним. В этом случае в журнале событий будет видно, когда устройством управлял Яндекс.</li>
@@ -2004,7 +2010,7 @@
 </ol>
 <h3 id="dups">Появляются дубли устройств<a class="headerlink" href="#dups" title="Permanent link">&para;</a></h3>
 <p>Скорее всего часть устройств были добавлены в <code>Черновик</code> навыка.
-Удалите их оттуда вручную через <a href="https://dialogs.yandex.ru/developer">dialogs.yandex.ru/developer</a> (вкладка <code>Тестирование</code>).</p>
+Удалите их оттуда вручную через в <a href="https://dialogs.yandex.ru/developer/smart-home">настройках</a> навыка (вкладка <code>Тестирование</code>).</p>
 <h3 id="validation-errors">Ошибки при публикации навыка<a class="headerlink" href="#validation-errors" title="Permanent link">&para;</a></h3>
 <p>При публикации навыка кнопкой <code>Опубликовать</code> могут появляться ошибки валидации.
 Подробнее об ошибке можно узнать, нажав на стрелочку вниз в правом верхнем углу ошибки.</p>
