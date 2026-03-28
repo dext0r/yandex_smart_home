@@ -11,7 +11,7 @@
 
 ## Где найти entity_id объекта? { id=get-entity-id }
 
-1. На странице `Настройки` --> `Устройства и службы` --> [`Объекты`](https://my.home-assistant.io/redirect/entities/):<br>
+1. На странице `Настройки` --> `Устройства и службы` --> [`Объекты`](https://my.home-assistant.io/redirect/entities/) (включите отображение столбца `Идентификатор объекта` через иконку настроек):<br>
     ![](assets/images/faq/entity-id-1.png){ width=750 }
 2. При клике на любом объекте на странице устройства: `Настройка` --> `Устройства и службы` --> [`Устройства`](https://my.home-assistant.io/redirect/devices/) --> Выбрать устройство:<br>
     ![](assets/images/faq/entity-id-2.png){ width=750 }
