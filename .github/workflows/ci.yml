@@ -42,6 +42,9 @@ jobs:
           - tox-env: 2026_3
             python: 3.14
             latest: true
+
+          - tox-env: 2026_4
+            python: 3.14
     steps:
       - uses: actions/checkout@v4
 
