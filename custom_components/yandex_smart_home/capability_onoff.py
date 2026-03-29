@@ -1,6 +1,7 @@
 """Implement the Yandex Smart Home on_off capability."""
 
 from abc import ABC, abstractmethod
+from functools import cached_property
 from typing import Protocol, override
 
 from homeassistant.components import (
@@ -438,7 +439,7 @@ class OnOffCapabilityClimate(OnOffCapability):
     @property
     def supported(self) -> bool:
         """Test if the capability is supported."""
-        return self.state.domain == climate.DOMAIN
+        return self.state.domain == climate.DOMAIN and len(self._hvac_modes) > 1
 
     def _is_on(self) -> bool:
         """Return true if capability is on."""
@@ -451,9 +452,8 @@ class OnOffCapabilityClimate(OnOffCapability):
         if state.value:
             service = SERVICE_TURN_ON
 
-            hvac_modes = self.state.attributes.get(climate.ATTR_HVAC_MODES) or []
             for mode in (HVACMode.HEAT_COOL, HVACMode.AUTO):
-                if mode not in hvac_modes:
+                if mode not in self._hvac_modes:
                     continue
 
                 service_data[climate.ATTR_HVAC_MODE] = mode
@@ -465,6 +465,11 @@ class OnOffCapabilityClimate(OnOffCapability):
         await self._hass.services.async_call(
             climate.DOMAIN, service, service_data, blocking=self._wait_for_service_call, context=context
         )
+
+    @cached_property
+    def _hvac_modes(self) -> list[HVACMode]:
+        """Return the list of available HVAC modes."""
+        return self.state.attributes.get(climate.ATTR_HVAC_MODES) or []
 
 
 class OnOffCapabilityWaterHeater(OnOffCapability):

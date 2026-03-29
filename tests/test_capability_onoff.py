@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 from homeassistant.components import (
     automation,
@@ -506,11 +506,15 @@ async def test_capability_onoff_vacuum_turn_off(
 
 
 async def test_capability_onoff_climate(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state_media = State("climate.test", STATE_ON, {climate.ATTR_HVAC_MODES: [HVACMode.HEAT]})
+    assert_no_capabilities(hass, entry_data, state_media, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
+
+    attributes = {climate.ATTR_HVAC_MODES: [HVACMode.OFF, HVACMode.HEAT]}
     for s in climate.HVAC_MODES:
         if s == HVACMode.OFF:
             continue
 
-        state = State("climate.test", s)
+        state = State("climate.test", s, attributes)
         cap = cast(
             OnOffCapability,
             get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
@@ -519,7 +523,7 @@ async def test_capability_onoff_climate(hass: HomeAssistant, entry_data: MockCon
         assert cap.retrievable is True
         assert cap.parameters is None
 
-    state = State("climate.test", STATE_OFF)
+    state = State("climate.test", STATE_OFF, attributes)
     cap = cast(
         OnOffCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
@@ -532,7 +536,7 @@ async def test_capability_onoff_climate(hass: HomeAssistant, entry_data: MockCon
     assert off_calls[0].data == {ATTR_ENTITY_ID: state.entity_id}
 
     entry_data = MockConfigEntryData(hass, entity_config={"climate.test": {CONF_STATE_UNKNOWN: True}})
-    state = State("climate.test", STATE_ON)
+    state = State("climate.test", STATE_ON, attributes)
     cap = cast(
         OnOffCapability,
         get_exact_one_capability(hass, entry_data, state, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
@@ -545,8 +549,6 @@ async def test_capability_onoff_climate(hass: HomeAssistant, entry_data: MockCon
 @pytest.mark.parametrize(
     ("hvac_modes", "service", "service_hvac_mode"),
     [
-        ([], SERVICE_TURN_ON, None),
-        ([HVACMode.COOL], SERVICE_TURN_ON, None),
         ([HVACMode.AUTO, HVACMode.COOL], climate.SERVICE_SET_HVAC_MODE, HVACMode.AUTO),
         (
             [HVACMode.HEAT_COOL, HVACMode.COOL],
@@ -833,13 +835,17 @@ async def test_capability_onoff_water_heater_set_unsupported_op_mode(
 def test_capability_onoff_invalid_state(
     hass: HomeAssistant, entry_data: MockConfigEntryData, domain: str, features: int
 ) -> None:
+    attributes: dict[str, Any] = {ATTR_SUPPORTED_FEATURES: features}
+    if domain == climate.DOMAIN:
+        attributes[climate.ATTR_HVAC_MODES] = [HVACMode.OFF, HVACMode.COOL]
+
     for state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
         cap = cast(
             OnOffCapability,
             get_exact_one_capability(
                 hass,
                 entry_data,
-                State(f"{domain}.test", state, {ATTR_SUPPORTED_FEATURES: features}),
+                State(f"{domain}.test", state, attributes),
                 CapabilityType.ON_OFF,
                 OnOffCapabilityInstance.ON,
             ),
@@ -851,7 +857,7 @@ def test_capability_onoff_invalid_state(
         get_exact_one_capability(
             hass,
             entry_data,
-            State(f"{domain}.test", STATE_OFF, {ATTR_SUPPORTED_FEATURES: features}),
+            State(f"{domain}.test", STATE_OFF, attributes),
             CapabilityType.ON_OFF,
             OnOffCapabilityInstance.ON,
         ),
