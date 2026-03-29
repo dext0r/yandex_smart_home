@@ -63,6 +63,20 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_CONFIG_ENTRY_TITLE = "Yandex Smart Home"
 PRE_V1_DIRECT_CONFIG_ENTRY_TITLE = "YSH: Direct"  # TODO: remove after v1.1 release
 USER_NONE = "none"
+APPS_URLS = {
+    "ya_iot_app_url": "https://ya.cc/iot_app",
+    "vk_marusia_app_url": "https://trk.mail.ru/c/u2dc49",
+}
+YANDEX_SKILL_URLS = {
+    "dialogs_url": "https://dialogs.yandex.ru/developer/smart-home",
+    "social_url": "https://social.yandex.net/",
+    "oauth_authorize_url": "https://oauth.yandex.ru/authorize?response_type=token&client_id=c473ca268cd749d3a8371351a8f2bcbd",
+    "skill_icon_url": "https://community-assets.home-assistant.io/original/3X/6/a/6a99ebb8d0b585a00b407123ff76964cb3e18780.png",
+}
+VK_SKILL_URLS = {
+    "vk_platform_url": "https://platform.vk.com",
+    "vc_url": "https://vc.go.mail.ru",
+}
 
 
 class MaintenanceAction(StrEnum):
@@ -126,6 +140,12 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
         """Choose skill settings for direct connection."""
         errors = {}
         description_placeholders = {"external_url": self._get_external_url(), "docs_url": DOCS_URL}
+        match platform:
+            case SmartHomePlatform.YANDEX:
+                description_placeholders.update(YANDEX_SKILL_URLS)
+            case SmartHomePlatform.VK:
+                description_placeholders.update(VK_SKILL_URLS)
+
         entry_skill = self._options.get(CONF_SKILL, {})
 
         if DOMAIN not in self.hass.data:
@@ -211,6 +231,12 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
             "instance_id": self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
             "docs_url": DOCS_URL,
         }
+        match platform:
+            case SmartHomePlatform.YANDEX:
+                description_placeholders.update(YANDEX_SKILL_URLS)
+            case SmartHomePlatform.VK:
+                description_placeholders.update(VK_SKILL_URLS)
+
         entry_skill = self._options.get(CONF_SKILL, {})
 
         if user_input is not None:
@@ -433,7 +459,13 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
         try:
             return network.get_url(self.hass, allow_internal=False)
         except network.NoURLAvailableError:
-            raise AbortFlow("missing_external_url")
+            raise AbortFlow(
+                "missing_external_url",
+                description_placeholders={
+                    "my_redirect_network_url": "https://my.home-assistant.io/redirect/network/",
+                    "external_url_docs_url": "https://www.home-assistant.io/integrations/homeassistant/#external_url",
+                },
+            )
 
 
 class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
@@ -452,7 +484,13 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return await self.async_step_connection_type()
 
-        return self.async_show_form(step_id="user", description_placeholders={"docs_url": DOCS_URL})
+        return self.async_show_form(
+            step_id="user",
+            description_placeholders={
+                "docs_url": DOCS_URL,
+                "tg_chat_url": "https://t.me/yandex_smart_home",
+            },
+        )
 
     async def async_step_connection_type(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose connection type."""
@@ -487,7 +525,10 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
                 {vol.Required(CONF_CONNECTION_TYPE, default=ConnectionType.CLOUD): CONNECTION_TYPE_SELECTOR}
             ),
             errors=errors,
-            description_placeholders={"docs_url": DOCS_URL},
+            description_placeholders={
+                "docs_url": DOCS_URL,
+                "yaha_cloud_skill_url": "https://dialogs.yandex.ru/store/skills/cef326b2-home-assistant",
+            },
         )
 
     async def async_step_platform_direct(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
@@ -538,6 +579,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         description = self._data[CONF_CONNECTION_TYPE]
         description_placeholders: dict[str, str] = self._data.get(CONF_CLOUD_INSTANCE, {}).copy()
         description_placeholders["docs_url"] = DOCS_URL
+        description_placeholders.update(APPS_URLS)
 
         if self._data[CONF_CONNECTION_TYPE] in (ConnectionType.DIRECT, ConnectionType.CLOUD_PLUS):
             description += f"_{self._data[CONF_PLATFORM]}"
@@ -607,6 +649,7 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
             CONF_CLOUD_INSTANCE_ID: self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
             CONF_CLOUD_INSTANCE_PASSWORD: self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_PASSWORD],
             CONF_CLOUD_INSTANCE_OTP: "-",
+            **APPS_URLS,
         }
         if self._data[CONF_CONNECTION_TYPE] == ConnectionType.CLOUD_PLUS:
             description_placeholders[CONF_SKILL] = self._options[CONF_SKILL][CONF_NAME]
