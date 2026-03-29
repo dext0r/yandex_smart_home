@@ -1,14 +1,13 @@
 {
   "domain": "yandex_smart_home",
   "name": "Yandex Smart Home",
+  "after_dependencies": ["local_calendar"],
+  "codeowners": ["@dext0r"],
   "config_flow": true,
+  "dependencies": ["http"],
   "documentation": "https://docs.yaha-cloud.ru/v1.1.x/",
+  "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/dext0r/yandex_smart_home/issues",
   "requirements": [],
-  "after_dependencies": ["local_calendar"],
-  "iot_class": "cloud_polling",
-  "type": "service",
-  "dependencies": ["http"],
-  "codeowners": ["@dext0r"],
   "version": "1.1.1.dev0"
 }

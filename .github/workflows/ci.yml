@@ -76,7 +76,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   validate:
-    name: Validate for HACS
+    name: Validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -85,3 +85,6 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+
+      - name: hassfest validaton
+        uses: home-assistant/actions/hassfest@master
