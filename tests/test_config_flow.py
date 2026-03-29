@@ -40,6 +40,7 @@ from custom_components.yandex_smart_home.const import (
     CONF_LINKED_PLATFORMS,
     CONF_SKILL,
     CONF_USER_ID,
+    DOCS_URL,
     ConnectionType,
     EntityFilterSource,
 )
@@ -111,7 +112,7 @@ async def _async_forward_to_step_skill_direct(hass: HomeAssistant, platform: Sma
     result4 = await hass.config_entries.flow.async_configure(result["flow_id"], {CONF_PLATFORM: platform})
     assert result4["type"] == FlowResultType.FORM
     assert result4["step_id"] == f"skill_{platform}_direct"
-    assert result4["description_placeholders"] == {"external_url": "https://example.com"}
+    assert result4["description_placeholders"] == {"external_url": "https://example.com", "docs_url": DOCS_URL}
     return result4
 
 
@@ -353,6 +354,7 @@ async def test_config_flow_cloud(hass: HomeAssistant, aioclient_mock: AiohttpCli
             "password": "simple",
             "token": "foo",
             "otp": "-",
+            "docs_url": DOCS_URL,
         }
 
     else:
@@ -361,6 +363,7 @@ async def test_config_flow_cloud(hass: HomeAssistant, aioclient_mock: AiohttpCli
             "password": "simple",
             "token": "foo",
             "otp": "654123",
+            "docs_url": DOCS_URL,
         }
 
     assert result7["data"] == {
@@ -422,7 +425,11 @@ async def test_config_flow_cloud_plus(
 
     assert result6["type"] == FlowResultType.FORM
     assert result6["step_id"] == f"skill_{platform}_cloud_plus"
-    assert result6["description_placeholders"] == {"cloud_base_url": CLOUD_BASE_URL, "instance_id": "1234567890"}
+    assert result6["description_placeholders"] == {
+        "cloud_base_url": CLOUD_BASE_URL,
+        "instance_id": "1234567890",
+        "docs_url": DOCS_URL,
+    }
     assert aioclient_mock.mock_calls[0][2] == {"platform": platform}
 
     if platform == SmartHomePlatform.VK:
@@ -479,6 +486,7 @@ async def test_config_flow_cloud_plus(
             "password": "simple",
             "token": "foo",
             "otp": "-",
+            "docs_url": DOCS_URL,
         }
     else:
         assert result9["description_placeholders"] == {
@@ -487,6 +495,7 @@ async def test_config_flow_cloud_plus(
             "password": "simple",
             "token": "foo",
             "otp": "654123",
+            "docs_url": DOCS_URL,
         }
 
     assert result9["data"] == {
@@ -1232,7 +1241,7 @@ async def test_options_flow_skill_yandex_direct(
     )
     assert result2["type"] == FlowResultType.FORM
     assert result2["step_id"] == "skill_yandex_direct"
-    assert result2["description_placeholders"] == {"external_url": "https://example.com"}
+    assert result2["description_placeholders"] == {"external_url": "https://example.com", "docs_url": DOCS_URL}
 
     result3 = await hass.config_entries.options.async_configure(result2["flow_id"], user_input=skill)
     assert result3["type"] == FlowResultType.FORM
@@ -1316,7 +1325,7 @@ async def test_options_flow_skill_vk_direct(
     )
     assert result2["type"] == FlowResultType.FORM
     assert result2["step_id"] == "skill_vk_direct"
-    assert result2["description_placeholders"] == {"external_url": "https://example.com"}
+    assert result2["description_placeholders"] == {"external_url": "https://example.com", "docs_url": DOCS_URL}
 
     result3 = await hass.config_entries.options.async_configure(result2["flow_id"], user_input=skill)
     assert result3["type"] == FlowResultType.FORM
@@ -1382,7 +1391,11 @@ async def test_options_flow_skill_yandex_cloud_plus(
     )
     assert result2["type"] == FlowResultType.FORM
     assert result2["step_id"] == "skill_yandex_cloud_plus"
-    assert result2["description_placeholders"] == {"cloud_base_url": CLOUD_BASE_URL, "instance_id": "test"}
+    assert result2["description_placeholders"] == {
+        "cloud_base_url": CLOUD_BASE_URL,
+        "instance_id": "test",
+        "docs_url": DOCS_URL,
+    }
 
     if attr_to_change == CONF_ID:
         skill[CONF_ID] = SKILL_ID_ALT
@@ -1435,7 +1448,11 @@ async def test_options_flow_skill_vk_cloud_plus(hass: HomeAssistant, attr_to_cha
     )
     assert result2["type"] == FlowResultType.FORM
     assert result2["step_id"] == "skill_vk_cloud_plus"
-    assert result2["description_placeholders"] == {"cloud_base_url": CLOUD_BASE_URL, "instance_id": "test"}
+    assert result2["description_placeholders"] == {
+        "cloud_base_url": CLOUD_BASE_URL,
+        "instance_id": "test",
+        "docs_url": DOCS_URL,
+    }
 
     skill[attr_to_change] += "bar"
 
@@ -1524,7 +1541,10 @@ async def test_options_flow_maintenance_cloud_revoke_tokens(
     assert result2["type"] == FlowResultType.FORM
     assert result2["step_id"] == "maintenance"
     assert result2["errors"] == {"revoke_oauth_tokens": "unknown"}
-    assert result2["description_placeholders"] == {"error": "401, message='', url='http://example.com'"}
+    assert result2["description_placeholders"] == {
+        "error": "401, message='', url='http://example.com'",
+        "docs_url": DOCS_URL,
+    }
 
     aioclient_mock.clear_requests()
     aioclient_mock.post(f"{cloud.BASE_API_URL}/instance/test/oauth/revoke-all", status=200)
@@ -1553,7 +1573,10 @@ async def test_options_flow_maintenance_cloud_reset_token(
     assert result2["type"] == FlowResultType.FORM
     assert result2["step_id"] == "maintenance"
     assert result2["errors"] == {"reset_cloud_instance_connection_token": "unknown"}
-    assert result2["description_placeholders"] == {"error": "401, message='', url='http://example.com'"}
+    assert result2["description_placeholders"] == {
+        "error": "401, message='', url='http://example.com'",
+        "docs_url": DOCS_URL,
+    }
 
     aioclient_mock.clear_requests()
     aioclient_mock.post(

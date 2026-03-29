@@ -24,6 +24,7 @@ from custom_components.yandex_smart_home.const import (
     CONF_FILTER,
     CONF_FILTER_SOURCE,
     CONF_LABEL,
+    DOCS_URL,
     ConnectionType,
     EntityFilterSource,
 )
@@ -140,7 +141,11 @@ async def test_unexposed_entity_found_issue(
     i = issue_registry.async_get_issue(DOMAIN, "unexposed_entity_found_config_entry")
     assert i is not None
     assert i.is_fixable
-    assert i.translation_placeholders == {"entry_title": "Config Flow", "entities": "* `switch.foo` (foo)"}
+    assert i.translation_placeholders == {
+        "entry_title": "Config Flow",
+        "entities": "* `switch.foo` (foo)",
+        "docs_url": DOCS_URL,
+    }
 
     await handlers.async_devices_action(hass, req_config_flow, payload_action)
     assert len(issue_registry.issues) == 1
@@ -149,6 +154,7 @@ async def test_unexposed_entity_found_issue(
     assert i.translation_placeholders == {
         "entry_title": "Config Flow",
         "entities": "* `switch.bar` (Bar Test Switch)\n* `switch.foo` (foo)",
+        "docs_url": DOCS_URL,
     }
 
     # label
@@ -157,7 +163,11 @@ async def test_unexposed_entity_found_issue(
     i = issue_registry.async_get_issue(DOMAIN, "unexposed_entity_found_label")
     assert i is not None
     assert i.is_fixable
-    assert i.translation_placeholders == {"entry_title": "Label", "entities": "* `switch.foo` (foo)"}
+    assert i.translation_placeholders == {
+        "entry_title": "Label",
+        "entities": "* `switch.foo` (foo)",
+        "docs_url": DOCS_URL,
+    }
 
     await handlers.async_devices_action(hass, req_label, payload_action)
     assert len(issue_registry.issues) == 2
@@ -166,6 +176,7 @@ async def test_unexposed_entity_found_issue(
     assert i.translation_placeholders == {
         "entry_title": "Label",
         "entities": "* `switch.bar` (Bar Test Switch)\n* `switch.foo` (foo)",
+        "docs_url": DOCS_URL,
     }
 
     # yaml
@@ -174,7 +185,11 @@ async def test_unexposed_entity_found_issue(
     i = issue_registry.async_get_issue(DOMAIN, "unexposed_entity_found_yaml")
     assert i is not None
     assert not i.is_fixable
-    assert i.translation_placeholders == {"entry_title": "YAML", "entities": "* `- switch.foo`"}
+    assert i.translation_placeholders == {
+        "entry_title": "YAML",
+        "entities": "* `- switch.foo`",
+        "docs_url": DOCS_URL,
+    }
 
     await handlers.async_devices_action(hass, req_yaml, payload_action)
     assert len(issue_registry.issues) == 3
@@ -183,6 +198,7 @@ async def test_unexposed_entity_found_issue(
     assert i.translation_placeholders == {
         "entry_title": "YAML",
         "entities": "* `- switch.bar`\n* `- switch.foo`",
+        "docs_url": DOCS_URL,
     }
 
     await hass.config_entries.async_unload(entry_config_flow.entry_id)

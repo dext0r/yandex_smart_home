@@ -50,6 +50,7 @@ from .const import (
     CONF_SETTINGS,
     CONF_SKILL,
     CONF_USER_ID,
+    DOCS_URL,
     DOMAIN,
     ISSUE_ID_DEPRECATED_PRESSURE_UNIT,
     ISSUE_ID_DEPRECATED_YAML_NOTIFIER,
@@ -135,7 +136,8 @@ class ConfigEntryData:
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=ISSUE_ID_DEPRECATED_PRESSURE_UNIT,
-                learn_more_url="https://docs.yaha-cloud.ru/v1.1.x/devices/sensor/float/#unit-conversion",
+                translation_placeholders={"docs_url": DOCS_URL},
+                learn_more_url=f"{DOCS_URL}/devices/sensor/float/#unit-conversion",
             )
         else:
             ir.async_delete_issue(self._hass, DOMAIN, "deprecated_pressure_unit")
@@ -149,7 +151,8 @@ class ConfigEntryData:
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=issue_id,
-                learn_more_url="https://docs.yaha-cloud.ru/v1.1.x/breaking-changes/#v1-notifier",
+                translation_placeholders={"docs_url": DOCS_URL},
+                learn_more_url=f"{DOCS_URL}/breaking-changes/#v1-notifier",
             )
         else:
             ir.async_delete_issue(self._hass, DOMAIN, ISSUE_ID_DEPRECATED_YAML_NOTIFIER)
@@ -319,8 +322,9 @@ class ConfigEntryData:
             translation_placeholders={
                 "entry_title": self.entry.title,
                 "entities": "\n".join(formatted_entities),
+                "docs_url": DOCS_URL,
             },
-            learn_more_url="https://docs.yaha-cloud.ru/v1.1.x/config/filter/",
+            learn_more_url=f"{DOCS_URL}/config/filter/",
         )
 
     async def _async_setup_notifiers(self, *_: Any) -> None:

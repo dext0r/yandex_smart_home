@@ -3,6 +3,7 @@
 from enum import StrEnum
 
 DOMAIN = "yandex_smart_home"
+DOCS_URL = "https://docs.yaha-cloud.ru/v1.1.x"
 
 CONF_SETTINGS = "settings"
 CONF_PRESSURE_UNIT = "pressure_unit"

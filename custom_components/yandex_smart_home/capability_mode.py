@@ -19,7 +19,7 @@ from homeassistant.core import Context
 from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item
 
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
-from .const import CONF_ENTITY_MODE_MAP, CONF_FEATURES, STATE_NONE, MediaPlayerFeature
+from .const import CONF_ENTITY_MODE_MAP, CONF_FEATURES, DOCS_URL, STATE_NONE, MediaPlayerFeature
 from .helpers import APIError
 from .schema import (
     CapabilityType,
@@ -237,7 +237,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                     _LOGGER.warning(
                         f"Failed to get Yandex mode for mode '{ha_mode}' for {self}. "
                         f"It may cause inconsistencies between Yandex and HA. "
-                        f"See https://docs.yaha-cloud.ru/v1.1.x/config/modes/"
+                        f"See {DOCS_URL}/config/modes/"
                     )
 
         return mode
@@ -260,7 +260,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
 
         raise APIError(
             ResponseCode.INVALID_VALUE,
-            f"Unsupported mode '{yandex_mode}' for {self}, see https://docs.yaha-cloud.ru/v1.1.x/config/modes/",
+            f"Unsupported mode '{yandex_mode}' for {self}, see {DOCS_URL}/config/modes/",
         )
 
     @abstractmethod
@@ -915,7 +915,7 @@ class FanSpeedCapabilityFanViaPercentage(FanSpeedCapability):
             if not ha_modes:
                 raise APIError(
                     ResponseCode.INVALID_VALUE,
-                    f"Unsupported mode '{state.value}' for {self}, see https://docs.yaha-cloud.ru/v1.1.x/config/modes/",
+                    f"Unsupported mode '{state.value}' for {self}, see {DOCS_URL}/config/modes/",
                 )
 
             ha_mode = self._convert_mapping_speed_value(ha_modes[0])

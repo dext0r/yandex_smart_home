@@ -34,7 +34,7 @@ from custom_components.yandex_smart_home.capability_color import (
     RGBColorCapability,
 )
 from custom_components.yandex_smart_home.color import ColorConverter, ColorName, rgb_to_int
-from custom_components.yandex_smart_home.const import CONF_COLOR_PROFILE, CONF_ENTITY_MODE_MAP
+from custom_components.yandex_smart_home.const import CONF_COLOR_PROFILE, CONF_ENTITY_MODE_MAP, DOCS_URL
 from custom_components.yandex_smart_home.entry_data import ConfigEntryData
 from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
@@ -917,6 +917,6 @@ async def test_capability_color_setting_scene(hass: HomeAssistant, entry_data: M
         await cap_scene.set_instance_state(Context(), SceneInstanceActionState(value=ColorScene("sunset")))
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert (
-        e.value.message == "Unsupported scene 'sunset' for instance scene of color_setting capability of light.test, "
-        "see https://docs.yaha-cloud.ru/v1.1.x/config/modes/"
+        e.value.message == f"Unsupported scene 'sunset' for instance scene of color_setting capability of light.test, "
+        f"see {DOCS_URL}/config/modes/"
     )

@@ -27,7 +27,7 @@ from homeassistant.util.color import RGBColor
 
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
 from .color import SOLID_LIGHT_EFFECT, ColorConverter, ColorTemperatureConverter, LightState
-from .const import CONF_COLOR_PROFILE, CONF_ENTITY_CUSTOM_MODES, CONF_ENTITY_MODE_MAP
+from .const import CONF_COLOR_PROFILE, CONF_ENTITY_CUSTOM_MODES, CONF_ENTITY_MODE_MAP, DOCS_URL
 from .helpers import APIError
 from .schema import (
     CapabilityInstance,
@@ -360,7 +360,7 @@ class ColorSceneCapability(Capability[SceneInstanceActionState]):
 
         raise APIError(
             ResponseCode.INVALID_VALUE,
-            f"Unsupported scene '{yandex_scene}' for {self}, see https://docs.yaha-cloud.ru/v1.1.x/config/modes/",
+            f"Unsupported scene '{yandex_scene}' for {self}, see {DOCS_URL}/config/modes/",
         )
 
     def get_description(self) -> None:

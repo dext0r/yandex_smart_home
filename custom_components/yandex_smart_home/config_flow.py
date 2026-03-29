@@ -46,6 +46,7 @@ from .const import (
     CONF_LINKED_PLATFORMS,
     CONF_SKILL,
     CONF_USER_ID,
+    DOCS_URL,
     ConnectionType,
     EntityFilterSource,
 )
@@ -124,7 +125,7 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
     ) -> ConfigFlowResult:
         """Choose skill settings for direct connection."""
         errors = {}
-        description_placeholders = {"external_url": self._get_external_url()}
+        description_placeholders = {"external_url": self._get_external_url(), "docs_url": DOCS_URL}
         entry_skill = self._options.get(CONF_SKILL, {})
 
         if DOMAIN not in self.hass.data:
@@ -208,6 +209,7 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
         description_placeholders = {
             "cloud_base_url": CLOUD_BASE_URL,
             "instance_id": self._data[CONF_CLOUD_INSTANCE][CONF_CLOUD_INSTANCE_ID],
+            "docs_url": DOCS_URL,
         }
         entry_skill = self._options.get(CONF_SKILL, {})
 
@@ -303,6 +305,7 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
                     ): BooleanSelector(),
                 }
             ),
+            description_placeholders={"docs_url": DOCS_URL},
         )
 
     async def async_step_update_filter(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
@@ -384,6 +387,7 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
                 }
             ),
             errors=errors,
+            description_placeholders={"docs_url": DOCS_URL},
         )
 
     async def async_step_choose_label(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
@@ -401,6 +405,7 @@ class BaseFlowHandler(FlowHandler["ConfigFlowContext", ConfigFlowResult]):
                     )
                 }
             ),
+            description_placeholders={"docs_url": DOCS_URL},
         )
 
     async def async_step_done(self, _: ConfigType | None = None) -> ConfigFlowResult:
@@ -447,7 +452,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return await self.async_step_connection_type()
 
-        return self.async_show_form(step_id="user")
+        return self.async_show_form(step_id="user", description_placeholders={"docs_url": DOCS_URL})
 
     async def async_step_connection_type(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Choose connection type."""
@@ -482,6 +487,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
                 {vol.Required(CONF_CONNECTION_TYPE, default=ConnectionType.CLOUD): CONNECTION_TYPE_SELECTOR}
             ),
             errors=errors,
+            description_placeholders={"docs_url": DOCS_URL},
         )
 
     async def async_step_platform_direct(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
@@ -493,7 +499,10 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="platform_direct",
-            description_placeholders={"external_url": self._get_external_url()},
+            description_placeholders={
+                "external_url": self._get_external_url(),
+                "docs_url": DOCS_URL,
+            },
             data_schema=vol.Schema({vol.Required(CONF_PLATFORM): PLATFORM_SELECTOR}),
         )
 
@@ -528,6 +537,7 @@ class ConfigFlowHandler(BaseFlowHandler, ConfigFlow, domain=DOMAIN):
         """Finish the flow."""
         description = self._data[CONF_CONNECTION_TYPE]
         description_placeholders: dict[str, str] = self._data.get(CONF_CLOUD_INSTANCE, {}).copy()
+        description_placeholders["docs_url"] = DOCS_URL
 
         if self._data[CONF_CONNECTION_TYPE] in (ConnectionType.DIRECT, ConnectionType.CLOUD_PLUS):
             description += f"_{self._data[CONF_PLATFORM]}"
@@ -639,7 +649,7 @@ class OptionsFlowHandler(OptionsFlow, BaseFlowHandler):
     async def async_step_maintenance(self, user_input: ConfigType | None = None) -> ConfigFlowResult:
         """Show maintenance actions."""
         errors: dict[str, str] = {}
-        description_placeholders = {}
+        description_placeholders = {"docs_url": DOCS_URL}
 
         component: YandexSmartHome = self.hass.data[DOMAIN]
         entity_filter = component.get_entity_filter_from_yaml()

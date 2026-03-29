@@ -20,7 +20,7 @@ from custom_components.yandex_smart_home.capability_mode import (
     StateModeCapability,
     SwingCapability,
 )
-from custom_components.yandex_smart_home.const import CONF_ENTITY_MODE_MAP
+from custom_components.yandex_smart_home.const import CONF_ENTITY_MODE_MAP, DOCS_URL
 from custom_components.yandex_smart_home.helpers import APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -106,9 +106,9 @@ async def test_capability_mode_auto_mapping(
     assert len(caplog.records) == 1
     for record in caplog.records:
         assert record.message == (
-            "Failed to get Yandex mode for mode 'mode_5' for instance swing of mode "
-            "capability of switch.test. It may cause inconsistencies between Yandex and "
-            "HA. See https://docs.yaha-cloud.ru/v1.1.x/config/modes/"
+            f"Failed to get Yandex mode for mode 'mode_5' for instance swing of mode "
+            f"capability of switch.test. It may cause inconsistencies between Yandex and "
+            f"HA. See {DOCS_URL}/config/modes/"
         )
     caplog.clear()
 
@@ -131,8 +131,8 @@ async def test_capability_mode_auto_mapping(
         assert cap.get_ha_mode_by_yandex_mode(ModeCapabilityMode.DEEP_FRYER) == ""
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
-        "Unsupported mode 'deep_fryer' for instance swing of mode capability of switch.test, "
-        "see https://docs.yaha-cloud.ru/v1.1.x/config/modes/"
+        f"Unsupported mode 'deep_fryer' for instance swing of mode capability of switch.test, "
+        f"see {DOCS_URL}/config/modes/"
     )
 
     assert cap.get_ha_mode_by_yandex_mode(ModeCapabilityMode.FOWL) == "mode_1"
@@ -868,8 +868,7 @@ async def test_capability_mode_fan_speed_fan_via_percentage_custom(hass: HomeAss
         )
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
-        "Unsupported mode 'low' for instance fan_speed of mode capability of "
-        "fan.test, see https://docs.yaha-cloud.ru/v1.1.x/config/modes/"
+        f"Unsupported mode 'low' for instance fan_speed of mode capability of fan.test, see {DOCS_URL}/config/modes/"
     )
 
     entry_data = MockConfigEntryData(
