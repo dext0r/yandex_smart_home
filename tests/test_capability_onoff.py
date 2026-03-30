@@ -159,15 +159,22 @@ async def test_capability_onoff_only_on(
 
 
 async def test_capability_onoff_cover(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    for state in (STATE_OPEN, STATE_OPENING):
+        state_open = State("cover.test", state, attributes={ATTR_SUPPORTED_FEATURES: CoverEntityFeature.SET_POSITION})
+        cap_open = cast(
+            OnOffCapability,
+            get_exact_one_capability(hass, entry_data, state_open, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+        )
+
+        assert cap_open.retrievable is True
+        assert cap_open.get_value() is True
+        assert cap_open.parameters is None
+
     state_open = State("cover.test", STATE_OPEN, attributes={ATTR_SUPPORTED_FEATURES: CoverEntityFeature.SET_POSITION})
     cap_open = cast(
         OnOffCapability,
         get_exact_one_capability(hass, entry_data, state_open, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
     )
-
-    assert cap_open.retrievable is True
-    assert cap_open.get_value() is True
-    assert cap_open.parameters is None
 
     on_calls = async_mock_service(hass, cover.DOMAIN, SERVICE_OPEN_COVER)
     await cap_open.set_instance_state(Context(), ACTION_STATE_ON)
@@ -179,7 +186,7 @@ async def test_capability_onoff_cover(hass: HomeAssistant, entry_data: MockConfi
     assert len(off_calls) == 1
     assert off_calls[0].data == {ATTR_ENTITY_ID: "cover.test"}
 
-    for state in [STATE_CLOSED, STATE_CLOSING, STATE_OPENING]:
+    for state in [STATE_CLOSED, STATE_CLOSING]:
         state_other = State("cover.test", state, attributes={ATTR_SUPPORTED_FEATURES: CoverEntityFeature.SET_POSITION})
         cap = cast(
             OnOffCapability,

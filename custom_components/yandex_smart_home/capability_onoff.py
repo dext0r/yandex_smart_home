@@ -43,6 +43,7 @@ from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
     STATE_OPEN,
+    STATE_OPENING,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
@@ -309,7 +310,7 @@ class OnOffCapabilityCover(OnOffCapability):
 
     def _is_on(self) -> bool:
         """Return true if capability is on."""
-        return self.state.state == STATE_OPEN
+        return self.state.state in (STATE_OPEN, STATE_OPENING)
 
     async def _set_instance_state(self, context: Context, state: OnOffCapabilityInstanceActionState) -> None:
         """Change the capability state."""
