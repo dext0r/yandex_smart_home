@@ -54,7 +54,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import async_mock_service
 
 from custom_components.yandex_smart_home.capability_onoff import OnOffCapability
-from custom_components.yandex_smart_home.const import CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON
+from custom_components.yandex_smart_home.const import CONF_SPLIT_ON_OFF, CONF_STATE_UNKNOWN, CONF_TURN_OFF, CONF_TURN_ON
 from custom_components.yandex_smart_home.helpers import ActionNotAllowedError, APIError
 from custom_components.yandex_smart_home.schema import (
     CapabilityType,
@@ -717,6 +717,32 @@ async def test_capability_onoff_disabled_by_user(hass: HomeAssistant, entry_data
         },
     )
     assert_no_capabilities(hass, entry_data_foo, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
+
+
+async def test_capability_onoff_split(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state_switch = State("switch.test", STATE_ON)
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, entry_data, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is True
+    assert cap.parameters is None
+
+    entry_data_foo = MockConfigEntryData(
+        hass,
+        entity_config={
+            state_switch.entity_id: {
+                CONF_SPLIT_ON_OFF: True,
+            },
+        },
+    )
+    cap = cast(
+        OnOffCapability,
+        get_exact_one_capability(hass, entry_data_foo, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
+    )
+    assert cap.retrievable is True
+    assert cap.parameters
+    assert cap.parameters.as_dict() == {"split": True}
 
 
 async def test_capability_onoff_water_heater(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
