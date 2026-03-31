@@ -323,6 +323,11 @@ class OnOffCapabilityCover(OnOffCapability):
     """Capability to open or close a cover."""
 
     @property
+    def parameters(self) -> OnOffCapabilityParameters | None:
+        """Return parameters for a devices list request."""
+        return OnOffCapabilityParameters(split=True)
+
+    @property
     def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == cover.DOMAIN

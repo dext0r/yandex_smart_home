@@ -168,7 +168,8 @@ async def test_capability_onoff_cover(hass: HomeAssistant, entry_data: MockConfi
 
         assert cap_open.retrievable is True
         assert cap_open.get_value() is True
-        assert cap_open.parameters is None
+        assert cap_open.parameters is not None
+        assert cap_open.parameters.as_dict() == {"split": True}
 
     state_open = State("cover.test", STATE_OPEN, attributes={ATTR_SUPPORTED_FEATURES: CoverEntityFeature.SET_POSITION})
     cap_open = cast(
@@ -203,17 +204,8 @@ async def test_capability_onoff_cover(hass: HomeAssistant, entry_data: MockConfi
     )
     assert cap_no_features.retrievable is True
     assert cap_no_features.get_value() is True
-    assert cap_no_features.parameters is None
-
-    entry_data = MockConfigEntryData(hass, entity_config={"cover.test": {CONF_STATE_UNKNOWN: True}})
-    state_binary = State("cover.test", STATE_OPEN)
-    cap_binary = cast(
-        OnOffCapability,
-        get_exact_one_capability(hass, entry_data, state_binary, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON),
-    )
-    assert cap_binary.retrievable is False
-    assert cap_binary.parameters
-    assert cap_binary.parameters.model_dump() == {"split": True}
+    assert cap_no_features.parameters is not None
+    assert cap_no_features.parameters.as_dict() == {"split": True}
 
 
 async def test_capability_onoff_valve(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
