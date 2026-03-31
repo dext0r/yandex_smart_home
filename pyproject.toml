@@ -1,6 +1,6 @@
 [project]
 name = "yandex_smart_home"
-version = "1.1.1.dev0"
+version = "1.1.1"
 requires-python = "~=3.14.2"
 
 [dependency-groups]
