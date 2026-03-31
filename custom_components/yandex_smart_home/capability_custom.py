@@ -152,7 +152,7 @@ class CustomOnOffCapability(CustomCapability, OnOffCapability):
     instance: OnOffCapabilityInstance
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return True
 

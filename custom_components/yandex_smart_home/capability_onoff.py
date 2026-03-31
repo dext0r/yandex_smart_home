@@ -84,6 +84,11 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
         ...
 
     @property
+    def supported(self) -> bool:
+        """Test if the capability is supported (based on user config)."""
+        return self._supported
+
+    @property
     def retrievable(self) -> bool:
         """Test if the capability can return the current value."""
         return not self._entity_config.get(CONF_STATE_UNKNOWN)
@@ -125,6 +130,12 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
 
         return SERVICE_TURN_OFF
 
+    @property
+    @abstractmethod
+    def _supported(self) -> bool:
+        """Test if the capability is supported."""
+        ...
+
     def _is_on(self) -> bool:
         """Return true if capability is on."""
         return self.state.state != STATE_OFF
@@ -147,7 +158,7 @@ class OnOffCapabilityBasic(OnOffCapability):
     """Capability to turn on or off a device."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain in (light.DOMAIN, fan.DOMAIN, switch.DOMAIN, humidifier.DOMAIN, input_boolean.DOMAIN)
 
@@ -166,7 +177,7 @@ class OnOffCapabilityAutomation(OnOffCapability):
     """Capability to enable or disable an automation."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return bool(self.state.domain == automation.DOMAIN)
 
@@ -189,7 +200,7 @@ class OnOffCapabilityGroup(OnOffCapability):
     """Capability to turn on or off a group of devices."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain in group.DOMAIN
 
@@ -208,7 +219,7 @@ class OnOffCapabilityScript(OnlyOnCapability):
     """Capability to call a script or scene."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain in (scene.DOMAIN, script.DOMAIN)
 
@@ -236,7 +247,7 @@ class OnOffCapabilityButton(OnlyOnCapability):
     """Capability to press a button."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == button.DOMAIN
 
@@ -256,7 +267,7 @@ class OnOffCapabilityInputButton(OnlyOnCapability):
     """Capability to press a input_button."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == input_button.DOMAIN
 
@@ -276,7 +287,7 @@ class OnOffCapabilityLock(OnOffCapability):
     """Capability to lock or unlock a lock."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == lock.DOMAIN
 
@@ -304,7 +315,7 @@ class OnOffCapabilityCover(OnOffCapability):
     """Capability to open or close a cover."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == cover.DOMAIN
 
@@ -332,7 +343,7 @@ class OnOffCapabilityRemote(ActionOnlyCapabilityMixin, OnOffCapability):
     """Capability to turn on or off a remote."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == remote.DOMAIN
 
@@ -356,7 +367,7 @@ class OnOffCapabilityMediaPlayer(OnOffCapability):
     """Capability to turn on or off a media player device."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == media_player.DOMAIN:
             if CONF_TURN_ON in self._entity_config or CONF_TURN_OFF in self._entity_config:
@@ -387,7 +398,7 @@ class OnOffCapabilityVacuum(OnOffCapability):
     """Capability to start or stop cleaning by a vacuum."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain != vacuum.DOMAIN:
             return False
@@ -438,7 +449,7 @@ class OnOffCapabilityClimate(OnOffCapability):
     """Capability to turn on or off a climate device."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == climate.DOMAIN and len(self._hvac_modes) > 1
 
@@ -482,7 +493,7 @@ class OnOffCapabilityWaterHeater(OnOffCapability):
     }
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return self.state.domain == water_heater.DOMAIN
 
@@ -543,7 +554,7 @@ class OnOffCapabilityValve(OnOffCapability):
     """Capability to open or close a valve."""
 
     @property
-    def supported(self) -> bool:
+    def _supported(self) -> bool:
         """Test if the capability is supported."""
         return bool(self.state.domain == valve.DOMAIN)
 

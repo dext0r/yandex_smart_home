@@ -482,7 +482,7 @@ async def test_handler_devices_action(
 async def test_handler_devices_action_error_template(hass: HomeAssistant, caplog: pytest.LogCaptureFixture) -> None:
     class MockCapabilityA(OnOffCapability):
         @property
-        def supported(self) -> bool:
+        def _supported(self) -> bool:
             return True
 
         def get_value(self) -> bool | None:
