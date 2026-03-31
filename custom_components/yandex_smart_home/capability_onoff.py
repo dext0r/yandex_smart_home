@@ -86,6 +86,13 @@ class OnOffCapability(StateCapability[OnOffCapabilityInstanceActionState], Proto
     @property
     def supported(self) -> bool:
         """Test if the capability is supported (based on user config)."""
+        if (
+            self._entity_config.get(CONF_STATE_UNKNOWN)
+            and self._entity_config.get(CONF_TURN_OFF) is False
+            and self._entity_config.get(CONF_TURN_ON) is False
+        ):
+            return False
+
         return self._supported
 
     @property

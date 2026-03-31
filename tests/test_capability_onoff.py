@@ -702,6 +702,23 @@ async def test_capability_onoff_custom_service(hass: HomeAssistant, entry_data: 
     assert len(water_heater_on_calls) == 1
 
 
+async def test_capability_onoff_disabled_by_user(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state_switch = State("switch.test", STATE_ON)
+    assert_exact_one_capability(hass, entry_data, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
+
+    entry_data_foo = MockConfigEntryData(
+        hass,
+        entity_config={
+            state_switch.entity_id: {
+                CONF_TURN_ON: False,
+                CONF_TURN_OFF: False,
+                CONF_STATE_UNKNOWN: True,
+            },
+        },
+    )
+    assert_no_capabilities(hass, entry_data_foo, state_switch, CapabilityType.ON_OFF, OnOffCapabilityInstance.ON)
+
+
 async def test_capability_onoff_water_heater(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     state = State("water_heater.test", STATE_ON)
 
