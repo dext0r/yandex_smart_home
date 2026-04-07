@@ -1044,13 +1044,13 @@ class WaterHeaterModeCapability(StateModeCapability):
 
     instance = ModeCapabilityInstance.HEAT
 
-    _modes_map_default = {                                               # Чайник Polaris
-        ModeCapabilityMode.ONE: [water_heater.STATE_PERFORMANCE],        # "Кипячение"
-        ModeCapabilityMode.TWO: [water_heater.STATE_ELECTRIC],           # "Разогрев"
-        ModeCapabilityMode.THREE: [water_heater.STATE_HEAT_PUMP],        # "Разогрев с удержанием"
-        ModeCapabilityMode.FOUR: [water_heater.STATE_ECO],               # "IQ Кипячение"
-        ModeCapabilityMode.FIVE: [water_heater.STATE_GAS],               # "Чайная церемония"
-        ModeCapabilityMode.SIX: [water_heater.STATE_HIGH_DEMAND],        # "Кипячение с удержанием"
+    _modes_map_default = {
+        ModeCapabilityMode.ONE: [water_heater.STATE_PERFORMANCE],
+        ModeCapabilityMode.TWO: [water_heater.STATE_ELECTRIC],
+        ModeCapabilityMode.THREE: [water_heater.STATE_HEAT_PUMP],
+        ModeCapabilityMode.FOUR: [water_heater.STATE_ECO],
+        ModeCapabilityMode.FIVE: [water_heater.STATE_GAS],
+        ModeCapabilityMode.SIX: [water_heater.STATE_HIGH_DEMAND],
     }
 
     @property
