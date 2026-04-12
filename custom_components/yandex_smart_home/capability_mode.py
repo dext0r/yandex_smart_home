@@ -1057,7 +1057,7 @@ class WaterHeaterModeCapability(StateModeCapability):
     def supported(self) -> bool:
         """Test if the capability is supported."""
         if self.state.domain == water_heater.DOMAIN and self._state_features & WaterHeaterEntityFeature.OPERATION_MODE:
-            return super().supported
+            return bool(super().supported)
 
         return False
 
