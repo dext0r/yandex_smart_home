@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 import logging
 import re
-from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import (
@@ -459,7 +459,7 @@ class Device:
             return str(room)
 
         if area:
-            if alias := self._get_entry_alias(area.aliases):
+            if alias := self._get_entry_alias(area.aliases or ()):
                 return alias
 
             return area.name
