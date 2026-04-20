@@ -550,6 +550,52 @@ async def test_device_name_room_ignore_aliases(
     assert d.room == "Комната"
 
 
+@pytest.mark.skipif(
+    not hasattr(er, "COMPUTED_NAME"),
+    reason="COMPUTED_NAME sentinel was introduced in Home Assistant 2026.4",
+)
+async def test_device_name_room_ignores_non_string_aliases(
+    hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
+    entity_registry: er.EntityRegistry,
+    device_registry: dr.DeviceRegistry,
+    area_registry: ar.AreaRegistry,
+) -> None:
+    """Regression test for #665.
+
+    Starting with Home Assistant 2026.4, ``RegistryEntry.aliases`` is typed as
+    ``list[str | ComputedNameType]``. ``describe()`` used to call ``.lower()``
+    on every alias unconditionally, raising ``AttributeError`` the moment the
+    sentinel showed up in the list. The fix must silently skip non-string
+    entries and still pick the best string alias from whatever remains.
+    """
+    area_closet = area_registry.async_create("Closet", aliases={"Кладовка"})
+    config_entry = MockConfigEntry(domain="test", data={})
+    config_entry.add_to_hass(hass)
+
+    state = State("switch.test_1", STATE_ON)
+    dev_entry = device_registry.async_get_or_create(
+        identifiers={("test_1", "test_1")}, config_entry_id=config_entry.entry_id
+    )
+    entry = entity_registry.async_get_or_create("switch", "test", "1", device_id=dev_entry.id)
+    entity_registry.async_update_entity(
+        entry.entity_id,
+        area_id=area_closet.id,
+        aliases=[er.COMPUTED_NAME, "Алиса: Тостер"],
+    )
+
+    device = Device(hass, entry_data, state.entity_id, state)
+    d = await device.describe()
+    assert d
+    assert d.name == "Тостер"
+    assert d.room == "Кладовка"
+
+    entity_registry.async_update_entity(entry.entity_id, aliases=[er.COMPUTED_NAME])
+    d = await device.describe()
+    assert d
+    assert d.name == "test 1"
+
+
 async def test_device_should_expose(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     entry_data = MockConfigEntryData(hass, entity_filter=generate_entity_filter(exclude_entities=["switch.not_expose"]))
     device = Device(hass, entry_data, "switch.test", State("switch.test", STATE_ON))
