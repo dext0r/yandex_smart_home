@@ -473,7 +473,7 @@ async def test_device_name_room(
     assert d.room == "Кухне"
 
     entity_registry.async_update_entity(
-        entry.entity_id, area_id=area_closet.id, aliases={"foo", "Устройство 2", "апельсин"}
+        entry.entity_id, area_id=area_closet.id, aliases=["foo", "Устройство 2", "апельсин"]
     )
     d = await device.describe()
     assert d
@@ -528,14 +528,14 @@ async def test_device_name_room_ignore_aliases(
     assert d.name == "test 1"
     assert d.room == "Балкон"
 
-    entity_registry.async_update_entity(entry.entity_id, area_id=area_closet.id, aliases={"Устройство"})
+    entity_registry.async_update_entity(entry.entity_id, area_id=area_closet.id, aliases=["Устройство"])
     d = await device.describe()
     assert d
     assert d.name == "test 1"
     assert d.room == "Closet"
 
     entity_registry.async_update_entity(
-        entry.entity_id, area_id=area_closet.id, aliases={"2", "foo", "Устройство", "апельсин", "Алиса: Устройство"}
+        entry.entity_id, area_id=area_closet.id, aliases=["2", "foo", "Устройство", "апельсин", "Алиса: Устройство"]
     )
     d = await device.describe()
     assert d

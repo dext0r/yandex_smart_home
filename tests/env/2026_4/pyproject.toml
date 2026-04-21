@@ -3,14 +3,10 @@ name = "ysh-test-2026-4"
 version = "2026.4"
 requires-python = "~=3.14.2"
 dependencies = [
-    "pytest-homeassistant-custom-component==0.13.322",
-    "homeassistant==2026.4.0b4",
+    "pytest-homeassistant-custom-component==0.13.321",
+    "homeassistant==2026.4.0",
     "aiohasupervisor==0.4.3",
     "hassil>=3.5.0",
     "home-assistant-intents>=2026.3.3",
     "pyturbojpeg>=1.8.2",
 ]
-
-[tool.uv]
-prerelease = "allow"
-extra-index-url = ["https://packagecloud.io/dext0r/pypi/pypi/simple"] # TODO: remove after official release
