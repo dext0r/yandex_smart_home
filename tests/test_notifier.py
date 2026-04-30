@@ -1283,6 +1283,8 @@ async def test_notifier_report_states(
         assert notifier._pending.empty is False
         assert notifier._unsub_report_states is not None
 
+    await notifier.async_unload()  # type: ignore[unreachable]
+
 
 async def test_notifier_pending_states(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     ps = PendingStates()
