@@ -2909,7 +2909,7 @@ wheels = [
 
 [[package]]
 name = "yandex-smart-home"
-version = "1.1.1"
+version = "1.1.2.dev0"
 source = { virtual = "." }
 
 [package.dev-dependencies]
