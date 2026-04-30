@@ -160,6 +160,9 @@ class CloudManager:
             _LOGGER.warning(f"Reconnecting too fast, next reconnection in {self._ws_reconnect_delay} seconds")
 
         _LOGGER.debug(f"Trying to reconnect in {self._ws_reconnect_delay} seconds")
+
+        if self._unsub_connect:
+            self._unsub_connect()
         self._unsub_connect = async_call_later(self._hass, self._ws_reconnect_delay, HassJob(self.async_connect))
 
 
