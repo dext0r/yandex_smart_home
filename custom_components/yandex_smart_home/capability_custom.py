@@ -12,8 +12,15 @@ from homeassistant.const import CONF_STATE_TEMPLATE, STATE_OFF, STATE_ON, STATE_
 from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.service import async_call_from_config
-from homeassistant.helpers.template import Template, forgiving_boolean
+from homeassistant.helpers.template import Template
 from homeassistant.helpers.typing import UNDEFINED, ConfigType, UndefinedType
+
+try:
+    from homeassistant.helpers.template.helpers import forgiving_boolean
+except ImportError:  # pragma: no cover
+    # HA <2026.5
+    from homeassistant.helpers.template import forgiving_boolean  # type: ignore[attr-defined, no-redef]
+
 
 from .capability import Capability
 from .capability_color import ColorSceneCapability
