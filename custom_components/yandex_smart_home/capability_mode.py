@@ -8,12 +8,13 @@ import logging
 import math
 from typing import Any, Protocol, override
 
-from homeassistant.components import climate, fan, humidifier, media_player, vacuum
+from homeassistant.components import climate, fan, humidifier, media_player, vacuum, water_heater
 from homeassistant.components.climate import ClimateEntityFeature, HVACMode
 from homeassistant.components.fan import FanEntityFeature
 from homeassistant.components.humidifier import HumidifierEntityFeature
 from homeassistant.components.media_player import MediaPlayerEntityFeature
 from homeassistant.components.vacuum import VacuumEntityFeature
+from homeassistant.components.water_heater import WaterHeaterEntityFeature
 from homeassistant.const import ATTR_ENTITY_ID, STATE_OFF, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Context
 from homeassistant.util.percentage import ordered_list_item_to_percentage, percentage_to_ordered_list_item
@@ -1038,6 +1039,52 @@ class CleanupModeCapability(StateModeCapability):
         return self.state.attributes.get(vacuum.ATTR_FAN_SPEED)
 
 
+class WaterHeaterModeCapability(StateModeCapability):
+    """Capability to control heat mode of a water_heater device."""
+
+    instance = ModeCapabilityInstance.HEAT
+
+    _modes_map_default = {
+        ModeCapabilityMode.ONE: [water_heater.STATE_PERFORMANCE],
+        ModeCapabilityMode.TWO: [water_heater.STATE_ELECTRIC],
+        ModeCapabilityMode.THREE: [water_heater.STATE_HEAT_PUMP],
+        ModeCapabilityMode.FOUR: [water_heater.STATE_ECO],
+        ModeCapabilityMode.FIVE: [water_heater.STATE_GAS],
+        ModeCapabilityMode.SIX: [water_heater.STATE_HIGH_DEMAND],
+    }
+
+    @property
+    def supported(self) -> bool:
+        """Test if the capability is supported."""
+        if self.state.domain == water_heater.DOMAIN and self._state_features & WaterHeaterEntityFeature.OPERATION_MODE:
+            return bool(super().supported)
+
+        return False
+
+    async def set_instance_state(self, context: Context, state: ModeCapabilityInstanceActionState) -> None:
+        """Change the capability state."""
+        await self._hass.services.async_call(
+            water_heater.DOMAIN,
+            water_heater.SERVICE_SET_OPERATION_MODE,
+            {
+                ATTR_ENTITY_ID: self.state.entity_id,
+                water_heater.ATTR_OPERATION_MODE: self.get_ha_mode_by_yandex_mode(state.value),
+            },
+            blocking=self._wait_for_service_call,
+            context=context,
+        )
+
+    @property
+    def _ha_modes(self) -> Iterable[Any]:
+        """Returns list of HA modes."""
+        return self.state.attributes.get(water_heater.ATTR_OPERATION_LIST) or []
+
+    @property
+    def _ha_value(self) -> Any:
+        """Return the current unmapped capability value."""
+        return self.state.attributes.get(water_heater.ATTR_OPERATION_MODE)
+
+# Test
 STATE_CAPABILITIES_REGISTRY.register(ThermostatCapability)
 STATE_CAPABILITIES_REGISTRY.register(HVSwingCapability)
 STATE_CAPABILITIES_REGISTRY.register(SwingCapability)
@@ -1049,3 +1096,4 @@ STATE_CAPABILITIES_REGISTRY.register(FanSpeedCapabilityClimate)
 STATE_CAPABILITIES_REGISTRY.register(FanSpeedCapabilityFanViaPreset)
 STATE_CAPABILITIES_REGISTRY.register(FanSpeedCapabilityFanViaPercentage)
 STATE_CAPABILITIES_REGISTRY.register(CleanupModeCapability)
+STATE_CAPABILITIES_REGISTRY.register(WaterHeaterModeCapability)
