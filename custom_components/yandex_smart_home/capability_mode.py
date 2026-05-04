@@ -217,7 +217,7 @@ class ModeCapability(Capability[ModeCapabilityInstanceActionState], Protocol):
                 mode = yandex_mode
                 break
 
-        if mode is not None and ha_mode not in self.supported_ha_modes:
+        if mode is not None and ha_mode.lower() not in [m.lower() for m in self.supported_ha_modes]:
             raise APIError(
                 ResponseCode.INVALID_VALUE,
                 f"Unsupported HA mode '{ha_mode}' for {self}: not in {self.supported_ha_modes}",

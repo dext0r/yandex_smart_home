@@ -46,6 +46,7 @@ class MockModeCapability(StateModeCapability):
         ModeCapabilityMode.FOWL: ["mode_1"],
         ModeCapabilityMode.PIZZA: ["mode_2"],
         ModeCapabilityMode.PUERH_TEA: ["MODE_3"],
+        ModeCapabilityMode.GLASS: ["glass"],
     }
 
     @property
@@ -120,11 +121,11 @@ async def test_capability_mode_auto_mapping(
     assert cap.get_yandex_mode_by_ha_mode("mode_3") == ModeCapabilityMode.PUERH_TEA
     assert cap.get_yandex_mode_by_ha_mode("mode_4") == ModeCapabilityMode.THREE
     assert cap.get_yandex_mode_by_ha_mode("eco") == ModeCapabilityMode.ECO
-    with pytest.raises(APIError) as e:  # strange case o_O
-        assert cap.get_yandex_mode_by_ha_mode("MODE_1")
+    with pytest.raises(APIError) as e:
+        assert cap.get_yandex_mode_by_ha_mode("glass")
     assert e.value.code == ResponseCode.INVALID_VALUE
     assert e.value.message == (
-        "Unsupported HA mode 'MODE_1' for instance swing of mode capability of "
+        "Unsupported HA mode 'glass' for instance swing of mode capability of "
         "switch.test: not in ['mode_1', 'mode_3', 'mode_4', 'eco', 'mode_5']"
     )
 
@@ -231,6 +232,13 @@ async def test_capability_mode_get_value(hass: HomeAssistant, entry_data: MockCo
     assert cap.get_value() is None
     cap.state.state = "mode_3"
     assert cap.get_value() == ModeCapabilityMode.PUERH_TEA
+
+
+async def test_capability_mode_case_sensitivity(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state = State("switch.test", STATE_OFF, {"modes_list": ["mode_1", "mode_3"], "current_mode": "Mode_3"})
+    cap = MockModeCapabilityA(hass, entry_data, state.entity_id, state)
+    assert cap.get_value() == ModeCapabilityMode.PUERH_TEA
+    assert cap.get_ha_mode_by_yandex_mode(ModeCapabilityMode.PUERH_TEA) == "mode_3"
 
 
 async def test_capability_mode_thermostat(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
