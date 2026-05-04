@@ -1,6 +1,6 @@
 from typing import cast
 
-from homeassistant.components import climate, fan, humidifier, media_player, vacuum
+from homeassistant.components import climate, fan, humidifier, media_player, vacuum, water_heater
 from homeassistant.components.climate import ClimateEntityFeature, HVACMode
 from homeassistant.components.fan import FanEntityFeature
 from homeassistant.components.humidifier import HumidifierEntityFeature
@@ -29,6 +29,7 @@ from custom_components.yandex_smart_home.schema import (
     ModeCapabilityMode,
     ResponseCode,
 )
+from tests.test_capability_onoff import WaterHeaterEntityFeature
 
 from . import MockConfigEntryData
 from .test_capability import (
@@ -1058,6 +1059,50 @@ async def test_capability_mode_cleanup_mode(hass: HomeAssistant, entry_data: Moc
     )
     assert len(calls) == 1
     assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, vacuum.ATTR_FAN_SPEED: "gentle"}
+
+
+async def test_capability_mode_heat_water_heater(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
+    state = State("water_heater.test", STATE_OFF)
+    assert_no_capabilities(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.HEAT)
+
+    state = State(
+        "water_heater.test",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: WaterHeaterEntityFeature.OPERATION_MODE,
+            water_heater.ATTR_OPERATION_LIST: ["gas", "heat_pump"],
+        },
+    )
+    cap = cast(
+        ModeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.HEAT),
+    )
+    assert cap.retrievable is True
+    assert cap.parameters.model_dump() == {"instance": "heat", "modes": [{"value": "five"}, {"value": "three"}]}
+    assert cap.get_value() is None
+
+    state = State(
+        "water_heater.test",
+        STATE_OFF,
+        {
+            ATTR_SUPPORTED_FEATURES: WaterHeaterEntityFeature.OPERATION_MODE,
+            water_heater.ATTR_OPERATION_LIST: ["gas", "heat_pump"],
+            water_heater.ATTR_OPERATION_MODE: "heat_pump",
+        },
+    )
+    cap = cast(
+        ModeCapability,
+        get_exact_one_capability(hass, entry_data, state, CapabilityType.MODE, ModeCapabilityInstance.HEAT),
+    )
+    assert cap.get_value() == ModeCapabilityMode.THREE
+
+    calls = async_mock_service(hass, water_heater.DOMAIN, water_heater.SERVICE_SET_OPERATION_MODE)
+    await cap.set_instance_state(
+        Context(),
+        ModeCapabilityInstanceActionState(instance=ModeCapabilityInstance.HEAT, value=ModeCapabilityMode.FIVE),
+    )
+    assert len(calls) == 1
+    assert calls[0].data == {ATTR_ENTITY_ID: state.entity_id, water_heater.ATTR_OPERATION_MODE: "gas"}
 
 
 async def test_capability_mode_unique_modes() -> None:

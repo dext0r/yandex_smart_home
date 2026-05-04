@@ -1084,7 +1084,7 @@ class WaterHeaterModeCapability(StateModeCapability):
         """Return the current unmapped capability value."""
         return self.state.attributes.get(water_heater.ATTR_OPERATION_MODE)
 
-# Test
+
 STATE_CAPABILITIES_REGISTRY.register(ThermostatCapability)
 STATE_CAPABILITIES_REGISTRY.register(HVSwingCapability)
 STATE_CAPABILITIES_REGISTRY.register(SwingCapability)
