@@ -178,7 +178,10 @@ async def test_property_demo_platform(hass: HomeAssistant, entry_data: MockConfi
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor.climate"
     props = [(p.type, p.instance) for p in device.get_properties()]
-    assert props == [("devices.properties.float", "temperature"), ("devices.properties.float", "battery_level")]
+    if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2026, 6):
+        assert props == [("devices.properties.float", "temperature")]
+    else:
+        assert props == [("devices.properties.float", "temperature"), ("devices.properties.float", "battery_level")]
 
     state = hass.states.get("sensor.outside_humidity")
     assert state is not None
@@ -199,7 +202,10 @@ async def test_property_demo_platform(hass: HomeAssistant, entry_data: MockConfi
     device = Device(hass, entry_data, state.entity_id, state)
     assert device.type == "devices.types.sensor.climate"
     props = [(p.type, p.instance) for p in device.get_properties()]
-    assert props == [("devices.properties.float", "co2_level"), ("devices.properties.float", "battery_level")]
+    if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2026, 6):
+        assert props == [("devices.properties.float", "co2_level")]
+    else:
+        assert props == [("devices.properties.float", "co2_level"), ("devices.properties.float", "battery_level")]
 
     state = hass.states.get("sensor.power_consumption")
     assert state is not None

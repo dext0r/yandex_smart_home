@@ -132,18 +132,29 @@ def entry_data(hass: HomeAssistant) -> MockConfigEntryData:
 
 @pytest.fixture
 def hass_platform(hass: HomeAssistant) -> HomeAssistant:
-    demo_sensor = DemoSensor(
-        "outside_temp",
-        "Outside Temperature",
-        state=15.6,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        unit_of_measurement=UnitOfTemperature.CELSIUS,
-        battery=None,
-    )
+    if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2026, 6):
+        demo_sensor = DemoSensor(
+            "outside_temp",
+            "Outside Temperature",
+            device_name="Outside Temperature",
+            state=15.6,
+            device_class=SensorDeviceClass.TEMPERATURE,
+            state_class=SensorStateClass.MEASUREMENT,
+            unit_of_measurement=UnitOfTemperature.CELSIUS,
+        )
+    else:
+        demo_sensor = DemoSensor(
+            "outside_temp",
+            "Outside Temperature",
+            state=15.6,
+            device_class=SensorDeviceClass.TEMPERATURE,
+            state_class=SensorStateClass.MEASUREMENT,
+            unit_of_measurement=UnitOfTemperature.CELSIUS,
+            battery=None,  # type: ignore[call-arg]
+        )
     demo_sensor.hass = hass
     demo_sensor.entity_id = "sensor.outside_temp"
-    demo_sensor._attr_name = "Температура за бортом"  # type: ignore[assignment]
+    demo_sensor._attr_name = "Температура за бортом"
 
     demo_binary_sensor = DemoBinarySensor(
         "front_door",

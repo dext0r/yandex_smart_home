@@ -5,11 +5,11 @@ requires-python = "~=3.14.2"
 
 [dependency-groups]
 test = [
-    "pytest-homeassistant-custom-component==0.13.326",
-    "mypy==1.20.2",
+    "pytest-homeassistant-custom-component==0.13.334",
+    "mypy==2.1.0",
 ]
 homeassistant = [
-    "homeassistant==2026.5.0b0",
+    "homeassistant==2026.6.0b0",
     "colorlog>=6.9.0",
 ]
 homeassistant-components = [
@@ -152,6 +152,7 @@ env_list = [
     "2026_3",
     "2026_4",
     "2026_5",
+    "2026_6",
 ]
 
 [tool.tox.env_run_base]
@@ -186,6 +187,9 @@ uv_sync_flags = ["--directory=tests/env/2026_4"]
 
 [tool.tox.env.2026_5]
 uv_sync_flags = ["--directory=tests/env/2026_5"]
+
+[tool.tox.env.2026_6]
+uv_sync_flags = ["--directory=tests/env/2026_6"]
 
 [tool.tox.env.type]
 description = "Run type checks under {env_python}"
