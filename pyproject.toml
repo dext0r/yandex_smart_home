@@ -92,6 +92,7 @@ verbosity_assertions = 2
 [tool.coverage.report]
 exclude_also = [
     "raise NotImplementedError",
+    "type: ignore",
 ]
 omit = ["tests/*"]
 
