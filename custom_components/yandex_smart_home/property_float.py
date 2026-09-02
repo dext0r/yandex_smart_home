@@ -15,7 +15,6 @@ from homeassistant.const import (
     ATTR_TEMPERATURE,
     ATTR_UNIT_OF_MEASUREMENT,
     ATTR_VOLTAGE,
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
     PERCENTAGE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
@@ -35,6 +34,7 @@ from homeassistant.util.unit_conversion import (
     VolumeConverter,
 )
 
+from .backports.const import UnitOfDensity
 from .const import (
     ATTR_CURRENT,
     ATTR_CURRENT_CONSUMPTION,
@@ -410,7 +410,7 @@ class TVOCConcentrationProperty(FloatProperty, Protocol):
     @property
     def unit_of_measurement(self) -> str:
         """Return the unit the property value is expressed in."""
-        return CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+        return UnitOfDensity.MICROGRAMS_PER_CUBIC_METER
 
     @property
     def _unit_converter(self) -> TVOCConcentrationConverter:

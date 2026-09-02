@@ -2,13 +2,6 @@
 
 from enum import StrEnum
 
-from homeassistant.const import (
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_FOOT,
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-    CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
-    CONCENTRATION_PARTS_PER_BILLION,
-    CONCENTRATION_PARTS_PER_MILLION,
-)
 from homeassistant.util.unit_conversion import (
     _IN_TO_M,
     _MERCURY_DENSITY,
@@ -17,6 +10,7 @@ from homeassistant.util.unit_conversion import (
     BaseUnitConverter,
 )
 
+from .backports.const import UnitOfDensity, UnitOfRatio
 from .schema import PressureUnit, TemperatureUnit
 
 # EFEKTA iAQ3 (#570)
@@ -27,23 +21,23 @@ class TVOCConcentrationConverter(BaseUnitConverter):
     """Utility to convert TVOC concentration values."""
 
     UNIT_CLASS = "tvoc"
-    NORMALIZED_UNIT = CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+    NORMALIZED_UNIT = UnitOfDensity.MICROGRAMS_PER_CUBIC_METER
     VALID_UNITS = {
-        CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
-        CONCENTRATION_MICROGRAMS_PER_CUBIC_FOOT,
-        CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER,
-        CONCENTRATION_PARTS_PER_MILLION,
-        CONCENTRATION_PARTS_PER_BILLION,
+        UnitOfDensity.MICROGRAMS_PER_CUBIC_METER,
+        UnitOfDensity.MICROGRAMS_PER_CUBIC_FOOT,
+        UnitOfDensity.MILLIGRAMS_PER_CUBIC_METER,
+        UnitOfRatio.PARTS_PER_MILLION,
+        UnitOfRatio.PARTS_PER_BILLION,
         UNIT_OF_MEASUREMENT_VOC_INDEX_POINT,
     }
 
     # average molecular weight of tVOC = 110 g/mol
     _UNIT_CONVERSION: dict[str | None, float] = {
-        CONCENTRATION_MICROGRAMS_PER_CUBIC_METER: 1,
-        CONCENTRATION_MICROGRAMS_PER_CUBIC_FOOT: 1 / 35.3146667215,
-        CONCENTRATION_MILLIGRAMS_PER_CUBIC_METER: 1 / 1000,
-        CONCENTRATION_PARTS_PER_MILLION: 1 / 4496.29381184,
-        CONCENTRATION_PARTS_PER_BILLION: 1 / 4.49629381184,
+        UnitOfDensity.MICROGRAMS_PER_CUBIC_METER: 1,
+        UnitOfDensity.MICROGRAMS_PER_CUBIC_FOOT: 1 / 35.3146667215,
+        UnitOfDensity.MILLIGRAMS_PER_CUBIC_METER: 1 / 1000,
+        UnitOfRatio.PARTS_PER_MILLION: 1 / 4496.29381184,
+        UnitOfRatio.PARTS_PER_BILLION: 1 / 4.49629381184,
         UNIT_OF_MEASUREMENT_VOC_INDEX_POINT: 1,
     }
 
