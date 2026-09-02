@@ -164,7 +164,7 @@ def hass_platform(hass: HomeAssistant) -> HomeAssistant:
     )
     demo_binary_sensor.hass = hass
     demo_binary_sensor.entity_id = "binary_sensor.front_door"
-    demo_binary_sensor._attr_name = "Front Door"  # type: ignore[assignment]
+    demo_binary_sensor._attr_name = "Front Door"
 
     demo_light = DemoLight("light_kitchen", "Kitchen Light", state=True)
     demo_light.hass = hass
