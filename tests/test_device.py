@@ -448,7 +448,9 @@ async def test_device_name_room(
     dev_entry = device_registry.async_get_or_create(
         identifiers={("test_1", "test_1")}, config_entry_id=config_entry.entry_id
     )
-    entry = entity_registry.async_get_or_create("switch", "test", "1", device_id=dev_entry.id)
+    entry = entity_registry.async_get_or_create(
+        "switch", "test", "1", device_id=dev_entry.id, suggested_object_id="test_1"
+    )
     device = Device(hass, entry_data, state.entity_id, state)
     d = await device.describe()
     assert d
@@ -509,7 +511,9 @@ async def test_device_name_room_ignore_aliases(
     dev_entry = device_registry.async_get_or_create(
         identifiers={("test_1", "test_1")}, config_entry_id=config_entry.entry_id
     )
-    entry = entity_registry.async_get_or_create("switch", "test", "1", device_id=dev_entry.id)
+    entry = entity_registry.async_get_or_create(
+        "switch", "test", "1", device_id=dev_entry.id, suggested_object_id="test_1"
+    )
     device = Device(hass, entry_data, state.entity_id, state)
     d = await device.describe()
     assert d

@@ -56,6 +56,9 @@ jobs:
 
           - tox-env: 2026_8
             python: 3.14
+
+          - tox-env: 2026_9
+            python: 3.14
             latest: true
 
     steps:
