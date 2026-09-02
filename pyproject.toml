@@ -5,17 +5,18 @@ requires-python = "~=3.14.2"
 
 [dependency-groups]
 test = [
-    "pytest-homeassistant-custom-component==0.13.334",
-    "mypy==2.1.0",
+    "pytest-homeassistant-custom-component==0.13.361",
+    "mypy==2.3.1",
 ]
 homeassistant = [
-    "homeassistant==2026.6.0b0",
+    "homeassistant==2026.9.0b4",
     "colorlog>=6.9.0",
 ]
 homeassistant-components = [
     "hassil>=3.5.0",
     "home-assistant-intents>=2026.3.3",
     "pyturbojpeg>=1.8.2",
+    "gazetteer-matcher>=1.1.0",
 ]
 lint = [
     "ruff==0.15.8",
