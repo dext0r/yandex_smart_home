@@ -7,6 +7,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 from urllib.parse import urlparse
 
+from homeassistant.const import MAJOR_VERSION, MINOR_VERSION
 from homeassistant.core import Context, HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import area_registry as ar, device_registry as dr, entity_registry as er
@@ -35,7 +36,10 @@ def _get_registry_entries(
     area_reg = ar.async_get(hass)
 
     if (entity_entry := ent_reg.async_get(entity_id)) and entity_entry.device_id:
-        device_entry = dev_reg.devices.get(entity_entry.device_id)
+        if (int(MAJOR_VERSION), int(MINOR_VERSION)) >= (2026, 9):
+            device_entry = dev_reg.async_get(entity_entry.device_id, include_child_devices=False)
+        else:
+            device_entry = dev_reg.devices.get(entity_entry.device_id)  # type: ignore[attr-defined]
     else:
         device_entry = None
 
