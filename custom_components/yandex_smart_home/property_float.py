@@ -61,6 +61,7 @@ from .schema import (
     FloatPropertyInstance,
     FloatPropertyParameters,
     FoodLevelFloatPropertyParameters,
+    FuelLevelFloatPropertyParameters,
     GasMeterFloatPropertyParameters,
     HeatMeterFloatPropertyParameters,
     HumidityFloatPropertyParameters,
@@ -255,6 +256,17 @@ class FoodLevelPercentageProperty(FloatProperty, Protocol):
     def parameters(self) -> FoodLevelFloatPropertyParameters:
         """Return parameters for a devices list request."""
         return FoodLevelFloatPropertyParameters()
+
+
+class FuelLevelPercentageProperty(FloatProperty, Protocol):
+    """Base class for fuel level (%) properties."""
+
+    instance: FloatPropertyInstance = FloatPropertyInstance.FUEL_LEVEL
+
+    @property
+    def parameters(self) -> FuelLevelFloatPropertyParameters:
+        """Return parameters for a devices list request."""
+        return FuelLevelFloatPropertyParameters()
 
 
 class WaterLevelPercentageProperty(FloatProperty, Protocol):

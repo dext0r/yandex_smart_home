@@ -48,6 +48,7 @@ from .property_float import (
     ElectricPowerProperty,
     FloatProperty,
     FoodLevelPercentageProperty,
+    FuelLevelPercentageProperty,
     GasMeterProperty,
     HeatMeterProperty,
     HumidityProperty,
@@ -322,6 +323,11 @@ class IlluminationCustomFloatProperty(IlluminationProperty, CustomFloatProperty)
 
 @FLOAT_PROPERTIES_REGISTRY.register
 class FoodLevelCustomFloatProperty(FoodLevelPercentageProperty, CustomFloatProperty):
+    pass
+
+
+@FLOAT_PROPERTIES_REGISTRY.register
+class FuelLevelCustomFloatProperty(FuelLevelPercentageProperty, CustomFloatProperty):
     pass
 
 

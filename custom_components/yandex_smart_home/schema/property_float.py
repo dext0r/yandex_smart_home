@@ -20,6 +20,7 @@ class FloatPropertyInstance(StrEnum):
     CO2_LEVEL = "co2_level"
     ELECTRICITY_METER = "electricity_meter"
     FOOD_LEVEL = "food_level"
+    FUEL_LEVEL = "fuel_level"
     GAS_METER = "gas_meter"
     HEAT_METER = "heat_meter"
     HUMIDITY = "humidity"
@@ -123,6 +124,10 @@ class ElectricityMeterFloatPropertyParameters(FloatPropertyAboveZeroMixin, Float
 
 class FoodLevelFloatPropertyParameters(PercentFloatPropertyParameters):
     instance: Literal[FloatPropertyInstance.FOOD_LEVEL] = FloatPropertyInstance.FOOD_LEVEL
+
+
+class FuelLevelFloatPropertyParameters(PercentFloatPropertyParameters):
+    instance: Literal[FloatPropertyInstance.FUEL_LEVEL] = FloatPropertyInstance.FUEL_LEVEL
 
 
 class GasMeterFloatPropertyParameters(FloatPropertyAboveZeroMixin, FloatPropertyParameters):
