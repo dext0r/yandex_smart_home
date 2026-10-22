@@ -227,6 +227,25 @@
           backlight_entity_id: switch.ac_backlight
     ```
 
+## Видеопоток { id=video_stream }
+
+> Параметр: `video_stream` (кроме `camera`)
+
+> Значение: идентификатор объекта `camera.*`
+
+Добавляет видеопоток камеры Home Assistant к устройству другого типа, сохраняя его ID и остальные умения. Камера должна поддерживать стриминг; отдельно передавать её в УДЯ не требуется.
+
+!!! example "Видеопоток в карточке домофона"
+    ```yaml
+    yandex_smart_home:
+      entity_config:
+        switch.smartintercom_accept_call:
+          type: devices.types.openable.intercom
+          video_stream: camera.front_door
+    ```
+
+Применяются общие [требования к видеотрансляции](../devices/camera.md#requirements).
+
 ## "Медленные" устройства { id=slow-device }
 
 > Параметр: `slow`

@@ -69,6 +69,7 @@ from . import (  # noqa: F401
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, DummyCapability, StateCapability
 from .capability_custom import get_custom_capability
 from .capability_toggle import BacklightCapability
+from .capability_video import VideoStreamCapability
 from .const import (
     CONF_BACKLIGHT_ENTITY_ID,
     CONF_ENTITY_CUSTOM_MODES,
@@ -76,6 +77,7 @@ from .const import (
     CONF_ENTITY_CUSTOM_TOGGLES,
     CONF_ENTITY_PROPERTIES,
     CONF_ERROR_CODE_TEMPLATE,
+    CONF_VIDEO_STREAM,
 )
 from .helpers import ActionNotAllowedError, APIError, _get_registry_entries
 from .property import STATE_PROPERTIES_REGISTRY, Property, StateProperty
@@ -234,6 +236,14 @@ class Device:
         for CapabilityT in STATE_CAPABILITIES_REGISTRY:  # noqa: N806
             state_capability = CapabilityT(self._hass, self._entry_data, self.id, self._state)
             _append_capabilities(state_capability)
+
+        if self._state.domain != camera.DOMAIN and (video_stream_entity_id := self._config.get(CONF_VIDEO_STREAM)):
+            video_stream_state = self._hass.states.get(video_stream_entity_id)
+            if video_stream_state:
+                video_stream_capability = VideoStreamCapability(
+                    self._hass, self._entry_data, self.id, video_stream_state
+                )
+                _append_capabilities(video_stream_capability)
 
         if backlight_entity_id := self._config.get(CONF_BACKLIGHT_ENTITY_ID):
             backlight_state = self._hass.states.get(backlight_entity_id)

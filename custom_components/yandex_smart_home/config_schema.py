@@ -4,6 +4,7 @@ from contextlib import suppress
 import logging
 from typing import Any
 
+from homeassistant.components import camera
 from homeassistant.components.event import EventDeviceClass
 from homeassistant.components.sensor.const import SensorDeviceClass
 from homeassistant.const import CONF_DEVICE_CLASS, CONF_NAME, CONF_ROOM, CONF_STATE_TEMPLATE, CONF_TYPE
@@ -59,6 +60,7 @@ from .const import (
     CONF_SUPPORT_SET_CHANNEL,
     CONF_TURN_OFF,
     CONF_TURN_ON,
+    CONF_VIDEO_STREAM,
     DOCS_URL,
     MediaPlayerFeature,
     PropertyInstanceType,
@@ -429,6 +431,7 @@ ENTITY_SCHEMA = vol.All(
             vol.Optional(CONF_STATE_UNKNOWN): cv.boolean,
             vol.Optional(CONF_SLOW): cv.boolean,
             vol.Optional(CONF_BACKLIGHT_ENTITY_ID): cv.entity_id,
+            vol.Optional(CONF_VIDEO_STREAM): vol.All(cv.entity_id, cv.entity_domain(camera.DOMAIN)),
             vol.Optional(CONF_COLOR_PROFILE): cv.string,
             vol.Optional(CONF_ERROR_CODE_TEMPLATE): cv.template,
             vol.Optional(CONF_ENTITY_RANGE): ENTITY_RANGE_SCHEMA,

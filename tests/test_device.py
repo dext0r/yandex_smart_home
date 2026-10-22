@@ -3,6 +3,7 @@ from unittest.mock import PropertyMock, patch
 
 from homeassistant.components import light, media_player
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.camera import CameraEntityFeature
 from homeassistant.components.cover import CoverDeviceClass
 from homeassistant.components.demo.light import DemoLight
 from homeassistant.components.light import ColorMode, LightEntityFeature
@@ -20,6 +21,7 @@ from homeassistant.const import (
     CONF_TYPE,
     PERCENTAGE,
     SERVICE_TURN_OFF,
+    STATE_IDLE,
     STATE_OFF,
     STATE_ON,
     STATE_UNAVAILABLE,
@@ -51,6 +53,7 @@ from custom_components.yandex_smart_home.capability_onoff import (
 )
 from custom_components.yandex_smart_home.capability_range import BrightnessCapability, VolumeCapability
 from custom_components.yandex_smart_home.capability_toggle import MuteCapability, StateToggleCapability
+from custom_components.yandex_smart_home.capability_video import VideoStreamCapability
 from custom_components.yandex_smart_home.const import (
     CONF_BACKLIGHT_ENTITY_ID,
     CONF_ENTITY_CUSTOM_CAPABILITY_STATE_ENTITY_ID,
@@ -67,6 +70,7 @@ from custom_components.yandex_smart_home.const import (
     CONF_ENTITY_PROPERTY_ENTITY,
     CONF_ENTITY_PROPERTY_TYPE,
     CONF_ENTRY_ALIASES,
+    CONF_VIDEO_STREAM,
     DOMAIN,
 )
 from custom_components.yandex_smart_home.device import BacklightCapability, Device
@@ -179,6 +183,18 @@ async def test_device_capabilities(hass: HomeAssistant) -> None:
 
     device_switch = Device(hass, entry_data, state_switch.entity_id, state_switch)
     assert [type(c) for c in device_switch.get_capabilities()] == [CustomOnOffCapability]
+
+
+async def test_device_capabilities_with_video_stream(hass: HomeAssistant) -> None:
+    hass.states.async_set("camera.test", STATE_IDLE, {ATTR_SUPPORTED_FEATURES: CameraEntityFeature.STREAM})
+    state = State("switch.test", STATE_OFF)
+    entry_data = MockConfigEntryData(
+        hass,
+        entity_config={state.entity_id: {CONF_VIDEO_STREAM: "camera.test"}},
+    )
+    device = Device(hass, entry_data, state.entity_id, state)
+
+    assert [type(c) for c in device.get_capabilities()] == [OnOffCapabilityBasic, VideoStreamCapability]
 
 
 async def test_device_capabilities_with_backlight_entity(hass: HomeAssistant) -> None:
