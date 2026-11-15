@@ -7,7 +7,7 @@ import math
 from typing import Any, Protocol
 
 from homeassistant.components import climate, cover, fan, humidifier, light, media_player, valve, water_heater
-from homeassistant.components.climate import ClimateEntityFeature
+from homeassistant.components.climate import ClimateEntityFeature, HVACMode
 from homeassistant.components.cover import CoverEntityFeature
 from homeassistant.components.light import ColorMode
 from homeassistant.components.media_player import MediaPlayerDeviceClass, MediaPlayerEntityFeature, MediaType
@@ -17,6 +17,7 @@ from homeassistant.const import (
     ATTR_DEVICE_CLASS,
     ATTR_ENTITY_ID,
     ATTR_MODEL,
+    ATTR_SUPPORTED_FEATURES,
     ATTR_TEMPERATURE,
     SERVICE_MEDIA_NEXT_TRACK,
     SERVICE_MEDIA_PREVIOUS_TRACK,
@@ -29,9 +30,11 @@ from homeassistant.const import (
     STATE_OFF,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
+    UnitOfTemperature,
 )
 from homeassistant.core import Context
 from homeassistant.util.color import RGBColor
+from homeassistant.util.unit_conversion import TemperatureConverter
 
 from .capability import STATE_CAPABILITIES_REGISTRY, Capability, StateCapability
 from .capability_color import LightState
@@ -51,6 +54,7 @@ from .const import (
 )
 from .helpers import APIError
 from .schema import (
+    CapabilityDescription,
     CapabilityType,
     RangeCapabilityInstance,
     RangeCapabilityInstanceActionState,
@@ -262,19 +266,167 @@ class ClimateTargetTemperatureCapability(TemperatureCapability):
             self._state_features & ClimateEntityFeature.TARGET_TEMPERATURE
         )
 
+    def get_description(self) -> CapabilityDescription | None:
+        """Do not advertise a midpoint range until the band and its limits are known."""
+        if (
+            self._state_features & ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+            and self.state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+        ) or (self._uses_temperature_range and self._get_temperature_range() is None):
+            return None
+        return super().get_description()
+
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
+        capability = self
+        current = self._hass.states.get(self.state.entity_id)
+        if self._state_features & ClimateEntityFeature.TARGET_TEMPERATURE_RANGE or (
+            current
+            and int(current.attributes.get(ATTR_SUPPORTED_FEATURES, 0)) & ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+        ):
+            # A previous action in the same request may have changed the HVAC mode or targets.
+            if current is None or current.state == STATE_UNAVAILABLE:
+                raise APIError(ResponseCode.DEVICE_UNREACHABLE, f"Missing current state for {self}")
+            capability = type(self)(self._hass, self._entry_data, self.device_id, current)
+            if not capability.supported or current.state == STATE_UNKNOWN:
+                raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Unknown temperature mode for {self}")
+
+        if capability._uses_temperature_range:
+            service_data = capability._get_temperature_range_service_data(state)
+        else:
+            service_data = {ATTR_TEMPERATURE: capability._get_service_call_value(state)}
+
         await self._hass.services.async_call(
             climate.DOMAIN,
             climate.SERVICE_SET_TEMPERATURE,
-            {ATTR_ENTITY_ID: self.state.entity_id, ATTR_TEMPERATURE: self._get_service_call_value(state)},
+            {ATTR_ENTITY_ID: self.state.entity_id, **service_data},
             blocking=self._wait_for_service_call,
             context=context,
         )
 
     def _get_value(self) -> float | None:
         """Return the current capability value (unguarded)."""
+        if self._uses_temperature_range:
+            if targets := self._get_temperature_range():
+                low, high, _, _, _ = targets
+                return TemperatureConverter.convert(
+                    (low + (high - low) / 2), self._temperature_unit, UnitOfTemperature.CELSIUS
+                )
+            return None
+
+        if self._state_features & ClimateEntityFeature.TARGET_TEMPERATURE_RANGE and self.state.state in (
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
+        ):
+            return None
         return self._convert_to_float(self.state.attributes.get(ATTR_TEMPERATURE))
+
+    @property
+    def _uses_temperature_range(self) -> bool:
+        """Use a band only in heat_cool, not for single-target auto-mode air conditioners."""
+        return self.state.state == HVACMode.HEAT_COOL and bool(
+            self._state_features & ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
+        )
+
+    @property
+    def _temperature_unit(self) -> str:
+        """State temperatures are expressed in the installation's temperature unit."""
+        return self._hass.config.units.temperature_unit
+
+    @cached_property
+    def _range(self) -> RangeCapabilityRange:
+        """Describe the band midpoint in Celsius; retain the existing single-target range."""
+        if not self._uses_temperature_range:
+            return super()._range
+        targets = self._get_temperature_range()
+        if targets is None:
+            raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Missing temperature range for {self}")
+        low, high, minimum_shift, maximum_shift, step = targets
+        midpoint = low + (high - low) / 2
+        unit = self._temperature_unit
+        return RangeCapabilityRange(
+            min=TemperatureConverter.convert(midpoint + minimum_shift, unit, UnitOfTemperature.CELSIUS),
+            max=TemperatureConverter.convert(midpoint + maximum_shift, unit, UnitOfTemperature.CELSIUS),
+            precision=step
+            * (
+                TemperatureConverter.convert(1, unit, UnitOfTemperature.CELSIUS)
+                - TemperatureConverter.convert(0, unit, UnitOfTemperature.CELSIUS)
+            ),
+        )
+
+    def _get_temperature_range(self) -> tuple[float, float, float, float, float] | None:
+        """Return a valid band, its step-aligned shift limits and step, without guessing targets."""
+        values = []
+        for attribute in (
+            climate.ATTR_TARGET_TEMP_LOW,
+            climate.ATTR_TARGET_TEMP_HIGH,
+            climate.ATTR_MIN_TEMP,
+            climate.ATTR_MAX_TEMP,
+            climate.ATTR_TARGET_TEMP_STEP,
+        ):
+            raw_value = self.state.attributes.get(
+                attribute, 0.5 if attribute == climate.ATTR_TARGET_TEMP_STEP else None
+            )
+            try:
+                value = self._convert_to_float(raw_value, strict=False)
+            except OverflowError:
+                return None
+            if isinstance(raw_value, bool) or value is None or not math.isfinite(value):
+                return None
+            values.append(value)
+
+        low, high, minimum, maximum, step = values
+        if not (
+            minimum <= low <= high <= maximum
+            and math.isfinite(maximum - minimum)
+            and step > 0
+            # Reject a lattice finer than float resolution anywhere within the device limits.
+            and step >= max(math.ulp(minimum), math.ulp(maximum))
+            and self._temperature_unit in (UnitOfTemperature.CELSIUS, UnitOfTemperature.FAHRENHEIT)
+        ):
+            return None
+
+        minimum_steps, maximum_steps = (minimum - low) / step, (maximum - high) / step
+        if not math.isfinite(minimum_steps) or not math.isfinite(maximum_steps):
+            return None
+        # Ignore floating-point noise near a whole step; never move a bound outside the device limits.
+        minimum_shift = max(minimum - low, math.ceil(round(minimum_steps, 7)) * step)
+        maximum_shift = min(maximum - high, math.floor(round(maximum_steps, 7)) * step)
+        return low, high, minimum_shift, maximum_shift, step
+
+    def _get_temperature_range_service_data(self, state: RangeCapabilityInstanceActionState) -> dict[str, float]:
+        """Translate a band as a whole, preserving its width and representable target steps."""
+        targets = self._get_temperature_range()
+        if targets is None:
+            raise APIError(
+                ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Missing or invalid temperature range for {self}"
+            )
+        if not math.isfinite(state.value):
+            raise APIError(ResponseCode.INVALID_VALUE, f"Non-finite temperature for {self}")
+
+        low, high, minimum_shift, maximum_shift, step = targets
+        if state.relative:
+            delta = state.value * (
+                TemperatureConverter.convert(1, UnitOfTemperature.CELSIUS, self._temperature_unit)
+                - TemperatureConverter.convert(0, UnitOfTemperature.CELSIUS, self._temperature_unit)
+            )
+            if not math.isfinite(delta):
+                raise APIError(ResponseCode.INVALID_VALUE, f"Non-finite temperature shift for {self}")
+            delta = max(minimum_shift, min(delta, maximum_shift))
+        else:
+            value = TemperatureConverter.convert(state.value, UnitOfTemperature.CELSIUS, self._temperature_unit)
+            delta = value - (low + (high - low) / 2)
+            bounded_delta = max(minimum_shift, min(delta, maximum_shift))
+            if not math.isclose(delta, bounded_delta, rel_tol=0, abs_tol=min(step * 1e-7, 1e-7)):
+                raise APIError(ResponseCode.INVALID_VALUE, f"Temperature range would exceed device limits for {self}")
+            delta = bounded_delta
+
+        steps = delta / step
+        if not math.isfinite(steps) or not math.isclose(steps, round(steps), rel_tol=0, abs_tol=1e-7):
+            raise APIError(
+                ResponseCode.INVALID_VALUE, f"Temperature range shift must be a multiple of {step} for {self}"
+            )
+        delta = max(minimum_shift, min(round(steps) * step, maximum_shift))
+        return {climate.ATTR_TARGET_TEMP_LOW: low + delta, climate.ATTR_TARGET_TEMP_HIGH: high + delta}
 
 
 class ClimateTargetTemperatureLowCapability(TemperatureCapability):
@@ -293,6 +445,15 @@ class ClimateTargetTemperatureLowCapability(TemperatureCapability):
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
+        current = self._hass.states.get(self.state.entity_id)
+        if current is None or current.state == STATE_UNAVAILABLE:
+            raise APIError(ResponseCode.DEVICE_UNREACHABLE, f"Missing current state for {self}")
+        if (
+            current.state == STATE_UNKNOWN
+            or not type(self)(self._hass, self._entry_data, self.device_id, current).supported
+        ):
+            # The legacy lower-target (volume) mapping no longer exists for this feature set.
+            raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Temperature capabilities changed for {self}")
         await self._hass.services.async_call(
             climate.DOMAIN,
             climate.SERVICE_SET_TEMPERATURE,
@@ -324,6 +485,15 @@ class ClimateTargetTemperatureHighCapability(TemperatureCapability):
 
     async def set_instance_state(self, context: Context, state: RangeCapabilityInstanceActionState) -> None:
         """Change the capability state."""
+        current = self._hass.states.get(self.state.entity_id)
+        if current is None or current.state == STATE_UNAVAILABLE:
+            raise APIError(ResponseCode.DEVICE_UNREACHABLE, f"Missing current state for {self}")
+        if (
+            current.state == STATE_UNKNOWN
+            or not type(self)(self._hass, self._entry_data, self.device_id, current).supported
+        ):
+            # Do not apply a stale upper-target command after switching to single-target or midpoint semantics.
+            raise APIError(ResponseCode.NOT_SUPPORTED_IN_CURRENT_MODE, f"Temperature capabilities changed for {self}")
         await self._hass.services.async_call(
             climate.DOMAIN,
             climate.SERVICE_SET_TEMPERATURE,
