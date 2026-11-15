@@ -359,6 +359,7 @@ async def test_capability_range_climate_dual_target_temperature(
     }
     assert cap_high.get_value() == 25
 
+    hass.states.async_set(state.entity_id, state.state, state.attributes)
     calls = async_mock_service(hass, climate.DOMAIN, climate.SERVICE_SET_TEMPERATURE)
     await cap_low.set_instance_state(
         Context(),
