@@ -7,10 +7,12 @@ import asyncio
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
+from email.utils import parsedate_to_datetime
 import itertools
 import logging
 from random import randint
+import re
 from typing import TYPE_CHECKING, Any, Protocol, Self
 
 from aiohttp import ClientTimeout, JsonPayload, hdrs
@@ -57,6 +59,7 @@ INITIAL_REPORT_DELAY = timedelta(seconds=15)
 DISCOVERY_REQUEST_DELAY = timedelta(seconds=5)
 HEARTBEAT_REPORT_INTERVAL = timedelta(hours=1)
 REPORT_STATE_WINDOW = timedelta(seconds=1)
+YANDEX_RATE_LIMIT_PAUSE = 300
 
 
 @dataclass
@@ -194,6 +197,16 @@ class Notifier(ABC):
         self._unsub_heartbeat_report: CALLBACK_TYPE | None = None
         self._unsub_report_states: CALLBACK_TYPE | None = None
         self._unsub_discovery: CALLBACK_TYPE | None = None
+        self._report_task: asyncio.Task[Any] | None = None
+        self._state_paused_until = 0.0
+
+    @property
+    def _pause_on_rate_limit(self) -> bool:
+        return False
+
+    @property
+    def _state_reporting_paused(self) -> bool:
+        return self._state_paused_until > self._hass.loop.time()
 
     async def async_setup(self) -> None:
         """Set up the notifier."""
@@ -240,11 +253,16 @@ class Notifier(ABC):
             self._template_changes_tracker.async_remove()
             self._template_changes_tracker = None
 
+        if self._report_task is not None:
+            self._report_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._report_task
+
     async def async_send_discovery(self, *_: Any) -> None:
         """Send notification about change of devices' parameters."""
         self._debug_log("Sending discovery request")
         request = CallbackDiscoveryRequest(payload=CallbackDiscoveryRequestPayload(user_id=self._config.user_id))
-        return await self._async_send_request(f"{self._base_url}/discovery", request)
+        await self._async_send_request(f"{self._base_url}/discovery", request)
 
     @property
     @abstractmethod
@@ -272,6 +290,14 @@ class Notifier(ABC):
 
     async def _async_report_states(self, *_: Any) -> None:
         """Send notification about device state change."""
+        if self._report_task is not None:
+            return
+
+        if self._state_reporting_paused:
+            await self._pending.async_get_all()
+            self._unsub_report_states = None
+            return
+
         states: list[DeviceState] = []
 
         for device_id, device_states in (await self._pending.async_get_all()).items():
@@ -306,19 +332,24 @@ class Notifier(ABC):
                 payload=CallbackStatesRequestPayload(user_id=self._config.user_id, devices=states)
             )
 
-            asyncio.create_task(self._async_send_request(f"{self._base_url}/state", request))  # noqa: RUF006
+            url = f"{self._base_url}/state"
+            if self._pause_on_rate_limit:
+                self._report_task = asyncio.current_task()
+                try:
+                    if (retry_after := await self._async_send_request(url, request)) is not None:
+                        self._state_paused_until = self._hass.loop.time() + max(YANDEX_RATE_LIMIT_PAUSE, retry_after)
+                        # Values queued during the rejected request would be stale after the pause.
+                        await self._pending.async_get_all()
+                finally:
+                    self._report_task = None
+            else:
+                asyncio.create_task(self._async_send_request(url, request))  # noqa: RUF006
 
-        if self._pending.empty:
-            self._unsub_report_states = None
-        else:
-            self._unsub_report_states = async_call_later(
-                self._hass,
-                delay=0 if self._pending.time_sensitive else REPORT_STATE_WINDOW,
-                action=HassJob(self._async_report_states),
-            )
+        self._unsub_report_states = None
+        self._schedule_report_states()
 
-    async def _async_send_request(self, url: str, request: CallbackRequest) -> None:
-        """Send a request to the url."""
+    async def _async_send_request(self, url: str, request: CallbackRequest) -> float | None:
+        """Send a request and return Retry-After when rate limited."""
         try:
             self._debug_log(f"Request: {url} (POST data: {request.as_json()})")
 
@@ -329,6 +360,11 @@ class Notifier(ABC):
                 timeout=ClientTimeout(total=5),
             )
 
+            if r.status == 429:
+                r.release()
+                _LOGGER.warning(self._format_log_message("State notification request failed: HTTP 429"))
+                return _retry_after_seconds(r.headers.get(hdrs.RETRY_AFTER, ""))
+
             response_body, error_message = await r.read(), ""
             try:
                 response = CallbackResponse.model_validate_json(response_body)
@@ -337,18 +373,21 @@ class Notifier(ABC):
                 elif response.error_code:
                     error_message = response.error_code
             except ValidationError:
-                error_message = response_body.decode("utf-8").strip()[:100]
+                error_message = response_body.decode("utf-8", errors="replace").strip()[:100]
 
             if r.status != 202 or error_message:
                 _LOGGER.warning(
                     self._format_log_message(f"State notification request failed: {error_message or r.status}")
                 )
+            if re.search(r"\bupstream request:\s*HTTP\s+429\b", error_message, re.IGNORECASE):
+                return _retry_after_seconds(r.headers.get(hdrs.RETRY_AFTER, ""))
         except ClientConnectionError as e:
             _LOGGER.warning(self._format_log_message(f"State notification request failed: {e!r}"))
         except TimeoutError as e:
             self._debug_log(f"State notification request failed: {e!r}")
         except Exception:
             _LOGGER.exception(self._format_log_message("Unexpected exception"))
+        return None
 
     async def _async_template_result_changed(
         self,
@@ -356,7 +395,7 @@ class Notifier(ABC):
         updates: list[TrackTemplateResult],
     ) -> None:
         """Handle track template changes."""
-        if event_type is None:  # update during setup
+        if event_type is None or self._state_reporting_paused:  # ignore updates during setup and rate limiting
             return None
 
         for result in updates:
@@ -379,6 +418,9 @@ class Notifier(ABC):
 
     async def _async_state_changed(self, event: Event[EventStateChangedData]) -> None:
         """Handle state changes."""
+        if self._state_reporting_paused:
+            return None
+
         entity_id = str(event.data.get(ATTR_ENTITY_ID))
         old_state: State | None = event.data.get("old_state")
         new_state: State | None = event.data.get("new_state")
@@ -411,6 +453,9 @@ class Notifier(ABC):
 
     async def _async_initial_report(self, *_: Any) -> None:
         """Schedule initial report."""
+        if self._state_reporting_paused:
+            return None
+
         self._debug_log("Reporting initial states")
         for state in self._hass.states.async_all():
             device = Device(self._hass, self._entry_data, state.entity_id, state)
@@ -422,11 +467,12 @@ class Notifier(ABC):
 
     async def _async_hearbeat_report(self, *_: Any) -> None:
         """Schedule periodical state report."""
-        self._debug_log("Reporting states (heartbeat)")
-        for state in self._hass.states.async_all():
-            device = Device(self._hass, self._entry_data, state.entity_id, state)
-            if device.should_expose:
-                await self._pending.async_add([p for p in device.get_properties() if p.heartbeat_report], [])
+        if not self._state_reporting_paused:
+            self._debug_log("Reporting states (heartbeat)")
+            for state in self._hass.states.async_all():
+                device = Device(self._hass, self._entry_data, state.entity_id, state)
+                if device.should_expose:
+                    await self._pending.async_add([p for p in device.get_properties() if p.heartbeat_report], [])
 
         self._unsub_heartbeat_report = async_call_later(
             self._hass,
@@ -437,7 +483,7 @@ class Notifier(ABC):
 
     def _schedule_report_states(self) -> None:
         """Schedule run report states job if there are pending states."""
-        if self._pending.empty or self._unsub_report_states:
+        if self._pending.empty or self._unsub_report_states or self._report_task or self._state_reporting_paused:
             return
 
         self._unsub_report_states = async_call_later(
@@ -465,6 +511,10 @@ class CloudNotifier(Notifier):
     """Notifier for cloud connections."""
 
     @property
+    def _pause_on_rate_limit(self) -> bool:
+        return self._config.platform == SmartHomePlatform.YANDEX
+
+    @property
     def _base_url(self) -> str:
         """Return base URL."""
         return f"{CLOUD_BASE_URL}/api/home_assistant/v2/callback/{self._config.platform}"
@@ -476,3 +526,14 @@ class CloudNotifier(Notifier):
             hdrs.AUTHORIZATION: f"Bearer {self._config.token}",
             hdrs.USER_AGENT: f"{SERVER_SOFTWARE} {DOMAIN}/{self._entry_data.component_version}",
         }
+
+
+def _retry_after_seconds(value: str) -> float:
+    if value.isascii() and value.isdecimal() and len(value) <= 10:
+        return int(value)
+    with suppress(TypeError, ValueError, OverflowError):
+        date = parsedate_to_datetime(value)
+        if date.tzinfo is None:
+            date = date.replace(tzinfo=UTC)
+        return max(0, (date - datetime.now(UTC)).total_seconds())
+    return 0

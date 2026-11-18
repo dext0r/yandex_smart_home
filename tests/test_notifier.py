@@ -1286,6 +1286,80 @@ async def test_notifier_report_states(
     await notifier.async_unload()  # type: ignore[unreachable]
 
 
+@pytest.mark.parametrize(
+    ("status", "error_message", "retry_after", "cooldown"),
+    [
+        (429, "limited", None, 300),
+        (503, "upstream request: HTTP 429: limited", "420", 420),
+        (503, "circuit breaker is open", "420", 0),
+    ],
+)
+async def test_yaha_yandex_state_reporting_after_rate_limit(
+    hass: HomeAssistant,
+    entry_data: MockConfigEntryData,
+    aioclient_mock: AiohttpClientMocker,
+    mock_call_later: AsyncMock,
+    status: int,
+    error_message: str,
+    retry_after: str | None,
+    cooldown: int,
+) -> None:
+    notifier = CloudNotifier(hass, entry_data, NotifierConfig("u", "t", platform=SmartHomePlatform.YANDEX), {}, {})
+    url = "https://yaha-cloud.ru/api/home_assistant/v2/callback/yandex/state"
+    aioclient_mock.post(
+        url,
+        status=status,
+        json={"status": "error", "error_message": error_message},
+        headers={"Retry-After": retry_after} if retry_after else None,
+    )
+    await notifier.async_setup()
+    try:
+        await _async_set_state(hass, "switch.test", "on")
+        assert not bool(notifier._pending.empty)
+        start = hass.loop.time()
+        send_request = notifier._async_send_request
+
+        async def send_with_pending_update(url: str, request: Any) -> float | None:
+            if cooldown:
+                await _async_set_state(hass, "switch.in_flight", "on")
+                assert not notifier._pending.empty
+            return await send_request(url, request)
+
+        with patch.object(notifier, "_async_send_request", side_effect=send_with_pending_update):
+            await notifier._async_report_states()
+        assert aioclient_mock.call_count == 1
+        assert notifier._pending.empty
+
+        if cooldown:
+            assert notifier._state_paused_until == pytest.approx(start + cooldown, abs=1)
+            scheduled = mock_call_later.call_count
+            await _async_set_state(hass, "switch.test", "off")
+            assert mock_call_later.call_count == scheduled
+            assert notifier._pending.empty
+            assert aioclient_mock.call_count == 1
+            notifier._state_paused_until = start
+        else:
+            assert notifier._state_paused_until == 0
+
+        await notifier._async_report_states()
+        assert aioclient_mock.call_count == 1
+        aioclient_mock.clear_requests()
+        aioclient_mock.post(url, status=202, json={"status": "ok"})
+        await _async_set_state(hass, "switch.fresh", "off")
+        await notifier._async_report_states()
+
+        assert aioclient_mock.call_count == 1
+        payload = json.loads(aioclient_mock.mock_calls[0][2]._value)["payload"]
+        assert payload["devices"] == [
+            {
+                "id": "switch.fresh",
+                "capabilities": [{"type": "devices.capabilities.on_off", "state": {"instance": "on", "value": False}}],
+            }
+        ]
+    finally:
+        await notifier.async_unload()
+
+
 async def test_notifier_pending_states(hass: HomeAssistant, entry_data: MockConfigEntryData) -> None:
     ps = PendingStates()
     await ps.async_add([OnOffCapabilityBasic(hass, entry_data, "switch.test", State("switch.test", "on"))], [])
