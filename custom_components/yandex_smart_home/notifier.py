@@ -13,10 +13,10 @@ import itertools
 import logging
 from random import randint
 import re
-from typing import TYPE_CHECKING, Any, Literal, Protocol, Self
+from typing import TYPE_CHECKING, Any, Protocol, Self
 
 from aiohttp import ClientTimeout, JsonPayload, hdrs
-from aiohttp.client_exceptions import ClientConnectionError, ClientPayloadError
+from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.const import ATTR_ENTITY_ID, EVENT_STATE_CHANGED
 from homeassistant.core import CALLBACK_TYPE, Event, HassJob, HomeAssistant, State
 from homeassistant.exceptions import TemplateError
@@ -59,11 +59,7 @@ INITIAL_REPORT_DELAY = timedelta(seconds=15)
 DISCOVERY_REQUEST_DELAY = timedelta(seconds=5)
 HEARTBEAT_REPORT_INTERVAL = timedelta(hours=1)
 REPORT_STATE_WINDOW = timedelta(seconds=1)
-YANDEX_BATCH_SIZE = 5
-YANDEX_BATCH_INTERVAL = 0.5
-YANDEX_RETRY_DELAYS = (5, 20)
-YANDEX_LIMIT_PAUSE = 300
-YANDEX_FAILURE_PAUSE = 60
+YANDEX_RATE_LIMIT_PAUSE = 300
 
 
 @dataclass
@@ -81,12 +77,6 @@ class ReportableDeviceState(Protocol):
     """Protocol type for device capabilities and properties."""
 
     device_id: str
-
-    @property
-    @abstractmethod
-    def retrievable(self) -> bool:
-        """Return whether the value describes a queryable state."""
-        ...
 
     @property
     @abstractmethod
@@ -168,18 +158,6 @@ class PendingStates:
             self._device_states.clear()
             return states
 
-    async def async_restore(self, states: dict[str, list[ReportableDeviceState]]) -> None:
-        """Keep current values across a pause without delivering old one-shot events."""
-        async with self._lock:
-            for device_id, items in list(self._device_states.items()):
-                if current := [item for item in items if item.retrievable]:
-                    self._device_states[device_id] = current
-                else:
-                    del self._device_states[device_id]
-            for device_id, states_to_restore in states.items():
-                pending = self._device_states.setdefault(device_id, [])
-                pending.extend(state for state in states_to_restore if state not in pending)
-
     @property
     def empty(self) -> bool:
         """Test if pending states exist."""
@@ -221,25 +199,26 @@ class Notifier(ABC):
         self._unsub_discovery: CALLBACK_TYPE | None = None
         self._report_task: asyncio.Task[Any] | None = None
         self._state_paused_until = 0.0
-        self._unloaded = False
 
     @property
-    def _manage_yandex_delivery(self) -> bool:
+    def _pause_on_rate_limit(self) -> bool:
         return False
+
+    @property
+    def _state_reporting_paused(self) -> bool:
+        return self._state_paused_until > self._hass.loop.time()
 
     async def async_setup(self) -> None:
         """Set up the notifier."""
-        self._unloaded = False
         self._unsub_state_changed = self._hass.bus.async_listen(EVENT_STATE_CHANGED, self._async_state_changed)
         self._unsub_initial_report = async_call_later(
             self._hass, INITIAL_REPORT_DELAY, HassJob(self._async_initial_report)
         )
-        if not self._manage_yandex_delivery:
-            self._unsub_heartbeat_report = async_call_later(
-                self._hass,
-                delay=HEARTBEAT_REPORT_INTERVAL + timedelta(minutes=randint(1, 15)),  # noqa: S311
-                action=HassJob(self._async_hearbeat_report),
-            )
+        self._unsub_heartbeat_report = async_call_later(
+            self._hass,
+            delay=HEARTBEAT_REPORT_INTERVAL + timedelta(minutes=randint(1, 15)),  # noqa: S311
+            action=HassJob(self._async_hearbeat_report),
+        )
         self._unsub_discovery = async_call_later(
             self._hass, DISCOVERY_REQUEST_DELAY, HassJob(self.async_send_discovery)
         )
@@ -254,7 +233,6 @@ class Notifier(ABC):
 
     async def async_unload(self) -> None:
         """Unload the notifier."""
-        self._unloaded = True
         for unsub in [
             self._unsub_state_changed,
             self._unsub_initial_report,
@@ -312,20 +290,17 @@ class Notifier(ABC):
 
     async def _async_report_states(self, *_: Any) -> None:
         """Send notification about device state change."""
-        if self._unloaded or self._report_task is not None:
+        if self._report_task is not None:
             return
-        self._unsub_report_states = None
-        self._report_task = asyncio.current_task()
-        try:
-            await self._async_drain_states()
-        finally:
-            self._report_task = None
-            self._schedule_report_states()
 
-    async def _async_drain_states(self) -> None:
-        pending = await self._pending.async_get_all()
+        if self._state_reporting_paused:
+            await self._pending.async_get_all()
+            self._unsub_report_states = None
+            return
+
         states: list[DeviceState] = []
-        for device_id, device_states in pending.items():
+
+        for device_id, device_states in (await self._pending.async_get_all()).items():
             capabilities: list[CapabilityInstanceState] = []
             properties: list[PropertyInstanceState] = []
 
@@ -352,91 +327,67 @@ class Notifier(ABC):
                     )
                 )
 
-        if not states:
-            return
-
-        size = YANDEX_BATCH_SIZE if self._manage_yandex_delivery else len(states)
-        for offset in range(0, len(states), size):
-            if offset:
-                await asyncio.sleep(YANDEX_BATCH_INTERVAL)
-            batch = states[offset : offset + size]
+        if states:
             request = CallbackStatesRequest(
-                payload=CallbackStatesRequestPayload(user_id=self._config.user_id, devices=batch)
+                payload=CallbackStatesRequestPayload(user_id=self._config.user_id, devices=states)
             )
-            result, retry_after = await self._async_send_request(f"{self._base_url}/state", request)
-            if not self._manage_yandex_delivery:
-                return
 
-            # A timeout may have delivered a button-like event; never replay such a batch.
-            if all(item.retrievable for device in batch for item in pending[device.id]):
-                for delay in YANDEX_RETRY_DELAYS:
-                    if result != "temporary":
-                        break
-                    await asyncio.sleep(max(delay, retry_after))
-                    result, retry_after = await self._async_send_request(f"{self._base_url}/state", request)
+            url = f"{self._base_url}/state"
+            if self._pause_on_rate_limit:
+                self._report_task = asyncio.current_task()
+                try:
+                    if (retry_after := await self._async_send_request(url, request)) is not None:
+                        self._state_paused_until = self._hass.loop.time() + max(YANDEX_RATE_LIMIT_PAUSE, retry_after)
+                        # Values queued during the rejected request would be stale after the pause.
+                        await self._pending.async_get_all()
+                finally:
+                    self._report_task = None
+            else:
+                asyncio.create_task(self._async_send_request(url, request))  # noqa: RUF006
 
-            if result in ("limited", "temporary"):
-                pause = YANDEX_LIMIT_PAUSE if result == "limited" else YANDEX_FAILURE_PAUSE
-                self._state_paused_until = self._hass.loop.time() + max(pause, retry_after)
-                # Defer unsent values without replaying failed batches or queued button presses.
-                unsent = {
-                    device.id: [item for item in pending[device.id] if item.retrievable]
-                    for device in states[offset + size :]
-                }
-                await self._pending.async_restore({device_id: items for device_id, items in unsent.items() if items})
-                break
+        self._unsub_report_states = None
+        self._schedule_report_states()
 
-    async def _async_send_request(
-        self, url: str, request: CallbackRequest
-    ) -> tuple[Literal["ok", "temporary", "limited", "rejected"], float]:
-        """Send one notification and classify the response."""
+    async def _async_send_request(self, url: str, request: CallbackRequest) -> float | None:
+        """Send a request and return Retry-After when rate limited."""
         try:
             self._debug_log(f"Request: {url} (POST data: {request.as_json()})")
-            async with self._session.post(
+
+            r = await self._session.post(
                 url,
                 headers=self._request_headers,
                 data=JsonPayload(request.as_json(), dumps=lambda p: p),
                 timeout=ClientTimeout(total=5),
-            ) as response:
-                response_body = await response.read()
-                status = response.status
-                retry_after = response.headers.get(hdrs.RETRY_AFTER, "")
+            )
 
-            error_code = None
+            if r.status == 429:
+                r.release()
+                _LOGGER.warning(self._format_log_message("State notification request failed: HTTP 429"))
+                return _retry_after_seconds(r.headers.get(hdrs.RETRY_AFTER, ""))
+
+            response_body, error_message = await r.read(), ""
             try:
-                callback = CallbackResponse.model_validate_json(response_body)
-                error_code = callback.error_code
-                error_message = callback.error_message or error_code or ""
-                if callback.status != "ok" and not error_message:
-                    error_message = "callback returned an error"
+                response = CallbackResponse.model_validate_json(response_body)
+                if response.error_message:
+                    error_message = response.error_message
+                elif response.error_code:
+                    error_message = response.error_code
             except ValidationError:
                 error_message = response_body.decode("utf-8", errors="replace").strip()[:100]
 
-            if status == 202 and not error_message:
-                return "ok", 0
-            _LOGGER.warning(self._format_log_message(f"State notification request failed: {error_message or status}"))
-            if error_code in ("BAD_REQUEST", "UNKNOWN_USER"):
-                return "rejected", 0
-            if status == 429 or re.search(r"\bHTTP\s+429\b", error_message, re.IGNORECASE):
-                return "limited", _retry_after_seconds(retry_after)
-            if (
-                500 <= status < 600
-                or re.search(r"\bHTTP\s+5\d\d\b", error_message, re.IGNORECASE)
-                or any(
-                    reason in error_message.lower()
-                    for reason in ("circuit breaker is open", "context deadline exceeded", "connection reset by peer")
+            if r.status != 202 or error_message:
+                _LOGGER.warning(
+                    self._format_log_message(f"State notification request failed: {error_message or r.status}")
                 )
-            ):
-                return "temporary", _retry_after_seconds(retry_after)
-        except (ClientConnectionError, ClientPayloadError) as e:
+            if re.search(r"\bupstream request:\s*HTTP\s+429\b", error_message, re.IGNORECASE):
+                return _retry_after_seconds(r.headers.get(hdrs.RETRY_AFTER, ""))
+        except ClientConnectionError as e:
             _LOGGER.warning(self._format_log_message(f"State notification request failed: {e!r}"))
-            return "temporary", 0
         except TimeoutError as e:
             self._debug_log(f"State notification request failed: {e!r}")
-            return "temporary", 0
         except Exception:
             _LOGGER.exception(self._format_log_message("Unexpected exception"))
-        return "rejected", 0
+        return None
 
     async def _async_template_result_changed(
         self,
@@ -444,7 +395,7 @@ class Notifier(ABC):
         updates: list[TrackTemplateResult],
     ) -> None:
         """Handle track template changes."""
-        if event_type is None:  # update during setup
+        if event_type is None or self._state_reporting_paused:  # ignore updates during setup and rate limiting
             return None
 
         for result in updates:
@@ -455,8 +406,6 @@ class Notifier(ABC):
                 result.last_result = None
 
             for state in self._track_templates[result.template]:
-                if self._state_paused_until > self._hass.loop.time() and not state.retrievable:
-                    continue
                 old_state = state.new_with_value(result.last_result)
                 new_state = state.new_with_value(result.result)
 
@@ -469,6 +418,9 @@ class Notifier(ABC):
 
     async def _async_state_changed(self, event: Event[EventStateChangedData]) -> None:
         """Handle state changes."""
+        if self._state_reporting_paused:
+            return None
+
         entity_id = str(event.data.get(ATTR_ENTITY_ID))
         old_state: State | None = event.data.get("old_state")
         new_state: State | None = event.data.get("new_state")
@@ -494,8 +446,6 @@ class Notifier(ABC):
                 old_device_states.extend(old_device.get_state_capabilities())
                 old_device_states.extend(old_device.get_state_properties())
 
-        if self._state_paused_until > self._hass.loop.time():
-            new_device_states = [state for state in new_device_states if state.retrievable]
         for pending_state in await self._pending.async_add(new_device_states, old_device_states):
             self._debug_log(f"State report with value '{pending_state.get_value()}' scheduled for {pending_state!r}")
 
@@ -503,6 +453,9 @@ class Notifier(ABC):
 
     async def _async_initial_report(self, *_: Any) -> None:
         """Schedule initial report."""
+        if self._state_reporting_paused:
+            return None
+
         self._debug_log("Reporting initial states")
         for state in self._hass.states.async_all():
             device = Device(self._hass, self._entry_data, state.entity_id, state)
@@ -514,11 +467,12 @@ class Notifier(ABC):
 
     async def _async_hearbeat_report(self, *_: Any) -> None:
         """Schedule periodical state report."""
-        self._debug_log("Reporting states (heartbeat)")
-        for state in self._hass.states.async_all():
-            device = Device(self._hass, self._entry_data, state.entity_id, state)
-            if device.should_expose:
-                await self._pending.async_add([p for p in device.get_properties() if p.heartbeat_report], [])
+        if not self._state_reporting_paused:
+            self._debug_log("Reporting states (heartbeat)")
+            for state in self._hass.states.async_all():
+                device = Device(self._hass, self._entry_data, state.entity_id, state)
+                if device.should_expose:
+                    await self._pending.async_add([p for p in device.get_properties() if p.heartbeat_report], [])
 
         self._unsub_heartbeat_report = async_call_later(
             self._hass,
@@ -529,15 +483,12 @@ class Notifier(ABC):
 
     def _schedule_report_states(self) -> None:
         """Schedule run report states job if there are pending states."""
-        if self._unloaded or self._pending.empty or self._unsub_report_states or self._report_task:
+        if self._pending.empty or self._unsub_report_states or self._report_task or self._state_reporting_paused:
             return
 
-        delay: float | timedelta = 0 if self._pending.time_sensitive else REPORT_STATE_WINDOW
-        if (paused_for := self._state_paused_until - self._hass.loop.time()) > 0:
-            delay = paused_for
         self._unsub_report_states = async_call_later(
             self._hass,
-            delay=delay,
+            delay=0 if self._pending.time_sensitive else REPORT_STATE_WINDOW,
             action=HassJob(self._async_report_states),
         )
 
@@ -560,7 +511,7 @@ class CloudNotifier(Notifier):
     """Notifier for cloud connections."""
 
     @property
-    def _manage_yandex_delivery(self) -> bool:
+    def _pause_on_rate_limit(self) -> bool:
         return self._config.platform == SmartHomePlatform.YANDEX
 
     @property

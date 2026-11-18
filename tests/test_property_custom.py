@@ -50,7 +50,7 @@ def test_property_custom_registry(registry: DictRegistry[Any], instance: type[St
 
 
 @pytest.mark.parametrize("domain", [sensor.DOMAIN, binary_sensor.DOMAIN])
-@pytest.mark.parametrize("instance", sorted(ALL_INSTANCES))
+@pytest.mark.parametrize("instance", ALL_INSTANCES)
 async def test_property_custom_short(
     hass: HomeAssistant, entry_data: MockConfigEntryData, domain: str, instance: str
 ) -> None:
